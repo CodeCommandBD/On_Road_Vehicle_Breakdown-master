@@ -51,13 +51,13 @@ export default {
       isTitleVisible: false,
       testimonials: [
         {
-          image: './Testimonial-img/testi-profile.png',
+          image: require('./Testimonial-img/testi-profile.png'),
           text: 'Lorem ipsum dolor sit, amet consectetur adipisicing elit...',
           name: 'Mr. Tony Rutherford',
           position: 'Product Quality Engineer',
         },
         {
-          image: './Testimonial-img/testi-profile.png',
+          image: require('./Testimonial-img/testi-profile.png'),
           text: 'Lorem ipsum dolor sit, amet consectetur adipisicing elit...',
           name: 'Mr. Tony Rutherford',
           position: 'Product Quality Engineer',

@@ -1,6 +1,6 @@
 <template>
   <div class="nav w-100 ">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark d-flex justify-content-between">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark d-flex align-items-center justify-content-between px-3">
       <a class="navbar-brand" href="#">
         <img src="./Nav-img/main-logo.svg" alt=""/>
       </a>
@@ -148,13 +148,13 @@ export default {
           id: 'home',
           services: [
             {
-              imgSrc: './Nav-img/nav-one.png',
+              imgSrc: require('./Nav-img/nav-one.png'),
               altText: 'Service 1',
               title: 'Service 1',
               description: 'Service 1 description',
             },
             {
-              imgSrc: './Nav-img/service2.svg',
+              imgSrc: require('./Nav-img/nav-two.png'),
               altText: 'Service 2',
               title: 'Service 2',
               description: 'Service 2 description',
@@ -166,13 +166,13 @@ export default {
           id: 'profile',
           services: [
             {
-              imgSrc: './Nav-img/service3.svg',
+              imgSrc: require('./Nav-img/nav-three.png'),
               altText: 'Service 3',
               title: 'Service 3',
               description: 'Service 3 description',
             },
             {
-              imgSrc: './Nav-img/service4.svg',
+              imgSrc: require('./Nav-img/nav-four.png'),
               altText: 'Service 4',
               title: 'Service 4',
               description: 'Service 4 description',
@@ -200,6 +200,9 @@ export default {
 </script>
 
 <style scoped>
+.navbar-brand img {
+  height: 40px;
+}
 a {
   text-decoration: none;
 }
@@ -217,7 +220,7 @@ a {
 }
 
 .container-fluid {
-  width: fit-content;
+  width: 100%;
 }
 
 .navbar-expand-lg .navbar-nav {
@@ -324,12 +327,14 @@ li {
   font-size: 18px;
   font-weight: 600;
   top: 70px;
-  left: 30%;
+  left: 50%;
+  transform: translateX(-50%);
   opacity: 0;
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.5s ease, opacity 0.5s ease;
   border-top: 2px solid rgb(255, 81, 0);
+  z-index: 1000;
 }
 
 .nav_content.show {

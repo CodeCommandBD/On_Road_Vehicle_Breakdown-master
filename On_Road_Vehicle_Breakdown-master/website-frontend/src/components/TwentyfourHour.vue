@@ -55,25 +55,25 @@ export default {
     return {
       cards: [
         {
-          image: require('@assets/js/components/Twentyfour-hour-img/Vector (12).png'),
+          image: require('./Twentyfour-hour-img/Vector (12).png'),
           title: 'Easy Booking',
           description: 'Our user-friendly platform makes it easy to book car or bike maintenance and repairs quickly and conveniently.',
           linkText: 'Learn More',
-          linkIcon: require('@assets/js/components/Twentyfour-hour-img/Icon.png'),
+          linkIcon: require('./Twentyfour-hour-img/Icon.png'),
         },
         {
-          image: require('@assets/js/components/Twentyfour-hour-img/Vector (13).png'),
+          image: require('./Twentyfour-hour-img/Vector (13).png'),
           title: 'Expert Mechanics',
           description: 'Our skilled technicians will keep your car running smoothly and safely, handling everything from check-ups to repairs.',
           linkText: 'Learn More',
-          linkIcon: require('@assets/js/components/Twentyfour-hour-img/Icon.png')
+          linkIcon: require('./Twentyfour-hour-img/Icon.png')
         },
         {
-          image: require('@assets/js/components/Twentyfour-hour-img/Vector (14).png'),
+          image: require('./Twentyfour-hour-img/Vector (14).png'),
           title: 'Genuine parts',
           description: 'We use only original, high-quality parts for repairs, ensuring your car runs smoothly, lasts longer, and stays safe.',
           linkText: 'Learn More',
-          linkIcon: require('@assets/js/components/Twentyfour-hour-img/Icon.png')
+          linkIcon: require('./Twentyfour-hour-img/Icon.png')
         }
       ]
     };

@@ -75,12 +75,12 @@ export default {
     return {
       slides: [
         {
-          image: './Hero-img/hero-slide-one.png',
+          image: require('./Hero-img/hero-slide-one.png'),
           title: 'CAR REPAIR & AUTO SERVICE',
           description: 'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Voluptas, ex?'
         },
         {
-          image: './Hero-img/hero-slide-two.png',
+          image: require('./Hero-img/hero-slide-two.png'),
           title: 'CAR REPAIR & AUTO SERVICE',
           description: 'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Voluptas, ex?'
         }
