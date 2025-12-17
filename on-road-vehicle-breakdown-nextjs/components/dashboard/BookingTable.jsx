@@ -5,90 +5,125 @@ import {
   formatPrice,
   formatDateTime,
 } from "@/lib/utils/helpers";
-import { MoreHorizontal, Eye, Navigation } from "lucide-react";
+import { Eye, Phone, XCircle, Package } from "lucide-react";
 
 export default function BookingTable({ type = "user", bookings = [] }) {
   // If no bookings
   if (bookings.length === 0) {
     return (
-      <div className="bg-white rounded-xl border shadow-sm p-12 text-center">
-        <p className="text-gray-500">No bookings found.</p>
+      <div className="bg-white/5 rounded-xl border border-white/10 p-12 text-center">
+        <Package className="w-16 h-16 text-white/30 mx-auto mb-4" />
+        <p className="text-white/60">No bookings found.</p>
+        <p className="text-white/40 text-sm mt-2">
+          Create your first service request to get started
+        </p>
       </div>
     );
   }
 
-  return (
-    <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
-      <div className="p-6 border-b flex items-center justify-between">
-        <h3 className="font-semibold text-lg">Recent Bookings</h3>
-        <button className="text-primary text-sm font-medium hover:underline">
-          View All
-        </button>
-      </div>
+  const getStatusConfig = (status) => {
+    const configs = {
+      pending: "bg-yellow-500/20 text-yellow-400 border-yellow-500/50",
+      confirmed: "bg-blue-500/20 text-blue-400 border-blue-500/50",
+      in_progress: "bg-purple-500/20 text-purple-400 border-purple-500/50",
+      completed: "bg-green-500/20 text-green-400 border-green-500/50",
+      cancelled: "bg-gray-500/20 text-gray-400 border-gray-500/50",
+    };
+    return configs[status] || configs.pending;
+  };
 
+  return (
+    <div className="overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="bg-gray-50 text-muted uppercase text-xs font-semibold">
+        <table className="w-full text-sm">
+          <thead className="border-b border-white/10">
             <tr>
-              <th className="px-6 py-4">Booking ID</th>
-              <th className="px-6 py-4">
+              <th className="px-4 py-3 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
+                Booking ID
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
                 {type === "user" ? "Garage" : "User"}
               </th>
-              <th className="px-6 py-4">Service</th>
-              <th className="px-6 py-4">Date & Time</th>
-              <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4">Cost</th>
-              <th className="px-6 py-4 text-right">Actions</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
+                Service
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
+                Date
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
+                Cost
+              </th>
+              <th className="px-4 py-3 text-right text-xs font-semibold text-white/60 uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
           </thead>
-          <tbody className="divide-y">
-            {bookings.map((booking) => (
+          <tbody className="divide-y divide-white/10">
+            {bookings.map((booking, index) => (
               <tr
                 key={booking._id}
-                className="hover:bg-gray-50 transition-colors"
+                className="hover:bg-white/5 transition-all"
+                style={{ animationDelay: `${index * 0.05}s` }}
               >
-                <td className="px-6 py-4 font-medium text-gray-900">
-                  {booking._id.substring(0, 8).toUpperCase()}...
+                <td className="px-4 py-4 font-mono text-white/80 text-xs">
+                  {booking.bookingNumber ||
+                    `#${booking._id.substring(0, 8).toUpperCase()}`}
                 </td>
-                <td className="px-6 py-4 text-gray-600">
-                  {type === "user"
-                    ? booking.garage?.name || "Unknown Garage"
-                    : booking.user?.name || "Unknown User"}
+                <td className="px-4 py-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-gradient-orange flex items-center justify-center text-white text-xs font-semibold">
+                      {type === "user"
+                        ? booking.garage?.name?.charAt(0) || "G"
+                        : booking.user?.name?.charAt(0) || "U"}
+                    </div>
+                    <span className="text-white/90 font-medium">
+                      {type === "user"
+                        ? booking.garage?.name || "Unknown Garage"
+                        : booking.user?.name || "Unknown User"}
+                    </span>
+                  </div>
                 </td>
-                <td className="px-6 py-4 text-gray-600">
+                <td className="px-4 py-4 text-white/80">
                   {booking.service?.name ||
-                    booking.description?.substring(0, 20) ||
+                    booking.description?.substring(0, 30) ||
                     "General Service"}
                 </td>
-                <td className="px-6 py-4 text-gray-600">
+                <td className="px-4 py-4 text-white/60 text-xs">
                   {formatDateTime(booking.createdAt)}
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-4 py-4">
                   <span
                     className={cn(
-                      "px-2.5 py-1 rounded-full text-xs font-medium",
-                      getStatusColor(booking.status)
+                      "px-3 py-1 rounded-full text-xs font-semibold border",
+                      getStatusConfig(booking.status)
                     )}
                   >
                     {getStatusLabel(booking.status)}
                   </span>
                 </td>
-                <td className="px-6 py-4 font-medium text-gray-900">
+                <td className="px-4 py-4 font-semibold text-green-400">
                   {formatPrice(booking.estimatedCost)}
                 </td>
-                <td className="px-6 py-4 text-right">
+                <td className="px-4 py-4">
                   <div className="flex items-center justify-end gap-2">
-                    <button className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-primary transition-colors">
+                    <button className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-white transition-all scale-hover">
                       <Eye className="w-4 h-4" />
                     </button>
-                    {type === "garage" && booking.status === "pending" && (
-                      <button className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-green-600 transition-colors">
-                        <Navigation className="w-4 h-4" />
+                    {type === "user" &&
+                      booking.status !== "cancelled" &&
+                      booking.status !== "completed" && (
+                        <button className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-orange-400 transition-all scale-hover">
+                          <Phone className="w-4 h-4" />
+                        </button>
+                      )}
+                    {type === "user" && booking.status === "pending" && (
+                      <button className="p-2 hover:bg-red-500/20 rounded-lg text-white/60 hover:text-red-400 transition-all scale-hover">
+                        <XCircle className="w-4 h-4" />
                       </button>
                     )}
-                    <button className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-900 transition-colors">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </button>
                   </div>
                 </td>
               </tr>

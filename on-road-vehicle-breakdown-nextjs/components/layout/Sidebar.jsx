@@ -24,18 +24,26 @@ import { cn } from "@/lib/utils/helpers";
 
 const sidebarLinks = {
   user: [
-    { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-    { href: "/dashboard/bookings", label: "My Bookings", icon: Calendar },
-    { href: "/dashboard/profile", label: "My Profile", icon: User },
-    { href: "/dashboard/messages", label: "Messages", icon: MessageSquare },
-    { href: "/dashboard/settings", label: "Settings", icon: Settings },
+    { href: "/user/dashboard", label: "Overview", icon: LayoutDashboard },
+    { href: "/user/dashboard/bookings", label: "My Bookings", icon: Calendar },
+    { href: "/user/dashboard/profile", label: "My Profile", icon: User },
+    {
+      href: "/user/dashboard/messages",
+      label: "Messages",
+      icon: MessageSquare,
+    },
+    { href: "/user/dashboard/settings", label: "Settings", icon: Settings },
   ],
   garage: [
     { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
     { href: "/dashboard/bookings", label: "Bookings", icon: Calendar },
     { href: "/dashboard/services", label: "My Services", icon: Wrench },
     { href: "/dashboard/profile", label: "Garage Profile", icon: User },
-    { href: "/dashboard/subscription", label: "Subscription", icon: CreditCard },
+    {
+      href: "/dashboard/subscription",
+      label: "Subscription",
+      icon: CreditCard,
+    },
     { href: "/dashboard/settings", label: "Settings", icon: Settings },
   ],
   admin: [
@@ -79,17 +87,17 @@ export default function Sidebar() {
       {/* Sidebar Container */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-50 h-screen w-64 bg-white border-r transition-transform duration-300 lg:translate-x-0 lg:static lg:h-[calc(100vh-80px)]",
+          "fixed top-0 left-0 z-50 h-screen w-64 bg-[#1E1E1E] border-r border-white/10 transition-transform duration-300 lg:translate-x-0 lg:static lg:h-[calc(100vh-80px)]",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         <div className="h-full flex flex-col">
           {/* Mobile Header */}
-          <div className="flex items-center justify-between p-4 border-b lg:hidden">
-            <span className="font-bold text-xl text-primary">Menu</span>
+          <div className="flex items-center justify-between p-4 border-b border-white/10 lg:hidden">
+            <span className="font-bold text-xl text-orange-500">Menu</span>
             <button
               onClick={() => dispatch(toggleSidebar())}
-              className="p-1 hover:bg-gray-100 rounded-md"
+              className="p-1 hover:bg-white/10 rounded-md text-white"
             >
               <X className="w-6 h-6" />
             </button>
@@ -113,7 +121,10 @@ export default function Sidebar() {
                       onClick={() => dispatch(setSidebarOpen(false))}
                     >
                       <link.icon
-                        className={cn("w-5 h-5", isActive ? "text-primary" : "text-gray-400")}
+                        className={cn(
+                          "w-5 h-5",
+                          isActive ? "text-primary" : "text-gray-400"
+                        )}
                       />
                       {link.label}
                     </Link>
@@ -124,10 +135,10 @@ export default function Sidebar() {
           </nav>
 
           {/* Logout Button */}
-          <div className="p-4 border-t">
+          <div className="p-4 border-t border-white/10">
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg font-medium text-red-600 hover:bg-red-50 transition-colors"
+              className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg font-medium text-red-400 hover:bg-red-500/20 transition-colors"
             >
               <LogOut className="w-5 h-5" />
               Logout

@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
-import StatsCards from "@/components/dashboard/StatsCards";
+import EnhancedStatsCards from "@/components/dashboard/EnhancedStatsCards";
 import BookingTable from "@/components/dashboard/BookingTable";
-import { Plus, Loader2 } from "lucide-react";
-import Link from "next/link";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import QuickActions from "@/components/dashboard/QuickActions";
+import BookingTimeline from "@/components/dashboard/BookingTimeline";
+import LiveGarageTracker from "@/components/dashboard/LiveGarageTracker";
+import UserRewardsCard from "@/components/dashboard/UserRewardsCard";
+import { Loader2 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -12,7 +16,7 @@ export default function UserDashboard({ user }) {
   const [stats, setStats] = useState({
     totalBookings: 0,
     totalSpent: 0,
-    points: 120, // Mock points
+    points: 0,
     activeRequests: 0,
   });
 
@@ -30,7 +34,10 @@ export default function UserDashboard({ user }) {
           // Calculate Stats
           const totalBookings = fetchedBookings.length;
           const activeRequests = fetchedBookings.filter(
-            (b) => b.status === "pending" || b.status === "accepted"
+            (b) =>
+              b.status === "pending" ||
+              b.status === "confirmed" ||
+              b.status === "in_progress"
           ).length;
           const totalSpent = fetchedBookings.reduce(
             (acc, curr) => acc + (curr.estimatedCost || 0),
@@ -40,7 +47,7 @@ export default function UserDashboard({ user }) {
           setStats({
             totalBookings,
             totalSpent,
-            points: Math.floor(totalSpent / 100), // Simple point logic
+            points: Math.floor(totalSpent / 100), // 1 point per 100 BDT spent
             activeRequests,
           });
         }
@@ -58,29 +65,52 @@ export default function UserDashboard({ user }) {
   if (isLoading) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <Loader2 className="w-12 h-12 animate-spin text-[#ff4800]" />
+        <Loader2 className="w-12 h-12 animate-spin text-orange-500" />
       </div>
     );
   }
 
   return (
-    <div>
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl font-bold mb-1">Dashboard</h1>
-          <p className="text-gray-600">
-            Welcome back, <span className="font-semibold">{user?.name}</span>
-          </p>
+    <div className="min-h-screen">
+      {/* Dashboard Header */}
+      <DashboardHeader user={user} notificationCount={stats.activeRequests} />
+
+      {/* Quick Actions */}
+      <QuickActions />
+
+      {/* Enhanced Stats Cards */}
+      <EnhancedStatsCards stats={stats} />
+
+      {/* Main Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        {/* Left Column - Booking Timeline (2 cols on large screens) */}
+        <div className="lg:col-span-2">
+          <BookingTimeline bookings={bookings} />
         </div>
-        <Link href="/book" className="btn btn-primary">
-          <Plus className="w-5 h-5 mr-2" />
-          New Request
-        </Link>
+
+        {/* Right Column - Live Garage Tracker */}
+        <div className="lg:col-span-1">
+          <LiveGarageTracker />
+        </div>
       </div>
 
-      <StatsCards stats={stats} />
-      <BookingTable type="user" bookings={bookings} />
+      {/* Secondary Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        {/* Rewards Card */}
+        <div className="lg:col-span-1">
+          <UserRewardsCard user={user} stats={stats} />
+        </div>
+
+        {/* Booking Table (Full Width) */}
+        <div className="lg:col-span-2">
+          <div className="bg-[#1E1E1E] border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 fade-in">
+            <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">
+              All Bookings
+            </h3>
+            <BookingTable type="user" bookings={bookings} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
