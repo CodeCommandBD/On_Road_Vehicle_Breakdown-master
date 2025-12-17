@@ -1,13 +1,10 @@
 /**
- * Seed script to populate membership plans in the database
- * Run with: node lib/db/seedPlans.js
+ * Seed script for membership plans
+ * Run: node scripts/seedPlans.js
  */
 
 const mongoose = require("mongoose");
-
-// Database connection
-const MONGODB_URI =
-  process.env.MONGODB_URI || "mongodb://localhost:27017/vehicle-breakdown";
+require("dotenv").config({ path: ".env.local" });
 
 const planSchema = new mongoose.Schema(
   {
@@ -131,7 +128,19 @@ const plans = [
 async function seedPlans() {
   try {
     console.log("🌱 Connecting to database...");
-    await mongoose.connect(MONGODB_URI);
+    console.log(
+      "Using MongoDB URI:",
+      process.env.MONGODB_URI ? "Found in .env.local" : "NOT FOUND!"
+    );
+
+    if (!process.env.MONGODB_URI) {
+      console.error("❌ MONGODB_URI not found in .env.local");
+      console.log("Please make sure .env.local exists with MONGODB_URI");
+      process.exit(1);
+    }
+
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log("✅ Connected successfully!");
 
     console.log("🗑️  Clearing existing plans...");
     await Plan.deleteMany({});
@@ -139,24 +148,34 @@ async function seedPlans() {
     console.log("📝 Creating new plans...");
     const createdPlans = await Plan.insertMany(plans);
 
-    console.log("✅ Successfully created plans:");
+    console.log("\n✅ Successfully created plans:");
     createdPlans.forEach((plan) => {
-      const discount = Math.round(
-        ((plan.price.monthly * 12 - plan.price.yearly) /
-          (plan.price.monthly * 12)) *
-          100
+      const discount =
+        plan.price.monthly > 0
+          ? Math.round(
+              ((plan.price.monthly * 12 - plan.price.yearly) /
+                (plan.price.monthly * 12)) *
+                100
+            )
+          : 0;
+      console.log(`\n   ✨ ${plan.name} (${plan.tier})`);
+      console.log(`      Monthly: ৳${plan.price.monthly}`);
+      console.log(
+        `      Yearly: ৳${plan.price.yearly}${
+          discount > 0 ? ` (${discount}% off)` : ""
+        }`
       );
-      console.log(`   - ${plan.name} (${plan.tier})`);
-      console.log(`     Monthly: ৳${plan.price.monthly}`);
-      console.log(`     Yearly: ৳${plan.price.yearly} (${discount}% off)`);
-      console.log("");
     });
 
-    console.log("🎉 Database seeding completed!");
+    console.log("\n🎉 Database seeding completed successfully!\n");
     await mongoose.connection.close();
     process.exit(0);
   } catch (error) {
-    console.error("❌ Error seeding database:", error);
+    console.error("\n❌ Error seeding database:", error.message);
+    console.error("\nTroubleshooting:");
+    console.error("1. Check if MongoDB is running (Atlas or local)");
+    console.error("2. Verify MONGODB_URI in .env.local is correct");
+    console.error("3. Check network connection for MongoDB Atlas\n");
     process.exit(1);
   }
 }
