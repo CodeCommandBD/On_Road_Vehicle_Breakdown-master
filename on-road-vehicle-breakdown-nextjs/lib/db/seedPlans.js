@@ -1,0 +1,156 @@
+/**
+ * Seed script to populate membership plans in the database
+ * Run with: node lib/db/seedPlans.js
+ */
+
+const mongoose = require("mongoose");
+
+// Database connection
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/vehicle-breakdown";
+
+const planSchema = new mongoose.Schema({
+  name: String,
+  tier: { type: String, unique: true },
+  price: {
+    monthly: Number,
+    yearly: Number,
+  },
+  features: [String],
+  limits: {
+    service Calls: Number,
+    responseTime: Number,
+    vehicles: Number,
+  },
+  description: String,
+  isActive: Boolean,
+  isFeatured: Boolean,
+  displayOrder: Number,
+}, { timestamps: true });
+
+const Plan = mongoose.models.Plan || mongoose.model("Plan", planSchema);
+
+const plans = [
+  {
+    name: "Free Trial",
+    tier: "trial",
+    price: { monthly: 0, yearly: 0 },
+    features: [
+      "7-day free trial",
+      "1 service call included",
+      "Basic features access",
+      "Email support",
+      "Standard response time (60 mins)",
+    ],
+    limits: { serviceCalls: 1, responseTime: 60, vehicles: 1 },
+    description: "Try our service risk-free for 7 days",
+    isActive: true,
+    isFeatured: false,
+    displayOrder: 0,
+  },
+  {
+    name: "Basic Plan",
+    tier: "basic",
+    price: { monthly: 199, yearly: 1987 },
+    features: [
+      "2 service calls per month",
+      "Standard response time (60 mins)",
+      "Basic roadside assistance",
+      "Email support",
+      "Mobile app access",
+    ],
+    limits: { serviceCalls: 2, responseTime: 60, vehicles: 1 },
+    description: "Perfect for occasional vehicle breakdowns",
+    isActive: true,
+    isFeatured: false,
+    displayOrder: 1,
+  },
+  {
+    name: "Standard Plan",
+    tier: "standard",
+    price: { monthly: 349, yearly: 3476 },
+    features: [
+      "5 service calls per month",
+      "Quick response time (30 mins)",
+      "Advanced roadside assistance",
+      "Phone + Email support",
+      "Priority garage booking",
+      "Mobile app access",
+    ],
+    limits: { serviceCalls: 5, responseTime: 30, vehicles: 1 },
+    description: "Great for regular drivers with peace of mind",
+    isActive: true,
+    isFeatured: false,
+    displayOrder: 2,
+  },
+  {
+    name: "Premium Plan",
+    tier: "premium",
+    price: { monthly: 499, yearly: 4969 },
+    features: [
+      "Unlimited service calls",
+      "Emergency response (15 mins)",
+      "Latest technology",
+      "24/7 service & quick car",
+      "Always repairable vehicles",
+      "Emergency priority support",
+      "Dedicated technician",
+      "Mobile app access",
+    ],
+    limits: { serviceCalls: -1, responseTime: 15, vehicles: 1 },
+    description: "Our most popular plan for frequent travelers",
+    isActive: true,
+    isFeatured: true,
+    displayOrder: 3,
+  },
+  {
+    name: "Enterprise Plan",
+    tier: "enterprise",
+    price: { monthly: 799, yearly: 7955 },
+    features: [
+      "Everything in Premium",
+      "Up to 5 vehicles coverage",
+      "Dedicated account manager",
+      "Custom SLA agreements",
+      "Fleet management dashboard",
+      "Priority response (10 mins)",
+      "Advanced analytics",
+      "24/7 VIP support",
+    ],
+    limits: { serviceCalls: -1, responseTime: 10, vehicles: 5 },
+    description: "Perfect for businesses and fleet management",
+    isActive: true,
+    isFeatured: false,
+    displayOrder: 4,
+  },
+];
+
+async function seedPlans() {
+  try {
+    console.log("🌱 Connecting to database...");
+    await mongoose.connect(MONGODB_URI);
+
+    console.log("🗑️  Clearing existing plans...");
+    await Plan.deleteMany({});
+
+    console.log("📝 Creating new plans...");
+    const createdPlans = await Plan.insertMany(plans);
+
+    console.log("✅ Successfully created plans:");
+    createdPlans.forEach((plan) => {
+      const discount = Math.round(((plan.price.monthly * 12 - plan.price.yearly) / (plan.price.monthly * 12)) * 100);
+      console.log(`   - ${plan.name} (${plan.tier})`);
+      console.log(`     Monthly: ৳${plan.price.monthly}`);
+      console.log(`     Yearly: ৳${plan.price.yearly} (${discount}% off)`);
+      console.log("");
+    });
+
+    console.log("🎉 Database seeding completed!");
+    await mongoose.connection.close();
+    process.exit(0);
+  } catch (error) {
+    console.error("❌ Error seeding database:", error);
+    process.exit(1);
+  }
+}
+
+seedPlans();
