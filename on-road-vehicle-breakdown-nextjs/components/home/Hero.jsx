@@ -13,25 +13,18 @@ import "swiper/css/pagination";
 
 const heroSlides = [
   {
-    image:
-      "https://images.unsplash.com/photo-1542367597-8849ebf6c71b?q=80&w=1920&auto=format&fit=crop",
-    title: "24/7 ROADSIDE ASSISTANCE",
+    image: "/Hero-img/hero-slide-one.png",
+    title: "On-Road Breakdown Service",
+    subtitle: "24/7 Emergency Vehicle Assistance",
     description:
-      "Professional vehicle breakdown service available round the clock for your safety.",
+      "Get instant help whenever your vehicle breaks down. Our expert mechanics are always ready to assist you.",
   },
   {
-    image:
-      "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?q=80&w=1920&auto=format&fit=crop",
-    title: "EXPERT MECHANICS",
+    image: "/Hero-img/hero-slide-two.png",
+    title: "Professional Auto Repair",
+    subtitle: "Trusted Garage Network",
     description:
-      "Certified professionals ready to help you get back on the road quickly and safely.",
-  },
-  {
-    image:
-      "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=1920&auto=format&fit=crop",
-    title: "EMERGENCY SUPPORT",
-    description:
-      "Fast response team available 24/7 for all your vehicle breakdown emergencies.",
+      "Connect with certified garages and mechanics in your area for quality vehicle maintenance and repairs.",
   },
 ];
 

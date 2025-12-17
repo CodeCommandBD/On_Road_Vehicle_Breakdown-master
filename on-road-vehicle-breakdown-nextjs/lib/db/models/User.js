@@ -26,7 +26,10 @@ const userSchema = new mongoose.Schema(
     phone: {
       type: String,
       trim: true,
-      match: [/^(\+88)?01[3-9]\d{8}$/, "Please enter a valid Bangladeshi phone number"],
+      match: [
+        /^(\+88)?01[3-9]\d{8}$/,
+        "Please enter a valid Bangladeshi phone number",
+      ],
     },
     role: {
       type: String,
@@ -45,12 +48,23 @@ const userSchema = new mongoose.Schema(
     },
     membershipTier: {
       type: String,
-      enum: ["free", "basic", "standard", "premium"],
+      enum: ["free", "trial", "basic", "standard", "premium", "enterprise"],
       default: "free",
     },
     membershipExpiry: {
       type: Date,
       default: null,
+    },
+    // Subscription reference
+    currentSubscription: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Subscription",
+      default: null,
+    },
+    // Trial tracking
+    hasUsedTrial: {
+      type: Boolean,
+      default: false,
     },
     isVerified: {
       type: Boolean,
@@ -75,7 +89,7 @@ const userSchema = new mongoose.Schema(
 // Hash password before saving
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
-  
+
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);

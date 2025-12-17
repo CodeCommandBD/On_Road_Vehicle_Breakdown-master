@@ -10,22 +10,22 @@ export default function Footer() {
 
   return (
     <>
-      <div className="w-full min-h-screen flex items-end relative">
-        <div className="absolute top-0 left-0 w-full h-[650px] overflow-hidden">
+      <div className="w-full min-h-[600px] md:min-h-screen flex items-end relative bg-[#F23C13]">
+        <div className="absolute inset-0 w-full h-full overflow-hidden">
           <Image
             src="/images/footer/Footer-bg.png"
             alt="Footer background"
             fill
-            style={{ objectFit: "cover" }}
+            style={{ objectFit: "cover", objectPosition: "top center" }}
           />
         </div>
 
-        <div className="relative z-[2] w-full p-[30px_20px] md:p-[40px]">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-[30px] md:gap-[40px] mb-[40px]">
+        <div className="relative z-[2] w-full px-4 py-8 sm:px-6 sm:py-10 md:px-8 md:py-12 lg:px-10 lg:py-16 flex flex-col items-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-8 sm:gap-10 lg:gap-12 mb-10 md:mb-12 max-w-[1400px] w-full">
             {/* Service Column */}
-            <div className="col-span-1 md:col-span-2 lg:col-span-1">
+            <div className="col-span-1 sm:col-span-2 lg:col-span-1 flex flex-col items-center sm:items-start text-center sm:text-left">
               <div
-                className={`flex gap-[15px] items-center mb-[25px] opacity-0 -translate-x-[80px] transition-all duration-[1000ms] ease-out ${
+                className={`flex gap-[15px] items-center justify-center sm:justify-start mb-[25px] w-full opacity-0 -translate-x-[80px] transition-all duration-[1000ms] ease-out ${
                   socialAnimations[0].isVisible
                     ? "opacity-100 translate-x-0"
                     : ""
@@ -114,14 +114,14 @@ export default function Footer() {
                 </h2>
               </div>
 
-              <div className="max-w-[280px]">
-                <p className="text-white text-justify text-[14px] font-medium mb-[32px]">
+              <div className="w-full max-w-[280px] mx-auto sm:mx-0">
+                <p className="text-white text-center sm:text-justify text-[14px] font-medium mb-[32px]">
                   We provide online and integrated audio-visual solutions for
                   schools, government, and businesses, enhancing communication
                   and collaboration.
                 </p>
 
-                <div className="flex gap-[12px]">
+                <div className="flex gap-[12px] justify-center sm:justify-start">
                   {[0, 1, 2, 3].map((i) => (
                     <div
                       key={i}
@@ -153,14 +153,14 @@ export default function Footer() {
             </div>
 
             {/* Company Column */}
-            <div className="col-span-1">
-              <h3 className="text-white text-[16px] font-bold leading-[172%] mb-[20px]">
+            <div className="col-span-1 text-center sm:text-left">
+              <h3 className="text-white text-[16px] sm:text-[18px] font-bold leading-[172%] mb-[20px]">
                 Company
               </h3>
               <div
                 ref={linkAnimations[0].ref}
-                className={`flex flex-col gap-[15px] opacity-0 translate-x-[30px] transition-all duration-[1000ms] ease-out ${
-                  linkAnimations[0].isVisible ? "opacity-100 translate-x-0" : ""
+                className={`flex flex-col gap-[15px] items-center sm:items-start opacity-0 translate-y-[30px] transition-all duration-[1000ms] ease-out delay-[200ms] ${
+                  linkAnimations[0].isVisible ? "opacity-100 translate-y-0" : ""
                 }`}
               >
                 <Link
@@ -197,14 +197,14 @@ export default function Footer() {
             </div>
 
             {/* Product Column */}
-            <div className="col-span-1">
-              <h3 className="text-white text-[16px] font-bold leading-[172%] mb-[20px]">
+            <div className="col-span-1 text-center sm:text-left">
+              <h3 className="text-white text-[16px] sm:text-[18px] font-bold leading-[172%] mb-[20px]">
                 Product
               </h3>
               <div
                 ref={linkAnimations[1].ref}
-                className={`flex flex-col gap-[15px] opacity-0 translate-x-[30px] transition-all duration-[1000ms] ease-out ${
-                  linkAnimations[1].isVisible ? "opacity-100 translate-x-0" : ""
+                className={`flex flex-col gap-[15px] items-center sm:items-start opacity-0 translate-y-[30px] transition-all duration-[1000ms] ease-out delay-[400ms] ${
+                  linkAnimations[1].isVisible ? "opacity-100 translate-y-0" : ""
                 }`}
               >
                 <Link
@@ -241,14 +241,14 @@ export default function Footer() {
             </div>
 
             {/* Discover Column */}
-            <div className="col-span-1">
-              <h3 className="text-white text-[16px] font-bold leading-[172%] mb-[20px]">
+            <div className="col-span-1 text-center sm:text-left">
+              <h3 className="text-white text-[16px] sm:text-[18px] font-bold leading-[172%] mb-[20px]">
                 Discover
               </h3>
               <div
                 ref={linkAnimations[2].ref}
-                className={`flex flex-col gap-[15px] opacity-0 translate-x-[30px] transition-all duration-[1000ms] ease-out ${
-                  linkAnimations[2].isVisible ? "opacity-100 translate-x-0" : ""
+                className={`flex flex-col gap-[15px] items-center sm:items-start opacity-0 translate-y-[30px] transition-all duration-[1000ms] ease-out delay-[600ms] ${
+                  linkAnimations[2].isVisible ? "opacity-100 translate-y-0" : ""
                 }`}
               >
                 <Link
@@ -285,14 +285,14 @@ export default function Footer() {
             </div>
 
             {/* Help Center Column */}
-            <div className="col-span-1">
-              <h3 className="text-white text-[16px] font-bold leading-[172%] mb-[20px]">
+            <div className="col-span-1 text-center sm:text-left">
+              <h3 className="text-white text-[16px] sm:text-[18px] font-bold leading-[172%] mb-[20px]">
                 Help Center
               </h3>
               <div
                 ref={linkAnimations[3].ref}
-                className={`flex flex-col gap-[15px] opacity-0 translate-x-[30px] transition-all duration-[1000ms] ease-out ${
-                  linkAnimations[3].isVisible ? "opacity-100 translate-x-0" : ""
+                className={`flex flex-col gap-[15px] items-center sm:items-start opacity-0 translate-y-[30px] transition-all duration-[1000ms] ease-out delay-[800ms] ${
+                  linkAnimations[3].isVisible ? "opacity-100 translate-y-0" : ""
                 }`}
               >
                 <Link
@@ -331,13 +331,13 @@ export default function Footer() {
 
           <div
             ref={linkAnimations[0].ref}
-            className={`h-[2px] bg-white w-full opacity-0 translate-x-full transition-all duration-[1000ms] ease-out ${
-              linkAnimations[0].isVisible ? "opacity-100 translate-x-0" : ""
+            className={`h-[2px] bg-white w-full max-w-[1400px] opacity-0 scale-x-0 transition-all duration-[1200ms] ease-out delay-[1000ms] ${
+              linkAnimations[0].isVisible ? "opacity-100 scale-x-100" : ""
             }`}
           ></div>
 
           <div className="text-center pt-[20px]">
-            <p className="text-[#d1cdcd] text-[16px] font-[300] leading-[172%] m-0">
+            <p className="text-[#d1cdcd] text-[14px] sm:text-[16px] font-[300] leading-[172%] m-0 px-4">
               © 2022. All rights reserved.
             </p>
           </div>
