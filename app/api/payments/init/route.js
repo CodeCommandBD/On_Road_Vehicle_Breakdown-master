@@ -1,27 +1,52 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/connect";
-import { getServerSession } from "next-auth";
-import SSLCommerzPayment from "sslcommerz-lts";
+import { getCurrentUser } from "@/lib/utils/auth";
 import Plan from "@/lib/db/models/Plan";
 import User from "@/lib/db/models/User";
 import Payment from "@/lib/db/models/Payment";
 import Subscription from "@/lib/db/models/Subscription";
+import fs from "fs";
+import path from "path";
+
+const logToFile = (message, data = null) => {
+  try {
+    const logPath = path.join(process.cwd(), "payment-debug.log");
+    const timestamp = new Date().toISOString();
+    const logEntry = `[${timestamp}] ${message} ${
+      data ? JSON.stringify(data, null, 2) : ""
+    }\n\n`;
+    fs.appendFileSync(logPath, logEntry);
+  } catch (err) {
+    console.error("Failed to write to log file:", err);
+  }
+};
 
 export async function POST(request) {
   try {
     await connectDB();
 
     // Get authenticated user
-    const session = await getServerSession();
-    if (!session) {
+    console.log("Payment Init: Checking authentication...");
+    const currentUser = await getCurrentUser();
+    console.log("Payment Init: currentUser =", currentUser);
+
+    if (!currentUser || !currentUser.userId) {
+      console.error("Payment Init: Authentication failed - no user or userId");
       return NextResponse.json(
-        { success: false, message: "Unauthorized" },
+        { success: false, message: "Unauthorized - Please login again" },
         { status: 401 }
       );
     }
 
+    console.log(
+      "Payment Init: User authenticated, userId =",
+      currentUser.userId
+    );
+
     // Get user from database
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findById(currentUser.userId);
+    console.log("Payment Init: User found in DB:", user?.email);
+
     if (!user) {
       return NextResponse.json(
         { success: false, message: "User not found" },
@@ -98,14 +123,23 @@ export async function POST(request) {
     const store_passwd = process.env.SSLCOMMERZ_STORE_PASSWORD;
     const is_live = process.env.SSLCOMMERZ_IS_LIVE === "true";
 
-    // Initialize SSLCommerz
-    const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
+    logToFile("Payment Init: Config:", {
+      store_id_exists: !!store_id,
+      store_passwd_exists: !!store_passwd,
+      is_live,
+    });
+
+    if (!store_id || !store_passwd) {
+      throw new Error("SSLCommerz credentials missing");
+    }
 
     // App base URL
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-    // Payment data
-    const data = {
+    // Prepare data for SSLCommerz
+    const initData = {
+      store_id,
+      store_passwd,
       total_amount: amount,
       currency: "BDT",
       tran_id: transactionId,
@@ -128,20 +162,42 @@ export async function POST(request) {
       value_c: billingCycle,
     };
 
-    // Initialize payment
-    const apiResponse = await sslcz.init(data);
+    logToFile("Payment Init: Initializing with data:", {
+      ...initData,
+      store_passwd: "***",
+    });
 
-    if (apiResponse?.GatewayPageURL) {
+    // Determine API URL
+    const apiUrl = is_live
+      ? "https://securepay.sslcommerz.com/gwprocess/v4/api.php"
+      : "https://sandbox.sslcommerz.com/gwprocess/v4/api.php";
+
+    // Use URLSearchParams for form-urlencoded body
+    const formData = new URLSearchParams();
+    for (const key in initData) {
+      formData.append(key, initData[key]);
+    }
+
+    // Direct fetch call
+    const sslResponse = await fetch(apiUrl, {
+      method: "POST",
+      body: formData,
+    });
+
+    const sslResult = await sslResponse.json();
+    logToFile("Payment Init: API Response:", sslResult);
+
+    if (sslResult?.status === "SUCCESS" && sslResult?.GatewayPageURL) {
       // Store session key
       await Payment.findByIdAndUpdate(payment._id, {
-        "sslcommerz.sessionKey": apiResponse.sessionkey || "",
+        "sslcommerz.sessionKey": sslResult.sessionkey || "",
       });
 
       return NextResponse.json({
         success: true,
         message: "Payment session initialized",
         data: {
-          paymentUrl: apiResponse.GatewayPageURL,
+          paymentUrl: sslResult.GatewayPageURL,
           transactionId,
           paymentId: payment._id,
         },
@@ -150,7 +206,8 @@ export async function POST(request) {
       // Payment initialization failed
       await Payment.findByIdAndUpdate(payment._id, {
         status: "failed",
-        errorMessage: "Failed to initialize payment gateway",
+        errorMessage:
+          sslResult?.failedreason || "Failed to initialize payment gateway",
       });
 
       await Subscription.findByIdAndUpdate(subscription._id, {
@@ -161,18 +218,23 @@ export async function POST(request) {
         {
           success: false,
           message: "Failed to initialize payment",
-          error: apiResponse,
+          error: sslResult,
         },
         { status: 500 }
       );
     }
   } catch (error) {
+    logToFile("Payment initialization error:", {
+      message: error.message,
+      stack: error.stack,
+    });
     console.error("Payment initialization error:", error);
     return NextResponse.json(
       {
         success: false,
         message: "Payment initialization failed",
         error: error.message,
+        stack: error.stack,
       },
       { status: 500 }
     );

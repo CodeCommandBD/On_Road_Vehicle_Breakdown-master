@@ -1,24 +1,24 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db/connection";
 import User from "@/lib/db/models/User";
-import { getServerSession } from "next-auth/next";
+import { getCurrentUser } from "@/lib/utils/auth";
 
 // GET - Fetch user profile
 export async function GET(request) {
   try {
     await dbConnect();
 
-    // Get user session (you'll need to implement auth checking)
-    const userId = request.headers.get("x-user-id"); // Placeholder - replace with actual auth
+    // Get current user from JWT token
+    const currentUser = await getCurrentUser();
 
-    if (!userId) {
+    if (!currentUser || !currentUser.userId) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    const user = await User.findById(userId).select("-password");
+    const user = await User.findById(currentUser.userId).select("-password");
 
     if (!user) {
       return NextResponse.json(
@@ -45,9 +45,9 @@ export async function PUT(request) {
   try {
     await dbConnect();
 
-    const userId = request.headers.get("x-user-id"); // Placeholder - replace with actual auth
+    const currentUser = await getCurrentUser();
 
-    if (!userId) {
+    if (!currentUser || !currentUser.userId) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
         { status: 401 }
@@ -67,7 +67,7 @@ export async function PUT(request) {
 
     // Update user
     const updatedUser = await User.findByIdAndUpdate(
-      userId,
+      currentUser.userId,
       {
         $set: {
           name: name || undefined,

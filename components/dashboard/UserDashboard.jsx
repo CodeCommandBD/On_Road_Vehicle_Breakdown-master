@@ -6,6 +6,7 @@ import QuickActions from "@/components/dashboard/QuickActions";
 import BookingTimeline from "@/components/dashboard/BookingTimeline";
 import LiveGarageTracker from "@/components/dashboard/LiveGarageTracker";
 import UserRewardsCard from "@/components/dashboard/UserRewardsCard";
+import SubscriptionCard from "@/components/dashboard/SubscriptionCard";
 import { Loader2 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -96,12 +97,12 @@ export default function UserDashboard({ user }) {
 
       {/* Secondary Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-        {/* Rewards Card */}
+        {/* Subscription Card */}
         <div className="lg:col-span-1">
-          <UserRewardsCard user={user} stats={stats} />
+          <SubscriptionCard />
         </div>
 
-        {/* Booking Table (Full Width) */}
+        {/* Booking Table (spans 2 columns) */}
         <div className="lg:col-span-2">
           <div className="bg-[#1E1E1E] border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 fade-in">
             <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">
@@ -110,6 +111,11 @@ export default function UserDashboard({ user }) {
             <BookingTable type="user" bookings={bookings} />
           </div>
         </div>
+      </div>
+
+      {/* Rewards Card - Moved to bottom */}
+      <div className="mb-6 sm:mb-8">
+        <UserRewardsCard user={user} stats={stats} />
       </div>
     </div>
   );

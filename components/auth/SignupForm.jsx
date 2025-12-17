@@ -80,14 +80,26 @@ export default function SignupForm() {
     }
 
     dispatch(setLoading(true));
+
+    // Safety timeout to force reset loading state if everything else fails
+    const safetyTimeout = setTimeout(() => {
+      dispatch(setLoading(false));
+    }, 20000); // 20s safety net
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // Reduce to 10s for better UX
+
     try {
       const response = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...data, role: activeTab }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       const result = await response.json();
+      console.log("Signup result:", result);
 
       if (!response.ok) {
         throw new Error(result.message || "Signup failed");
@@ -98,8 +110,13 @@ export default function SignupForm() {
       // Redirect to login page after signup
       router.push("/login");
     } catch (error) {
-      dispatch(loginFailure(error.message));
-      toast.error(error.message);
+      console.error("Signup Error:", error);
+      dispatch(loginFailure(error.message || "An unexpected error occurred"));
+      toast.error(error.message || "Signup failed");
+    } finally {
+      clearTimeout(timeoutId);
+      clearTimeout(safetyTimeout);
+      dispatch(setLoading(false)); // Double ensure loading is off
     }
   };
 

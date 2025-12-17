@@ -3,7 +3,6 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./globals.css";
 import StoreProvider from "@/store/provider";
-import NextAuthProvider from "@/providers/NextAuthProvider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -25,10 +24,8 @@ export default function RootLayout({ children }) {
     <html lang="en" className="scroll-smooth">
       <body className={`${inter.variable} font-sans antialiased`}>
         <StoreProvider>
-          <NextAuthProvider>
-            {children}
-            <ToastContainer position="bottom-right" theme="colored" />
-          </NextAuthProvider>
+          {children}
+          <ToastContainer position="bottom-right" theme="colored" />
         </StoreProvider>
       </body>
     </html>
