@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/connect";
-import { getServerSession } from "next-auth";
+import { getCurrentUser } from "@/lib/utils/auth";
 import Plan from "@/lib/db/models/Plan";
 import User from "@/lib/db/models/User";
 import Subscription from "@/lib/db/models/Subscription";
@@ -10,8 +10,8 @@ export async function POST(request) {
     await connectDB();
 
     // Check authentication
-    const session = await getServerSession();
-    if (!session) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !currentUser.userId) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
         { status: 401 }
@@ -19,7 +19,7 @@ export async function POST(request) {
     }
 
     // Get user
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findById(currentUser.userId);
     if (!user) {
       return NextResponse.json(
         { success: false, message: "User not found" },

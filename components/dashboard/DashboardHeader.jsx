@@ -14,11 +14,37 @@ export default function DashboardHeader({ user, notificationCount = 0 }) {
   const getMembershipColor = (tier) => {
     const colors = {
       free: "bg-gray-500",
+      trial: "bg-cyan-500",
       basic: "bg-blue-500",
       standard: "bg-purple-500",
       premium: "bg-gradient-to-r from-yellow-400 to-orange-500",
+      enterprise: "bg-gradient-to-r from-purple-600 to-pink-600",
     };
     return colors[tier] || colors.free;
+  };
+
+  const getMembershipLabel = (tier) => {
+    if (!tier) return "FREE";
+    return tier.toUpperCase();
+  };
+
+  const formatExpiryDate = (expiryDate) => {
+    if (!expiryDate) return null;
+    const date = new Date(expiryDate);
+    const now = new Date();
+    const diffTime = date - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) return "Expired";
+    if (diffDays === 0) return "Expires today";
+    if (diffDays === 1) return "Expires tomorrow";
+    if (diffDays <= 7) return `${diffDays} days left`;
+
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   };
 
   return (
@@ -47,15 +73,32 @@ export default function DashboardHeader({ user, notificationCount = 0 }) {
             <h2 className="text-base sm:text-xl font-bold text-white truncate">
               Welcome back, {user?.name?.split(" ")[0] || "User"}! 👋
             </h2>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
               <span
                 className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold text-white ${getMembershipColor(
                   user?.membershipTier
                 )}`}
               >
                 <Award className="w-3 h-3 inline mr-1" />
-                {user?.membershipTier?.toUpperCase() || "FREE"} Member
+                {getMembershipLabel(user?.membershipTier)} Member
               </span>
+
+              {/* Expiry Date for Paid Members */}
+              {user?.membershipExpiry && user?.membershipTier !== "free" && (
+                <span className="px-2 py-1 bg-white/10 rounded-full text-xs text-white/80">
+                  {formatExpiryDate(user?.membershipExpiry)}
+                </span>
+              )}
+
+              {/* Upgrade Button for Free Users */}
+              {(!user?.membershipTier || user?.membershipTier === "free") && (
+                <Link
+                  href="/pricing"
+                  className="px-2 sm:px-3 py-1 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 rounded-full text-xs font-semibold text-white transition-all scale-hover"
+                >
+                  ⭐ Upgrade
+                </Link>
+              )}
             </div>
           </div>
         </div>

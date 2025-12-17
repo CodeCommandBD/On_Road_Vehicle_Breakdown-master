@@ -1,0 +1,1197 @@
+[2025-12-17T17:40:30.352Z] Payment Init: Config: {
+  "store_id_exists": true,
+  "store_passwd_exists": true,
+  "is_live": false
+}
+
+[2025-12-17T17:40:30.356Z] Payment Init: Initializing with data: {
+  "total_amount": 349,
+  "currency": "BDT",
+  "tran_id": "TXN-1765993230177-c3e2f1",
+  "success_url": "http://localhost:3000/api/payments/success",
+  "fail_url": "http://localhost:3000/api/payments/fail",
+  "cancel_url": "http://localhost:3000/api/payments/cancel",
+  "ipn_url": "http://localhost:3000/api/payments/ipn",
+  "product_name": "Standard Plan",
+  "product_category": "Subscription",
+  "product_profile": "general",
+  "cus_name": "Test User UI2",
+  "cus_email": "testui2@example.com",
+  "cus_add1": "Dhaka",
+  "cus_city": "Dhaka",
+  "cus_country": "Bangladesh",
+  "cus_phone": "01798765433",
+  "shipping_method": "NO",
+  "value_a": "6942eb0e6e7b17465cc3e38a",
+  "value_b": "6942eb0e6e7b17465cc3e388",
+  "value_c": "monthly"
+}
+
+[2025-12-17T17:40:30.363Z] Payment initialization error: {
+  "message": "fetch is not a function",
+  "stack": "TypeError: fetch is not a function\n    at httpCall (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\.next\\server\\chunks\\1ac83_589285e9._.js:5167:12)\n    at SSLCommerzPayment.init (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\.next\\server\\chunks\\1ac83_589285e9._.js:5287:16)\n    at POST (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\.next\\server\\chunks\\[root-of-the-server]__f2b886e5._.js:1020:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async AppRouteRouteModule.do (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\compiled\\next-server\\app-route-turbo.runtime.dev.js:5:38696)\n    at async AppRouteRouteModule.handle (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\compiled\\next-server\\app-route-turbo.runtime.dev.js:5:45978)\n    at async responseGenerator (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\.next\\server\\chunks\\1ac83_next_4c828bb1._.js:15715:38)\n    at async AppRouteRouteModule.handleResponse (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\compiled\\next-server\\app-route-turbo.runtime.dev.js:1:187643)\n    at async handleResponse (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\.next\\server\\chunks\\1ac83_next_4c828bb1._.js:15777:32)\n    at async handler (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\.next\\server\\chunks\\1ac83_next_4c828bb1._.js:15829:13)\n    at async DevServer.renderToResponseWithComponentsImpl (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\base-server.js:1422:9)\n    at async DevServer.renderPageComponent (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\base-server.js:1474:24)\n    at async DevServer.renderToResponseImpl (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\base-server.js:1514:32)\n    at async DevServer.pipeImpl (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\base-server.js:1025:25)\n    at async NextNodeServer.handleCatchallRenderRequest (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\next-server.js:393:17)\n    at async DevServer.handleRequestImpl (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\base-server.js:916:17)\n    at async C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\dev\\next-dev-server.js:399:20\n    at async Span.traceAsyncFn (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\trace\\trace.js:157:20)\n    at async DevServer.handleRequest (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\dev\\next-dev-server.js:395:24)\n    at async invokeRender (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\lib\\router-server.js:240:21)\n    at async handleRequest (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\lib\\router-server.js:437:24)\n    at async requestHandlerImpl (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\lib\\router-server.js:485:13)\n    at async Server.requestListener (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\lib\\start-server.js:226:13)"
+}
+
+[2025-12-17T17:42:50.476Z] Payment Init: Config: {
+  "store_id_exists": true,
+  "store_passwd_exists": true,
+  "is_live": false
+}
+
+[2025-12-17T17:42:50.477Z] Payment Init: Initializing with data: {
+  "total_amount": 199,
+  "currency": "BDT",
+  "tran_id": "TXN-1765993370313-c3e2f1",
+  "success_url": "http://localhost:3000/api/payments/success",
+  "fail_url": "http://localhost:3000/api/payments/fail",
+  "cancel_url": "http://localhost:3000/api/payments/cancel",
+  "ipn_url": "http://localhost:3000/api/payments/ipn",
+  "product_name": "Basic Plan",
+  "product_category": "Subscription",
+  "product_profile": "general",
+  "cus_name": "Test User UI2",
+  "cus_email": "testui2@example.com",
+  "cus_add1": "Dhaka",
+  "cus_city": "Dhaka",
+  "cus_country": "Bangladesh",
+  "cus_phone": "01798765433",
+  "shipping_method": "NO",
+  "value_a": "6942eb9a4255ea72b8036e20",
+  "value_b": "6942eb9a4255ea72b8036e1c",
+  "value_c": "monthly"
+}
+
+[2025-12-17T17:42:50.479Z] Payment initialization error: {
+  "message": "fetch is not a function",
+  "stack": "TypeError: fetch is not a function\n    at httpCall (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\.next\\server\\chunks\\1ac83_589285e9._.js:5167:12)\n    at SSLCommerzPayment.init (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\.next\\server\\chunks\\1ac83_589285e9._.js:5287:16)\n    at POST (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\.next\\server\\chunks\\[root-of-the-server]__f2b886e5._.js:1020:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async AppRouteRouteModule.do (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\compiled\\next-server\\app-route-turbo.runtime.dev.js:5:38696)\n    at async AppRouteRouteModule.handle (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\compiled\\next-server\\app-route-turbo.runtime.dev.js:5:45978)\n    at async responseGenerator (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\.next\\server\\chunks\\1ac83_next_4c828bb1._.js:15715:38)\n    at async AppRouteRouteModule.handleResponse (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\compiled\\next-server\\app-route-turbo.runtime.dev.js:1:187643)\n    at async handleResponse (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\.next\\server\\chunks\\1ac83_next_4c828bb1._.js:15777:32)\n    at async handler (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\.next\\server\\chunks\\1ac83_next_4c828bb1._.js:15829:13)\n    at async DevServer.renderToResponseWithComponentsImpl (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\base-server.js:1422:9)\n    at async DevServer.renderPageComponent (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\base-server.js:1474:24)\n    at async DevServer.renderToResponseImpl (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\base-server.js:1514:32)\n    at async DevServer.pipeImpl (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\base-server.js:1025:25)\n    at async NextNodeServer.handleCatchallRenderRequest (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\next-server.js:393:17)\n    at async DevServer.handleRequestImpl (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\base-server.js:916:17)\n    at async C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\dev\\next-dev-server.js:399:20\n    at async Span.traceAsyncFn (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\trace\\trace.js:157:20)\n    at async DevServer.handleRequest (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\dev\\next-dev-server.js:395:24)\n    at async invokeRender (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\lib\\router-server.js:240:21)\n    at async handleRequest (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\lib\\router-server.js:437:24)\n    at async requestHandlerImpl (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\lib\\router-server.js:485:13)\n    at async Server.requestListener (C:\\Users\\Shanto\\Downloads\\Compressed\\project\\real project\\full stack\\On_Road_Vehicle_Breakdown-master\\node_modules\\next\\dist\\server\\lib\\start-server.js:226:13)"
+}
+
+[2025-12-17T17:51:34.423Z] Payment Init: Config: {
+  "store_id_exists": true,
+  "store_passwd_exists": true,
+  "is_live": false
+}
+
+[2025-12-17T17:51:34.424Z] Payment Init: Initializing with data: {
+  "store_id": "codec6942ac604f187",
+  "store_passwd": "***",
+  "total_amount": 199,
+  "currency": "BDT",
+  "tran_id": "TXN-1765993894250-c3e2f1",
+  "success_url": "http://localhost:3000/api/payments/success",
+  "fail_url": "http://localhost:3000/api/payments/fail",
+  "cancel_url": "http://localhost:3000/api/payments/cancel",
+  "ipn_url": "http://localhost:3000/api/payments/ipn",
+  "product_name": "Basic Plan",
+  "product_category": "Subscription",
+  "product_profile": "general",
+  "cus_name": "Test User UI2",
+  "cus_email": "testui2@example.com",
+  "cus_add1": "Dhaka",
+  "cus_city": "Dhaka",
+  "cus_country": "Bangladesh",
+  "cus_phone": "01798765433",
+  "shipping_method": "NO",
+  "value_a": "6942eda66e7b17465cc3e396",
+  "value_b": "6942eda66e7b17465cc3e394",
+  "value_c": "monthly"
+}
+
+[2025-12-17T17:51:34.683Z] Payment Init: API Response: {
+  "status": "FAILED",
+  "failedreason": "Store Credential Error Or Store is De-active",
+  "sessionkey": "",
+  "gw": {
+    "visa": "",
+    "master": "",
+    "amex": "",
+    "othercards": "",
+    "internetbanking": "",
+    "mobilebanking": ""
+  },
+  "redirectGatewayURL": "",
+  "directPaymentURLBank": "",
+  "directPaymentURLCard": "",
+  "directPaymentURL": "",
+  "redirectGatewayURLFailed": "",
+  "GatewayPageURL": "",
+  "storeBanner": "https://sandbox.sslcommerz.com/stores/logos/demoLogo.png",
+  "storeLogo": "https://sandbox.sslcommerz.com/stores/logos/demoLogo.png",
+  "store_name": "Demo",
+  "desc": []
+}
+
+[2025-12-17T18:04:01.229Z] Payment Init: Config: {
+  "store_id_exists": true,
+  "store_passwd_exists": true,
+  "is_live": false
+}
+
+[2025-12-17T18:04:01.230Z] Payment Init: Initializing with data: {
+  "store_id": "codec6942ac604f187",
+  "store_passwd": "***",
+  "total_amount": 199,
+  "currency": "BDT",
+  "tran_id": "TXN-1765994641041-c3e2f1",
+  "success_url": "http://localhost:3000/api/payments/success",
+  "fail_url": "http://localhost:3000/api/payments/fail",
+  "cancel_url": "http://localhost:3000/api/payments/cancel",
+  "ipn_url": "http://localhost:3000/api/payments/ipn",
+  "product_name": "Basic Plan",
+  "product_category": "Subscription",
+  "product_profile": "general",
+  "cus_name": "Test User UI2",
+  "cus_email": "testui2@example.com",
+  "cus_add1": "Dhaka",
+  "cus_city": "Dhaka",
+  "cus_country": "Bangladesh",
+  "cus_phone": "01798765433",
+  "shipping_method": "NO",
+  "value_a": "6942f0916e7b17465cc3e3a0",
+  "value_b": "6942f0916e7b17465cc3e39e",
+  "value_c": "monthly"
+}
+
+[2025-12-17T18:04:01.480Z] Payment Init: API Response: {
+  "status": "FAILED",
+  "failedreason": "Store Credential Error Or Store is De-active",
+  "sessionkey": "",
+  "gw": {
+    "visa": "",
+    "master": "",
+    "amex": "",
+    "othercards": "",
+    "internetbanking": "",
+    "mobilebanking": ""
+  },
+  "redirectGatewayURL": "",
+  "directPaymentURLBank": "",
+  "directPaymentURLCard": "",
+  "directPaymentURL": "",
+  "redirectGatewayURLFailed": "",
+  "GatewayPageURL": "",
+  "storeBanner": "https://sandbox.sslcommerz.com/stores/logos/demoLogo.png",
+  "storeLogo": "https://sandbox.sslcommerz.com/stores/logos/demoLogo.png",
+  "store_name": "Demo",
+  "desc": []
+}
+
+[2025-12-17T18:04:19.151Z] Payment Init: Config: {
+  "store_id_exists": true,
+  "store_passwd_exists": true,
+  "is_live": false
+}
+
+[2025-12-17T18:04:19.152Z] Payment Init: Initializing with data: {
+  "store_id": "codec6942ac604f187",
+  "store_passwd": "***",
+  "total_amount": 199,
+  "currency": "BDT",
+  "tran_id": "TXN-1765994658990-c3e2f1",
+  "success_url": "http://localhost:3000/api/payments/success",
+  "fail_url": "http://localhost:3000/api/payments/fail",
+  "cancel_url": "http://localhost:3000/api/payments/cancel",
+  "ipn_url": "http://localhost:3000/api/payments/ipn",
+  "product_name": "Basic Plan",
+  "product_category": "Subscription",
+  "product_profile": "general",
+  "cus_name": "Test User UI2",
+  "cus_email": "testui2@example.com",
+  "cus_add1": "Dhaka",
+  "cus_city": "Dhaka",
+  "cus_country": "Bangladesh",
+  "cus_phone": "01798765433",
+  "shipping_method": "NO",
+  "value_a": "6942f0a36e7b17465cc3e3aa",
+  "value_b": "6942f0a26e7b17465cc3e3a8",
+  "value_c": "monthly"
+}
+
+[2025-12-17T18:04:19.266Z] Payment Init: API Response: {
+  "status": "FAILED",
+  "failedreason": "Store Credential Error Or Store is De-active",
+  "sessionkey": "",
+  "gw": {
+    "visa": "",
+    "master": "",
+    "amex": "",
+    "othercards": "",
+    "internetbanking": "",
+    "mobilebanking": ""
+  },
+  "redirectGatewayURL": "",
+  "directPaymentURLBank": "",
+  "directPaymentURLCard": "",
+  "directPaymentURL": "",
+  "redirectGatewayURLFailed": "",
+  "GatewayPageURL": "",
+  "storeBanner": "https://sandbox.sslcommerz.com/stores/logos/demoLogo.png",
+  "storeLogo": "https://sandbox.sslcommerz.com/stores/logos/demoLogo.png",
+  "store_name": "Demo",
+  "desc": []
+}
+
+[2025-12-17T18:05:51.070Z] Payment Init: Config: {
+  "store_id_exists": true,
+  "store_passwd_exists": true,
+  "is_live": false
+}
+
+[2025-12-17T18:05:51.071Z] Payment Init: Initializing with data: {
+  "store_id": "codec6942ac604f187",
+  "store_passwd": "***",
+  "total_amount": 199,
+  "currency": "BDT",
+  "tran_id": "TXN-1765994750891-c3e2f1",
+  "success_url": "http://localhost:3000/api/payments/success",
+  "fail_url": "http://localhost:3000/api/payments/fail",
+  "cancel_url": "http://localhost:3000/api/payments/cancel",
+  "ipn_url": "http://localhost:3000/api/payments/ipn",
+  "product_name": "Basic Plan",
+  "product_category": "Subscription",
+  "product_profile": "general",
+  "cus_name": "Test User UI2",
+  "cus_email": "testui2@example.com",
+  "cus_add1": "Dhaka",
+  "cus_city": "Dhaka",
+  "cus_country": "Bangladesh",
+  "cus_phone": "01798765433",
+  "shipping_method": "NO",
+  "value_a": "6942f0fe0c1335756cbbce2f",
+  "value_b": "6942f0fe0c1335756cbbce2b",
+  "value_c": "monthly"
+}
+
+[2025-12-17T18:05:51.218Z] Payment Init: API Response: {
+  "status": "FAILED",
+  "failedreason": "Store Credential Error Or Store is De-active",
+  "sessionkey": "",
+  "gw": {
+    "visa": "",
+    "master": "",
+    "amex": "",
+    "othercards": "",
+    "internetbanking": "",
+    "mobilebanking": ""
+  },
+  "redirectGatewayURL": "",
+  "directPaymentURLBank": "",
+  "directPaymentURLCard": "",
+  "directPaymentURL": "",
+  "redirectGatewayURLFailed": "",
+  "GatewayPageURL": "",
+  "storeBanner": "https://sandbox.sslcommerz.com/stores/logos/demoLogo.png",
+  "storeLogo": "https://sandbox.sslcommerz.com/stores/logos/demoLogo.png",
+  "store_name": "Demo",
+  "desc": []
+}
+
+[2025-12-17T20:09:04.855Z] Payment Init: Config: {
+  "store_id_exists": true,
+  "store_passwd_exists": true,
+  "is_live": false
+}
+
+[2025-12-17T20:09:04.873Z] Payment Init: Initializing with data: {
+  "store_id": "codec69430931be955",
+  "store_passwd": "***",
+  "total_amount": 199,
+  "currency": "BDT",
+  "tran_id": "TXN-1766002143361-c3e2f1",
+  "success_url": "http://localhost:3000/api/payments/success",
+  "fail_url": "http://localhost:3000/api/payments/fail",
+  "cancel_url": "http://localhost:3000/api/payments/cancel",
+  "ipn_url": "http://localhost:3000/api/payments/ipn",
+  "product_name": "Basic Plan",
+  "product_category": "Subscription",
+  "product_profile": "general",
+  "cus_name": "Test User UI2",
+  "cus_email": "testui2@example.com",
+  "cus_add1": "Dhaka",
+  "cus_city": "Dhaka",
+  "cus_country": "Bangladesh",
+  "cus_phone": "01798765433",
+  "shipping_method": "NO",
+  "value_a": "69430de0b2a97f0e03d3daf4",
+  "value_b": "69430ddfb2a97f0e03d3daf2",
+  "value_c": "monthly"
+}
+
+[2025-12-17T20:09:06.173Z] Payment Init: API Response: {
+  "status": "SUCCESS",
+  "failedreason": "",
+  "sessionkey": "DECEA9A73C53A7F368B487C5980C03B0",
+  "gw": {
+    "visa": "city_visa,ebl_visa,visacard",
+    "master": "city_master,ebl_master,mastercard",
+    "amex": "city_amex,amexcard",
+    "othercards": "qcash,fastcash",
+    "internetbanking": "city,abbank,bankasia,ibbl,mtbl,tapnpay,eblsky,instapay,pmoney,woori,modhumoti,fsibl",
+    "mobilebanking": "dbblmobilebanking,bkash,nagad,abbank,ibbl,tap,upay,okaywallet,cellfine,mcash"
+  },
+  "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtml.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=",
+  "directPaymentURLBank": "",
+  "directPaymentURLCard": "",
+  "directPaymentURL": "",
+  "redirectGatewayURLFailed": "",
+  "GatewayPageURL": "https://sandbox.sslcommerz.com/EasyCheckOut/testcdedecea9a73c53a7f368b487c5980c03b0",
+  "storeBanner": "https://sandbox.sslcommerz.com/stores/logos/demoLogo.png",
+  "storeLogo": "https://sandbox.sslcommerz.com/stores/logos/demoLogo.png",
+  "store_name": "Demo",
+  "desc": [
+    {
+      "name": "AMEX",
+      "type": "amex",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/amex.png",
+      "gw": "amexcard",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=amexcard"
+    },
+    {
+      "name": "VISA",
+      "type": "visa",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/visa.png",
+      "gw": "visacard",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=visavard"
+    },
+    {
+      "name": "MASTER",
+      "type": "master",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/master.png",
+      "gw": "mastercard",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=mastercard"
+    },
+    {
+      "name": "AMEX-City Bank",
+      "type": "amex",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/amex.png",
+      "gw": "city_amex",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=city_amex"
+    },
+    {
+      "name": "QCash",
+      "type": "othercards",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/qcash.png",
+      "gw": "qcash",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=qcash"
+    },
+    {
+      "name": "Fast Cash",
+      "type": "othercards",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/fastcash.png",
+      "gw": "fastcash"
+    },
+    {
+      "name": "bKash",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/bkash.png",
+      "gw": "bkash",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=bkash"
+    },
+    {
+      "name": "Nagad",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/nagad.png",
+      "gw": "nagad",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=nagad"
+    },
+    {
+      "name": "DBBL Mobile Banking",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/dbblmobilebank.png",
+      "gw": "dbblmobilebanking",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=dbblmobilebanking"
+    },
+    {
+      "name": "AB Direct",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/abbank.png",
+      "gw": "abbank",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=abbank"
+    },
+    {
+      "name": "AB Direct",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/abbank.png",
+      "gw": "abbank",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=abbank"
+    },
+    {
+      "name": "IBBL",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/ibbl.png",
+      "gw": "ibbl",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=ibbl"
+    },
+    {
+      "name": "Citytouch",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/citytouch.png",
+      "gw": "city",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=city"
+    },
+    {
+      "name": "MTBL",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/mtbl.png",
+      "gw": "mtbl",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=mtbl"
+    },
+    {
+      "name": "Bank Asia",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/bankasia.png",
+      "gw": "bankasia",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=bankasia"
+    },
+    {
+      "name": "VISA-Eastern Bank Limited",
+      "type": "visa",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/visa.png",
+      "gw": "ebl_visa",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=ebl_visa"
+    },
+    {
+      "name": "MASTER-Eastern Bank Limited",
+      "type": "master",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/master.png",
+      "gw": "ebl_master",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=ebl_master"
+    },
+    {
+      "name": "VISA-City Bank",
+      "type": "visa",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/visa.png",
+      "gw": "city_visa",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=city_visa"
+    },
+    {
+      "name": "MASTER-City bank",
+      "type": "master",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/master.png",
+      "gw": "city_master",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=city_master"
+    },
+    {
+      "name": "TAP",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/tap.png",
+      "gw": "mobilemoney",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=mobilemoney"
+    },
+    {
+      "name": "upay",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/upay.png",
+      "gw": "upay",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=upay"
+    },
+    {
+      "name": "okaywallet",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/okwallet.png",
+      "gw": "okaywallet",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=okaywallet"
+    },
+    {
+      "name": "cellfine",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/cellfin.png",
+      "gw": "cellfine",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=cellfine"
+    },
+    {
+      "name": "mcash",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/ibblmobile.png",
+      "gw": "ibbl_m",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=ibbl_m"
+    },
+    {
+      "name": "tapnpay",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/tapnpay.png",
+      "gw": "tapnpay",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=tapnpay"
+    },
+    {
+      "name": "eblsky",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/eblsky.png",
+      "gw": "eblsky",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=eblsky"
+    },
+    {
+      "name": "instapay",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/instapay.png",
+      "gw": "instapay",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=instapay"
+    },
+    {
+      "name": "pmoney",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/pmoney.png",
+      "gw": "pmoney",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=pmoney"
+    },
+    {
+      "name": "woori",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/woori.png",
+      "gw": "woori",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=woori"
+    },
+    {
+      "name": "modhumoti",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/modhumoti.png",
+      "gw": "modhumoti",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=modhumoti"
+    },
+    {
+      "name": "fsibl",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/FsiblCloudLogo.png",
+      "gw": "fsibl",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121820840efcjdSyPm45cXIb&Q=REDIRECT&SESSIONKEY=DECEA9A73C53A7F368B487C5980C03B0&tran_type=success&cardname=fsibl"
+    }
+  ],
+  "is_direct_pay_enable": "0"
+}
+
+[2025-12-17T20:22:13.056Z] Payment Init: Config: {
+  "store_id_exists": true,
+  "store_passwd_exists": true,
+  "is_live": false
+}
+
+[2025-12-17T20:22:13.059Z] Payment Init: Initializing with data: {
+  "store_id": "codec69430931be955",
+  "store_passwd": "***",
+  "total_amount": 199,
+  "currency": "BDT",
+  "tran_id": "TXN-1766002932833-c3e2f1",
+  "success_url": "http://localhost:3000/api/payments/success",
+  "fail_url": "http://localhost:3000/api/payments/fail",
+  "cancel_url": "http://localhost:3000/api/payments/cancel",
+  "ipn_url": "http://localhost:3000/api/payments/ipn",
+  "product_name": "Basic Plan",
+  "product_category": "Subscription",
+  "product_profile": "general",
+  "cus_name": "Test User UI2",
+  "cus_email": "testui2@example.com",
+  "cus_add1": "Dhaka",
+  "cus_city": "Dhaka",
+  "cus_country": "Bangladesh",
+  "cus_phone": "01798765433",
+  "shipping_method": "NO",
+  "value_a": "694310f4b2a97f0e03d3db02",
+  "value_b": "694310f4b2a97f0e03d3db00",
+  "value_c": "monthly"
+}
+
+[2025-12-17T20:22:14.556Z] Payment Init: API Response: {
+  "status": "SUCCESS",
+  "failedreason": "",
+  "sessionkey": "BC6B7963189B982B03B8BEFA7C05DAD5",
+  "gw": {
+    "visa": "city_visa,ebl_visa,visacard",
+    "master": "city_master,ebl_master,mastercard",
+    "amex": "city_amex,amexcard",
+    "othercards": "qcash,fastcash",
+    "internetbanking": "city,abbank,bankasia,ibbl,mtbl,tapnpay,eblsky,instapay,pmoney,woori,modhumoti,fsibl",
+    "mobilebanking": "dbblmobilebanking,bkash,nagad,abbank,ibbl,tap,upay,okaywallet,cellfine,mcash"
+  },
+  "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtml.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=",
+  "directPaymentURLBank": "",
+  "directPaymentURLCard": "",
+  "directPaymentURL": "",
+  "redirectGatewayURLFailed": "",
+  "GatewayPageURL": "https://sandbox.sslcommerz.com/EasyCheckOut/testcdebc6b7963189b982b03b8befa7c05dad5",
+  "storeBanner": "https://sandbox.sslcommerz.com/stores/logos/demoLogo.png",
+  "storeLogo": "https://sandbox.sslcommerz.com/stores/logos/demoLogo.png",
+  "store_name": "Demo",
+  "desc": [
+    {
+      "name": "AMEX",
+      "type": "amex",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/amex.png",
+      "gw": "amexcard",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=amexcard"
+    },
+    {
+      "name": "VISA",
+      "type": "visa",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/visa.png",
+      "gw": "visacard",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=visavard"
+    },
+    {
+      "name": "MASTER",
+      "type": "master",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/master.png",
+      "gw": "mastercard",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=mastercard"
+    },
+    {
+      "name": "AMEX-City Bank",
+      "type": "amex",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/amex.png",
+      "gw": "city_amex",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=city_amex"
+    },
+    {
+      "name": "QCash",
+      "type": "othercards",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/qcash.png",
+      "gw": "qcash",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=qcash"
+    },
+    {
+      "name": "Fast Cash",
+      "type": "othercards",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/fastcash.png",
+      "gw": "fastcash"
+    },
+    {
+      "name": "bKash",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/bkash.png",
+      "gw": "bkash",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=bkash"
+    },
+    {
+      "name": "Nagad",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/nagad.png",
+      "gw": "nagad",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=nagad"
+    },
+    {
+      "name": "DBBL Mobile Banking",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/dbblmobilebank.png",
+      "gw": "dbblmobilebanking",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=dbblmobilebanking"
+    },
+    {
+      "name": "AB Direct",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/abbank.png",
+      "gw": "abbank",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=abbank"
+    },
+    {
+      "name": "AB Direct",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/abbank.png",
+      "gw": "abbank",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=abbank"
+    },
+    {
+      "name": "IBBL",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/ibbl.png",
+      "gw": "ibbl",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=ibbl"
+    },
+    {
+      "name": "Citytouch",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/citytouch.png",
+      "gw": "city",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=city"
+    },
+    {
+      "name": "MTBL",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/mtbl.png",
+      "gw": "mtbl",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=mtbl"
+    },
+    {
+      "name": "Bank Asia",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/bankasia.png",
+      "gw": "bankasia",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=bankasia"
+    },
+    {
+      "name": "VISA-Eastern Bank Limited",
+      "type": "visa",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/visa.png",
+      "gw": "ebl_visa",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=ebl_visa"
+    },
+    {
+      "name": "MASTER-Eastern Bank Limited",
+      "type": "master",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/master.png",
+      "gw": "ebl_master",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=ebl_master"
+    },
+    {
+      "name": "VISA-City Bank",
+      "type": "visa",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/visa.png",
+      "gw": "city_visa",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=city_visa"
+    },
+    {
+      "name": "MASTER-City bank",
+      "type": "master",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/master.png",
+      "gw": "city_master",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=city_master"
+    },
+    {
+      "name": "TAP",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/tap.png",
+      "gw": "mobilemoney",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=mobilemoney"
+    },
+    {
+      "name": "upay",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/upay.png",
+      "gw": "upay",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=upay"
+    },
+    {
+      "name": "okaywallet",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/okwallet.png",
+      "gw": "okaywallet",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=okaywallet"
+    },
+    {
+      "name": "cellfine",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/cellfin.png",
+      "gw": "cellfine",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=cellfine"
+    },
+    {
+      "name": "mcash",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/ibblmobile.png",
+      "gw": "ibbl_m",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=ibbl_m"
+    },
+    {
+      "name": "tapnpay",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/tapnpay.png",
+      "gw": "tapnpay",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=tapnpay"
+    },
+    {
+      "name": "eblsky",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/eblsky.png",
+      "gw": "eblsky",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=eblsky"
+    },
+    {
+      "name": "instapay",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/instapay.png",
+      "gw": "instapay",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=instapay"
+    },
+    {
+      "name": "pmoney",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/pmoney.png",
+      "gw": "pmoney",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=pmoney"
+    },
+    {
+      "name": "woori",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/woori.png",
+      "gw": "woori",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=woori"
+    },
+    {
+      "name": "modhumoti",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/modhumoti.png",
+      "gw": "modhumoti",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=modhumoti"
+    },
+    {
+      "name": "fsibl",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/FsiblCloudLogo.png",
+      "gw": "fsibl",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=199.00&ssl_id=25121822148VvFwG3NxQJe05DS&Q=REDIRECT&SESSIONKEY=BC6B7963189B982B03B8BEFA7C05DAD5&tran_type=success&cardname=fsibl"
+    }
+  ],
+  "is_direct_pay_enable": "0"
+}
+
+[2025-12-17T20:23:37.104Z] Payment Init: Config: {
+  "store_id_exists": true,
+  "store_passwd_exists": true,
+  "is_live": false
+}
+
+[2025-12-17T20:23:37.105Z] Payment Init: Initializing with data: {
+  "store_id": "codec69430931be955",
+  "store_passwd": "***",
+  "total_amount": 499,
+  "currency": "BDT",
+  "tran_id": "TXN-1766003016946-c3e2f1",
+  "success_url": "http://localhost:3000/api/payments/success",
+  "fail_url": "http://localhost:3000/api/payments/fail",
+  "cancel_url": "http://localhost:3000/api/payments/cancel",
+  "ipn_url": "http://localhost:3000/api/payments/ipn",
+  "product_name": "Premium Plan",
+  "product_category": "Subscription",
+  "product_profile": "general",
+  "cus_name": "Test User UI2",
+  "cus_email": "testui2@example.com",
+  "cus_add1": "Dhaka",
+  "cus_city": "Dhaka",
+  "cus_country": "Bangladesh",
+  "cus_phone": "01798765433",
+  "shipping_method": "NO",
+  "value_a": "69431149b2a97f0e03d3db0f",
+  "value_b": "69431148b2a97f0e03d3db0d",
+  "value_c": "monthly"
+}
+
+[2025-12-17T20:23:37.228Z] Payment Init: API Response: {
+  "status": "SUCCESS",
+  "failedreason": "",
+  "sessionkey": "F4B4402CFACD2835396D2BAAED19AF74",
+  "gw": {
+    "visa": "city_visa,ebl_visa,visacard",
+    "master": "city_master,ebl_master,mastercard",
+    "amex": "city_amex,amexcard",
+    "othercards": "qcash,fastcash",
+    "internetbanking": "city,abbank,bankasia,ibbl,mtbl,tapnpay,eblsky,instapay,pmoney,woori,modhumoti,fsibl",
+    "mobilebanking": "dbblmobilebanking,bkash,nagad,abbank,ibbl,tap,upay,okaywallet,cellfine,mcash"
+  },
+  "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtml.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=",
+  "directPaymentURLBank": "",
+  "directPaymentURLCard": "",
+  "directPaymentURL": "",
+  "redirectGatewayURLFailed": "",
+  "GatewayPageURL": "https://sandbox.sslcommerz.com/EasyCheckOut/testcdef4b4402cfacd2835396d2baaed19af74",
+  "storeBanner": "https://sandbox.sslcommerz.com/stores/logos/demoLogo.png",
+  "storeLogo": "https://sandbox.sslcommerz.com/stores/logos/demoLogo.png",
+  "store_name": "Demo",
+  "desc": [
+    {
+      "name": "AMEX",
+      "type": "amex",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/amex.png",
+      "gw": "amexcard",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=amexcard"
+    },
+    {
+      "name": "VISA",
+      "type": "visa",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/visa.png",
+      "gw": "visacard",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=visavard"
+    },
+    {
+      "name": "MASTER",
+      "type": "master",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/master.png",
+      "gw": "mastercard",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=mastercard"
+    },
+    {
+      "name": "AMEX-City Bank",
+      "type": "amex",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/amex.png",
+      "gw": "city_amex",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=city_amex"
+    },
+    {
+      "name": "QCash",
+      "type": "othercards",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/qcash.png",
+      "gw": "qcash",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=qcash"
+    },
+    {
+      "name": "Fast Cash",
+      "type": "othercards",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/fastcash.png",
+      "gw": "fastcash"
+    },
+    {
+      "name": "bKash",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/bkash.png",
+      "gw": "bkash",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=bkash"
+    },
+    {
+      "name": "Nagad",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/nagad.png",
+      "gw": "nagad",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=nagad"
+    },
+    {
+      "name": "DBBL Mobile Banking",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/dbblmobilebank.png",
+      "gw": "dbblmobilebanking",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=dbblmobilebanking"
+    },
+    {
+      "name": "AB Direct",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/abbank.png",
+      "gw": "abbank",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=abbank"
+    },
+    {
+      "name": "AB Direct",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/abbank.png",
+      "gw": "abbank",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=abbank"
+    },
+    {
+      "name": "IBBL",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/ibbl.png",
+      "gw": "ibbl",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=ibbl"
+    },
+    {
+      "name": "Citytouch",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/citytouch.png",
+      "gw": "city",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=city"
+    },
+    {
+      "name": "MTBL",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/mtbl.png",
+      "gw": "mtbl",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=mtbl"
+    },
+    {
+      "name": "Bank Asia",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/bankasia.png",
+      "gw": "bankasia",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=bankasia"
+    },
+    {
+      "name": "VISA-Eastern Bank Limited",
+      "type": "visa",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/visa.png",
+      "gw": "ebl_visa",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=ebl_visa"
+    },
+    {
+      "name": "MASTER-Eastern Bank Limited",
+      "type": "master",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/master.png",
+      "gw": "ebl_master",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=ebl_master"
+    },
+    {
+      "name": "VISA-City Bank",
+      "type": "visa",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/visa.png",
+      "gw": "city_visa",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=city_visa"
+    },
+    {
+      "name": "MASTER-City bank",
+      "type": "master",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/master.png",
+      "gw": "city_master",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=city_master"
+    },
+    {
+      "name": "TAP",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/tap.png",
+      "gw": "mobilemoney",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=mobilemoney"
+    },
+    {
+      "name": "upay",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/upay.png",
+      "gw": "upay",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=upay"
+    },
+    {
+      "name": "okaywallet",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/okwallet.png",
+      "gw": "okaywallet",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=okaywallet"
+    },
+    {
+      "name": "cellfine",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/cellfin.png",
+      "gw": "cellfine",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=cellfine"
+    },
+    {
+      "name": "mcash",
+      "type": "mobilebanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/ibblmobile.png",
+      "gw": "ibbl_m",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=ibbl_m"
+    },
+    {
+      "name": "tapnpay",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/tapnpay.png",
+      "gw": "tapnpay",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=tapnpay"
+    },
+    {
+      "name": "eblsky",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/eblsky.png",
+      "gw": "eblsky",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=eblsky"
+    },
+    {
+      "name": "instapay",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/instapay.png",
+      "gw": "instapay",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=instapay"
+    },
+    {
+      "name": "pmoney",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/pmoney.png",
+      "gw": "pmoney",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=pmoney"
+    },
+    {
+      "name": "woori",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/woori.png",
+      "gw": "woori",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=woori"
+    },
+    {
+      "name": "modhumoti",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/modhumoti.png",
+      "gw": "modhumoti",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=modhumoti"
+    },
+    {
+      "name": "fsibl",
+      "type": "internetbanking",
+      "logo": "https://sandbox.sslcommerz.com/gwprocess/v4/image/gw/FsiblCloudLogo.png",
+      "gw": "fsibl",
+      "r_flag": "1",
+      "redirectGatewayURL": "https://sandbox.sslcommerz.com/gwprocess/v4/bankgw/indexhtmlOTP.php?mamount=499.00&ssl_id=251218223110xhl5J7EiRmkabu&Q=REDIRECT&SESSIONKEY=F4B4402CFACD2835396D2BAAED19AF74&tran_type=success&cardname=fsibl"
+    }
+  ],
+  "is_direct_pay_enable": "0"
+}
+

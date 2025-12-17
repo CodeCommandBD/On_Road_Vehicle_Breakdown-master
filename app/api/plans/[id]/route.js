@@ -7,7 +7,7 @@ export async function GET(request, { params }) {
   try {
     await connectDB();
 
-    const { id } = params;
+    const { id } = await params;
 
     const plan = await Plan.findById(id);
 
@@ -43,7 +43,7 @@ export async function PUT(request, { params }) {
   try {
     await connectDB();
 
-    const { id } = params;
+    const { id } = await params;
     const updates = await request.json();
 
     const plan = await Plan.findByIdAndUpdate(id, updates, {
@@ -84,7 +84,7 @@ export async function DELETE(request, { params }) {
   try {
     await connectDB();
 
-    const { id } = params;
+    const { id } = await params;
 
     const plan = await Plan.findByIdAndDelete(id);
 

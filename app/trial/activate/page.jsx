@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "use";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth";
+import { useSelector } from "react-redux";
+import { selectIsAuthenticated } from "@/store/slices/authSlice";
 import { Sparkles, Check, Loader2, Clock } from "lucide-react";
 
 export default function TrialActivatePage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const isAuthenticated = useSelector(selectIsAuthenticated);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -35,16 +36,13 @@ export default function TrialActivatePage() {
     }
   };
 
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-orange-500 animate-spin" />
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push("/login?redirect=/trial/activate");
+    }
+  }, [isAuthenticated, router]);
 
-  if (status === "unauthenticated") {
-    router.push("/auth/login?redirect=/trial/activate");
+  if (!isAuthenticated) {
     return null;
   }
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,6 +37,8 @@ export default function LoginForm() {
   const [activeTab, setActiveTab] = useState("user");
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParams = searchParams.get("redirect");
   const dispatch = useDispatch();
   const isLoading = useSelector(selectAuthLoading);
 
@@ -56,31 +58,46 @@ export default function LoginForm() {
 
   const onSubmit = async (data) => {
     dispatch(setLoading(true));
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...data, role: activeTab }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       const result = await response.json();
+      console.log("Login result:", result);
 
       if (!response.ok) {
         throw new Error(result.message || "Login failed");
       }
 
+      console.log("Dispatching loginSuccess");
       dispatch(loginSuccess(result));
       toast.success(`Welcome back, ${result.user.name}!`);
 
       // Redirect based on role
-      if (result.user.role === "admin") {
+      // Redirect based on role or return URL
+      console.log("Redirecting...", { redirectParams, role: result.user.role });
+      if (redirectParams) {
+        router.push(redirectParams);
+      } else if (result.user.role === "admin") {
         router.push("/admin/dashboard");
       } else {
         router.push("/"); // Redirect to home page for users
       }
     } catch (error) {
-      dispatch(loginFailure(error.message));
-      toast.error(error.message);
+      console.error("Login Error Catch:", error);
+      dispatch(loginFailure(error.message || "An unexpected error occurred"));
+      toast.error(error.message || "Login failed");
+    } finally {
+      // Ensure loading is false if something weird happens (though dispatch should handle it)
+      // actually dispatch handles it.
     }
   };
 
