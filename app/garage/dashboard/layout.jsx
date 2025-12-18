@@ -3,8 +3,12 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
-import { selectIsAuthenticated, selectAuthLoading } from "@/store/slices/authSlice";
+import {
+  selectIsAuthenticated,
+  selectAuthLoading,
+} from "@/store/slices/authSlice";
 import Sidebar from "@/components/layout/Sidebar";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { Loader2 } from "lucide-react";
 
 export default function DashboardLayout({ children }) {
@@ -27,11 +31,14 @@ export default function DashboardLayout({ children }) {
   }
 
   return (
-    <div className="flex bg-gray-50 min-h-[calc(100vh-80px)]">
+    <div className="flex h-screen bg-[#111] overflow-hidden">
       <Sidebar />
-      <main className="flex-1 p-6 lg:p-8 overflow-y-auto h-[calc(100vh-80px)]">
-        {children}
-      </main>
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <DashboardHeader />
+        <main className="flex-1 p-4 lg:p-8 overflow-y-auto scrollbar-hide">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

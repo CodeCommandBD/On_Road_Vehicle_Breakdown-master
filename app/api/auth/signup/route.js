@@ -39,6 +39,17 @@ export async function POST(request) {
       );
     }
 
+    // Format address into an object if it's a string
+    const formattedAddress =
+      typeof address === "string"
+        ? {
+            street: address,
+            city: "Dhaka",
+            district: "Dhaka",
+            postalCode: "",
+          }
+        : address;
+
     // Create user
     const userData = {
       name,
@@ -48,8 +59,8 @@ export async function POST(request) {
       role: role || "user",
     };
 
-    if (address) {
-      userData.address = address;
+    if (formattedAddress) {
+      userData.address = formattedAddress;
     }
 
     const user = new User(userData);
@@ -62,7 +73,7 @@ export async function POST(request) {
         owner: user._id,
         email: email,
         phone: phone || "",
-        address: address || {
+        address: formattedAddress || {
           street: "",
           city: "Dhaka",
           district: "Dhaka",
@@ -71,7 +82,7 @@ export async function POST(request) {
       await garage.save();
     }
 
-    // Create JWT token
+    // Create JWT token (optional if redirecting to login)
     const tokenPayload = {
       userId: user._id.toString(),
       email: user.email,
@@ -79,16 +90,16 @@ export async function POST(request) {
     };
     const token = await createToken(tokenPayload);
 
-    // Set cookie
-    await setTokenCookie(token);
+    // Skip setting cookie to allow redirect to login page as requested by user
+    // await setTokenCookie(token);
 
     // Return success
     return NextResponse.json(
       {
         success: true,
-        message: "Registration successful",
+        message: "Registration successful. Please login.",
         user: user.toPublicJSON(),
-        token,
+        token, // Still return token in case frontend wants it
       },
       { status: 201 }
     );

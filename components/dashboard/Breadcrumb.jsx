@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight, Home } from "lucide-react";
+import { useSelector } from "react-redux";
+import { selectUserRole } from "@/store/slices/authSlice";
 import { cn } from "@/lib/utils/helpers";
 
 export default function Breadcrumb() {
   const pathname = usePathname();
+  const role = useSelector(selectUserRole);
   const pathSegments = pathname.split("/").filter((segment) => segment !== "");
 
   // Helper to format segments
@@ -15,6 +18,7 @@ export default function Breadcrumb() {
     if (segment.length === 24 && /^[0-9a-fA-F]+$/.test(segment)) {
       return "Details";
     }
+
     return segment.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
@@ -32,11 +36,33 @@ export default function Breadcrumb() {
         const isLast = index === pathSegments.length - 1;
 
         // Custom redirect for role segments that don't have valid landing pages
-        const isRoleSegment = ["user", "admin", "garage"].includes(
-          segment.toLowerCase()
-        );
-        if (isRoleSegment && !isLast) {
-          href = "/";
+        const roleMap = {
+          user: "/user/dashboard",
+          admin: "/admin/dashboard",
+          garage: "/garage/dashboard",
+          dashboard:
+            role === "admin"
+              ? "/admin/dashboard"
+              : role === "garage"
+              ? "/garage/dashboard"
+              : "/user/dashboard",
+        };
+
+        const isRoleOrDashboard = [
+          "user",
+          "admin",
+          "garage",
+          "dashboard",
+        ].includes(segment.toLowerCase());
+
+        if (isRoleOrDashboard && !isLast) {
+          // If we encounter 'user' or 'admin' or 'garage', we usually want to go to their dashboard
+          href = roleMap[segment.toLowerCase()] || "/";
+        }
+
+        // Skip rendering role prefixes (user, admin, garage) in breadcrumb
+        if (["user", "admin", "garage"].includes(segment.toLowerCase())) {
+          return null;
         }
 
         return (

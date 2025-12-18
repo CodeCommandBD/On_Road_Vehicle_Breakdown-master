@@ -105,7 +105,9 @@ export default function SignupForm() {
         throw new Error(result.message || "Signup failed");
       }
 
-      toast.success("Account created successfully! Please login.");
+      toast.success(
+        result.message || "Account created successfully! Please login."
+      );
 
       // Redirect to login page after signup
       router.push("/login");
