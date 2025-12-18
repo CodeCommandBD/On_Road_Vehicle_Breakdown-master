@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   User,
   Phone,
@@ -10,15 +10,28 @@ import {
   Trash2,
   Save,
   Loader2,
+  Search,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useDispatch } from "react-redux";
 import { updateUser } from "@/store/slices/authSlice";
+import dynamic from "next/dynamic";
+import axios from "axios";
+
+// Dynamically import MapComponent
+const MapComponent = dynamic(() => import("@/components/maps/MapComponent"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[250px] w-full bg-gray-100 animate-pulse rounded-xl" />
+  ),
+});
 
 export default function ProfileForm() {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [isLocationLocked, setIsLocationLocked] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -27,6 +40,10 @@ export default function ProfileForm() {
       city: "",
       district: "",
       postalCode: "",
+    },
+    location: {
+      type: "Point",
+      coordinates: [90.4125, 23.8103], // Dhaka default
     },
     vehicles: [],
   });
@@ -57,6 +74,10 @@ export default function ProfileForm() {
             district: "",
             postalCode: "",
           },
+          location: data.user.location || {
+            type: "Point",
+            coordinates: [90.4125, 23.8103],
+          },
           vehicles: data.user.vehicles || [],
         });
       }
@@ -79,6 +100,47 @@ export default function ProfileForm() {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
+
+  const handleGeocode = async () => {
+    const { street, city, district } = formData.address;
+    const query = `${street}, ${city}, ${district}, Bangladesh`;
+
+    setIsGeocoding(true);
+    try {
+      const response = await axios.get(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          query
+        )}`
+      );
+      if (response.data && response.data.length > 0) {
+        const { lat, lon } = response.data[0];
+        setFormData((prev) => ({
+          ...prev,
+          location: {
+            ...prev.location,
+            coordinates: [parseFloat(lon), parseFloat(lat)],
+          },
+        }));
+        toast.success("Location found on map!");
+      } else {
+        toast.warning("Could not find address. Please mark manually on map.");
+      }
+    } catch (error) {
+      toast.error("Failed to lookup address.");
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
+
+  const handleLocationSelect = useCallback((latlng) => {
+    setFormData((prev) => ({
+      ...prev,
+      location: {
+        ...prev.location,
+        coordinates: [latlng.lng, latlng.lat],
+      },
+    }));
+  }, []);
 
   const handleAddVehicle = () => {
     if (!newVehicle.make || !newVehicle.model || !newVehicle.licensePlate) {
@@ -147,7 +209,7 @@ export default function ProfileForm() {
           <h2 className="text-xl font-bold">Personal Information</h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Full Name</label>
@@ -175,43 +237,146 @@ export default function ProfileForm() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-4 border-t pt-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">City</label>
-              <input
-                type="text"
-                name="address.city"
-                value={formData.address.city}
-                onChange={handleInputChange}
-                className="w-full p-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-primary/20 transition-all outline-none"
-                placeholder="City"
-              />
+          <div className="grid md:grid-cols-2 gap-8 border-t pt-6">
+            <div className="space-y-4">
+              <h3 className="font-bold text-gray-700 flex items-center gap-2">
+                <MapPin size={16} /> Address Details
+              </h3>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase">
+                  Street Address
+                </label>
+                <input
+                  type="text"
+                  name="address.street"
+                  value={formData.address.street}
+                  onChange={handleInputChange}
+                  className="w-full p-2.5 bg-gray-50 border rounded-xl text-sm"
+                  placeholder="Street"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase">
+                    City
+                  </label>
+                  <input
+                    type="text"
+                    name="address.city"
+                    value={formData.address.city}
+                    onChange={handleInputChange}
+                    className="w-full p-2.5 bg-gray-50 border rounded-xl text-sm"
+                    placeholder="City"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase">
+                    District
+                  </label>
+                  <input
+                    type="text"
+                    name="address.district"
+                    value={formData.address.district}
+                    onChange={handleInputChange}
+                    className="w-full p-2.5 bg-gray-50 border rounded-xl text-sm"
+                    placeholder="District"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase">
+                  Postal Code
+                </label>
+                <input
+                  type="text"
+                  name="address.postalCode"
+                  value={formData.address.postalCode}
+                  onChange={handleInputChange}
+                  className="w-full p-2.5 bg-gray-50 border rounded-xl text-sm"
+                  placeholder="1207"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGeocode}
+                disabled={isGeocoding || !formData.address.city}
+                className="w-full py-2.5 bg-blue-50 text-blue-600 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-100 transition-all disabled:opacity-50 border border-blue-100 mt-2"
+              >
+                {isGeocoding ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Search size={16} />
+                )}
+                Set Map from Address
+              </button>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">District</label>
-              <input
-                type="text"
-                name="address.district"
-                value={formData.address.district}
-                onChange={handleInputChange}
-                className="w-full p-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-primary/20 transition-all outline-none"
-                placeholder="District"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Postal Code</label>
-              <input
-                type="text"
-                name="address.postalCode"
-                value={formData.address.postalCode}
-                onChange={handleInputChange}
-                className="w-full p-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-primary/20 transition-all outline-none"
-                placeholder="1207"
-              />
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-gray-700">
+                  Map Location (Home/Base)
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsLocationLocked(!isLocationLocked)}
+                  className={`flex items-center gap-2 px-3 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                    isLocationLocked
+                      ? "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20"
+                      : "bg-green-100 text-green-700 border border-green-200 hover:bg-green-200"
+                  }`}
+                >
+                  {isLocationLocked ? "🛠️ Edit" : "✅ Confirm"}
+                </button>
+              </div>
+
+              <div
+                className={`relative rounded-2xl overflow-hidden border transition-all ${
+                  isLocationLocked
+                    ? "border-gray-200"
+                    : "ring-2 ring-green-500/20 border-green-500/50"
+                }`}
+              >
+                <MapComponent
+                  center={[
+                    formData.location.coordinates[1],
+                    formData.location.coordinates[0],
+                  ]}
+                  zoom={15}
+                  onLocationSelect={
+                    isLocationLocked ? null : handleLocationSelect
+                  }
+                  markers={[
+                    {
+                      lat: formData.location.coordinates[1],
+                      lng: formData.location.coordinates[0],
+                      content: isLocationLocked
+                        ? "Locked"
+                        : "Setting Location...",
+                    },
+                  ]}
+                  className="h-[250px] w-full"
+                />
+                {isLocationLocked && (
+                  <div className="absolute inset-0 z-[1001] bg-black/5 cursor-not-allowed flex items-center justify-center group">
+                    <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm border border-gray-100 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                        Click "Edit" to move
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <p className="text-[10px] text-gray-400 italic text-center">
+                Your default service location is pinned here
+              </p>
             </div>
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex justify-end pt-4 border-t">
             <button
               type="submit"
               disabled={saving}
@@ -222,7 +387,7 @@ export default function ProfileForm() {
               ) : (
                 <Save className="w-4 h-4" />
               )}
-              Save Changes
+              Save Profile Changes
             </button>
           </div>
         </form>

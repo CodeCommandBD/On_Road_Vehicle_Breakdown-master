@@ -19,6 +19,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Star,
+  BadgeCheck,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
@@ -513,18 +514,28 @@ function BookingForm() {
                               <div
                                 key={garage._id}
                                 onClick={() => setSelectedGarage(garage)}
-                                className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                                className={`p-4 rounded-xl border cursor-pointer transition-all relative ${
                                   selectedGarage?._id === garage._id
                                     ? "bg-[#ff4800]/10 border-[#ff4800] ring-1 ring-[#ff4800]"
                                     : "bg-black/40 border-white/10 hover:border-white/30"
                                 }`}
                               >
+                                {garage.isVerified && (
+                                  <div className="absolute top-2 right-2 flex items-center gap-1 bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-500/20">
+                                    <BadgeCheck size={10} /> Verified
+                                  </div>
+                                )}
+                                {!garage.isVerified && (
+                                  <div className="absolute top-2 right-2 bg-gray-500/20 text-gray-400 px-2 py-0.5 rounded text-[10px] font-bold border border-gray-500/20">
+                                    New
+                                  </div>
+                                )}
                                 <div className="flex items-center gap-3 mb-2">
                                   <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center">
                                     <Wrench className="w-5 h-5 text-gray-400" />
                                   </div>
                                   <div>
-                                    <h4 className="font-semibold text-white text-sm">
+                                    <h4 className="font-semibold text-white text-sm pr-16 truncate">
                                       {garage.name}
                                     </h4>
                                     <div className="flex items-center gap-1 text-xs text-yellow-500">

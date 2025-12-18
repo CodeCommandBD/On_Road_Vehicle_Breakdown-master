@@ -58,6 +58,7 @@ export async function GET(request) {
           completedBookings: garage.completedBookings,
           isVerified: garage.isVerified,
           logo: garage.logo,
+          mechanicDetails: garage.mechanicDetails,
           membership: {
             tier: owner?.membershipTier || "free",
             expiry: owner?.membershipExpiry,
@@ -102,6 +103,10 @@ export async function PUT(request) {
       operatingHours,
       is24Hours,
       vehicleTypes,
+      experience,
+      specializedEquipments,
+      garageImages,
+      mechanicDetails,
     } = body;
 
     // Find garage by owner ID
@@ -124,6 +129,12 @@ export async function PUT(request) {
     if (operatingHours) garage.operatingHours = operatingHours;
     if (is24Hours !== undefined) garage.is24Hours = is24Hours;
     if (vehicleTypes) garage.vehicleTypes = vehicleTypes;
+    if (verification) garage.verification = verification;
+    if (experience) garage.experience = experience;
+    if (specializedEquipments)
+      garage.specializedEquipments = specializedEquipments;
+    if (garageImages) garage.garageImages = garageImages;
+    if (mechanicDetails) garage.mechanicDetails = mechanicDetails;
 
     await garage.save();
 

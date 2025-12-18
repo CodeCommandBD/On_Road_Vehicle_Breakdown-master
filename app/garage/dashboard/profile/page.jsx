@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   Loader2,
   Save,
@@ -14,10 +15,22 @@ import {
   Car,
   Info,
   Crown,
-  CreditCard,
+  Search,
+  BadgeCheck,
+  FileText,
+  Image as ImageIcon,
+  Wrench,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
+
+// Dynamically import MapComponent to avoid SSR issues
+const MapComponent = dynamic(() => import("@/components/maps/MapComponent"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[300px] w-full bg-white/5 animate-pulse rounded-xl" />
+  ),
+});
 
 const DAYS = [
   "monday",
@@ -43,6 +56,8 @@ export default function GarageProfilePage() {
   const user = useSelector(selectUser);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [isLocationLocked, setIsLocationLocked] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -55,11 +70,20 @@ export default function GarageProfilePage() {
       postalCode: "",
     },
     location: {
+      type: "Point",
       coordinates: [90.4125, 23.8103], // Dhaka default
     },
     operatingHours: {},
     is24Hours: false,
     vehicleTypes: [],
+    verification: {
+      tradeLicense: { number: "", imageUrl: "" },
+      nid: { number: "", imageUrl: "" },
+      ownerPhoto: "",
+    },
+    experience: { years: 0, description: "" },
+    specializedEquipments: [],
+    garageImages: { frontView: "", indoorView: "", additional: [] },
   });
   const [membership, setMembership] = useState(null);
 
@@ -98,11 +122,24 @@ export default function GarageProfilePage() {
               postalCode: "",
             },
             location: garage.location || {
+              type: "Point",
               coordinates: [90.4125, 23.8103],
             },
             operatingHours: hours,
             is24Hours: garage.is24Hours || false,
             vehicleTypes: garage.vehicleTypes || [],
+            verification: garage.verification || {
+              tradeLicense: { number: "", imageUrl: "" },
+              nid: { number: "", imageUrl: "" },
+              ownerPhoto: "",
+            },
+            experience: garage.experience || { years: 0, description: "" },
+            specializedEquipments: garage.specializedEquipments || [],
+            garageImages: garage.garageImages || {
+              frontView: "",
+              indoorView: "",
+              additional: [],
+            },
           });
         }
       } catch (error) {
@@ -115,6 +152,49 @@ export default function GarageProfilePage() {
 
     fetchProfile();
   }, [user]);
+
+  // Handle geocoding (nominatim)
+  const handleGeocode = async () => {
+    const { street, city, district } = formData.address;
+    const query = `${street}, ${city}, ${district}, Bangladesh`;
+
+    setIsGeocoding(true);
+    try {
+      const response = await axios.get(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          query
+        )}`
+      );
+      if (response.data && response.data.length > 0) {
+        const { lat, lon } = response.data[0];
+        setFormData((prev) => ({
+          ...prev,
+          location: {
+            ...prev.location,
+            coordinates: [parseFloat(lon), parseFloat(lat)],
+          },
+        }));
+        toast.success("Location found on map!");
+      } else {
+        toast.warning("Could not find address on map. Please pick manually.");
+      }
+    } catch (error) {
+      console.error("Geocoding error:", error);
+      toast.error("Failed to lookup address coordinates.");
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
+
+  const handleLocationSelect = useCallback((latlng) => {
+    setFormData((prev) => ({
+      ...prev,
+      location: {
+        ...prev.location,
+        coordinates: [latlng.lng, latlng.lat],
+      },
+    }));
+  }, []);
 
   // Handle input change
   const handleChange = (field, value) => {
@@ -246,6 +326,47 @@ export default function GarageProfilePage() {
         </div>
       )}
 
+      {/* Verification Status Card */}
+      <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div
+              className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${
+                formData.verification?.status === "verified"
+                  ? "bg-green-500 shadow-green-500/20"
+                  : "bg-blue-500 shadow-blue-500/20"
+              }`}
+            >
+              <BadgeCheck className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white leading-tight">
+                Legal Verification
+              </h2>
+              <p className="text-white/60 text-sm mt-1">
+                Status:{" "}
+                <span
+                  className={`font-bold uppercase ${
+                    formData.verification?.status === "verified"
+                      ? "text-green-500"
+                      : "text-orange-500"
+                  }`}
+                >
+                  {formData.verification?.status || "Not Verified"}
+                </span>
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/garage/dashboard/verification"
+            className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-bold transition-all text-center flex items-center justify-center gap-2"
+          >
+            <FileText size={16} />
+            Manage Verification
+          </Link>
+        </div>
+      </div>
+
       {/* Basic Information */}
       <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
         <div className="flex items-center gap-3 mb-6">
@@ -319,71 +440,166 @@ export default function GarageProfilePage() {
         </div>
       </div>
 
-      {/* Address */}
+      {/* Address & Map */}
       <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
             <MapPin className="w-5 h-5 text-blue-500" />
           </div>
-          <h2 className="text-xl font-bold text-white">Location</h2>
+          <h2 className="text-xl font-bold text-white">Location Setup</h2>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="md:col-span-2">
-            <label className="block text-white/80 text-sm font-medium mb-2">
-              Street Address *
-            </label>
-            <input
-              type="text"
-              value={formData.address.street}
-              onChange={(e) => handleAddressChange("street", e.target.value)}
-              required
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50 transition-colors"
-              placeholder="123 Main Street"
-            />
+        <div className="grid lg:grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <div className="md:col-span-2">
+              <label className="block text-white/80 text-sm font-medium mb-2">
+                Street Address *
+              </label>
+              <input
+                type="text"
+                value={formData.address.street}
+                onChange={(e) => handleAddressChange("street", e.target.value)}
+                required
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50 transition-colors"
+                placeholder="Ex: Gazipur, Tongi"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-white/80 text-sm font-medium mb-2">
+                  City *
+                </label>
+                <input
+                  type="text"
+                  value={formData.address.city}
+                  onChange={(e) => handleAddressChange("city", e.target.value)}
+                  required
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50 transition-colors"
+                  placeholder="Dhaka"
+                />
+              </div>
+
+              <div>
+                <label className="block text-white/80 text-sm font-medium mb-2">
+                  District *
+                </label>
+                <input
+                  type="text"
+                  value={formData.address.district}
+                  onChange={(e) =>
+                    handleAddressChange("district", e.target.value)
+                  }
+                  required
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50 transition-colors"
+                  placeholder="Dhaka"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-white/80 text-sm font-medium mb-2">
+                Postal Code
+              </label>
+              <input
+                type="text"
+                value={formData.address.postalCode}
+                onChange={(e) =>
+                  handleAddressChange("postalCode", e.target.value)
+                }
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50 transition-colors"
+                placeholder="1200"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGeocode}
+              disabled={isGeocoding || !formData.address.city}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold transition-all disabled:opacity-50"
+            >
+              {isGeocoding ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Search size={18} />
+              )}
+              Find Location on Map
+            </button>
+            <p className="text-[10px] text-white/40 italic">
+              * After clicking, we will pinpoint your address on the map. You
+              can also drag the map or click manually to refine.
+            </p>
           </div>
 
-          <div>
-            <label className="block text-white/80 text-sm font-medium mb-2">
-              City *
-            </label>
-            <input
-              type="text"
-              value={formData.address.city}
-              onChange={(e) => handleAddressChange("city", e.target.value)}
-              required
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50 transition-colors"
-              placeholder="Dhaka"
-            />
-          </div>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="block text-white/80 text-sm font-medium">
+                Map Picker
+              </label>
+              <button
+                type="button"
+                onClick={() => setIsLocationLocked(!isLocationLocked)}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  isLocationLocked
+                    ? "bg-orange-500/20 text-orange-500 border border-orange-500/30 hover:bg-orange-500/30"
+                    : "bg-green-500/20 text-green-500 border border-green-500/30 hover:bg-green-500/30"
+                }`}
+              >
+                {isLocationLocked ? (
+                  <>🛠️ Edit Location</>
+                ) : (
+                  <>✅ Confirm Location</>
+                )}
+              </button>
+            </div>
 
-          <div>
-            <label className="block text-white/80 text-sm font-medium mb-2">
-              District *
-            </label>
-            <input
-              type="text"
-              value={formData.address.district}
-              onChange={(e) => handleAddressChange("district", e.target.value)}
-              required
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50 transition-colors"
-              placeholder="Dhaka"
-            />
-          </div>
-
-          <div>
-            <label className="block text-white/80 text-sm font-medium mb-2">
-              Postal Code
-            </label>
-            <input
-              type="text"
-              value={formData.address.postalCode}
-              onChange={(e) =>
-                handleAddressChange("postalCode", e.target.value)
-              }
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50 transition-colors"
-              placeholder="1200"
-            />
+            <div
+              className={`relative rounded-2xl overflow-hidden border transition-all ${
+                isLocationLocked
+                  ? "border-white/10 opacity-80"
+                  : "border-green-500/50 ring-2 ring-green-500/20"
+              }`}
+            >
+              <MapComponent
+                center={[
+                  formData.location.coordinates[1],
+                  formData.location.coordinates[0],
+                ]}
+                zoom={15}
+                onLocationSelect={
+                  isLocationLocked ? null : handleLocationSelect
+                }
+                markers={[
+                  {
+                    lat: formData.location.coordinates[1],
+                    lng: formData.location.coordinates[0],
+                    content: isLocationLocked
+                      ? "Location Locked"
+                      : "Click to Move Marker",
+                  },
+                ]}
+                className="h-[350px] w-full"
+              />
+              {isLocationLocked && (
+                <div className="absolute inset-0 z-[1001] bg-black/5 cursor-not-allowed group">
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/80 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <p className="text-[10px] text-white">
+                      Click "Edit Location" to change
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-4 text-xs text-white/40 bg-white/5 p-3 rounded-lg">
+              <div className="flex-1">
+                <span className="block font-bold">Longitude</span>
+                <code>{formData.location.coordinates[0].toFixed(6)}</code>
+              </div>
+              <div className="flex-1">
+                <span className="block font-bold">Latitude</span>
+                <code>{formData.location.coordinates[1].toFixed(6)}</code>
+              </div>
+            </div>
           </div>
         </div>
       </div>

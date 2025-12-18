@@ -1,6 +1,6 @@
 "use client";
 
-import { X, MapPin, Phone, Mail, Clock, ShieldCheck, Star } from "lucide-react";
+import { X, MapPin, Phone, Mail, Clock, ShieldCheck, Star, FileText, Award, User, Wrench, ImageIcon, ExternalLink } from "lucide-react";
 
 export default function GarageDetailModal({ garage, onClose, onAction }) {
   if (!garage) return null;
@@ -45,7 +45,7 @@ export default function GarageDetailModal({ garage, onClose, onAction }) {
                   <Mail size={16} /> {garage.email}
                 </div>
                 <div className="flex items-center gap-3">
-                  <MapPin size={16} /> {garage.address}
+                  <MapPin size={16} /> {garage.address?.street}, {garage.address?.city}
                 </div>
               </div>
             </div>
@@ -58,7 +58,7 @@ export default function GarageDetailModal({ garage, onClose, onAction }) {
                 <div className="flex justify-between">
                   <span>License No:</span>
                   <span className="text-white">
-                    {garage.licenseNumber || "N/A"}
+                    {garage.verification?.tradeLicense?.number || "N/A"}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -90,21 +90,102 @@ export default function GarageDetailModal({ garage, onClose, onAction }) {
           <div>
             <h3 className="text-white/80 font-semibold border-b border-white/5 pb-2 mb-4">
               Services Offered
+            </div>
+          </div>
+
+          {/* Legal Documents */}
+          <div className="space-y-4">
+            <h3 className="text-white/80 font-semibold border-b border-white/5 pb-2 flex items-center gap-2">
+              <FileText size={18} /> Legal Documents
             </h3>
-            <div className="flex flex-wrap gap-2">
-              {(garage.services || []).length > 0 ? (
-                (garage.services || []).map((service, idx) => (
-                  <span
-                    key={idx}
-                    className="bg-[#FF532D]/10 text-[#FF532D] px-3 py-1 rounded-full text-sm font-medium border border-[#FF532D]/20"
-                  >
-                    {typeof service === "object" ? service.name : service}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {garage.verification?.tradeLicense?.imageUrl && (
+                <a 
+                  href={garage.verification.tradeLicense.imageUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="p-4 bg-white/5 rounded-xl border border-white/10 hover:border-orange-500/50 transition-all group"
+                >
+                  <p className="text-[10px] text-white/40 uppercase font-bold mb-2">Trade License</p>
+                  <div className="flex items-center justify-between text-white text-sm">
+                    <span>View Document</span>
+                    <ExternalLink size={14} className="group-hover:text-orange-500" />
+                  </div>
+                </a>
+              )}
+              {garage.verification?.nid?.imageUrl && (
+                <a 
+                  href={garage.verification.nid.imageUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="p-4 bg-white/5 rounded-xl border border-white/10 hover:border-orange-500/50 transition-all group"
+                >
+                  <p className="text-[10px] text-white/40 uppercase font-bold mb-2">NID (Owner)</p>
+                  <div className="flex items-center justify-between text-white text-sm">
+                    <span>View Document</span>
+                    <ExternalLink size={14} className="group-hover:text-orange-500" />
+                  </div>
+                </a>
+              )}
+            </div>
+          </div>
+
+          {/* Professional Context */}
+          <div className="space-y-4">
+            <h3 className="text-white/80 font-semibold border-b border-white/5 pb-2 flex items-center gap-2">
+              <Wrench size={18} /> Experience & Equipment
+            </h3>
+            <div className="space-y-4">
+              <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+                <p className="text-xs text-white/40 mb-1">Professional Summary ({garage.experience?.years || 0} Years Exp)</p>
+                <p className="text-sm text-white/90">{garage.experience?.description || "No description provided."}</p>
+              </div>
+              
+              <div className="flex flex-wrap gap-2">
+                {(garage.specializedEquipments || []).map((equip, idx) => (
+                  <span key={idx} className="bg-purple-500/10 text-purple-400 px-3 py-1 rounded-full text-[10px] font-bold border border-purple-500/20 uppercase tracking-wider">
+                    {equip}
                   </span>
-                ))
-              ) : (
-                <span className="text-white/20 text-xs">
-                  No services listed yet.
-                </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Mechanic Details */}
+          <div className="space-y-4">
+            <h3 className="text-white/80 font-semibold border-b border-white/5 pb-2 flex items-center gap-2">
+              <User size={18} /> Mechanic Details
+            </h3>
+            <div className="p-4 bg-orange-500/5 rounded-xl border border-orange-500/10">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h4 className="text-white font-bold">{garage.mechanicDetails?.leadName || "N/A"}</h4>
+                  <p className="text-xs text-white/60">Lead Mechanic • {garage.mechanicDetails?.experienceYears || 0} Years Experience</p>
+                </div>
+                {garage.mechanicDetails?.certifications?.length > 0 && (
+                  <div className="flex -space-x-2">
+                    {garage.mechanicDetails.certifications.map((cert, idx) => (
+                      <div key={idx} className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center border-2 border-[#1E1E1E] text-white" title={cert.title}>
+                        <Award size={14} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Photos */}
+          <div className="space-y-4 pb-4">
+            <h3 className="text-white/80 font-semibold border-b border-white/5 pb-2 flex items-center gap-2">
+              <ImageIcon size={18} /> Garage Gallery
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              {garage.garageImages?.frontView && (
+                <img src={garage.garageImages.frontView} alt="Front View" className="w-full h-32 object-cover rounded-xl border border-white/10" />
+              )}
+              {garage.garageImages?.indoorView && (
+                <img src={garage.garageImages.indoorView} alt="Indoor View" className="w-full h-32 object-cover rounded-xl border border-white/10" />
               )}
             </div>
           </div>

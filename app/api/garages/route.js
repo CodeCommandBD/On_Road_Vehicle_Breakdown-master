@@ -8,23 +8,40 @@ export async function GET(request) {
     await dbConnect();
 
     const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get("limit") || "10");
-    const isActive = searchParams.get("isActive") === "true";
-    const isVerified = searchParams.get("isVerified") === "true";
-    const sort = searchParams.get("sort") || "rating";
+    const lat = parseFloat(searchParams.get("lat"));
+    const lng = parseFloat(searchParams.get("lng"));
+    const maxDistance = parseInt(searchParams.get("distance") || "10000"); // 10km default
+    const limit = parseInt(searchParams.get("limit") || "20");
+    const sort = searchParams.get("sort") || "latest";
 
     // Build query
     const query = {};
-    if (isActive !== undefined) {
-      query.isActive = isActive;
+    if (searchParams.get("isActive")) {
+      query.isActive = searchParams.get("isActive") === "true";
     }
-    if (isVerified !== undefined) {
-      query.isVerified = isVerified;
+    if (searchParams.get("isVerified")) {
+      query.isVerified = searchParams.get("isVerified") === "true";
+    }
+
+    // Add geospatial search if lat/lng are provided
+    if (!isNaN(lat) && !isNaN(lng)) {
+      query.location = {
+        $near: {
+          $geometry: {
+            type: "Point",
+            coordinates: [lng, lat],
+          },
+          $maxDistance: maxDistance,
+        },
+      };
     }
 
     // Build sort object
     let sortObj = {};
-    if (sort === "rating") {
+    if (!isNaN(lat) && !isNaN(lng)) {
+      // Mongo automatically sorts by distance for $near
+      sortObj = {};
+    } else if (sort === "rating") {
       sortObj = { "rating.average": -1, "rating.count": -1 };
     } else if (sort === "bookings") {
       sortObj = { completedBookings: -1 };
@@ -41,7 +58,10 @@ export async function GET(request) {
       .limit(limit)
       .lean();
 
-    const total = await Garage.countDocuments(query);
+    const total =
+      isNaN(lat) || isNaN(lng)
+        ? await Garage.countDocuments(query)
+        : garages.length;
 
     return NextResponse.json({
       success: true,
