@@ -26,7 +26,7 @@ export default function UserDashboardLayout({ children }) {
       if (user.role === "admin") {
         router.push("/admin/dashboard");
       } else if (user.role === "garage") {
-        router.push("/dashboard"); // Garage uses the original dashboard
+        router.push("/garage/dashboard"); // Garage uses the new garage dashboard
       }
     }
   }, [isLoading, isAuthenticated, user, router]);

@@ -35,16 +35,16 @@ const sidebarLinks = {
     { href: "/user/dashboard/settings", label: "Settings", icon: Settings },
   ],
   garage: [
-    { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-    { href: "/dashboard/bookings", label: "Bookings", icon: Calendar },
-    { href: "/dashboard/services", label: "My Services", icon: Wrench },
-    { href: "/dashboard/profile", label: "Garage Profile", icon: User },
+    { href: "/garage/dashboard", label: "Overview", icon: LayoutDashboard },
+    { href: "/garage/dashboard/bookings", label: "Bookings", icon: Calendar },
+    { href: "/garage/dashboard/services", label: "My Services", icon: Wrench },
+    { href: "/garage/dashboard/profile", label: "Garage Profile", icon: User },
     {
-      href: "/dashboard/subscription",
+      href: "/garage/dashboard/subscription",
       label: "Subscription",
       icon: CreditCard,
     },
-    { href: "/dashboard/settings", label: "Settings", icon: Settings },
+    { href: "/garage/dashboard/settings", label: "Settings", icon: Settings },
   ],
   admin: [
     { href: "/admin/dashboard", label: "Overview", icon: LayoutDashboard },

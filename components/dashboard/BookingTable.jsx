@@ -6,9 +6,13 @@ import {
   formatDateTime,
 } from "@/lib/utils/helpers";
 import Link from "next/link";
-import { Eye, Phone, XCircle, Package } from "lucide-react";
+import { Eye, Phone, XCircle, Package, Check, Clock } from "lucide-react";
 
-export default function BookingTable({ type = "user", bookings = [] }) {
+export default function BookingTable({
+  type = "user",
+  bookings = [],
+  onStatusUpdate,
+}) {
   // If no bookings
   if (bookings.length === 0) {
     return (
@@ -16,7 +20,9 @@ export default function BookingTable({ type = "user", bookings = [] }) {
         <Package className="w-16 h-16 text-white/30 mx-auto mb-4" />
         <p className="text-white/60">No bookings found.</p>
         <p className="text-white/40 text-sm mt-2">
-          Create your first service request to get started
+          {type === "garage"
+            ? "New service requests will appear here"
+            : "Create your first service request to get started"}
         </p>
       </div>
     );
@@ -25,11 +31,10 @@ export default function BookingTable({ type = "user", bookings = [] }) {
   const getStatusConfig = (status) => {
     const configs = {
       pending: "bg-yellow-500/20 text-yellow-400 border-yellow-500/50",
-      confirmed: "bg-blue-500/20 text-blue-400 border-blue-500/50",
-      in_progress: "bg-purple-500/20 text-purple-400 border-purple-500/50",
+      accepted: "bg-blue-500/20 text-blue-400 border-blue-500/50",
       "in-progress": "bg-purple-500/20 text-purple-400 border-purple-500/50",
       completed: "bg-green-500/20 text-green-400 border-green-500/50",
-      cancelled: "bg-gray-500/20 text-gray-400 border-gray-500/50",
+      canceled: "bg-gray-500/20 text-gray-400 border-gray-500/50",
     };
     return configs[status] || configs.pending;
   };
@@ -111,25 +116,73 @@ export default function BookingTable({ type = "user", bookings = [] }) {
                 </td>
                 <td className="px-4 py-4">
                   <div className="flex items-center justify-end gap-2">
+                    {/* View Details Button */}
                     <Link
                       href={
                         type === "user"
                           ? `/user/dashboard/bookings/${booking._id}`
-                          : `/dashboard/bookings/${booking._id}`
+                          : `/garage/dashboard/bookings/${booking._id}`
                       }
-                      className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-white transition-all scale-hover"
+                      className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-white transition-all"
+                      title="View Details"
                     >
                       <Eye className="w-4 h-4" />
                     </Link>
+
+                    {/* Garage-specific action buttons */}
+                    {type === "garage" &&
+                      booking.status === "pending" &&
+                      onStatusUpdate && (
+                        <button
+                          onClick={() =>
+                            onStatusUpdate(booking._id, "accepted")
+                          }
+                          className="p-2 hover:bg-green-500/20 rounded-lg text-white/60 hover:text-green-400 transition-all"
+                          title="Accept Booking"
+                        >
+                          <Check className="w-4 h-4" />
+                        </button>
+                      )}
+
+                    {type === "garage" &&
+                      booking.status === "accepted" &&
+                      onStatusUpdate && (
+                        <button
+                          onClick={() =>
+                            onStatusUpdate(booking._id, "completed")
+                          }
+                          className="p-2 hover:bg-blue-500/20 rounded-lg text-white/60 hover:text-blue-400 transition-all"
+                          title="Mark as Completed"
+                        >
+                          <Clock className="w-4 h-4" />
+                        </button>
+                      )}
+
+                    {type === "garage" &&
+                      booking.status !== "completed" &&
+                      booking.status !== "canceled" &&
+                      onStatusUpdate && (
+                        <button
+                          onClick={() =>
+                            onStatusUpdate(booking._id, "canceled")
+                          }
+                          className="p-2 hover:bg-red-500/20 rounded-lg text-white/60 hover:text-red-400 transition-all"
+                          title="Cancel Booking"
+                        >
+                          <XCircle className="w-4 h-4" />
+                        </button>
+                      )}
+
+                    {/* User-specific action buttons */}
                     {type === "user" &&
                       booking.status !== "cancelled" &&
                       booking.status !== "completed" && (
-                        <button className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-orange-400 transition-all scale-hover">
+                        <button className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-orange-400 transition-all">
                           <Phone className="w-4 h-4" />
                         </button>
                       )}
                     {type === "user" && booking.status === "pending" && (
-                      <button className="p-2 hover:bg-red-500/20 rounded-lg text-white/60 hover:text-red-400 transition-all scale-hover">
+                      <button className="p-2 hover:bg-red-500/20 rounded-lg text-white/60 hover:text-red-400 transition-all">
                         <XCircle className="w-4 h-4" />
                       </button>
                     )}
