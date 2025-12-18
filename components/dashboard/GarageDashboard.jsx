@@ -5,7 +5,21 @@ import StatsCards from "@/components/dashboard/StatsCards";
 import BookingTable from "@/components/dashboard/BookingTable";
 import RevenueChart from "@/components/dashboard/RevenueChart";
 import GarageMapDashboard from "@/components/dashboard/GarageMapDashboard";
-import { Plus, Loader2, MapPin, Star, CheckCircle, Crown } from "lucide-react";
+import {
+  Plus,
+  Loader2,
+  MapPin,
+  Star,
+  CheckCircle,
+  Crown,
+  Siren,
+  AlertTriangle,
+  Navigation,
+  Phone,
+  AlertCircle,
+  Clock,
+  Bell,
+} from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -13,6 +27,7 @@ import { toast } from "react-toastify";
 export default function GarageDashboard({ user }) {
   const [bookings, setBookings] = useState([]);
   const [sosAlerts, setSosAlerts] = useState([]);
+  const [assignedSos, setAssignedSos] = useState([]);
   const [garageProfile, setGarageProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(new Date());
@@ -24,6 +39,13 @@ export default function GarageDashboard({ user }) {
     completedToday: 0,
     successRate: 0,
   });
+  const [showAcceptModal, setShowAcceptModal] = useState(false);
+  const [showResolveModal, setShowResolveModal] = useState(false);
+  const [selectedSosId, setSelectedSosId] = useState(null);
+  const [isProcessingAccept, setIsProcessingAccept] = useState(false);
+  const [isProcessingResolve, setIsProcessingResolve] = useState(false);
+  const [newAlert, setNewAlert] = useState(null);
+  const [prevSosCount, setPrevSosCount] = useState(null);
 
   const fetchData = async (showToast = false) => {
     if (!user) return;
@@ -32,7 +54,7 @@ export default function GarageDashboard({ user }) {
       const [garageRes, bookingsRes, sosRes] = await Promise.all([
         axios.get("/api/garages/profile"),
         axios.get(`/api/bookings?userId=${user._id}&role=garage`),
-        axios.get("/api/sos?status=pending"),
+        axios.get("/api/sos?status=pending,assigned"),
       ]);
 
       if (garageRes.data.success) {
@@ -40,7 +62,49 @@ export default function GarageDashboard({ user }) {
       }
 
       if (sosRes.data.success) {
-        setSosAlerts(sosRes.data.data);
+        const allSos = sosRes.data.data;
+        const pendingAlerts = allSos.filter((s) => s.status === "pending");
+        const assignedAlerts = allSos.filter((s) => s.status === "assigned");
+
+        // Detect new SOS alert - check if count increased AND we have previous data
+        const hasNewAlert =
+          pendingAlerts.length > prevSosCount && prevSosCount !== null;
+
+        console.log("SOS Check:", {
+          currentCount: pendingAlerts.length,
+          prevCount: prevSosCount,
+          hasNewAlert,
+          hasLocation: !!garageRes.data.garage?.location,
+        });
+
+        if (hasNewAlert && garageRes.data.garage?.location) {
+          const latestAlert = pendingAlerts[0];
+          const garageCoords = garageRes.data.garage.location.coordinates;
+          const alertCoords = latestAlert.location.coordinates;
+
+          // Calculate distance (rough estimate in km)
+          const distance =
+            Math.sqrt(
+              Math.pow(garageCoords[1] - alertCoords[1], 2) +
+                Math.pow(garageCoords[0] - alertCoords[0], 2)
+            ) * 111; // Convert degrees to km (approximate)
+
+          console.log("New SOS Alert Detected!", latestAlert);
+
+          setNewAlert({
+            id: latestAlert._id,
+            distance: distance.toFixed(1),
+            user: latestAlert.user?.name || "Unknown User",
+          });
+
+          // Auto-dismiss after 10 seconds
+          setTimeout(() => setNewAlert(null), 10000);
+        }
+
+        // Update previous count (set to null initially, then to actual count)
+        setPrevSosCount(pendingAlerts.length);
+        setSosAlerts(pendingAlerts);
+        setAssignedSos(assignedAlerts);
       }
 
       if (bookingsRes.data.success) {
@@ -104,6 +168,65 @@ export default function GarageDashboard({ user }) {
     }
   };
 
+  const handleAcceptSOS = (sosId) => {
+    setSelectedSosId(sosId);
+    setShowAcceptModal(true);
+  };
+
+  const executeAcceptSOS = async () => {
+    if (!selectedSosId) return;
+    setIsProcessingAccept(true);
+    try {
+      const res = await axios.patch("/api/sos", {
+        sosId: selectedSosId,
+        status: "assigned",
+      });
+      if (res.data.success) {
+        toast.success("SOS ACCEPTED! Please head to the location immediately.");
+        setShowAcceptModal(false);
+        setSelectedSosId(null);
+        fetchData();
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to accept SOS");
+    } finally {
+      setIsProcessingAccept(false);
+    }
+  };
+
+  const handleResolveSOS = (sosId) => {
+    setSelectedSosId(sosId);
+    setShowResolveModal(true);
+  };
+
+  const executeResolveSOS = async () => {
+    if (!selectedSosId) return;
+    setIsProcessingResolve(true);
+    try {
+      const res = await axios.patch("/api/sos", {
+        sosId: selectedSosId,
+        status: "resolved",
+      });
+      if (res.data.success) {
+        toast.success("SOS Case Resolved and Closed!");
+        setShowResolveModal(false);
+        setSelectedSosId(null);
+        fetchData();
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to resolve SOS");
+    } finally {
+      setIsProcessingResolve(false);
+    }
+  };
+
+  const handleTrackUser = (sos) => {
+    const lat = sos.location.coordinates[1];
+    const lng = sos.location.coordinates[0];
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+    window.open(url, "_blank");
+  };
+
   useEffect(() => {
     fetchData();
     // Poll for updates every 30 seconds
@@ -121,6 +244,44 @@ export default function GarageDashboard({ user }) {
 
   return (
     <div className="space-y-6">
+      {/* Floating New SOS Alert Notification */}
+      {newAlert && (
+        <div className="fixed top-20 right-4 z-[9999] animate-in slide-in-from-right duration-500">
+          <div className="bg-gradient-to-r from-red-600 to-red-700 text-white rounded-2xl shadow-2xl shadow-red-500/50 p-4 min-w-[320px] border-2 border-red-400">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+                <Bell className="text-white animate-pulse" size={20} />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="font-bold text-sm">🚨 New Emergency Alert!</h4>
+                </div>
+                <p className="text-xs text-white/90 mb-2">
+                  {newAlert.user} needs help {newAlert.distance}km away
+                </p>
+                <button
+                  onClick={() => {
+                    const element =
+                      document.getElementById("garage-map-section");
+                    element?.scrollIntoView({ behavior: "smooth" });
+                    setNewAlert(null);
+                  }}
+                  className="text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg font-medium transition-all"
+                >
+                  View on Map
+                </button>
+              </div>
+              <button
+                onClick={() => setNewAlert(null)}
+                className="text-white/60 hover:text-white transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header with Garage Info */}
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
         <div>
@@ -261,18 +422,195 @@ export default function GarageDashboard({ user }) {
       </div>
 
       {/* Map Dashboard */}
-      <GarageMapDashboard
-        bookings={bookings.filter(
-          (b) =>
-            b.status === "accepted" ||
-            b.status === "in_progress" ||
-            b.status === "pending"
-        )}
-        sosAlerts={sosAlerts}
-        garageLocation={garageProfile?.location}
-        onRefresh={fetchData}
-        lastUpdated={lastUpdated}
-      />
+      <div id="garage-map-section">
+        <GarageMapDashboard
+          bookings={bookings.filter(
+            (b) =>
+              b.status === "accepted" ||
+              b.status === "in_progress" ||
+              b.status === "pending"
+          )}
+          sosAlerts={sosAlerts}
+          garageLocation={garageProfile?.location}
+          onRefresh={fetchData}
+          onAcceptSOS={handleAcceptSOS}
+          lastUpdated={lastUpdated}
+        />
+      </div>
+
+      {/* SOS Acceptance Confirmation Modal */}
+      {showAcceptModal && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-[#1A1A1A] border border-red-500/20 rounded-3xl w-full max-w-md overflow-hidden shadow-[0_0_50px_rgba(239,68,68,0.2)] scale-in">
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20 relative">
+                <Siren className="text-red-500" size={40} />
+                <span className="absolute inset-0 bg-red-500/20 rounded-full animate-ping"></span>
+              </div>
+
+              <h3 className="text-2xl font-bold text-white mb-3">
+                Accept Emergency SOS?
+              </h3>
+              <p className="text-white/60 mb-8 leading-relaxed">
+                By accepting this, you confirm that a mechanic is available and
+                will respond to the user's location immediately. Rate of
+                response is critical.
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={executeAcceptSOS}
+                  disabled={isProcessingAccept}
+                  className="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-bold transition-all shadow-lg shadow-red-600/20 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:scale-100"
+                >
+                  {isProcessingAccept ? (
+                    <>
+                      <Loader2 size={20} className="animate-spin" />
+                      Accepting...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle size={20} />
+                      Confirm & Respond Now
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAcceptModal(false);
+                    setSelectedSosId(null);
+                  }}
+                  disabled={isProcessingAccept}
+                  className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/60 rounded-2xl font-bold transition-all border border-white/5 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-red-500/5 p-4 border-t border-red-500/10 flex items-center gap-2 text-[10px] text-red-400 font-medium">
+              <AlertTriangle size={12} />
+              <span>
+                Warning: Frequent cancellations after acceptance may affect your
+                garage rating.
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Active SOS Tasks Section */}
+      {assignedSos.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+            <h2 className="text-xl font-bold text-white">Active SOS Tasks</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {assignedSos.map((sos) => (
+              <div
+                key={sos._id}
+                className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6 hover:bg-red-500/10 transition-all flex flex-col sm:flex-row justify-between gap-4"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="px-2 py-0.5 bg-red-500/20 text-red-500 rounded text-[10px] font-bold uppercase tracking-wider">
+                      Emergency Alert
+                    </div>
+                    <span className="text-white/40 text-xs">
+                      {new Date(sos.createdAt).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="text-white font-bold">
+                      {sos.user?.name || "Unknown User"}
+                    </h4>
+                    <p className="text-white/60 text-sm flex items-center gap-1">
+                      <MapPin size={12} /> {sos.location.address}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <a
+                      href={`tel:${sos.phone}`}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white text-xs rounded-lg border border-white/10 transition-all"
+                    >
+                      <Phone size={14} className="text-blue-400" />
+                      {sos.phone}
+                    </a>
+                  </div>
+                </div>
+
+                <div className="flex flex-row sm:flex-col gap-2 justify-end">
+                  <button
+                    onClick={() => handleTrackUser(sos)}
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white text-black hover:bg-white/90 rounded-xl text-xs font-bold transition-all shadow-lg"
+                  >
+                    <Navigation size={14} />
+                    Track User
+                  </button>
+                  <button
+                    onClick={() => handleResolveSOS(sos._id)}
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold transition-all shadow-lg"
+                  >
+                    <CheckCircle size={14} />
+                    Mark Resolved
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Resolve SOS Confirmation Modal */}
+      {showResolveModal && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-[#1A1A1A] border border-green-500/20 rounded-3xl w-full max-w-md overflow-hidden shadow-[0_0_50px_rgba(34,197,94,0.1)] scale-in">
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-green-500/20">
+                <CheckCircle className="text-green-500" size={40} />
+              </div>
+
+              <h3 className="text-2xl font-bold text-white mb-3">
+                Case Resolved?
+              </h3>
+              <p className="text-white/60 mb-8 leading-relaxed">
+                Are you sure the emergency has been handled and the vehicle is
+                safe to continue or being towed? This will close the SOS alert.
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={executeResolveSOS}
+                  disabled={isProcessingResolve}
+                  className="w-full py-4 bg-green-600 hover:bg-green-700 text-white rounded-2xl font-bold transition-all shadow-lg shadow-green-600/20 flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isProcessingResolve ? (
+                    <>
+                      <Loader2 size={20} className="animate-spin" />
+                      Resolving...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle size={20} />
+                      Yes, Resolve Case
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowResolveModal(false);
+                    setSelectedSosId(null);
+                  }}
+                  disabled={isProcessingResolve}
+                  className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/60 rounded-2xl font-bold transition-all border border-white/5"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Active Bookings Table */}
       <div>

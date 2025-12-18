@@ -7,6 +7,7 @@ import {
   CheckCircle,
   Clock,
   AlertTriangle,
+  X,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import axios from "axios";
@@ -28,6 +29,11 @@ export default function EmergencySOS() {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mapCenter, setMapCenter] = useState([23.8103, 90.4125]);
+  const [selectedSOS, setSelectedSOS] = useState(null);
+  const [nearbyGarages, setNearbyGarages] = useState([]);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [showResolveModal, setShowResolveModal] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
 
   const fetchAlerts = async () => {
     try {
@@ -54,8 +60,71 @@ export default function EmergencySOS() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleAssign = (alertId) => {
-    toast.info("Assigning mechanic functionality coming soon!");
+  const handleAssignClick = async (sos) => {
+    setSelectedSOS(sos);
+    setIsAssigning(true);
+    setNearbyGarages([]);
+    try {
+      const lat = sos.location.coordinates[1];
+      const lng = sos.location.coordinates[0];
+      const res = await axios.get(
+        `/api/garages/nearby?lat=${lat}&lng=${lng}&maxDistance=20000`
+      );
+      if (res.data.success) {
+        setNearbyGarages(res.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching nearby garages:", error);
+      toast.error("Failed to find nearby garages");
+    }
+  };
+
+  const handleConfirmAssignment = async (garageId) => {
+    if (!selectedSOS) return;
+    setIsActionLoading(true);
+    try {
+      const res = await axios.patch("/api/sos", {
+        sosId: selectedSOS._id,
+        garageId: garageId,
+      });
+      if (res.data.success) {
+        toast.success("Garage assigned successfully!");
+        setIsAssigning(false);
+        setSelectedSOS(null);
+        fetchAlerts();
+      }
+    } catch (error) {
+      console.error("Assignment error:", error);
+      toast.error(error.response?.data?.message || "Failed to assign mechanic");
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleResolveClick = (sosId) => {
+    setSelectedSOS({ _id: sosId }); // Basic object for consistency
+    setShowResolveModal(true);
+  };
+
+  const executeResolve = async () => {
+    if (!selectedSOS) return;
+    setIsActionLoading(true);
+    try {
+      const res = await axios.patch("/api/sos", {
+        sosId: selectedSOS._id,
+        status: "resolved",
+      });
+      if (res.data.success) {
+        toast.success("SOS alert resolved");
+        setShowResolveModal(false);
+        setSelectedSOS(null);
+        fetchAlerts();
+      }
+    } catch (error) {
+      toast.error("Failed to resolve SOS");
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
   const mapMarkers = alerts.map((alert) => ({
@@ -173,10 +242,16 @@ export default function EmergencySOS() {
                       <Phone size={14} className="text-green-500" /> Call User
                     </a>
                     <button
-                      onClick={() => handleAssign(alert._id)}
+                      onClick={() => handleAssignClick(alert)}
                       className="flex-1 flex items-center justify-center gap-2 bg-[#FF532D] hover:bg-[#F23C13] text-white py-2 rounded-xl text-xs font-medium transition-all"
                     >
                       <CheckCircle size={14} /> Assign Mechanic
+                    </button>
+                    <button
+                      onClick={() => handleResolveClick(alert._id)}
+                      className="flex-1 flex items-center justify-center gap-2 bg-green-500/10 hover:bg-green-500/20 text-green-500 border border-green-500/20 py-2 rounded-xl text-xs font-medium transition-all"
+                    >
+                      <CheckCircle size={14} /> Resolve
                     </button>
                   </div>
                 </div>
@@ -185,6 +260,106 @@ export default function EmergencySOS() {
           )}
         </div>
       </div>
+
+      {/* Assignment Modal/Overlay */}
+      {isAssigning && selectedSOS && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#1A1A1A] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-orange-500/10 to-transparent">
+              <div>
+                <h4 className="text-white font-bold">Assign Mechanic</h4>
+                <p className="text-xs text-white/40">
+                  Select a nearby garage for {selectedSOS.user?.name}
+                </p>
+              </div>
+              <button
+                onClick={() => setIsAssigning(false)}
+                className="p-2 hover:bg-white/5 rounded-lg text-white/40 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
+              {nearbyGarages.length === 0 ? (
+                <div className="text-center py-10 text-white/40 italic">
+                  No active garages found within 15km
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {nearbyGarages.map((garage) => (
+                    <div
+                      key={garage._id}
+                      className="p-4 bg-white/5 border border-white/5 rounded-xl hover:border-orange-500/50 transition-all group"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="font-bold text-white group-hover:text-orange-400">
+                            {garage.name}
+                          </p>
+                          <p className="text-[10px] text-white/40">
+                            {garage.address.city}, {garage.address.district}
+                          </p>
+                        </div>
+                        <span className="text-xs font-bold text-orange-500">
+                          {(garage.distance / 1000).toFixed(1)} km
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleConfirmAssignment(garage._id)}
+                        disabled={isActionLoading}
+                        className="w-full mt-2 py-2 bg-orange-500 text-white rounded-lg text-xs font-bold hover:bg-orange-600 transition-colors disabled:opacity-50"
+                      >
+                        {isActionLoading
+                          ? "Assigning..."
+                          : "Assign This Garage"}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Resolve Confirmation Modal */}
+      {showResolveModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#1A1A1A] border border-white/10 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl scale-in">
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-500/20">
+                <CheckCircle className="text-green-500" size={32} />
+              </div>
+              <h4 className="text-white font-bold text-lg mb-2">
+                Resolve SOS?
+              </h4>
+              <p className="text-white/40 text-xs mb-6">
+                Marking this alert as resolved will remove it from the active
+                emergencies list.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowResolveModal(false);
+                    setSelectedSOS(null);
+                  }}
+                  className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-xs font-bold transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={executeResolve}
+                  disabled={isActionLoading}
+                  className="flex-1 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+                >
+                  {isActionLoading ? "Resolving..." : "Yes, Resolve"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { selectUser, updateUser } from "@/store/slices/authSlice";
+import dynamic from "next/dynamic";
 import {
   User,
   Mail,
@@ -16,10 +17,21 @@ import {
   X,
   Loader2,
   Award,
+  Navigation,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
 import PasswordChangeModal from "@/components/profile/PasswordChangeModal";
+
+// Dynamically import MapComponent to avoid SSR issues
+const MapComponent = dynamic(() => import("@/components/maps/MapComponent"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[300px] w-full bg-white/5 animate-pulse rounded-xl flex items-center justify-center border border-white/10">
+      <p className="text-white/40">Initializing Map...</p>
+    </div>
+  ),
+});
 
 export default function ProfilePage() {
   const user = useSelector(selectUser);
@@ -35,6 +47,10 @@ export default function ProfilePage() {
     city: "",
     district: "",
     postalCode: "",
+    location: {
+      type: "Point",
+      coordinates: [90.4125, 23.8103],
+    },
     vehicles: [],
   });
 
@@ -54,7 +70,8 @@ export default function ProfilePage() {
   }, [profileFormData]);
 
   useEffect(() => {
-    if (user && !isEditing) {
+    if (user && !isEditing && !isLoading) {
+      console.log("Initializing ProfileForm with user data:", user.location);
       setProfileFormData({
         name: user.name || "",
         email: user.email || "",
@@ -63,6 +80,10 @@ export default function ProfilePage() {
         city: user.address?.city || "",
         district: user.address?.district || "",
         postalCode: user.address?.postalCode || "",
+        location: user.location || {
+          type: "Point",
+          coordinates: [90.4125, 23.8103],
+        },
         vehicles: Array.isArray(user.vehicles) ? user.vehicles : [],
       });
     }
@@ -74,6 +95,49 @@ export default function ProfilePage() {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleLocationSelect = useCallback((latlng) => {
+    setProfileFormData((prev) => ({
+      ...prev,
+      location: {
+        ...prev.location,
+        coordinates: [latlng.lng, latlng.lat],
+      },
+    }));
+  }, []);
+
+  const handleGeocode = async () => {
+    const { street, city, district } = profileFormData;
+    const query = `${street}, ${city}, ${district}`;
+    if (!street || !city) {
+      toast.info("Please enter street and city to find on map");
+      return;
+    }
+
+    try {
+      const response = await axios.get(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          query
+        )}`
+      );
+      if (response.data && response.data.length > 0) {
+        const { lat, lon } = response.data[0];
+        setProfileFormData((prev) => ({
+          ...prev,
+          location: {
+            ...prev.location,
+            coordinates: [parseFloat(lon), parseFloat(lat)],
+          },
+        }));
+        toast.success("Location found on map!");
+      } else {
+        toast.error("Could not find location on map. Please pick manually.");
+      }
+    } catch (error) {
+      console.error("Geocoding error:", error);
+      toast.error("Failed to search location");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -92,23 +156,49 @@ export default function ProfilePage() {
         district: currentData.district || "",
         postalCode: currentData.postalCode || "",
       },
+      location: {
+        type: "Point",
+        coordinates: currentData.location?.coordinates || [90.4125, 23.8103],
+      },
       vehicles: Array.isArray(currentData.vehicles) ? currentData.vehicles : [],
     };
 
-    console.log("FINAL SUBMISSION PAYLOAD:", payload);
+    console.log("FINAL SUBMISSION PAYLOAD:", JSON.stringify(payload));
 
     try {
       const response = await axios.put("/api/user/profile", payload);
 
       if (response.data.success) {
+        console.log(
+          "Profile update success. Response user location:",
+          response.data.user.location
+        );
+        const updatedUser = response.data.user;
+
+        // Update local state immediately to avoid flickers
+        setProfileFormData((prev) => ({
+          ...prev,
+          name: updatedUser.name || "",
+          phone: updatedUser.phone || "",
+          street: updatedUser.address?.street || "",
+          city: updatedUser.address?.city || "",
+          district: updatedUser.address?.district || "",
+          postalCode: updatedUser.address?.postalCode || "",
+          location: updatedUser.location || prev.location,
+          vehicles: Array.isArray(updatedUser.vehicles)
+            ? updatedUser.vehicles
+            : [],
+        }));
+
         toast.success(
           `Profile updated successfully! ${
             response.data.user.vehicles?.length || 0
           } vehicles saved.`
         );
+
+        // Update global state
+        dispatch(updateUser(updatedUser));
         setIsEditing(false);
-        // Update local Redux state
-        dispatch(updateUser(response.data.user));
       }
     } catch (error) {
       console.error("Profile update error:", error);
@@ -128,6 +218,10 @@ export default function ProfilePage() {
         city: user.address?.city || "",
         district: user.address?.district || "",
         postalCode: user.address?.postalCode || "",
+        location: user.location || {
+          type: "Point",
+          coordinates: [90.4125, 23.8103],
+        },
         vehicles: Array.isArray(user.vehicles) ? user.vehicles : [],
       });
     }
@@ -450,6 +544,58 @@ export default function ProfilePage() {
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white/60 cursor-not-allowed"
               />
             </div>
+          </div>
+
+          {/* Map Section */}
+          <div className="mt-8 pt-8 border-t border-white/10">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <h4 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-orange-500" />
+                  Point on Map
+                </h4>
+                <p className="text-sm text-white/40 mt-1">
+                  Drag the marker or click to set your precise location for
+                  nearby help
+                </p>
+              </div>
+              {isEditing && (
+                <button
+                  type="button"
+                  onClick={handleGeocode}
+                  className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-sm transition-all border border-white/10 flex items-center gap-2 self-start"
+                >
+                  <Navigation className="w-4 h-4" />
+                  Find on Map
+                </button>
+              )}
+            </div>
+
+            <div className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+              <MapComponent
+                center={[
+                  profileFormData.location.coordinates[1],
+                  profileFormData.location.coordinates[0],
+                ]}
+                zoom={15}
+                onLocationSelect={isEditing ? handleLocationSelect : null}
+                markers={[
+                  {
+                    lat: profileFormData.location.coordinates[1],
+                    lng: profileFormData.location.coordinates[0],
+                    content: "Your Set Location",
+                  },
+                ]}
+                className="h-[350px] w-full"
+              />
+            </div>
+            {isEditing && (
+              <p className="text-[10px] text-white/30 mt-3 text-center italic">
+                Coordinates:{" "}
+                {profileFormData.location.coordinates[1].toFixed(6)},{" "}
+                {profileFormData.location.coordinates[0].toFixed(6)}
+              </p>
+            )}
           </div>
         </div>
 

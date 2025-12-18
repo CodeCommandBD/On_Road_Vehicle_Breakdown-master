@@ -3,6 +3,15 @@ import connectDB from "@/lib/db/connect";
 import User from "@/lib/db/models/User";
 import Garage from "@/lib/db/models/Garage";
 import { verifyToken } from "@/lib/utils/auth";
+import fs from "fs";
+
+const logFile =
+  "c:/Users/Shanto/Downloads/Compressed/project/real project/full stack/On_Road_Vehicle_Breakdown-master/debug.log";
+const log = (msg) => {
+  try {
+    fs.appendFileSync(logFile, `${new Date().toISOString()} - ${msg}\n`);
+  } catch (e) {}
+};
 
 export async function GET(request) {
   try {
@@ -60,11 +69,12 @@ export async function PUT(request) {
     }
 
     const body = await request.json();
-    const { name, phone, address, vehicles, garageData } = body;
+    const { name, phone, address, location, vehicles, garageData } = body;
     console.log(
       `API PUT /api/user/profile - Received ${vehicles?.length || 0} vehicles:`,
       vehicles
     );
+    if (location) console.log("Received location update:", location);
 
     const user = await User.findById(decoded.userId);
     if (!user) {
@@ -79,6 +89,7 @@ export async function PUT(request) {
     if (name) updateData.name = name;
     if (phone) updateData.phone = phone;
     if (address) updateData.address = address;
+    if (location) updateData.location = location;
     if (vehicles) updateData.vehicles = vehicles;
 
     // Perform atomic update
@@ -86,6 +97,11 @@ export async function PUT(request) {
       decoded.userId,
       { $set: updateData },
       { new: true, runValidators: true }
+    );
+
+    console.log(
+      "User updated in DB. New location:",
+      JSON.stringify(updatedUser?.location)
     );
 
     if (!updatedUser) {
@@ -113,10 +129,25 @@ export async function PUT(request) {
       );
     }
 
+    log(`PUT /api/user/profile - updatedUser name: ${updatedUser?.name}`);
+    log(
+      `PUT /api/user/profile - updatedUser location: ${JSON.stringify(
+        updatedUser?.location
+      )}`
+    );
+    const publicUser = updatedUser.toPublicJSON();
+    log(`PUT /api/user/profile - publicUser: ${JSON.stringify(publicUser)}`);
+
     return NextResponse.json({
       success: true,
       message: "Profile updated successfully",
-      user: updatedUser.toPublicJSON(),
+      debug_field: "v2_logging",
+      debug_user_raw: {
+        name: updatedUser.name,
+        location: updatedUser.location,
+        keys: Object.keys(updatedUser.toObject()),
+      },
+      user: publicUser,
     });
   } catch (error) {
     console.error("Profile PUT error:", error);

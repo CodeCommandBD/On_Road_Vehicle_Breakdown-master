@@ -12,6 +12,8 @@ import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import dynamic from "next/dynamic";
 import { toast } from "react-toastify";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 // Dynamically import MapComponent to avoid SSR issues with Leaflet
 const MapComponent = dynamic(() => import("@/components/maps/MapComponent"), {
@@ -23,11 +25,12 @@ const MapComponent = dynamic(() => import("@/components/maps/MapComponent"), {
   ),
 });
 
-export default function LiveGarageTracker() {
+export default function LiveGarageTracker({ user }) {
   const [garages, setGarages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userLocation, setUserLocation] = useState(null);
   const [mapCenter, setMapCenter] = useState([23.8103, 90.4125]); // Dhaka default
+  const [locationSource, setLocationSource] = useState("loading"); // 'profile', 'detected', 'default'
 
   const fetchNearbyGarages = useCallback(async (lat, lng) => {
     try {
@@ -46,36 +49,53 @@ export default function LiveGarageTracker() {
     }
   }, []);
 
-  const handleUpdateLocation = () => {
+  const handleUpdateLocation = useCallback(() => {
     if (!navigator.geolocation) {
       toast.error("Geolocation is not supported by your browser");
       return;
     }
 
-    toast.info("Updating location...");
+    toast.info("Detecting your current location...");
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
         setUserLocation({ lat: latitude, lng: longitude });
         setMapCenter([latitude, longitude]);
+        setLocationSource("detected");
         fetchNearbyGarages(latitude, longitude);
-        toast.success("Location updated!");
+        toast.success("Live location detected!");
       },
       (error) => {
         console.error("Geolocation error:", error);
-        toast.error("Could not get your location. Please check permissions.");
-        // Fallback to default if location fails
-        fetchNearbyGarages(23.8103, 90.4125);
+        toast.error("Could not get your location. Using profile/default.");
+
+        // Fallback to user saved location or default
+        const lat = user?.location?.coordinates[1] || 23.8103;
+        const lng = user?.location?.coordinates[0] || 90.4125;
+        setUserLocation({ lat, lng });
+        setMapCenter([lat, lng]);
+        setLocationSource(user?.location?.coordinates ? "profile" : "default");
+        fetchNearbyGarages(lat, lng);
       }
     );
-  };
+  }, [user, fetchNearbyGarages]);
 
   useEffect(() => {
-    // Initial fetch with default location or detect if possible
-    handleUpdateLocation();
-  }, [fetchNearbyGarages]);
+    // If user has a saved location, use it initially
+    if (user?.location?.coordinates) {
+      const lat = user.location.coordinates[1];
+      const lng = user.location.coordinates[0];
+      setUserLocation({ lat, lng });
+      setMapCenter([lat, lng]);
+      setLocationSource("profile");
+      fetchNearbyGarages(lat, lng);
+    } else {
+      handleUpdateLocation();
+    }
+  }, [user, fetchNearbyGarages]); // Only run when user or fetchNearbyGarages changes
 
   const getStatusConfig = (status) => {
+    // ... same ...
     const configs = {
       available: {
         label: "Available",
@@ -115,11 +135,45 @@ export default function LiveGarageTracker() {
 
   // Add user marker if available
   if (userLocation) {
+    const userIcon =
+      typeof window !== "undefined"
+        ? new L.Icon({
+            iconUrl:
+              "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
+            shadowUrl:
+              "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41],
+          })
+        : null;
+
     mapMarkers.push({
       lat: userLocation.lat,
       lng: userLocation.lng,
-      content: "Your Location",
-      // You could add a custom icon here later
+      content: (
+        <div className="text-center p-1">
+          <p className="font-bold text-orange-600 mb-1">Your Location</p>
+          <div
+            className={`text-[10px] px-2 py-0.5 rounded-full inline-block mb-1 ${
+              locationSource === "profile"
+                ? "bg-blue-100 text-blue-700"
+                : "bg-green-100 text-green-700"
+            }`}
+          >
+            {locationSource === "profile"
+              ? "Saved in Profile"
+              : "Live Detected"}
+          </div>
+          {locationSource === "detected" && (
+            <p className="text-[9px] text-gray-400 italic leading-tight mt-1">
+              Note: Detection can be inaccurate on Desktop browsers
+            </p>
+          )}
+        </div>
+      ),
+      icon: userIcon,
     });
   }
 
@@ -134,9 +188,10 @@ export default function LiveGarageTracker() {
           <button
             onClick={handleUpdateLocation}
             className="text-sm text-orange-400 hover:text-orange-300 transition flex items-center gap-1 bg-orange-400/10 px-3 py-1.5 rounded-full"
+            title="Attempts to detect your current real-time GPS position"
           >
             <Navigation className="w-4 h-4" />
-            Update Location
+            Detect Live Location
           </button>
         </div>
 
