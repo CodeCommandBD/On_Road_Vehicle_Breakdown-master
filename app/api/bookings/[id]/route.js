@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import connectDB from "@/lib/db/connect";
 import Booking from "@/lib/db/models/Booking";
 import Garage from "@/lib/db/models/Garage";
+import Review from "@/lib/db/models/Review";
 import { verifyToken } from "@/lib/utils/auth";
 
 export async function GET(request, { params }) {
@@ -26,7 +27,6 @@ export async function GET(request, { params }) {
       .populate("user", "name email phone avatar");
 
     // Fetch review separately if exists
-    const Review = mongoose.models.Review;
     const review = await Review.findOne({ booking: id });
 
     if (!booking) {

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import StatsCards from "@/components/dashboard/StatsCards";
 import BookingTable from "@/components/dashboard/BookingTable";
 import RevenueChart from "@/components/dashboard/RevenueChart";
-import { Plus, Loader2, MapPin, Star, CheckCircle } from "lucide-react";
+import { Plus, Loader2, MapPin, Star, CheckCircle, Crown } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -131,13 +131,41 @@ export default function GarageDashboard({ user }) {
             </div>
           </div>
         </div>
-        <Link
-          href="/garage/dashboard/services/new"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:shadow-lg hover:shadow-orange-500/30 transition-all font-medium"
-        >
-          <Plus className="w-5 h-5" />
-          Add Service
-        </Link>
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          {garageProfile?.membership && (
+            <div
+              className={`px-4 py-2 rounded-xl border ${
+                garageProfile.membership.tier === "premium"
+                  ? "bg-orange-500/10 border-orange-500/30 text-orange-500"
+                  : garageProfile.membership.tier === "basic"
+                  ? "bg-blue-500/10 border-blue-500/30 text-blue-400"
+                  : "bg-white/5 border-white/10 text-white/60"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Crown className="w-4 h-4" />
+                <span className="text-sm font-bold capitalize">
+                  {garageProfile.membership.tier} Plan
+                </span>
+              </div>
+              {garageProfile.membership.expiry && (
+                <p className="text-[10px] opacity-70 mt-0.5">
+                  Expires:{" "}
+                  {new Date(
+                    garageProfile.membership.expiry
+                  ).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+          )}
+          <Link
+            href="/garage/dashboard/services/new"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:shadow-lg hover:shadow-orange-500/30 transition-all font-medium whitespace-nowrap"
+          >
+            <Plus className="w-5 h-5" />
+            Add Service
+          </Link>
+        </div>
       </div>
 
       {/* Stats Cards */}
