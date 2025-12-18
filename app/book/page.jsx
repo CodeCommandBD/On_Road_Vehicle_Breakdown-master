@@ -35,6 +35,8 @@ const bookingSchema = z.object({
     "rickshaw",
     "other",
   ]),
+  serviceId: z.string().min(1, "Please select a service"),
+  vehicleId: z.string().optional(),
   brand: z.string().min(1, "Brand is required"),
   model: z.string().min(1, "Model is required"),
   plateNumber: z.string().min(1, "Plate number is required"),
@@ -55,20 +57,39 @@ function BookingForm() {
   const [isEstimating, setIsEstimating] = useState(false);
   const [coordinates, setCoordinates] = useState(null); // [long, lat]
 
-  // Garage Selection State
+  // Data Fetching State
+  const [services, setServices] = useState([]);
+  const [isLoadingServices, setIsLoadingServices] = useState(false);
   const [nearbyGarages, setNearbyGarages] = useState([]);
   const [isLoadingGarages, setIsLoadingGarages] = useState(false);
   const [selectedGarage, setSelectedGarage] = useState(null);
 
   // Get query params if pre-selecting
-  const serviceId = searchParams.get("service");
-  // If garage exists in URL, we might want to pre-fetch it, but for now we focus on nearby logic
+  const serviceIdFromUrl = searchParams.get("service");
 
   useEffect(() => {
     if (!isAuthenticated) {
       toast.info("Please login to book a service");
       router.push("/login?callbackUrl=/book");
+      return;
     }
+
+    const fetchInitialData = async () => {
+      setIsLoadingServices(true);
+      try {
+        const res = await axios.get("/api/services?isActive=true");
+        if (res.data.success) {
+          setServices(res.data.data.services);
+        }
+      } catch (error) {
+        console.error("Error fetching services:", error);
+        toast.error("Failed to load services");
+      } finally {
+        setIsLoadingServices(false);
+      }
+    };
+
+    fetchInitialData();
   }, [isAuthenticated, router]);
 
   const {
@@ -81,6 +102,8 @@ function BookingForm() {
     resolver: zodResolver(bookingSchema),
     defaultValues: {
       vehicleType: "car",
+      serviceId: serviceIdFromUrl || "",
+      vehicleId: "",
       brand: "",
       model: "",
       plateNumber: "",
@@ -90,6 +113,34 @@ function BookingForm() {
   });
 
   const description = watch("description");
+  const vehicleId = watch("vehicleId");
+  const selectedServiceId = watch("serviceId");
+
+  // Auto-fill vehicle details when a saved vehicle is selected
+  useEffect(() => {
+    if (vehicleId && user?.vehicles) {
+      const vehicle = user.vehicles.find(
+        (v) => v._id === vehicleId || v.id === vehicleId
+      );
+      if (vehicle) {
+        setValue("brand", vehicle.make);
+        setValue("model", vehicle.model);
+        setValue("plateNumber", vehicle.licensePlate);
+        setValue("vehicleType", vehicle.vehicleType.toLowerCase());
+      }
+    }
+  }, [vehicleId, user, setValue]);
+
+  // Update estimated cost base price when service changes
+  const [basePrice, setBasePrice] = useState(500);
+  useEffect(() => {
+    if (selectedServiceId && services.length > 0) {
+      const service = services.find((s) => s._id === selectedServiceId);
+      if (service) {
+        setBasePrice(service.basePrice);
+      }
+    }
+  }, [selectedServiceId, services]);
 
   const fetchNearbyGarages = async (lng, lat) => {
     setIsLoadingGarages(true);
@@ -120,16 +171,20 @@ function BookingForm() {
     }
 
     setIsEstimating(true);
-    // Mock AI estimation
+    // Dynamic AI estimation based on selected service base price
     setTimeout(() => {
+      const partsEst = Math.floor(Math.random() * 1000) + 500;
+      const laborEst = Math.floor(basePrice * 0.5);
+      const totalMin = basePrice + partsEst + laborEst;
+
       setEstimatedCost({
-        min: 1500,
-        max: 2500,
+        min: totalMin,
+        max: totalMin + 1000,
         confidence: "85%",
         breakdown: [
-          { item: "Service Charge", cost: 500 },
-          { item: "Parts (Est.)", cost: 1000 },
-          { item: "Labor", cost: 500 },
+          { item: "Service Base Charge", cost: basePrice },
+          { item: "Estimated Parts", cost: partsEst },
+          { item: "Labor Estimate", cost: laborEst },
         ],
       });
       setIsEstimating(false);
@@ -157,8 +212,8 @@ function BookingForm() {
     // Let's assume user MUST select if available.
 
     // Fallback ID strictly for development if no garages exist in DB yet
-    const finalGarageId = selectedGarage?._id || "657a8b9cde1234567890efff";
-    const finalServiceId = serviceId || "657a8b9cde1234567890abcd";
+    const finalGarageId = selectedGarage?._id || null; // Will be null if admin needs to assign
+    const finalServiceId = data.serviceId;
 
     // Use detected coordinates or default
     const finalCoordinates = coordinates || [90.4125, 23.8103];
@@ -167,8 +222,8 @@ function BookingForm() {
     try {
       const payload = {
         user: user._id || user.id,
-        garage: finalGarageId,
-        service: finalServiceId,
+        garage: selectedGarage?._id || null, // Will be null if admin needs to assign
+        service: data.serviceId,
         vehicleType: data.vehicleType,
         vehicleInfo: {
           brand: data.brand,
@@ -181,7 +236,7 @@ function BookingForm() {
           address: data.address,
         },
         description: data.description,
-        estimatedCost: estimatedCost ? estimatedCost.min : 0,
+        estimatedCost: estimatedCost ? estimatedCost.min : basePrice,
         status: "pending",
         scheduledAt: data.scheduledDate
           ? new Date(`${data.scheduledDate}T${data.scheduledTime || "00:00"}`)
@@ -192,7 +247,7 @@ function BookingForm() {
 
       if (response.data.success) {
         toast.success("Booking request submitted successfully!");
-        router.push("/dashboard/bookings");
+        router.push("/user/dashboard/bookings");
       }
     } catch (error) {
       console.error("Booking Error:", error);
@@ -254,6 +309,42 @@ function BookingForm() {
           <div className="lg:col-span-2">
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl">
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+                {/* Service Selection */}
+                <div>
+                  <h3 className="text-xl font-semibold mb-6 flex items-center gap-3 text-white/90">
+                    <div className="p-2 bg-[#ff4800]/10 rounded-lg">
+                      <Wrench className="w-5 h-5 text-[#ff4800]" />
+                    </div>
+                    Select Service
+                  </h3>
+                  <div className="space-y-4">
+                    <select
+                      {...register("serviceId")}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-[#ff4800] focus:ring-1 focus:ring-[#ff4800] transition-all"
+                    >
+                      <option value="" className="bg-gray-900">
+                        Choose a service...
+                      </option>
+                      {services.map((s) => (
+                        <option
+                          key={s._id}
+                          value={s._id}
+                          className="bg-gray-900"
+                        >
+                          {s.name} - ৳{s.basePrice} (Base)
+                        </option>
+                      ))}
+                    </select>
+                    {errors.serviceId && (
+                      <p className="text-red-500 text-sm">
+                        {errors.serviceId.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="h-px bg-white/10" />
+
                 {/* Vehicle Details */}
                 <div>
                   <h3 className="text-xl font-semibold mb-6 flex items-center gap-3 text-white/90">
@@ -262,6 +353,32 @@ function BookingForm() {
                     </div>
                     Vehicle Information
                   </h3>
+
+                  {/* Saved Vehicles Dropdown */}
+                  {user?.vehicles?.length > 0 && (
+                    <div className="mb-6 space-y-2">
+                      <label className="text-sm font-medium text-gray-400">
+                        Select from your Saved Vehicles
+                      </label>
+                      <select
+                        {...register("vehicleId")}
+                        className="w-full bg-black/40 border border-[#ff4800]/30 rounded-xl p-3 text-white outline-none focus:border-[#ff4800] focus:ring-1 focus:ring-[#ff4800] transition-all"
+                      >
+                        <option value="" className="bg-gray-900">
+                          Add a new vehicle manually
+                        </option>
+                        {user.vehicles.map((v) => (
+                          <option
+                            key={v._id || v.id}
+                            value={v._id || v.id}
+                            className="bg-gray-900"
+                          >
+                            {v.make} {v.model} ({v.licensePlate})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   <div className="grid md:grid-cols-2 gap-6 mb-6">
                     <div className="space-y-2">
@@ -631,8 +748,8 @@ function BookingForm() {
               <h3 className="font-semibold text-white mb-4">Booking Summary</h3>
               <ul className="space-y-4 text-sm">
                 <li className="flex justify-between items-center">
-                  <span className="text-gray-400">Service Fee</span>
-                  <span className="font-bold text-white">৳500</span>
+                  <span className="text-gray-400">Service Base Fee</span>
+                  <span className="font-bold text-white">৳{basePrice}</span>
                 </li>
                 <li className="flex justify-between items-center">
                   <span className="text-gray-400">Urgency</span>
@@ -646,7 +763,7 @@ function BookingForm() {
                     Total (Estimated)
                   </span>
                   <span className="font-bold text-[#ff4800] text-lg">
-                    ৳{estimatedCost ? estimatedCost.min + 500 : 500}+
+                    ৳{estimatedCost ? estimatedCost.min : basePrice}+
                   </span>
                 </li>
               </ul>

@@ -12,8 +12,11 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { useDispatch } from "react-redux";
+import { updateUser } from "@/store/slices/authSlice";
 
 export default function ProfileForm() {
+  const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -114,6 +117,7 @@ export default function ProfileForm() {
       const data = await res.json();
       if (data.success) {
         toast.success("Profile updated successfully");
+        dispatch(updateUser(data.user));
       } else {
         toast.error(data.message);
       }

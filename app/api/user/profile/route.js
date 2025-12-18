@@ -61,6 +61,10 @@ export async function PUT(request) {
 
     const body = await request.json();
     const { name, phone, address, vehicles, garageData } = body;
+    console.log(
+      `API PUT /api/user/profile - Received ${vehicles?.length || 0} vehicles:`,
+      vehicles
+    );
 
     const user = await User.findById(decoded.userId);
     if (!user) {
@@ -70,18 +74,31 @@ export async function PUT(request) {
       );
     }
 
-    // Update user fields
-    if (name) user.name = name;
-    if (phone) user.phone = phone;
-    if (address) user.address = address;
-    if (vehicles) user.vehicles = vehicles;
+    // Prepare update data
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (phone) updateData.phone = phone;
+    if (address) updateData.address = address;
+    if (vehicles) updateData.vehicles = vehicles;
 
-    await user.save();
+    // Perform atomic update
+    const updatedUser = await User.findByIdAndUpdate(
+      decoded.userId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      return NextResponse.json(
+        { success: false, message: "User not found" },
+        { status: 404 }
+      );
+    }
 
     // Update garage fields if applicable
-    if (user.role === "garage" && garageData) {
+    if (updatedUser.role === "garage" && garageData) {
       await Garage.findOneAndUpdate(
-        { owner: user._id },
+        { owner: updatedUser._id },
         {
           $set: {
             name: garageData.name,
@@ -99,7 +116,7 @@ export async function PUT(request) {
     return NextResponse.json({
       success: true,
       message: "Profile updated successfully",
-      user: user.toPublicJSON(),
+      user: updatedUser.toPublicJSON(),
     });
   } catch (error) {
     console.error("Profile PUT error:", error);

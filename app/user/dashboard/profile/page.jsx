@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
-import { selectUser } from "@/store/slices/authSlice";
+import { useState, useEffect, useRef } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { selectUser, updateUser } from "@/store/slices/authSlice";
 import {
   User,
   Mail,
@@ -23,10 +23,11 @@ import PasswordChangeModal from "@/components/profile/PasswordChangeModal";
 
 export default function ProfilePage() {
   const user = useSelector(selectUser);
+  const dispatch = useDispatch();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [formData, setFormData] = useState({
+  const [profileFormData, setProfileFormData] = useState({
     name: "",
     email: "",
     phone: "",
@@ -34,9 +35,9 @@ export default function ProfilePage() {
     city: "",
     district: "",
     postalCode: "",
+    vehicles: [],
   });
 
-  const [vehicles, setVehicles] = useState([]);
   const [newVehicle, setNewVehicle] = useState({
     make: "",
     model: "",
@@ -45,9 +46,16 @@ export default function ProfilePage() {
     vehicleType: "Car",
   });
 
+  // Ref to always hold the latest formData to avoid stale closures in handleSubmit
+  const profileDataRef = useRef(profileFormData);
+
   useEffect(() => {
-    if (user) {
-      setFormData({
+    profileDataRef.current = profileFormData;
+  }, [profileFormData]);
+
+  useEffect(() => {
+    if (user && !isEditing) {
+      setProfileFormData({
         name: user.name || "",
         email: user.email || "",
         phone: user.phone || "",
@@ -55,14 +63,14 @@ export default function ProfilePage() {
         city: user.address?.city || "",
         district: user.address?.district || "",
         postalCode: user.address?.postalCode || "",
+        vehicles: Array.isArray(user.vehicles) ? user.vehicles : [],
       });
-      setVehicles(user.vehicles || []);
     }
-  }, [user]);
+  }, [user, isEditing]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setProfileFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
@@ -72,24 +80,35 @@ export default function ProfilePage() {
     e.preventDefault();
     setIsLoading(true);
 
+    const currentData = profileDataRef.current;
+
+    // Explicitly reconstruct the payload to ensure NO KEYS are missing
+    const payload = {
+      name: currentData.name || "",
+      phone: currentData.phone || "",
+      address: {
+        street: currentData.street || "",
+        city: currentData.city || "",
+        district: currentData.district || "",
+        postalCode: currentData.postalCode || "",
+      },
+      vehicles: Array.isArray(currentData.vehicles) ? currentData.vehicles : [],
+    };
+
+    console.log("FINAL SUBMISSION PAYLOAD:", payload);
+
     try {
-      const response = await axios.put("/api/user/profile", {
-        name: formData.name,
-        phone: formData.phone,
-        address: {
-          street: formData.street,
-          city: formData.city,
-          district: formData.district,
-          postalCode: formData.postalCode,
-        },
-        vehicles: vehicles,
-      });
+      const response = await axios.put("/api/user/profile", payload);
 
       if (response.data.success) {
-        toast.success("Profile updated successfully!");
+        toast.success(
+          `Profile updated successfully! ${
+            response.data.user.vehicles?.length || 0
+          } vehicles saved.`
+        );
         setIsEditing(false);
-        // Optionally refresh user data
-        window.location.reload();
+        // Update local Redux state
+        dispatch(updateUser(response.data.user));
       }
     } catch (error) {
       console.error("Profile update error:", error);
@@ -100,9 +119,8 @@ export default function ProfilePage() {
   };
 
   const handleCancel = () => {
-    // Reset form data
     if (user) {
-      setFormData({
+      setProfileFormData({
         name: user.name || "",
         email: user.email || "",
         phone: user.phone || "",
@@ -110,9 +128,9 @@ export default function ProfilePage() {
         city: user.address?.city || "",
         district: user.address?.district || "",
         postalCode: user.address?.postalCode || "",
+        vehicles: Array.isArray(user.vehicles) ? user.vehicles : [],
       });
     }
-    setVehicles(user?.vehicles || []);
     setIsEditing(false);
   };
 
@@ -121,7 +139,10 @@ export default function ProfilePage() {
       toast.warning("Please fill vehicle details");
       return;
     }
-    setVehicles((prev) => [...prev, newVehicle]);
+    setProfileFormData((prev) => ({
+      ...prev,
+      vehicles: [...(prev.vehicles || []), { ...newVehicle }],
+    }));
     setNewVehicle({
       make: "",
       model: "",
@@ -129,10 +150,16 @@ export default function ProfilePage() {
       licensePlate: "",
       vehicleType: "Car",
     });
+    toast.success(
+      `${newVehicle.make} added to your list. Don't forget to click "Save All Changes" below to save permanently!`
+    );
   };
 
   const handleRemoveVehicle = (index) => {
-    setVehicles((prev) => prev.filter((_, i) => i !== index));
+    setProfileFormData((prev) => ({
+      ...prev,
+      vehicles: (prev.vehicles || []).filter((_, i) => i !== index),
+    }));
   };
 
   const getMembershipColor = (tier) => {
@@ -242,7 +269,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Profile Details Form */}
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div className="bg-[#1E1E1E] border border-white/10 rounded-2xl p-4 sm:p-8">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-semibold text-white">
@@ -284,7 +311,7 @@ export default function ProfilePage() {
               <input
                 type="text"
                 name="name"
-                value={formData.name}
+                value={profileFormData.name}
                 onChange={handleChange}
                 disabled={!isEditing}
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -301,7 +328,7 @@ export default function ProfilePage() {
               <input
                 type="email"
                 name="email"
-                value={formData.email}
+                value={profileFormData.email}
                 disabled
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white/60 cursor-not-allowed"
               />
@@ -319,7 +346,7 @@ export default function ProfilePage() {
               <input
                 type="tel"
                 name="phone"
-                value={formData.phone}
+                value={profileFormData.phone}
                 onChange={handleChange}
                 disabled={!isEditing}
                 placeholder="+880 1712-345678"
@@ -350,7 +377,7 @@ export default function ProfilePage() {
               <input
                 type="text"
                 name="street"
-                value={formData.street}
+                value={profileFormData.street}
                 onChange={handleChange}
                 disabled={!isEditing}
                 placeholder="123 Main Street"
@@ -366,7 +393,7 @@ export default function ProfilePage() {
               <input
                 type="text"
                 name="city"
-                value={formData.city}
+                value={profileFormData.city}
                 onChange={handleChange}
                 disabled={!isEditing}
                 placeholder="Dhaka"
@@ -382,7 +409,7 @@ export default function ProfilePage() {
               <input
                 type="text"
                 name="district"
-                value={formData.district}
+                value={profileFormData.district}
                 onChange={handleChange}
                 disabled={!isEditing}
                 placeholder="Dhaka"
@@ -398,7 +425,7 @@ export default function ProfilePage() {
               <input
                 type="text"
                 name="postalCode"
-                value={formData.postalCode}
+                value={profileFormData.postalCode}
                 onChange={handleChange}
                 disabled={!isEditing}
                 placeholder="1200"
@@ -425,121 +452,145 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-      </form>
 
-      {/* Vehicle Management Section */}
-      <div className="bg-[#1E1E1E] border border-white/10 rounded-2xl p-4 sm:p-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
-              <Award className="w-5 h-5" />
-            </div>
-            <h3 className="text-xl font-semibold text-white">My Vehicles</h3>
-          </div>
-          {isEditing && (
-            <p className="text-xs text-white/40">
-              Don't forget to click Save above after adding vehicles
-            </p>
-          )}
-        </div>
-
-        {/* Vehicle List */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-          {vehicles.length > 0 ? (
-            vehicles.map((v, index) => (
-              <div
-                key={index}
-                className="bg-white/5 border border-white/10 p-4 rounded-xl flex justify-between items-center group"
-              >
-                <div>
-                  <h4 className="font-bold text-white mb-1">
-                    {v.make} {v.model}
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[10px] font-bold rounded uppercase">
-                      {v.licensePlate}
-                    </span>
-                    <span className="text-xs text-white/40">{v.year}</span>
-                    <span className="text-xs text-white/40">
-                      {v.vehicleType}
-                    </span>
-                  </div>
-                </div>
-                {isEditing && (
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveVehicle(index)}
-                    className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                )}
+        {/* Vehicle Management Section */}
+        <div className="bg-[#1E1E1E] border border-white/10 rounded-2xl p-4 sm:p-8">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
+                <Award className="w-5 h-5" />
               </div>
-            ))
-          ) : (
-            <div className="sm:col-span-2 py-8 text-center bg-white/5 border border-dashed border-white/10 rounded-xl">
-              <p className="text-white/40">No vehicles added yet</p>
+              <h3 className="text-xl font-semibold text-white">My Vehicles</h3>
+            </div>
+            {isEditing && (
+              <p className="text-xs text-white/40">
+                Don't forget to click Save above after adding vehicles
+              </p>
+            )}
+          </div>
+
+          {/* Vehicle List */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+            {profileFormData.vehicles.length > 0 ? (
+              profileFormData.vehicles.map((v, index) => (
+                <div
+                  key={index}
+                  className="bg-white/5 border border-white/10 p-4 rounded-xl flex justify-between items-center group"
+                >
+                  <div>
+                    <h4 className="font-bold text-white mb-1">
+                      {v.make} {v.model}
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[10px] font-bold rounded uppercase">
+                        {v.licensePlate}
+                      </span>
+                      <span className="text-xs text-white/40">{v.year}</span>
+                      <span className="text-xs text-white/40">
+                        {v.vehicleType}
+                      </span>
+                    </div>
+                  </div>
+                  {isEditing && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveVehicle(index)}
+                      className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="sm:col-span-2 py-8 text-center bg-white/5 border border-dashed border-white/10 rounded-xl">
+                <p className="text-white/40">No vehicles added yet</p>
+              </div>
+            )}
+          </div>
+
+          {/* Add Vehicle Form (Only when editing) */}
+          {isEditing && (
+            <div className="bg-white/5 border-2 border-dashed border-white/10 p-5 rounded-2xl">
+              <h4 className="text-sm font-bold text-white/80 mb-4">
+                Add New Vehicle
+              </h4>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <input
+                  type="text"
+                  placeholder="Make (e.g. Toyota)"
+                  value={newVehicle.make}
+                  onChange={(e) =>
+                    setNewVehicle({ ...newVehicle, make: e.target.value })
+                  }
+                  className="px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-white focus:border-orange-500 outline-none"
+                />
+                <input
+                  type="text"
+                  placeholder="Model (e.g. Corolla)"
+                  value={newVehicle.model}
+                  onChange={(e) =>
+                    setNewVehicle({ ...newVehicle, model: e.target.value })
+                  }
+                  className="px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-white focus:border-orange-500 outline-none"
+                />
+                <input
+                  type="text"
+                  placeholder="License Plate"
+                  value={newVehicle.licensePlate}
+                  onChange={(e) =>
+                    setNewVehicle({
+                      ...newVehicle,
+                      licensePlate: e.target.value,
+                    })
+                  }
+                  className="px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-white focus:border-orange-500 outline-none"
+                />
+                <select
+                  value={newVehicle.vehicleType}
+                  onChange={(e) =>
+                    setNewVehicle({
+                      ...newVehicle,
+                      vehicleType: e.target.value,
+                    })
+                  }
+                  className="px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-white focus:border-orange-500 outline-none"
+                >
+                  <option value="Car">Car</option>
+                  <option value="Motorcycle">Motorcycle</option>
+                  <option value="Truck">Truck</option>
+                  <option value="Van">Van</option>
+                </select>
+              </div>
+              <button
+                type="button"
+                onClick={handleAddVehicle}
+                className="mt-4 w-full py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition-all border border-white/10"
+              >
+                Confirm and Add to List
+              </button>
+            </div>
+          )}
+
+          {/* Secondary Save Button (Visible only when editing) */}
+          {isEditing && (
+            <div className="mt-8 flex justify-end border-t border-white/10 pt-6">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="px-8 py-3 bg-gradient-orange text-white rounded-xl flex items-center gap-2 transition-all hover:shadow-glow-orange disabled:opacity-50 font-bold"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Save className="w-5 h-5" />
+                )}
+                Save All Changes
+              </button>
             </div>
           )}
         </div>
-
-        {/* Add Vehicle Form (Only when editing) */}
-        {isEditing && (
-          <div className="bg-white/5 border-2 border-dashed border-white/10 p-5 rounded-2xl">
-            <h4 className="text-sm font-bold text-white/80 mb-4">
-              Add New Vehicle
-            </h4>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <input
-                type="text"
-                placeholder="Make (e.g. Toyota)"
-                value={newVehicle.make}
-                onChange={(e) =>
-                  setNewVehicle({ ...newVehicle, make: e.target.value })
-                }
-                className="px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-white focus:border-orange-500 outline-none"
-              />
-              <input
-                type="text"
-                placeholder="Model (e.g. Corolla)"
-                value={newVehicle.model}
-                onChange={(e) =>
-                  setNewVehicle({ ...newVehicle, model: e.target.value })
-                }
-                className="px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-white focus:border-orange-500 outline-none"
-              />
-              <input
-                type="text"
-                placeholder="License Plate"
-                value={newVehicle.licensePlate}
-                onChange={(e) =>
-                  setNewVehicle({ ...newVehicle, licensePlate: e.target.value })
-                }
-                className="px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-white focus:border-orange-500 outline-none"
-              />
-              <select
-                value={newVehicle.vehicleType}
-                onChange={(e) =>
-                  setNewVehicle({ ...newVehicle, vehicleType: e.target.value })
-                }
-                className="px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-white focus:border-orange-500 outline-none"
-              >
-                <option value="Car">Car</option>
-                <option value="Motorcycle">Motorcycle</option>
-                <option value="Truck">Truck</option>
-                <option value="Van">Van</option>
-              </select>
-            </div>
-            <button
-              type="button"
-              onClick={handleAddVehicle}
-              className="mt-4 w-full py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition-all border border-white/10"
-            >
-              Confirm and Add to List
-            </button>
-          </div>
-        )}
-      </div>
+      </form>
 
       {/* Account Security Section */}
       <div className="bg-[#1E1E1E] border border-white/10 rounded-2xl p-4 sm:p-8">
