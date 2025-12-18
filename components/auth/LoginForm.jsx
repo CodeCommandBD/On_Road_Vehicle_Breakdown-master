@@ -88,6 +88,8 @@ export default function LoginForm() {
         router.push(redirectParams);
       } else if (result.user.role === "admin") {
         router.push("/admin/dashboard");
+      } else if (result.user.role === "garage") {
+        router.push("/garage/dashboard");
       } else {
         router.push("/"); // Redirect to home page for users
       }

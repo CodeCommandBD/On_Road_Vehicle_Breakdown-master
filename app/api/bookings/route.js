@@ -3,6 +3,7 @@ import connectDB from "@/lib/db/connect";
 import Booking from "@/lib/db/models/Booking";
 import Garage from "@/lib/db/models/Garage";
 import Service from "@/lib/db/models/Service";
+import Notification from "@/lib/db/models/Notification";
 
 // Basic API route for creating bookings
 // Authentication details handled via searchParams or logic below
@@ -17,6 +18,25 @@ export async function POST(req) {
 
     // Create the booking
     const booking = await Booking.create(body);
+
+    // Create notification for garage if assigned
+    if (body.garage) {
+      try {
+        const garage = await Garage.findById(body.garage);
+        if (garage && garage.owner) {
+          await Notification.create({
+            recipient: garage.owner,
+            type: "booking_new",
+            title: "New Booking Request",
+            message: `You have a new booking request for vehicle type: ${body.vehicleType}`,
+            link: `/garage/dashboard/bookings/${booking._id}`,
+            metadata: { bookingId: booking._id },
+          });
+        }
+      } catch (err) {
+        console.error("Failed to create booking notification:", err);
+      }
+    }
 
     return NextResponse.json(
       { success: true, message: "Booking created successfully", booking },

@@ -4,6 +4,7 @@ import connectDB from "@/lib/db/connect";
 import Booking from "@/lib/db/models/Booking";
 import Garage from "@/lib/db/models/Garage";
 import Review from "@/lib/db/models/Review";
+import Notification from "@/lib/db/models/Notification";
 import { verifyToken } from "@/lib/utils/auth";
 
 export async function GET(request, { params }) {
@@ -112,6 +113,24 @@ export async function PATCH(request, { params }) {
     if (notes) booking.notes = notes;
 
     await booking.save();
+
+    // Create notification for user
+    if (status) {
+      try {
+        await Notification.create({
+          recipient: booking.user,
+          type: "booking_update",
+          title: "Booking Status Updated",
+          message: `Your booking #${
+            booking.bookingNumber || booking._id
+          } has been updated to: ${status}`,
+          link: `/user/dashboard/bookings/${booking._id}`,
+          metadata: { bookingId: booking._id, status },
+        });
+      } catch (err) {
+        console.error("Failed to create status update notification:", err);
+      }
+    }
 
     return NextResponse.json({
       success: true,
