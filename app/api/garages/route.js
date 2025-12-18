@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db/connect";
 import Garage from "@/lib/db/models/Garage";
+import Service from "@/lib/db/models/Service";
 
 export async function GET(request) {
   try {

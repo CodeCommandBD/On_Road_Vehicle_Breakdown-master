@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db/connect";
 import Garage from "@/lib/db/models/Garage";
+import Service from "@/lib/db/models/Service";
 import { verifyToken } from "@/lib/utils/auth";
 
 // PUT /api/garages/services - Update garage services

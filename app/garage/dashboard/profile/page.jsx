@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
+import Link from "next/link";
 import {
   Loader2,
   Save,
@@ -12,6 +13,8 @@ import {
   Clock,
   Car,
   Info,
+  Crown,
+  CreditCard,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -58,6 +61,7 @@ export default function GarageProfilePage() {
     is24Hours: false,
     vehicleTypes: [],
   });
+  const [membership, setMembership] = useState(null);
 
   // Fetch garage profile
   useEffect(() => {
@@ -70,6 +74,7 @@ export default function GarageProfilePage() {
 
         if (response.data.success) {
           const garage = response.data.garage;
+          setMembership(garage.membership);
 
           // Initialize operating hours if not exists
           const hours = {};
@@ -209,6 +214,37 @@ export default function GarageProfilePage() {
           )}
         </button>
       </div>
+
+      {/* Subscription Plan Section */}
+      {membership && (
+        <div className="bg-gradient-to-r from-orange-500/10 to-purple-500/10 backdrop-blur-sm border border-orange-500/20 rounded-2xl p-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
+                <Crown className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white leading-tight">
+                  {membership.tier?.toUpperCase()} Plan Active
+                </h2>
+                <p className="text-white/60 text-sm">
+                  {membership.expiry
+                    ? `Valid until ${new Date(
+                        membership.expiry
+                      ).toLocaleDateString()}`
+                    : "Lifetime Free Access"}
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/garage/dashboard/subscription"
+              className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-medium transition-all text-center"
+            >
+              Manage Subscription
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Basic Information */}
       <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">

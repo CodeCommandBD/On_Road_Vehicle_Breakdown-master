@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db/connect";
 import Garage from "@/lib/db/models/Garage";
 import User from "@/lib/db/models/User";
+import Service from "@/lib/db/models/Service";
 import { verifyToken } from "@/lib/utils/auth";
 
 // GET /api/garages/profile - Get garage profile for authenticated garage owner
@@ -32,6 +33,11 @@ export async function GET(request) {
       );
     }
 
+    // Fetch user for membership details
+    const owner = await User.findById(decoded.userId).select(
+      "membershipTier membershipExpiry currentSubscription"
+    );
+
     return NextResponse.json(
       {
         success: true,
@@ -52,6 +58,11 @@ export async function GET(request) {
           completedBookings: garage.completedBookings,
           isVerified: garage.isVerified,
           logo: garage.logo,
+          membership: {
+            tier: owner?.membershipTier || "free",
+            expiry: owner?.membershipExpiry,
+            subscriptionId: owner?.currentSubscription,
+          },
         },
       },
       { status: 200 }

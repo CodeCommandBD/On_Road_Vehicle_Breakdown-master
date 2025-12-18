@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db/connect";
 import Booking from "@/lib/db/models/Booking";
 import Garage from "@/lib/db/models/Garage";
+import Service from "@/lib/db/models/Service";
 
 // Basic API route for creating bookings
 // Authentication details handled via searchParams or logic below
