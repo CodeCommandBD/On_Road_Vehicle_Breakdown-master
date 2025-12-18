@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db/connect";
+import connectDB from "@/lib/db/connect";
 import Payment from "@/lib/db/models/Payment";
 import Subscription from "@/lib/db/models/Subscription";
 import User from "@/lib/db/models/User";
+import Plan from "@/lib/db/models/Plan";
 
 export async function POST(request) {
   try {

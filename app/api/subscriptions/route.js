@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/db/connect";
+import connectDB from "@/lib/db/connect";
 import { getCurrentUser } from "@/lib/utils/auth";
 import Subscription from "@/lib/db/models/Subscription";
 import User from "@/lib/db/models/User";
+import Plan from "@/lib/db/models/Plan";
 
 // GET user's subscriptions
 export async function GET(request) {

@@ -8,6 +8,7 @@ import {
   User,
   AlertCircle,
   RefreshCcw,
+  CheckCircle,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -25,6 +26,7 @@ export default function GarageMapDashboard({
   sosAlerts = [],
   garageLocation,
   onRefresh,
+  onAcceptSOS,
   lastUpdated,
 }) {
   const [markers, setMarkers] = useState([]);
@@ -100,6 +102,12 @@ export default function GarageMapDashboard({
             >
               <Navigation size={10} /> Emergency Route
             </a>
+            <button
+              onClick={() => onAcceptSOS(sos._id)}
+              className="w-full mt-2 flex items-center justify-center gap-1 bg-red-600 text-white text-[10px] py-1.5 rounded hover:bg-red-700 transition-colors font-bold"
+            >
+              <CheckCircle size={10} /> Accept & Respond
+            </button>
           </div>
         ),
       });

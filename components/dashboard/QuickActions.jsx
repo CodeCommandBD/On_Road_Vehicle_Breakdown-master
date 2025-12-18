@@ -1,6 +1,14 @@
 "use client";
 
-import { Plus, AlertCircle, MapPin, MessageCircle, Siren } from "lucide-react";
+import {
+  Plus,
+  AlertCircle,
+  MapPin,
+  MessageCircle,
+  Siren,
+  X,
+  AlertTriangle,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import axios from "axios";
@@ -9,6 +17,7 @@ import { useSelector } from "react-redux";
 
 export default function QuickActions() {
   const [loading, setLoading] = useState(false);
+  const [showSOSModal, setShowSOSModal] = useState(false);
   const { user } = useSelector((state) => state.auth);
 
   const handleSOS = async () => {
@@ -22,11 +31,11 @@ export default function QuickActions() {
       return;
     }
 
-    const confirmSOS = window.confirm(
-      "Are you sure you want to trigger an Emergency SOS? This will alert nearby garages and admins."
-    );
-    if (!confirmSOS) return;
+    setShowSOSModal(true);
+  };
 
+  const executeSOS = async () => {
+    setShowSOSModal(false);
     try {
       setLoading(true);
       toast.info("Capturing your location...");
@@ -39,14 +48,13 @@ export default function QuickActions() {
             const response = await axios.post("/api/sos", {
               latitude,
               longitude,
-              phone: user.phone || "01XXXXXXXXX", // Fallback if phone not in state
+              phone: user.phone || "01XXXXXXXXX",
               vehicleType: user.vehicles?.[0]?.vehicleType || "Other",
               address: "Automatic Location Capture",
             });
 
             if (response.data.success) {
               toast.success("EMERGENCY ALERT SENT! Help is on the way.");
-              // Trigger a siren sound or other visual feedback if possible
             }
           } catch (error) {
             console.error("SOS API error:", error);
@@ -153,6 +161,48 @@ export default function QuickActions() {
           );
         })}
       </div>
+
+      {/* SOS Confirmation Modal */}
+      {showSOSModal && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-[#1A1A1A] border border-red-500/20 rounded-3xl w-full max-w-md overflow-hidden shadow-[0_0_50px_rgba(239,68,68,0.15)] scale-in">
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20 relative">
+                <AlertTriangle className="text-red-500" size={40} />
+                <span className="absolute inset-0 bg-red-500/20 rounded-full animate-ping"></span>
+              </div>
+
+              <h3 className="text-2xl font-bold text-white mb-3">
+                Trigger Emergency SOS?
+              </h3>
+              <p className="text-white/60 mb-8 leading-relaxed">
+                This will immediately broadcast your location to nearby garages
+                and administrators. Only use this for real emergencies.
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={executeSOS}
+                  className="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-bold transition-all shadow-lg shadow-red-600/20 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <Siren size={20} />
+                  Yes, Send SOS Alert
+                </button>
+                <button
+                  onClick={() => setShowSOSModal(false)}
+                  className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/60 rounded-2xl font-bold transition-all border border-white/5"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-red-500/5 p-4 border-t border-red-500/10 text-[10px] text-red-400 font-medium">
+              Note: Abuse of the SOS system may lead to account suspension.
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
