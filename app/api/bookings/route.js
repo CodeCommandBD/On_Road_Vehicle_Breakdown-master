@@ -56,6 +56,9 @@ export async function GET(req) {
         );
       }
       query = { garage: garage._id };
+    } else if (role === "admin") {
+      // Admin sees everything
+      query = {};
     } else {
       // Provide bookings for the regular user
       query = { user: userId };

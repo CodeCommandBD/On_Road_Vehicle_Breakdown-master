@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import EnhancedStatsCards from "@/components/dashboard/EnhancedStatsCards";
 import BookingTable from "@/components/dashboard/BookingTable";
-import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import QuickActions from "@/components/dashboard/QuickActions";
 import BookingTimeline from "@/components/dashboard/BookingTimeline";
 import LiveGarageTracker from "@/components/dashboard/LiveGarageTracker";
@@ -73,9 +72,6 @@ export default function UserDashboard({ user }) {
 
   return (
     <div className="min-h-screen">
-      {/* Dashboard Header */}
-      <DashboardHeader user={user} notificationCount={stats.activeRequests} />
-
       {/* Quick Actions */}
       <QuickActions />
 
