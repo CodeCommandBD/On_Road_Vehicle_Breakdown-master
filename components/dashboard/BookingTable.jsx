@@ -5,6 +5,7 @@ import {
   formatPrice,
   formatDateTime,
 } from "@/lib/utils/helpers";
+import Link from "next/link";
 import { Eye, Phone, XCircle, Package } from "lucide-react";
 
 export default function BookingTable({ type = "user", bookings = [] }) {
@@ -26,6 +27,7 @@ export default function BookingTable({ type = "user", bookings = [] }) {
       pending: "bg-yellow-500/20 text-yellow-400 border-yellow-500/50",
       confirmed: "bg-blue-500/20 text-blue-400 border-blue-500/50",
       in_progress: "bg-purple-500/20 text-purple-400 border-purple-500/50",
+      "in-progress": "bg-purple-500/20 text-purple-400 border-purple-500/50",
       completed: "bg-green-500/20 text-green-400 border-green-500/50",
       cancelled: "bg-gray-500/20 text-gray-400 border-gray-500/50",
     };
@@ -109,9 +111,16 @@ export default function BookingTable({ type = "user", bookings = [] }) {
                 </td>
                 <td className="px-4 py-4">
                   <div className="flex items-center justify-end gap-2">
-                    <button className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-white transition-all scale-hover">
+                    <Link
+                      href={
+                        type === "user"
+                          ? `/user/dashboard/bookings/${booking._id}`
+                          : `/dashboard/bookings/${booking._id}`
+                      }
+                      className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-white transition-all scale-hover"
+                    >
                       <Eye className="w-4 h-4" />
-                    </button>
+                    </Link>
                     {type === "user" &&
                       booking.status !== "cancelled" &&
                       booking.status !== "completed" && (

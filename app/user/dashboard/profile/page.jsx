@@ -36,6 +36,15 @@ export default function ProfilePage() {
     postalCode: "",
   });
 
+  const [vehicles, setVehicles] = useState([]);
+  const [newVehicle, setNewVehicle] = useState({
+    make: "",
+    model: "",
+    year: new Date().getFullYear(),
+    licensePlate: "",
+    vehicleType: "Car",
+  });
+
   useEffect(() => {
     if (user) {
       setFormData({
@@ -47,6 +56,7 @@ export default function ProfilePage() {
         district: user.address?.district || "",
         postalCode: user.address?.postalCode || "",
       });
+      setVehicles(user.vehicles || []);
     }
   }, [user]);
 
@@ -72,6 +82,7 @@ export default function ProfilePage() {
           district: formData.district,
           postalCode: formData.postalCode,
         },
+        vehicles: vehicles,
       });
 
       if (response.data.success) {
@@ -101,7 +112,27 @@ export default function ProfilePage() {
         postalCode: user.address?.postalCode || "",
       });
     }
+    setVehicles(user?.vehicles || []);
     setIsEditing(false);
+  };
+
+  const handleAddVehicle = () => {
+    if (!newVehicle.make || !newVehicle.model || !newVehicle.licensePlate) {
+      toast.warning("Please fill vehicle details");
+      return;
+    }
+    setVehicles((prev) => [...prev, newVehicle]);
+    setNewVehicle({
+      make: "",
+      model: "",
+      year: new Date().getFullYear(),
+      licensePlate: "",
+      vehicleType: "Car",
+    });
+  };
+
+  const handleRemoveVehicle = (index) => {
+    setVehicles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const getMembershipColor = (tier) => {
@@ -395,6 +426,120 @@ export default function ProfilePage() {
           </div>
         </div>
       </form>
+
+      {/* Vehicle Management Section */}
+      <div className="bg-[#1E1E1E] border border-white/10 rounded-2xl p-4 sm:p-8">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
+              <Award className="w-5 h-5" />
+            </div>
+            <h3 className="text-xl font-semibold text-white">My Vehicles</h3>
+          </div>
+          {isEditing && (
+            <p className="text-xs text-white/40">
+              Don't forget to click Save above after adding vehicles
+            </p>
+          )}
+        </div>
+
+        {/* Vehicle List */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+          {vehicles.length > 0 ? (
+            vehicles.map((v, index) => (
+              <div
+                key={index}
+                className="bg-white/5 border border-white/10 p-4 rounded-xl flex justify-between items-center group"
+              >
+                <div>
+                  <h4 className="font-bold text-white mb-1">
+                    {v.make} {v.model}
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[10px] font-bold rounded uppercase">
+                      {v.licensePlate}
+                    </span>
+                    <span className="text-xs text-white/40">{v.year}</span>
+                    <span className="text-xs text-white/40">
+                      {v.vehicleType}
+                    </span>
+                  </div>
+                </div>
+                {isEditing && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveVehicle(index)}
+                    className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+            ))
+          ) : (
+            <div className="sm:col-span-2 py-8 text-center bg-white/5 border border-dashed border-white/10 rounded-xl">
+              <p className="text-white/40">No vehicles added yet</p>
+            </div>
+          )}
+        </div>
+
+        {/* Add Vehicle Form (Only when editing) */}
+        {isEditing && (
+          <div className="bg-white/5 border-2 border-dashed border-white/10 p-5 rounded-2xl">
+            <h4 className="text-sm font-bold text-white/80 mb-4">
+              Add New Vehicle
+            </h4>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <input
+                type="text"
+                placeholder="Make (e.g. Toyota)"
+                value={newVehicle.make}
+                onChange={(e) =>
+                  setNewVehicle({ ...newVehicle, make: e.target.value })
+                }
+                className="px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-white focus:border-orange-500 outline-none"
+              />
+              <input
+                type="text"
+                placeholder="Model (e.g. Corolla)"
+                value={newVehicle.model}
+                onChange={(e) =>
+                  setNewVehicle({ ...newVehicle, model: e.target.value })
+                }
+                className="px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-white focus:border-orange-500 outline-none"
+              />
+              <input
+                type="text"
+                placeholder="License Plate"
+                value={newVehicle.licensePlate}
+                onChange={(e) =>
+                  setNewVehicle({ ...newVehicle, licensePlate: e.target.value })
+                }
+                className="px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-white focus:border-orange-500 outline-none"
+              />
+              <select
+                value={newVehicle.vehicleType}
+                onChange={(e) =>
+                  setNewVehicle({ ...newVehicle, vehicleType: e.target.value })
+                }
+                className="px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-white focus:border-orange-500 outline-none"
+              >
+                <option value="Car">Car</option>
+                <option value="Motorcycle">Motorcycle</option>
+                <option value="Truck">Truck</option>
+                <option value="Van">Van</option>
+              </select>
+            </div>
+            <button
+              type="button"
+              onClick={handleAddVehicle}
+              className="mt-4 w-full py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition-all border border-white/10"
+            >
+              Confirm and Add to List
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Account Security Section */}
       <div className="bg-[#1E1E1E] border border-white/10 rounded-2xl p-4 sm:p-8">
