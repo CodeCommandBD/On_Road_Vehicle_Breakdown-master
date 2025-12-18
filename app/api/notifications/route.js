@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db/connect";
 import Notification from "@/lib/db/models/Notification";
-import { verifyToken } from "@/lib/utils/helpers";
+import { verifyToken } from "@/lib/utils/auth";
 
 export async function GET(req) {
   try {
