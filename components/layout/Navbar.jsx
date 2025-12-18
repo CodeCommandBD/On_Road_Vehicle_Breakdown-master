@@ -375,7 +375,13 @@ export default function Navbar() {
                   </Link>
 
                   <Link
-                    href="/user/dashboard/profile"
+                    href={
+                      userRole === "admin"
+                        ? "/admin/dashboard"
+                        : userRole === "garage"
+                        ? "/garage/dashboard/profile"
+                        : "/user/dashboard/profile"
+                    }
                     className="flex gap-[14px] items-center p-[12px_16px] text-[#ffffffe6] text-[14px] font-medium transition-all duration-300 rounded-[10px] my-[4px_0] relative overflow-hidden group/item hover:bg-gradient-to-r hover:from-[#ff480026] hover:to-[#ff48000d] hover:text-[#ff6a3d] hover:translate-x-[4px] hover:pl-[20px]"
                     onClick={() => setIsProfileOpen(false)}
                   >
@@ -433,9 +439,9 @@ export default function Navbar() {
             href={
               isAuthenticated
                 ? userRole === "admin"
-                  ? "/admin"
+                  ? "/admin/dashboard"
                   : userRole === "garage"
-                  ? "/dashboard"
+                  ? "/garage/dashboard"
                   : "/book"
                 : "/login"
             }

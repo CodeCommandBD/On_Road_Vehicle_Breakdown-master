@@ -5,11 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle, ArrowRight, Download } from "lucide-react";
 import Link from "next/link";
 import confetti from "canvas-confetti";
+import { useSelector } from "react-redux";
+import { selectUserRole } from "@/store/slices/authSlice";
 
 export default function PaymentSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [countdown, setCountdown] = useState(10);
+  const userRole = useSelector(selectUserRole);
 
   const transaction = searchParams.get("transaction");
   const planName = searchParams.get("plan");
@@ -39,7 +42,9 @@ export default function PaymentSuccessPage() {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          router.push("/user/dashboard");
+          const dashboardPath =
+            userRole === "garage" ? "/garage/dashboard" : "/user/dashboard";
+          router.push(dashboardPath);
           return 0;
         }
         return prev - 1;
@@ -110,7 +115,9 @@ export default function PaymentSuccessPage() {
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
           <Link
-            href="/user/dashboard"
+            href={
+              userRole === "garage" ? "/garage/dashboard" : "/user/dashboard"
+            }
             className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:from-orange-600 hover:to-red-700 transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
           >
             Go to Dashboard

@@ -5,9 +5,12 @@ import { useRouter } from "next/navigation";
 import { Sparkles, CheckCircle, ArrowRight, Clock } from "lucide-react";
 import Link from "next/link";
 import confetti from "canvas-confetti";
+import { useSelector } from "react-redux";
+import { selectUserRole } from "@/store/slices/authSlice";
 
 export default function TrialSuccessPage() {
   const router = useRouter();
+  const userRole = useSelector(selectUserRole);
 
   useEffect(() => {
     // Trigger confetti
@@ -109,7 +112,9 @@ export default function TrialSuccessPage() {
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
-            href="/user/dashboard"
+            href={
+              userRole === "garage" ? "/garage/dashboard" : "/user/dashboard"
+            }
             className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
           >
             Go to Dashboard

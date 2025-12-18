@@ -7,6 +7,8 @@ const initialState = {
   modalContent: null,
   theme: "light",
   notifications: [],
+  searchTerm: "",
+  unreadNotificationsCount: 0,
 };
 
 const uiSlice = createSlice({
@@ -50,6 +52,12 @@ const uiSlice = createSlice({
     clearNotifications: (state) => {
       state.notifications = [];
     },
+    setSearchTerm: (state, action) => {
+      state.searchTerm = action.payload;
+    },
+    setUnreadNotificationsCount: (state, action) => {
+      state.unreadNotificationsCount = action.payload;
+    },
   },
 });
 
@@ -64,6 +72,8 @@ export const {
   addNotification,
   removeNotification,
   clearNotifications,
+  setSearchTerm,
+  setUnreadNotificationsCount,
 } = uiSlice.actions;
 
 export default uiSlice.reducer;
@@ -75,3 +85,6 @@ export const selectModalOpen = (state) => state.ui.modalOpen;
 export const selectModalContent = (state) => state.ui.modalContent;
 export const selectTheme = (state) => state.ui.theme;
 export const selectNotifications = (state) => state.ui.notifications;
+export const selectSearchTerm = (state) => state.ui.searchTerm;
+export const selectUnreadNotificationsCount = (state) =>
+  state.ui.unreadNotificationsCount;

@@ -6,14 +6,41 @@ import {
   formatDateTime,
 } from "@/lib/utils/helpers";
 import Link from "next/link";
-import { Eye, Phone, XCircle, Package, Check, Clock } from "lucide-react";
+import {
+  Eye,
+  Phone,
+  XCircle,
+  Package,
+  Check,
+  Clock,
+  Search,
+} from "lucide-react";
+import { useSelector } from "react-redux";
+import { selectSearchTerm } from "@/store/slices/uiSlice";
 
 export default function BookingTable({
   type = "user",
   bookings = [],
   onStatusUpdate,
 }) {
-  // If no bookings
+  const searchTerm = useSelector(selectSearchTerm);
+
+  const filteredBookings = bookings.filter((booking) => {
+    if (!searchTerm) return true;
+    const search = searchTerm.toLowerCase();
+
+    const matchesName = (
+      type === "user" ? booking.garage?.name : booking.user?.name
+    )
+      ?.toLowerCase()
+      .includes(search);
+    const matchesVehicle = booking.vehicleType?.toLowerCase().includes(search);
+    const matchesNumber = booking.bookingNumber?.toLowerCase().includes(search);
+    const matchesStatus = booking.status?.toLowerCase().includes(search);
+
+    return matchesName || matchesVehicle || matchesNumber || matchesStatus;
+  });
+  // If no bookings at all
   if (bookings.length === 0) {
     return (
       <div className="bg-white/5 rounded-xl border border-white/10 p-12 text-center">
@@ -23,6 +50,19 @@ export default function BookingTable({
           {type === "garage"
             ? "New service requests will appear here"
             : "Create your first service request to get started"}
+        </p>
+      </div>
+    );
+  }
+
+  // If filtered results are empty
+  if (filteredBookings.length === 0) {
+    return (
+      <div className="bg-white/5 rounded-xl border border-white/10 p-12 text-center">
+        <Search className="w-16 h-16 text-white/30 mx-auto mb-4" />
+        <p className="text-white/60">No matching bookings found.</p>
+        <p className="text-white/40 text-sm mt-2">
+          Try searching for a different keyword or booking ID
         </p>
       </div>
     );
@@ -69,7 +109,7 @@ export default function BookingTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-white/10">
-            {bookings.map((booking, index) => (
+            {filteredBookings.map((booking, index) => (
               <tr
                 key={booking._id}
                 className="hover:bg-white/5 transition-all"
