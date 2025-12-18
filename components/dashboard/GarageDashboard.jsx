@@ -1,7 +1,10 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import StatsCards from "@/components/dashboard/StatsCards";
 import BookingTable from "@/components/dashboard/BookingTable";
 import RevenueChart from "@/components/dashboard/RevenueChart";
+import GarageMapDashboard from "@/components/dashboard/GarageMapDashboard";
 import { Plus, Loader2, MapPin, Star, CheckCircle, Crown } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
@@ -9,8 +12,10 @@ import { toast } from "react-toastify";
 
 export default function GarageDashboard({ user }) {
   const [bookings, setBookings] = useState([]);
+  const [sosAlerts, setSosAlerts] = useState([]);
   const [garageProfile, setGarageProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
   const [stats, setStats] = useState({
     totalBookings: 0,
     monthlyRevenue: 0,
@@ -20,77 +25,90 @@ export default function GarageDashboard({ user }) {
     successRate: 0,
   });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!user) return;
-      try {
-        // Fetch garage profile and bookings in parallel
-        const [garageRes, bookingsRes] = await Promise.all([
-          axios.get("/api/garages/profile"),
-          axios.get(`/api/bookings?userId=${user._id}&role=garage`),
-        ]);
+  const fetchData = async (showToast = false) => {
+    if (!user) return;
+    try {
+      // Fetch garage profile, bookings, and SOS alerts in parallel
+      const [garageRes, bookingsRes, sosRes] = await Promise.all([
+        axios.get("/api/garages/profile"),
+        axios.get(`/api/bookings?userId=${user._id}&role=garage`),
+        axios.get("/api/sos?status=pending"),
+      ]);
 
-        if (garageRes.data.success) {
-          setGarageProfile(garageRes.data.garage);
-        }
-
-        if (bookingsRes.data.success) {
-          const fetchedBookings = bookingsRes.data.bookings;
-          setBookings(fetchedBookings);
-
-          // Calculate Stats
-          const totalBookings = fetchedBookings.length;
-          const activeRequests = fetchedBookings.filter(
-            (b) => b.status === "pending" || b.status === "accepted"
-          ).length;
-
-          // Monthly revenue (current month)
-          const now = new Date();
-          const currentMonth = now.getMonth();
-          const currentYear = now.getFullYear();
-          const monthlyRevenue = fetchedBookings
-            .filter((b) => {
-              const bookingDate = new Date(b.createdAt);
-              return (
-                b.status === "completed" &&
-                bookingDate.getMonth() === currentMonth &&
-                bookingDate.getFullYear() === currentYear
-              );
-            })
-            .reduce((sum, b) => sum + (b.estimatedCost || 0), 0);
-
-          // Completed today
-          const today = new Date().setHours(0, 0, 0, 0);
-          const completedToday = fetchedBookings.filter((b) => {
-            const completedDate = new Date(b.updatedAt).setHours(0, 0, 0, 0);
-            return b.status === "completed" && completedDate === today;
-          }).length;
-
-          // Success rate
-          const completedBookings = fetchedBookings.filter(
-            (b) => b.status === "completed"
-          ).length;
-          const successRate =
-            totalBookings > 0 ? (completedBookings / totalBookings) * 100 : 0;
-
-          setStats({
-            totalBookings,
-            monthlyRevenue,
-            rating: garageRes.data.garage?.rating?.average || 0,
-            activeRequests,
-            completedToday,
-            successRate,
-          });
-        }
-      } catch (error) {
-        console.error("Dashboard Error:", error);
-        toast.error("Failed to load dashboard data");
-      } finally {
-        setIsLoading(false);
+      if (garageRes.data.success) {
+        setGarageProfile(garageRes.data.garage);
       }
-    };
 
+      if (sosRes.data.success) {
+        setSosAlerts(sosRes.data.data);
+      }
+
+      if (bookingsRes.data.success) {
+        const fetchedBookings = bookingsRes.data.bookings;
+        setBookings(fetchedBookings);
+
+        // Calculate Stats
+        const totalBookings = fetchedBookings.length;
+        const activeRequests = fetchedBookings.filter(
+          (b) =>
+            b.status === "pending" ||
+            b.status === "accepted" ||
+            b.status === "in_progress"
+        ).length;
+
+        // Monthly revenue (current month)
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        const monthlyRevenue = fetchedBookings
+          .filter((b) => {
+            const bookingDate = new Date(b.createdAt);
+            return (
+              b.status === "completed" &&
+              bookingDate.getMonth() === currentMonth &&
+              bookingDate.getFullYear() === currentYear
+            );
+          })
+          .reduce((sum, b) => sum + (b.estimatedCost || 0), 0);
+
+        // Completed today
+        const today = new Date().setHours(0, 0, 0, 0);
+        const completedToday = fetchedBookings.filter((b) => {
+          const completedDate = new Date(b.updatedAt).setHours(0, 0, 0, 0);
+          return b.status === "completed" && completedDate === today;
+        }).length;
+
+        // Success rate
+        const completedBookings = fetchedBookings.filter(
+          (b) => b.status === "completed"
+        ).length;
+        const successRate =
+          totalBookings > 0 ? (completedBookings / totalBookings) * 100 : 0;
+
+        setStats({
+          totalBookings,
+          monthlyRevenue,
+          rating: garageRes.data.garage?.rating?.average || 0,
+          activeRequests,
+          completedToday,
+          successRate,
+        });
+      }
+      setLastUpdated(new Date());
+      if (showToast) toast.success("Data refreshed");
+    } catch (error) {
+      console.error("Dashboard Error:", error);
+      if (showToast) toast.error("Failed to refresh data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
+    // Poll for updates every 30 seconds
+    const interval = setInterval(() => fetchData(false), 30000);
+    return () => clearInterval(interval);
   }, [user]);
 
   if (isLoading) {
@@ -241,6 +259,20 @@ export default function GarageDashboard({ user }) {
           </div>
         </div>
       </div>
+
+      {/* Map Dashboard */}
+      <GarageMapDashboard
+        bookings={bookings.filter(
+          (b) =>
+            b.status === "accepted" ||
+            b.status === "in_progress" ||
+            b.status === "pending"
+        )}
+        sosAlerts={sosAlerts}
+        garageLocation={garageProfile?.location}
+        onRefresh={fetchData}
+        lastUpdated={lastUpdated}
+      />
 
       {/* Active Bookings Table */}
       <div>
