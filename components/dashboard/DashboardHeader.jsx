@@ -158,6 +158,16 @@ export default function DashboardHeader() {
                     notifications.map((n) => (
                       <div
                         key={n._id}
+                        onClick={() => {
+                          console.log("🔔 Notification Clicked:", n);
+                          if (n.link) {
+                            console.log("🚀 Redirecting to:", n.link);
+                            router.push(n.link);
+                          } else {
+                            console.log("⚠️ No link found in notification");
+                          }
+                          setIsNotifyOpen(false);
+                        }}
                         className="p-4 border-b border-white/10 hover:bg-white/5 transition-colors cursor-pointer group"
                       >
                         <p className="text-xs font-bold text-white mb-1 group-hover:text-orange-500">
