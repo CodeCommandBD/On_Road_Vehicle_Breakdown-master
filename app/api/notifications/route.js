@@ -28,18 +28,35 @@ export async function GET(req) {
     let finalNotifications = [];
     let extraUnread = 0;
 
-    // If user is a garage, dynamically check for pending SOS alerts
+    // If user is a garage, dynamically check for pending SOS alerts OR alerts assigned to them
     if (decoded.role === "garage") {
-      const pendingSos = await SOS.find({ status: "pending" })
-        .sort({ createdAt: -1 })
-        .limit(5);
+      const garage = await Garage.findOne({ owner: decoded.userId });
 
-      pendingSos.forEach((sos) => {
+      const sosQueries = [
+        { status: "pending" }, // All garages see pending
+      ];
+
+      if (garage) {
+        sosQueries.push({ status: "assigned", assignedGarage: garage._id }); // My assigned alerts
+      }
+
+      const relevantSos = await SOS.find({
+        $or: sosQueries,
+      })
+        .sort({ createdAt: -1 })
+        .limit(10);
+
+      relevantSos.forEach((sos) => {
+        const isAssignedToMe = sos.status === "assigned";
         finalNotifications.push({
           _id: "sos-" + sos._id,
-          title: "🚨 PENDING SOS ALERT",
-          message: `${sos.location?.address || "Someone"} needs help!`,
-          link: "/garage/dashboard",
+          title: isAssignedToMe
+            ? "🛠️ YOUR ASSIGNED SOS"
+            : "🚨 PENDING SOS ALERT",
+          message: isAssignedToMe
+            ? `Active mission: ${sos.location?.address || "Go to location"}`
+            : `${sos.location?.address || "Someone"} needs help!`,
+          link: `/garage/sos-navigation/${sos._id}`,
           createdAt: sos.createdAt,
           isRead: false,
           isSos: true,
@@ -59,29 +76,19 @@ export async function GET(req) {
       isRead: false,
     });
 
-    // Always add a "System Ready" notification for garages to confirm the pipeline is working
+    // Always add a "System Ready" notification for garages
     if (decoded.role === "garage") {
       finalNotifications.unshift({
         _id: "system-check",
-        title: "📡 NOTIFICATION SYSTEM ONLINE",
-        message: "You will receive real-time SOS alerts here.",
+        title: "📡 SOS SYSTEM ACTIVE",
+        message: "You are connected to the live emergency network.",
         link: "/garage/dashboard",
         createdAt: new Date(),
         isRead: false,
       });
     }
 
-    // Add a hardcoded notification for testing/demonstration purposes
-    finalNotifications.unshift({
-      _id: "hardcoded-test-notification",
-      title: "Test Notification",
-      message: "This is a hardcoded test notification.",
-      link: "/test",
-      createdAt: new Date(),
-      isRead: false,
-    });
-    extraUnread++; // Increment unread count for the hardcoded notification
-
+    // Finalize and sort notifications
     finalNotifications = [...finalNotifications, ...dbNotifications].sort(
       (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
     );

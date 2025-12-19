@@ -49,26 +49,28 @@ export async function POST(request) {
     try {
       const user = await User.findById(decoded.userId);
       const garages = await Garage.find({}).populate("owner");
-      
-      const emailPromises = garages.map(g => {
+
+      const emailPromises = garages.map((g) => {
         if (g.owner?.email) {
           return sendSOSEmail(g.owner.email, {
             userName: user?.name || "A User",
             location: address || "GPS Location",
             phone: phone,
-            vehicleType: vehicleType
+            vehicleType: vehicleType,
           });
         }
         return null;
       });
 
-      const notificationPromises = garages.map(g => 
+      const notificationPromises = garages.map((g) =>
         Notification.create({
           recipient: g.owner?._id || g.owner,
           type: "system_alert",
           title: "🚨 EMERGENCY SOS ALERT",
-          message: `${user?.name || "A user"} needs immediate help! Check the SOS dashboard.`,
-          link: "/garage/dashboard"
+          message: `${
+            user?.name || "A user"
+          } needs immediate help! Check the SOS dashboard.`,
+          link: `/garage/sos-navigation/${sosAlert._id}`,
         })
       );
 
@@ -232,7 +234,7 @@ export async function PATCH(request) {
             await sendAssignmentEmail(garage.owner.email, garage.name, {
               userName: user?.name || "User",
               location: sos.location?.address || "Location",
-              phone: sos.phone
+              phone: sos.phone,
             });
           }
         } catch (err) {

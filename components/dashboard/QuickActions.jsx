@@ -15,7 +15,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 
-export default function QuickActions() {
+export default function QuickActions({ onSOSSent }) {
   const [loading, setLoading] = useState(false);
   const [showSOSModal, setShowSOSModal] = useState(false);
   const { user } = useSelector((state) => state.auth);
@@ -55,6 +55,7 @@ export default function QuickActions() {
 
             if (response.data.success) {
               toast.success("EMERGENCY ALERT SENT! Help is on the way.");
+              if (onSOSSent) onSOSSent();
             }
           } catch (error) {
             console.error("SOS API error:", error);
@@ -103,7 +104,7 @@ export default function QuickActions() {
       description: "Nearby locations",
       icon: MapPin,
       gradient: "gradient-blue",
-      href: "#garages",
+      href: "/user/dashboard/garages",
       shadow: "shadow-glow-blue",
     },
     {

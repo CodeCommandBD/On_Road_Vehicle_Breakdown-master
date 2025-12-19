@@ -13,6 +13,7 @@ import {
   X,
   CreditCard,
   MessageSquare,
+  Activity,
 } from "lucide-react";
 import {
   selectSidebarOpen,
@@ -39,6 +40,11 @@ const sidebarLinks = {
     { href: "/garage/dashboard/bookings", label: "Bookings", icon: Calendar },
     { href: "/garage/dashboard/services", label: "My Services", icon: Wrench },
     { href: "/garage/dashboard/profile", label: "Garage Profile", icon: User },
+    {
+      href: "/garage/dashboard/navigation",
+      label: "Mission Control",
+      icon: Activity,
+    },
     {
       href: "/garage/dashboard/subscription",
       label: "Subscription",

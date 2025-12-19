@@ -53,18 +53,6 @@ export default function UserDashboard({ user }) {
             points: Math.floor(totalSpent / 100), // 1 point per 100 BDT spent
             activeRequests,
           });
-
-          // Fetch active SOS
-          try {
-            const sosRes = await axios.get("/api/sos?status=pending,assigned");
-            if (sosRes.data.success && sosRes.data.data.length > 0) {
-              setActiveSOS(sosRes.data.data[0]);
-            } else {
-              setActiveSOS(null);
-            }
-          } catch (sosError) {
-            console.error("SOS Fetch error:", sosError);
-          }
         }
       } catch (error) {
         console.error("Dashboard Error:", error);
@@ -75,7 +63,21 @@ export default function UserDashboard({ user }) {
     };
 
     fetchData();
+    fetchSOS();
   }, [user]);
+
+  const fetchSOS = async () => {
+    try {
+      const sosRes = await axios.get("/api/sos?status=pending,assigned");
+      if (sosRes.data.success && sosRes.data.data.length > 0) {
+        setActiveSOS(sosRes.data.data[0]);
+      } else {
+        setActiveSOS(null);
+      }
+    } catch (sosError) {
+      console.error("SOS Fetch error:", sosError);
+    }
+  };
 
   const handleCancelSOS = () => {
     setShowCancelModal(true);
@@ -226,22 +228,14 @@ export default function UserDashboard({ user }) {
       )}
 
       {/* Quick Actions */}
-      <QuickActions />
+      <QuickActions onSOSSent={fetchSOS} />
 
       {/* Enhanced Stats Cards */}
       <EnhancedStatsCards stats={stats} />
 
-      {/* Main Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-        {/* Left Column - Booking Timeline (2 cols on large screens) */}
-        <div className="lg:col-span-2">
-          <BookingTimeline bookings={bookings} />
-        </div>
-
-        {/* Right Column - Live Garage Tracker */}
-        <div className="lg:col-span-1">
-          <LiveGarageTracker user={user} />
-        </div>
+      {/* Main Grid Layout - Booking Timeline Spans Full Width */}
+      <div className="mb-6 sm:mb-8">
+        <BookingTimeline bookings={bookings} />
       </div>
 
       {/* Secondary Grid */}
