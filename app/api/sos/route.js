@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db/connect";
 import SOS from "@/lib/db/models/SOS";
 import Garage from "@/lib/db/models/Garage";
-import User from "@/lib/db/models/User"; // Ensure User model is registered
+import Notification from "@/lib/db/models/Notification";
+import User from "@/lib/db/models/User";
 import { verifyToken } from "@/lib/utils/auth";
-import mongoose from "mongoose"; // Import mongoose to access models and connection state
+import { sendSOSEmail, sendAssignmentEmail } from "@/lib/utils/email";
+import mongoose from "mongoose";
 
 export async function POST(request) {
   try {
@@ -42,6 +44,38 @@ export async function POST(request) {
       vehicleType: vehicleType || "other",
       status: "pending",
     });
+
+    // Create notifications and send emails
+    try {
+      const user = await User.findById(decoded.userId);
+      const garages = await Garage.find({}).populate("owner");
+      
+      const emailPromises = garages.map(g => {
+        if (g.owner?.email) {
+          return sendSOSEmail(g.owner.email, {
+            userName: user?.name || "A User",
+            location: address || "GPS Location",
+            phone: phone,
+            vehicleType: vehicleType
+          });
+        }
+        return null;
+      });
+
+      const notificationPromises = garages.map(g => 
+        Notification.create({
+          recipient: g.owner?._id || g.owner,
+          type: "system_alert",
+          title: "🚨 EMERGENCY SOS ALERT",
+          message: `${user?.name || "A user"} needs immediate help! Check the SOS dashboard.`,
+          link: "/garage/dashboard"
+        })
+      );
+
+      await Promise.all([...notificationPromises, ...emailPromises]);
+    } catch (notifyErr) {
+      console.error("Failed to send SOS alerts:", notifyErr);
+    }
 
     return NextResponse.json({
       success: true,
@@ -189,6 +223,21 @@ export async function PATCH(request) {
         sos.assignedGarage = garageId;
         sos.status = "assigned";
         sos.assignedAt = new Date();
+
+        // Send Email to the assigned garage
+        try {
+          const garage = await Garage.findById(garageId).populate("owner");
+          const user = await User.findById(sos.user);
+          if (garage && garage.owner?.email) {
+            await sendAssignmentEmail(garage.owner.email, garage.name, {
+              userName: user?.name || "User",
+              location: sos.location?.address || "Location",
+              phone: sos.phone
+            });
+          }
+        } catch (err) {
+          console.error("Assignment email error:", err);
+        }
       }
       if (status === "resolved") sos.resolvedAt = new Date();
     } else if (decoded.role === "garage") {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import StatsCards from "@/components/dashboard/StatsCards";
 import BookingTable from "@/components/dashboard/BookingTable";
 import RevenueChart from "@/components/dashboard/RevenueChart";
@@ -19,6 +19,7 @@ import {
   AlertCircle,
   Clock,
   Bell,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
@@ -46,6 +47,7 @@ export default function GarageDashboard({ user }) {
   const [isProcessingResolve, setIsProcessingResolve] = useState(false);
   const [newAlert, setNewAlert] = useState(null);
   const [prevSosCount, setPrevSosCount] = useState(null);
+  const prevCountRef = useRef(null);
 
   const fetchData = async (showToast = false) => {
     if (!user) return;
@@ -66,42 +68,74 @@ export default function GarageDashboard({ user }) {
         const pendingAlerts = allSos.filter((s) => s.status === "pending");
         const assignedAlerts = allSos.filter((s) => s.status === "assigned");
 
-        // Detect new SOS alert - check if count increased AND we have previous data
-        const hasNewAlert =
-          pendingAlerts.length > prevSosCount && prevSosCount !== null;
+        // Detect new SOS alert
+        const currentCount = pendingAlerts.length;
+        const prevCount = prevCountRef.current;
 
-        console.log("SOS Check:", {
-          currentCount: pendingAlerts.length,
-          prevCount: prevSosCount,
-          hasNewAlert,
-          hasLocation: !!garageRes.data.garage?.location,
+        // Trigger alert if:
+        // 1. First time checking and there are pending alerts
+        // 2. Count has increased
+        const shouldNotify =
+          (prevCount === null && currentCount > 0) ||
+          (prevCount !== null && currentCount > prevCount);
+
+        console.log("SOS Notification Internal Sync:", {
+          currentCount,
+          prevCount,
+          shouldNotify,
         });
 
-        if (hasNewAlert && garageRes.data.garage?.location) {
+        if (shouldNotify) {
           const latestAlert = pendingAlerts[0];
-          const garageCoords = garageRes.data.garage.location.coordinates;
-          const alertCoords = latestAlert.location.coordinates;
+          let distance = "Nearby";
 
-          // Calculate distance (rough estimate in km)
-          const distance =
-            Math.sqrt(
-              Math.pow(garageCoords[1] - alertCoords[1], 2) +
-                Math.pow(garageCoords[0] - alertCoords[0], 2)
-            ) * 111; // Convert degrees to km (approximate)
+          if (
+            garageRes.data.garage?.location?.coordinates &&
+            latestAlert.location?.coordinates
+          ) {
+            const garageCoords = garageRes.data.garage.location.coordinates;
+            const alertCoords = latestAlert.location.coordinates;
 
-          console.log("New SOS Alert Detected!", latestAlert);
+            const d =
+              Math.sqrt(
+                Math.pow(garageCoords[1] - alertCoords[1], 2) +
+                  Math.pow(garageCoords[0] - alertCoords[0], 2)
+              ) * 111;
+            distance = d.toFixed(1) + "km";
+          }
 
+          console.log("🔥 SOS NOTIFICATION TRIGGERED!", {
+            user: latestAlert.user?.name,
+            distance,
+          });
+
+          // 1. Set Floating Alert
           setNewAlert({
             id: latestAlert._id,
-            distance: distance.toFixed(1),
+            distance: distance,
             user: latestAlert.user?.name || "Unknown User",
           });
 
-          // Auto-dismiss after 10 seconds
-          setTimeout(() => setNewAlert(null), 10000);
+          // 2. Browser Toast (Fallback)
+          toast.error(
+            `🚨 EMERGENCY SOS: ${
+              latestAlert.user?.name || "Someone"
+            } needs help!`,
+            {
+              position: "top-center",
+              autoClose: 10000,
+            }
+          );
+
+          // 3. Sound Alert
+          playSound();
+
+          // Auto-dismiss floating alert after 15s
+          setTimeout(() => setNewAlert(null), 15000);
         }
 
-        // Update previous count (set to null initially, then to actual count)
+        // Update previous count
+        prevCountRef.current = pendingAlerts.length;
         setPrevSosCount(pendingAlerts.length);
         setSosAlerts(pendingAlerts);
         setAssignedSos(assignedAlerts);
@@ -227,6 +261,40 @@ export default function GarageDashboard({ user }) {
     window.open(url, "_blank");
   };
 
+  const playSound = () => {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.type = "siren";
+      oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(
+        880,
+        audioCtx.currentTime + 0.5
+      );
+      gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.5);
+    } catch (e) {
+      console.log("Sound play failed", e);
+    }
+  };
+
+  const triggerTestAlert = () => {
+    setNewAlert({
+      id: "test-" + Date.now(),
+      distance: "2.5km",
+      user: "Test User (Demo)",
+    });
+    toast.info("🚨 This is a TEST Alert demonstration!", {
+      position: "top-right",
+    });
+    playSound(); // Call playSound for test alert
+    setTimeout(() => setNewAlert(null), 10000);
+  };
+
   useEffect(() => {
     fetchData();
     // Poll for updates every 30 seconds
@@ -246,7 +314,7 @@ export default function GarageDashboard({ user }) {
     <div className="space-y-6">
       {/* Floating New SOS Alert Notification */}
       {newAlert && (
-        <div className="fixed top-20 right-4 z-[9999] animate-in slide-in-from-right duration-500">
+        <div className="fixed top-6 right-6 z-[99999] transition-all transform translate-x-0 opacity-100 scale-100">
           <div className="bg-gradient-to-r from-red-600 to-red-700 text-white rounded-2xl shadow-2xl shadow-red-500/50 p-4 min-w-[320px] border-2 border-red-400">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shrink-0">
@@ -257,7 +325,10 @@ export default function GarageDashboard({ user }) {
                   <h4 className="font-bold text-sm">🚨 New Emergency Alert!</h4>
                 </div>
                 <p className="text-xs text-white/90 mb-2">
-                  {newAlert.user} needs help {newAlert.distance}km away
+                  {newAlert.user} is{" "}
+                  {newAlert.distance === "Nearby"
+                    ? "Nearby"
+                    : `${newAlert.distance} away`}
                 </p>
                 <button
                   onClick={() => {
@@ -344,6 +415,12 @@ export default function GarageDashboard({ user }) {
             <Plus className="w-5 h-5" />
             Add Service
           </Link>
+          <button
+            onClick={triggerTestAlert}
+            className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white rounded-xl text-xs font-medium border border-white/10 transition-all"
+          >
+            Test Alert
+          </button>
         </div>
       </div>
 

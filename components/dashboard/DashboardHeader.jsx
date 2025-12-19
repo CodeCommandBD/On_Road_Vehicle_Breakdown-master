@@ -46,6 +46,12 @@ export default function DashboardHeader() {
         if (res.data.success) {
           setNotifications(res.data.notifications);
           dispatch(setUnreadNotificationsCount(res.data.unreadCount));
+          if (res.data.notifications.length > 0) {
+            console.log(
+              "🔔 Notifications synced:",
+              res.data.notifications.length
+            );
+          }
         }
       } catch (err) {
         console.error("Failed to fetch notifications:", err);
@@ -68,6 +74,8 @@ export default function DashboardHeader() {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  console.log("🔔 NOTIFICATIONS STATE IN HEADER:", notifications);
 
   const handleLogout = async () => {
     try {
