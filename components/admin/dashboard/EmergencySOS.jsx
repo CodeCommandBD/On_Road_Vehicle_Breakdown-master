@@ -38,7 +38,7 @@ export default function EmergencySOS() {
   const fetchAlerts = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("/api/sos?status=pending");
+      const response = await axios.get("/api/sos?status=pending,assigned");
       if (response.data.success) {
         setAlerts(response.data.data);
         if (response.data.data.length > 0) {
@@ -213,10 +213,30 @@ export default function EmergencySOS() {
                         • {dayjs(alert.createdAt).fromNow()}
                       </span>
                     </div>
-                    <span className="bg-red-500/10 text-red-500 border border-red-500/20 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
-                      Critical
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {alert.status === "assigned" ? (
+                        <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
+                          Active / Assigned
+                        </span>
+                      ) : (
+                        <span className="bg-red-500/10 text-red-500 border border-red-500/20 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider animate-pulse">
+                          Critical / Pending
+                        </span>
+                      )}
+                    </div>
                   </div>
+
+                  {alert.assignedGarage && (
+                    <div className="bg-blue-500/5 border border-blue-500/10 rounded-lg p-2 flex items-center gap-2 mb-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                      <p className="text-[10px] text-blue-400 font-medium">
+                        Assigned to:{" "}
+                        <span className="font-bold">
+                          {alert.assignedGarage.name}
+                        </span>
+                      </p>
+                    </div>
+                  )}
 
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 text-sm text-white/50 group-hover:text-white/80 transition-colors">
@@ -237,21 +257,26 @@ export default function EmergencySOS() {
                   <div className="flex gap-2 mt-2">
                     <a
                       href={`tel:${alert.phone}`}
-                      className="flex-1 flex items-center justify-center gap-2 bg-[#1a1a1a] hover:bg-[#252525] border border-white/10 text-white py-2 rounded-xl text-xs font-medium transition-all"
+                      className="flex-1 flex items-center justify-center gap-2 bg-[#1a1a1a] hover:bg-[#252525] border border-white/10 text-white py-2 rounded-xl text-[10px] font-medium transition-all"
                     >
-                      <Phone size={14} className="text-green-500" /> Call User
+                      <Phone size={12} className="text-green-500" /> Call User
                     </a>
                     <button
                       onClick={() => handleAssignClick(alert)}
-                      className="flex-1 flex items-center justify-center gap-2 bg-[#FF532D] hover:bg-[#F23C13] text-white py-2 rounded-xl text-xs font-medium transition-all"
+                      className={`flex-1 flex items-center justify-center gap-2 ${
+                        alert.status === "assigned"
+                          ? "bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20"
+                          : "bg-[#FF532D] hover:bg-[#F23C13] text-white"
+                      } py-2 rounded-xl text-[10px] font-medium transition-all`}
                     >
-                      <CheckCircle size={14} /> Assign Mechanic
+                      <CheckCircle size={12} />{" "}
+                      {alert.status === "assigned" ? "Reassign" : "Assign"}
                     </button>
                     <button
                       onClick={() => handleResolveClick(alert._id)}
-                      className="flex-1 flex items-center justify-center gap-2 bg-green-500/10 hover:bg-green-500/20 text-green-500 border border-green-500/20 py-2 rounded-xl text-xs font-medium transition-all"
+                      className="flex-1 flex items-center justify-center gap-2 bg-green-500/10 hover:bg-green-500/20 text-green-500 border border-green-500/20 py-2 rounded-xl text-[10px] font-medium transition-all"
                     >
-                      <CheckCircle size={14} /> Resolve
+                      <CheckCircle size={12} /> Resolve
                     </button>
                   </div>
                 </div>
