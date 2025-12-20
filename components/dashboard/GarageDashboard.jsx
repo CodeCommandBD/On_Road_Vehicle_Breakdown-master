@@ -53,15 +53,7 @@ export default function GarageDashboard({ user }) {
 
       if (garageRes.data.success) {
         setGarageProfile(garageRes.data.garage);
-        // Sync points to redux
-        if (garageRes.data.garage?.owner?.rewardPoints !== undefined) {
-          dispatch(
-            updateUser({
-              rewardPoints: garageRes.data.garage.owner.rewardPoints,
-              level: garageRes.data.garage.owner.level || 1,
-            })
-          );
-        }
+        // Points syncing is handled by DashboardHeader to prevent update loops
       }
 
       if (bookingsRes.data.success) {
@@ -128,7 +120,7 @@ export default function GarageDashboard({ user }) {
     fetchData();
     // Removed auto-polling to prevent unnecessary page reloads
     // Data will refresh on manual page navigation or refresh
-  }, [user]);
+  }, [user?._id]);
 
   if (isLoading) {
     return (
@@ -232,11 +224,7 @@ export default function GarageDashboard({ user }) {
         <h2 className="text-xl font-bold text-white mb-4">
           {bookingT("title")}
         </h2>
-        <BookingTable
-          type="garage"
-          bookings={bookings}
-          onRefresh={() => window.location.reload()}
-        />
+        <BookingTable type="garage" bookings={bookings} />
       </div>
       {/* Rewards & Leaderboard */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
