@@ -60,8 +60,12 @@ export default function Breadcrumb() {
           href = roleMap[segment.toLowerCase()] || "/";
         }
 
-        // Skip rendering role prefixes (user, admin, garage) in breadcrumb
-        if (["user", "admin", "garage"].includes(segment.toLowerCase())) {
+        // Skip rendering role prefixes (user, admin, garage) and locale (bn, en) in breadcrumb
+        if (
+          ["user", "admin", "garage", "bn", "en"].includes(
+            segment.toLowerCase()
+          )
+        ) {
           return null;
         }
 
