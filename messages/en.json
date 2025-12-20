@@ -116,22 +116,7 @@
       "canceled": "Canceled"
     }
   },
-  "Rewards": {
-    "title": "Rewards & Benefits",
-    "howItWorks": "How it works",
-    "yourPoints": "Your Points",
-    "member": "{tier} Member",
-    "pointsNeeded": "{count} to {tier}",
-    "progress": "Next Tier Progress",
-    "currentBenefits": "Current Benefits",
-    "upgrade": "Upgrade to {tier}",
-    "tiers": {
-      "free": "Free",
-      "basic": "Basic",
-      "standard": "Standard",
-      "premium": "Premium"
-    }
-  },
+
   "SOS": {
     "emergencyAlert": "Emergency SOS Active",
     "lookingForHelp": "Looking for nearby garages to respond...",
@@ -318,6 +303,23 @@
     "manageZone": "Manage Zone",
     "viewDetails": "View Details",
     "legalDocs": "Legal Documents",
+    "city": "City",
+    "district": "District",
+    "postalCode": "Postal Code",
+    "memberSince": "Member Since",
+    "pointOnMap": "Point on Map",
+    "pointOnMapDesc": "Drag the marker or click to set your precise location for nearby help",
+    "findOnMap": "Find on Map",
+    "coordinates": "Coordinates",
+    "yourLocation": "Your Set Location",
+    "saveAll": "Save All",
+    "myVehicles": "My Vehicles",
+    "noVehicles": "No vehicles added yet",
+    "addVehicle": "Add New Vehicle",
+    "confirmAdd": "Confirm & Add",
+    "accountSecurity": "Account Security",
+    "keepSecure": "Keep your account secure",
+    "changePassword": "Change Password",
     "pending": "Pending"
   },
   "Verification": {
@@ -374,6 +376,19 @@
     "loading": "Loading..."
   },
   "Rewards": {
+    "howItWorks": "How it works",
+    "yourPoints": "Your Points",
+    "member": "{tier} Member",
+    "pointsNeeded": "{count} to {tier}",
+    "progress": "Next Tier Progress",
+    "currentBenefits": "Current Benefits",
+    "upgrade": "Upgrade to {tier}",
+    "tiers": {
+      "free": "Free",
+      "basic": "Basic",
+      "standard": "Standard",
+      "premium": "Premium"
+    },
     "title": "Reward Points Guide",
     "subtitle": "Earn rewards for every interaction on the platform.",
     "howToEarn": "How to Earn Points",

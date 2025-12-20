@@ -479,7 +479,7 @@ export default function ProfilePage() {
             {/* City */}
             <div>
               <label className="text-sm font-medium text-white/80 mb-2 block">
-                City
+                {t("city")}
               </label>
               <input
                 type="text"
@@ -495,7 +495,7 @@ export default function ProfilePage() {
             {/* District */}
             <div>
               <label className="text-sm font-medium text-white/80 mb-2 block">
-                District
+                {t("district")}
               </label>
               <input
                 type="text"
@@ -511,7 +511,7 @@ export default function ProfilePage() {
             {/* Postal Code */}
             <div>
               <label className="text-sm font-medium text-white/80 mb-2 block">
-                Postal Code
+                {t("postalCode")}
               </label>
               <input
                 type="text"
@@ -528,7 +528,7 @@ export default function ProfilePage() {
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-white/80 mb-2">
                 <Calendar className="w-4 h-4" />
-                Member Since
+                {t("memberSince")}
               </label>
               <input
                 type="text"
@@ -549,11 +549,10 @@ export default function ProfilePage() {
               <div>
                 <h4 className="text-lg font-semibold text-white flex items-center gap-2">
                   <MapPin className="w-5 h-5 text-orange-500" />
-                  Point on Map
+                  {t("pointOnMap")}
                 </h4>
                 <p className="text-sm text-white/40 mt-1">
-                  Drag the marker or click to set your precise location for
-                  nearby help
+                  {t("pointOnMapDesc")}
                 </p>
               </div>
               {isEditing && (
@@ -563,7 +562,7 @@ export default function ProfilePage() {
                   className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-sm transition-all border border-white/10 flex items-center gap-2 self-start"
                 >
                   <Navigation className="w-4 h-4" />
-                  Find on Map
+                  {t("findOnMap")}
                 </button>
               )}
             </div>
@@ -580,7 +579,7 @@ export default function ProfilePage() {
                   {
                     lat: profileFormData.location.coordinates[1],
                     lng: profileFormData.location.coordinates[0],
-                    content: "Your Set Location",
+                    content: t("yourLocation"),
                   },
                 ]}
                 className="h-[350px] w-full"
@@ -588,7 +587,7 @@ export default function ProfilePage() {
             </div>
             {isEditing && (
               <p className="text-[10px] text-white/30 mt-3 text-center italic">
-                Coordinates:{" "}
+                {t("coordinates")}:{" "}
                 {profileFormData.location.coordinates[1].toFixed(6)},{" "}
                 {profileFormData.location.coordinates[0].toFixed(6)}
               </p>
