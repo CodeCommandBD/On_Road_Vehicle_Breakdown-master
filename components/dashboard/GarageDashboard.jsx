@@ -126,9 +126,8 @@ export default function GarageDashboard({ user }) {
 
   useEffect(() => {
     fetchData();
-    // Poll for updates every 30 seconds
-    const interval = setInterval(() => fetchData(false), 30000);
-    return () => clearInterval(interval);
+    // Removed auto-polling to prevent unnecessary page reloads
+    // Data will refresh on manual page navigation or refresh
   }, [user]);
 
   if (isLoading) {
