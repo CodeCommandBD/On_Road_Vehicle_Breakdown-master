@@ -84,13 +84,18 @@ export async function POST(request) {
       text,
     });
 
-    // Update last message in conversation
-    conversation.lastMessage = {
-      text,
-      sender: decoded.userId,
-      createdAt: new Date(),
-    };
-    await conversation.save();
+    // Update last message and increment unread count for recipient
+    const unreadKey = `unreadCount.${recipientId}`;
+    await Conversation.findByIdAndUpdate(conversation._id, {
+      $set: {
+        lastMessage: {
+          text,
+          sender: decoded.userId,
+          createdAt: new Date(),
+        },
+      },
+      $inc: { [unreadKey]: 1 },
+    });
 
     // Create Notification for the recipient
     try {

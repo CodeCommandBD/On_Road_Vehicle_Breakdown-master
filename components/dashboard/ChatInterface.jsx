@@ -15,9 +15,14 @@ import {
   PlusCircle,
   MessageSquare,
   X,
+  Check,
+  CheckCheck,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { formatDateTime } from "@/lib/utils/helpers";
+
+const NOTIFICATION_SOUND_URL =
+  "https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3";
 
 export default function ChatInterface({ userId }) {
   const [conversations, setConversations] = useState([]);
@@ -36,7 +41,14 @@ export default function ChatInterface({ userId }) {
   const [fetchingRecipients, setFetchingRecipients] = useState(false);
   const [recipientSearch, setRecipientSearch] = useState("");
   const messagesEndRef = useRef(null);
+  const messagesRef = useRef(messages);
+  const lastPollTimeRef = useRef(null);
   const searchParams = useSearchParams();
+
+  // Keep messagesRef in sync with messages state
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   useEffect(() => {
     fetchConversations();
@@ -162,30 +174,94 @@ export default function ChatInterface({ userId }) {
       const data = await res.json();
       if (data.success) {
         setMessages(data.messages);
+        lastPollTimeRef.current = data.serverTime;
       }
     } catch (error) {
       toast.error("Failed to load messages");
     }
   };
 
-  const pollNewMessages = async (id) => {
-    if (messages.length === 0) return;
+  const playNotificationSound = () => {
+    try {
+      const audio = new Audio(NOTIFICATION_SOUND_URL);
+      audio.volume = 0.5;
+      // Handle browser autoplay policies
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((error) => {
+          console.log(
+            "Audio playback blocked until user interaction:",
+            error.message
+          );
+        });
+      }
+    } catch (e) {
+      console.warn("Sound play initialization failed:", e);
+    }
+  };
 
-    // Get timestamp of last message
-    const lastMsgTime = messages[messages.length - 1].createdAt;
+  const pollNewMessages = async (id) => {
+    const currentMessages = messagesRef.current;
+    // Use lastPollTime instead of last message time for more accurate status updates
+    const since =
+      lastPollTimeRef.current ||
+      (currentMessages.length > 0
+        ? currentMessages[currentMessages.length - 1].createdAt
+        : null);
+    if (!since) return;
 
     try {
       const res = await fetch(
-        `/api/messages/${id}?since=${encodeURIComponent(lastMsgTime)}`
+        `/api/messages/${id}?since=${encodeURIComponent(since)}`
       );
       const data = await res.json();
-      if (data.success && data.messages.length > 0) {
-        // Only append messages that aren't already in the list (sanity check)
-        const newOnes = data.messages.filter(
-          (nm) => !messages.find((m) => m._id === nm._id)
-        );
-        if (newOnes.length > 0) {
-          setMessages((prev) => [...prev, ...newOnes]);
+      if (data.success && (data.messages.length > 0 || data.serverTime)) {
+        // Update last poll time even if no messages (to keep it fresh)
+        if (data.serverTime) lastPollTimeRef.current = data.serverTime;
+
+        if (data.messages.length > 0) {
+          setMessages((prev) => {
+            let updatedPrev = [...prev];
+            const newOnes = [];
+
+            data.messages.forEach((nm) => {
+              // 1. Try to find by real ID
+              let existingIndex = updatedPrev.findIndex(
+                (m) => m._id === nm._id
+              );
+
+              // 2. If not found, try to find an optimistic message that matches this one
+              if (existingIndex === -1) {
+                existingIndex = updatedPrev.findIndex(
+                  (m) =>
+                    m.isOptimistic &&
+                    m.text === nm.text &&
+                    m.sender === nm.sender
+                );
+              }
+
+              if (existingIndex !== -1) {
+                // Update or Replace (if it was optimistic)
+                updatedPrev[existingIndex] = nm;
+              } else {
+                // Truly new message (e.g. from other user)
+                newOnes.push(nm);
+              }
+            });
+
+            if (
+              newOnes.length === 0 &&
+              updatedPrev.every((m, i) => m === prev[i])
+            ) {
+              return prev;
+            }
+
+            // If any truly new messages were from someone else, play sound
+            const hasIncoming = newOnes.some((m) => m.sender !== userId);
+            if (hasIncoming) playNotificationSound();
+
+            return [...updatedPrev, ...newOnes];
+          });
         }
       }
     } catch (error) {
@@ -282,15 +358,30 @@ export default function ChatInterface({ userId }) {
             conversations.map((conv) => {
               const recipient = conv.participants.find((p) => p._id !== userId);
               const isActive = activeConversation?._id === conv._id;
+              const unreadCount = conv.unreadCount?.[userId] || 0;
+
               return (
                 <button
                   key={conv._id}
-                  onClick={() => setActiveConversation(conv)}
-                  className={`w-full p-4 flex items-center gap-4 transition-colors hover:bg-white/5 ${
+                  onClick={() => {
+                    setActiveConversation(conv);
+                    // Clear unread locally
+                    setConversations((prev) =>
+                      prev.map((c) =>
+                        c._id === conv._id
+                          ? {
+                              ...c,
+                              unreadCount: { ...c.unreadCount, [userId]: 0 },
+                            }
+                          : c
+                      )
+                    );
+                  }}
+                  className={`w-full p-4 flex items-center gap-4 transition-colors hover:bg-white/5 relative ${
                     isActive ? "bg-white/10" : ""
                   }`}
                 >
-                  <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-500 font-bold shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-500 font-bold shrink-0 relative">
                     {recipient?.avatar ? (
                       <img
                         src={recipient.avatar}
@@ -300,10 +391,17 @@ export default function ChatInterface({ userId }) {
                     ) : (
                       recipient?.name?.charAt(0) || <User />
                     )}
+
+                    {/* Online Status Dot - Placeholder */}
+                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#1E1E1E] rounded-full"></span>
                   </div>
                   <div className="flex-1 text-left min-w-0">
                     <div className="flex justify-between items-center mb-1">
-                      <p className="font-bold text-white truncate">
+                      <p
+                        className={`font-bold transition-colors ${
+                          isActive ? "text-orange-500" : "text-white"
+                        } truncate`}
+                      >
                         {recipient?.name || "Unknown"}
                       </p>
                       {conv.lastMessage && (
@@ -317,9 +415,22 @@ export default function ChatInterface({ userId }) {
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-white/60 truncate italic">
-                      {conv.lastMessage?.text || "Started a conversation"}
-                    </p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p
+                        className={`text-sm truncate italic flex-1 ${
+                          unreadCount > 0
+                            ? "text-white font-medium"
+                            : "text-white/40"
+                        }`}
+                      >
+                        {conv.lastMessage?.text || "Started a conversation"}
+                      </p>
+                      {unreadCount > 0 && (
+                        <span className="bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-5 text-center shadow-lg shadow-orange-500/20">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </button>
               );
@@ -380,16 +491,31 @@ export default function ChatInterface({ userId }) {
                       }`}
                     >
                       <p>{msg.text}</p>
-                      <p
-                        className={`text-[10px] mt-1 ${
-                          isMine ? "text-white/60" : "text-white/40"
-                        }`}
-                      >
-                        {new Date(msg.createdAt).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
+                      <div className="flex items-center justify-between gap-2 mt-1">
+                        <p
+                          className={`text-[10px] ${
+                            isMine ? "text-white/60" : "text-white/40"
+                          }`}
+                        >
+                          {new Date(msg.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                        {isMine && !msg.isOptimistic && (
+                          <div
+                            className={
+                              msg.isRead ? "text-blue-400" : "text-white/40"
+                            }
+                          >
+                            {msg.isRead ? (
+                              <CheckCheck size={12} />
+                            ) : (
+                              <Check size={12} />
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
