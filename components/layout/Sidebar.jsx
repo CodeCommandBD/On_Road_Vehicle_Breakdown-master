@@ -15,13 +15,16 @@ import {
   MessageSquare,
   Activity,
   BrainCircuit,
+  LifeBuoy,
+  TrendingUp,
+  Webhook,
 } from "lucide-react";
 import {
   selectSidebarOpen,
   setSidebarOpen,
   toggleSidebar,
 } from "@/store/slices/uiSlice";
-import { selectUserRole, logout } from "@/store/slices/authSlice";
+import { selectUserRole, selectUser, logout } from "@/store/slices/authSlice";
 import { cn } from "@/lib/utils/helpers";
 
 export default function Sidebar() {
@@ -31,10 +34,23 @@ export default function Sidebar() {
   const dispatch = useDispatch();
   const sidebarOpen = useSelector(selectSidebarOpen);
   const role = useSelector(selectUserRole) || "user";
+  const user = useSelector(selectUser);
 
   const sidebarLinks = {
     user: [
       { href: "/user/dashboard", label: t("dashboard"), icon: LayoutDashboard },
+      {
+        href: "/user/dashboard/analytics",
+        label: "Analytics",
+        icon: TrendingUp,
+        locked: user?.planTier !== "premium" && user?.planTier !== "enterprise",
+      },
+      {
+        href: "/user/dashboard/integrations",
+        label: "CRM / Integrations",
+        icon: Webhook,
+        locked: user?.planTier !== "premium" && user?.planTier !== "enterprise",
+      },
       {
         href: "/user/dashboard/bookings",
         label: t("bookings"),
@@ -42,14 +58,25 @@ export default function Sidebar() {
       },
       {
         href: "/user/dashboard/predictive-maintenance",
-        label: t("aiMaintenance") || "AI Diagnosis", // Fallback if translation missing
+        label: t("aiMaintenance") || "AI Diagnosis",
         icon: BrainCircuit,
+      },
+      {
+        href: "/user/dashboard/automation",
+        label: "Automation",
+        icon: Activity,
+        locked: role === "user" && true, // Placeholder logic, needs real subscription check
       },
       { href: "/user/dashboard/profile", label: t("profile"), icon: User },
       {
         href: "/user/dashboard/messages",
         label: t("messages"),
         icon: MessageSquare,
+      },
+      {
+        href: "/user/dashboard/support",
+        label: t("support") || "Help & Support",
+        icon: LifeBuoy,
       },
       {
         href: "/user/dashboard/settings",
@@ -159,26 +186,43 @@ export default function Sidebar() {
                 const isActive = pathname === link.href;
                 return (
                   <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all group",
-                        isActive
-                          ? "bg-orange-500/10 text-orange-500 shadow-[0_4px_12px_rgba(249,115,22,0.1)]"
-                          : "text-white/60 hover:bg-white/5 hover:text-white"
-                      )}
-                      onClick={() => dispatch(setSidebarOpen(false))}
-                    >
-                      <link.icon
+                    {link.locked ? (
+                      <div
                         className={cn(
-                          "w-5 h-5",
-                          isActive
-                            ? "text-orange-500"
-                            : "text-white/40 group-hover:text-white transition-colors"
+                          "flex items-center justify-between px-3 py-2.5 rounded-lg font-medium text-white/40 cursor-not-allowed group"
                         )}
-                      />
-                      {link.label}
-                    </Link>
+                        title="Upgrade to unlock"
+                      >
+                        <div className="flex items-center gap-3">
+                          <link.icon className="w-5 h-5" />
+                          {link.label}
+                        </div>
+                        <span className="text-xs bg-white/10 px-1.5 py-0.5 rounded">
+                          🔒
+                        </span>
+                      </div>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        className={cn(
+                          "flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all group",
+                          isActive
+                            ? "bg-orange-500/10 text-orange-500 shadow-[0_4px_12px_rgba(249,115,22,0.1)]"
+                            : "text-white/60 hover:bg-white/5 hover:text-white"
+                        )}
+                        onClick={() => dispatch(setSidebarOpen(false))}
+                      >
+                        <link.icon
+                          className={cn(
+                            "w-5 h-5",
+                            isActive
+                              ? "text-orange-500"
+                              : "text-white/40 group-hover:text-white transition-colors"
+                          )}
+                        />
+                        {link.label}
+                      </Link>
+                    )}
                   </li>
                 );
               })}

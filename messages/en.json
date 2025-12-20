@@ -30,7 +30,8 @@
     "new": "New",
     "myProfile": "My Profile",
     "aiMaintenance": "AI Mechanic",
-    "member": "Member"
+    "member": "Member",
+    "support": "Help & Support"
   },
   "Garage": {
     "addService": "Add Service",

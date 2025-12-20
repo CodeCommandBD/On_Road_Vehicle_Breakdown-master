@@ -82,12 +82,30 @@ export default function DashboardHeader() {
       }
     };
 
+    const fetchSubscription = async () => {
+      try {
+        const res = await axios.get("/api/subscriptions");
+        if (res.data.success && res.data.data.current) {
+          const tier = res.data.data.current.planId?.tier;
+          // Store active plan tier in user state or local state
+          dispatch(updateUser({ planTier: tier }));
+        }
+      } catch (err) {
+        console.error("Failed to fetch subscription:", err);
+      }
+    };
+
     fetchNotifications();
-    if (user?.role !== "admin") fetchPoints();
+    if (user?.role !== "admin") {
+      fetchPoints();
+      fetchSubscription();
+    }
 
     const interval = setInterval(() => {
       fetchNotifications();
-      if (user?.role !== "admin") fetchPoints();
+      if (user?.role !== "admin") {
+        fetchPoints();
+      }
     }, 30000); // Polling every 30s
     return () => clearInterval(interval);
   }, [dispatch, user?.role]);
@@ -257,8 +275,13 @@ export default function DashboardHeader() {
                 <p className="text-sm font-bold text-white group-hover:text-orange-500 transition-colors">
                   {user?.name || dashT("welcome", { name: "Guest" })}
                 </p>
-                <p className="text-[10px] text-white/40 uppercase tracking-widest leading-none font-bold">
+                <p className="text-[10px] text-white/40 uppercase tracking-widest leading-none font-bold flex items-center justify-end gap-1">
                   {user?.role || navT("member")}
+                  {user?.planTier && user.planTier !== "free" && (
+                    <span className="bg-yellow-400 text-gray-900 px-1 rounded-[2px] text-[8px]">
+                      PRO
+                    </span>
+                  )}
                 </p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 p-[1px]">
