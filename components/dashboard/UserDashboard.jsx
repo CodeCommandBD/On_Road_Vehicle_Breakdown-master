@@ -9,8 +9,11 @@ import SubscriptionCard from "@/components/dashboard/SubscriptionCard";
 import { Loader2, Siren, Phone, AlertCircle, X } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useDispatch } from "react-redux";
+import { updateUser } from "@/store/slices/authSlice";
 
 export default function UserDashboard({ user }) {
+  const dispatch = useDispatch();
   const [bookings, setBookings] = useState([]);
   const [activeSOS, setActiveSOS] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,10 +50,29 @@ export default function UserDashboard({ user }) {
             0
           );
 
+          // Fetch Points separately for accuracy
+          let realPoints = 0;
+          try {
+            const pointsRes = await axios.get("/api/user/points");
+            if (pointsRes.data.success) {
+              realPoints = pointsRes.data.rewardPoints;
+              // Sync to global Redux state so header updates instantly
+              dispatch(
+                updateUser({
+                  rewardPoints: realPoints,
+                  level: pointsRes.data.level,
+                })
+              );
+            }
+          } catch (pErr) {
+            console.warn("Points fetch failed, using fallback:", pErr);
+            realPoints = Math.floor(totalSpent / 100);
+          }
+
           setStats({
             totalBookings,
             totalSpent,
-            points: Math.floor(totalSpent / 100), // 1 point per 100 BDT spent
+            points: realPoints,
             activeRequests,
           });
         }

@@ -5,6 +5,8 @@ import Booking from "@/lib/db/models/Booking";
 import Garage from "@/lib/db/models/Garage";
 import Review from "@/lib/db/models/Review";
 import Notification from "@/lib/db/models/Notification";
+import PointsRecord from "@/lib/db/models/PointsRecord";
+import User from "@/lib/db/models/User";
 import { verifyToken } from "@/lib/utils/auth";
 
 export async function GET(request, { params }) {
@@ -107,6 +109,35 @@ export async function PATCH(request, { params }) {
       booking.status = status;
       if (status === "completed") {
         booking.completedAt = new Date();
+
+        // Award points to user
+        try {
+          const pointsAwarded = 50;
+          await User.findByIdAndUpdate(booking.user, {
+            $inc: { rewardPoints: pointsAwarded },
+          });
+
+          await PointsRecord.create({
+            user: booking.user,
+            points: pointsAwarded,
+            type: "earn",
+            reason: "Completed a service booking",
+            metadata: { bookingId: booking._id },
+          });
+
+          await Notification.create({
+            recipient: booking.user,
+            type: "system_alert",
+            title: "🏆 Points Earned!",
+            message: `Congratulations! You earned ${pointsAwarded} points for completing your service.`,
+            link: `/user/dashboard/bookings/${booking._id}`,
+          });
+        } catch (pointsErr) {
+          console.error(
+            "Failed to award points on booking completion:",
+            pointsErr
+          );
+        }
       }
     }
     if (actualCost !== undefined) booking.actualCost = actualCost;

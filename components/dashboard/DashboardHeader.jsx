@@ -8,6 +8,7 @@ import {
   LogOut,
   Settings,
   Breadcrumb,
+  Award,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -17,7 +18,7 @@ import {
   selectUnreadNotificationsCount,
   setUnreadNotificationsCount,
 } from "@/store/slices/uiSlice";
-import { selectUser, logout } from "@/store/slices/authSlice";
+import { selectUser, logout, updateUser } from "@/store/slices/authSlice";
 import BreadcrumbNav from "./Breadcrumb";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
@@ -58,10 +59,31 @@ export default function DashboardHeader() {
       }
     };
 
+    const fetchPoints = async () => {
+      try {
+        const res = await axios.get("/api/user/points");
+        if (res.data.success) {
+          dispatch(
+            updateUser({
+              rewardPoints: res.data.rewardPoints,
+              level: res.data.level,
+            })
+          );
+        }
+      } catch (err) {
+        console.error("Failed to fetch points in header:", err);
+      }
+    };
+
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000); // Polling every 30s
+    if (user?.role !== "admin") fetchPoints();
+
+    const interval = setInterval(() => {
+      fetchNotifications();
+      if (user?.role !== "admin") fetchPoints();
+    }, 30000); // Polling every 30s
     return () => clearInterval(interval);
-  }, [dispatch]);
+  }, [dispatch, user?.role]);
 
   // Click outside handlers
   useEffect(() => {
@@ -128,6 +150,19 @@ export default function DashboardHeader() {
 
         {/* Action icons */}
         <div className="flex items-center gap-2">
+          {/* Reward Points - Visible on tablet and desktop */}
+          {user?.role !== "admin" && (
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-xl mr-2 group cursor-help transition-all hover:border-orange-500/40">
+              <Award className="w-4 h-4 text-orange-500 group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-bold text-white">
+                {user?.rewardPoints || 0}
+              </span>
+              <span className="text-[10px] text-white/40 uppercase font-bold tracking-tighter">
+                Pts
+              </span>
+            </div>
+          )}
+
           {/* Notifications Dropdown */}
           <div className="relative" ref={notifyRef}>
             <button
