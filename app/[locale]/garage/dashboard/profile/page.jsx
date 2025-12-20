@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useTranslations } from "next-intl";
+import axios from "axios";
 
 // Dynamically import MapComponent to avoid SSR issues
 const MapComponent = dynamic(() => import("@/components/maps/MapComponent"), {
