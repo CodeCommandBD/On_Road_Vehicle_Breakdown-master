@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useTranslations } from "next-intl";
+import axios from "axios";
 
 const EQUIPMENT_SUGGESTIONS = [
   "Computer Diagnostic (OBD-II)",
@@ -260,8 +261,8 @@ export default function GarageVerificationPage() {
           </h3>
           <p className="text-xs text-white/60">
             {formData.verification.status === "verified"
-              ? "Your garage is officially verified. User trust is at maximum."
-              : "Our team will review your submitted documents within 48 hours."}
+              ? t("verifiedDesc")
+              : t("pendingDesc")}
           </p>
         </div>
       </div>
@@ -310,12 +311,12 @@ export default function GarageVerificationPage() {
                   )
                 }
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50"
-                placeholder="Paste image URL link"
+                placeholder={t("imgUrlPlaceholder")}
               />
             </div>
             <div className="space-y-2">
               <label className="text-white/80 text-sm font-medium">
-                NID Number (Owner)
+                {t("nid")}
               </label>
               <input
                 type="text"
@@ -324,12 +325,12 @@ export default function GarageVerificationPage() {
                   handleVerificationChange("nid", "number", e.target.value)
                 }
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50"
-                placeholder="Enter NID no."
+                placeholder={t("nidPlaceholder")}
               />
             </div>
             <div className="space-y-2">
               <label className="text-white/80 text-sm font-medium">
-                NID Front Side Image URL
+                {t("nidImg")}
               </label>
               <input
                 type="text"
@@ -338,14 +339,14 @@ export default function GarageVerificationPage() {
                   handleVerificationChange("nid", "imageUrl", e.target.value)
                 }
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50"
-                placeholder="Paste NID image URL"
+                placeholder={t("imgUrlPlaceholder")}
               />
             </div>
           </div>
 
           <div className="space-y-2">
             <label className="text-white/80 text-sm font-medium">
-              Owner's Profile Photo URL
+              {t("ownerPhoto")}
             </label>
             <input
               type="text"
@@ -354,7 +355,7 @@ export default function GarageVerificationPage() {
                 handleVerificationChange("ownerPhoto", null, e.target.value)
               }
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50"
-              placeholder="Paste professional photo link"
+              placeholder={t("photoPlaceholder")}
             />
           </div>
         </section>
@@ -365,15 +366,13 @@ export default function GarageVerificationPage() {
             <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-500">
               <Wrench size={20} />
             </div>
-            <h2 className="text-xl font-bold text-white">
-              Professional Details
-            </h2>
+            <h2 className="text-xl font-bold text-white">{t("profDetails")}</h2>
           </div>
 
           <div className="grid md:grid-cols-4 gap-6 mb-6">
             <div className="md:col-span-1 space-y-2">
               <label className="text-white/80 text-sm font-medium">
-                Experience (Years)
+                {t("expYears")}
               </label>
               <input
                 type="number"
@@ -387,7 +386,7 @@ export default function GarageVerificationPage() {
             </div>
             <div className="md:col-span-3 space-y-2">
               <label className="text-white/80 text-sm font-medium">
-                Professional Summary
+                {t("profSummary")}
               </label>
               <input
                 type="text"
@@ -396,16 +395,16 @@ export default function GarageVerificationPage() {
                   handleExperienceChange("description", e.target.value)
                 }
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50"
-                placeholder="Engine Specialist, AC Expert, etc."
+                placeholder={t("summaryPlaceholder")}
               />
             </div>
           </div>
 
           <div className="space-y-2">
             <label className="block text-white/80 text-sm font-medium flex items-center justify-between">
-              Specialized Equipments
+              {t("specializedEquip")}
               <span className="text-[10px] text-white/40 font-normal">
-                Press Enter to add
+                {t("pressEnter")}
               </span>
             </label>
             <div className="space-y-4">
@@ -430,12 +429,12 @@ export default function GarageVerificationPage() {
                 type="text"
                 onKeyDown={handleEquipmentKeyDown}
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50 mb-4"
-                placeholder="Ex: Computer Diagnostic, Hydraulic Lift..."
+                placeholder={t("summaryPlaceholder")}
               />
 
               <div className="space-y-2">
                 <p className="text-[10px] text-white/40 uppercase font-bold tracking-wider">
-                  Quick Add Suggestions
+                  {t("quickAdd")}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {EQUIPMENT_SUGGESTIONS.map((sug) => (
@@ -465,14 +464,14 @@ export default function GarageVerificationPage() {
               <User size={20} />
             </div>
             <h2 className="text-xl font-bold text-white">
-              Mechanic Verification
+              {t("mechanicVerif")}
             </h2>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6 mb-6">
             <div className="space-y-2">
               <label className="text-white/80 text-sm font-medium">
-                Lead Mechanic Name
+                {t("leadName")}
               </label>
               <input
                 type="text"
@@ -481,12 +480,12 @@ export default function GarageVerificationPage() {
                   handleMechanicChange("leadName", e.target.value)
                 }
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50"
-                placeholder="Full Name of Lead Mechanic"
+                placeholder={t("leadNamePlaceholder")}
               />
             </div>
             <div className="space-y-2">
               <label className="text-white/80 text-sm font-medium">
-                Mechanic Experience (Years)
+                {t("mechExp")}
               </label>
               <input
                 type="number"
@@ -498,7 +497,7 @@ export default function GarageVerificationPage() {
                   )
                 }
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50"
-                placeholder="Years of professional work"
+                placeholder={t("mechExpPlaceholder")}
               />
             </div>
           </div>
@@ -507,14 +506,14 @@ export default function GarageVerificationPage() {
             <div className="flex items-center justify-between">
               <label className="text-white/80 text-sm font-medium flex items-center gap-2">
                 <Award size={16} className="text-orange-500" />
-                Certifications & Awards
+                {t("certs")}
               </label>
               <button
                 type="button"
                 onClick={addCertification}
                 className="text-xs text-blue-500 hover:text-blue-400 font-medium"
               >
-                + Add Another
+                + {t("addAnother")}
               </button>
             </div>
 
@@ -525,7 +524,7 @@ export default function GarageVerificationPage() {
               >
                 <div className="space-y-2">
                   <label className="text-white/40 text-[10px] uppercase font-bold tracking-wider">
-                    Certificate Title
+                    {t("certTitle")}
                   </label>
                   <input
                     type="text"
@@ -534,12 +533,12 @@ export default function GarageVerificationPage() {
                       updateCertification(index, "title", e.target.value)
                     }
                     className="w-full bg-transparent border-b border-white/10 py-1 text-white text-sm focus:outline-none focus:border-orange-500"
-                    placeholder="e.g. Master Engine Specialist"
+                    placeholder={t("certPlaceholder")}
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-white/40 text-[10px] uppercase font-bold tracking-wider">
-                    Image URL
+                    {t("imgUrl")}
                   </label>
                   <input
                     type="text"
@@ -548,7 +547,7 @@ export default function GarageVerificationPage() {
                       updateCertification(index, "imageUrl", e.target.value)
                     }
                     className="w-full bg-transparent border-b border-white/10 py-1 text-white text-sm focus:outline-none focus:border-orange-500"
-                    placeholder="Paste image link"
+                    placeholder={t("imgUrlPlaceholder")}
                   />
                 </div>
               </div>
@@ -562,13 +561,15 @@ export default function GarageVerificationPage() {
             <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center text-orange-500">
               <ImageIcon size={20} />
             </div>
-            <h2 className="text-xl font-bold text-white">Garage Photos</h2>
+            <h2 className="text-xl font-bold text-white">
+              {t("garagePhotos")}
+            </h2>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-white/80 text-sm font-medium">
-                Front View Image URL
+                {t("frontView")}
               </label>
               <input
                 type="text"
@@ -583,12 +584,12 @@ export default function GarageVerificationPage() {
                   }))
                 }
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white"
-                placeholder="Paste sign board photo link"
+                placeholder={t("frontPlaceholder")}
               />
             </div>
             <div className="space-y-2">
               <label className="text-white/80 text-sm font-medium">
-                Indoor Workshop URL
+                {t("indoorView")}
               </label>
               <input
                 type="text"
@@ -603,7 +604,7 @@ export default function GarageVerificationPage() {
                   }))
                 }
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white"
-                placeholder="Paste workshop photo link"
+                placeholder={t("indoorPlaceholder")}
               />
             </div>
           </div>
