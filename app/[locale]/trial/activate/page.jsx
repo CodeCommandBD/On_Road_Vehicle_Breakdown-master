@@ -58,7 +58,7 @@ export default function TrialActivatePage() {
             Start Your Free Trial
           </h1>
           <p className="text-xl text-gray-300">
-            Experience our Basic plan features for 7 days, absolutely free!
+            Experience our Standard plan features for 7 days, absolutely free!
           </p>
         </div>
 
@@ -87,7 +87,7 @@ export default function TrialActivatePage() {
               <div>
                 <h3 className="text-white font-semibold mb-1">7-Day Access</h3>
                 <p className="text-gray-400 text-sm">
-                  Full access to basic features for one week
+                  Full access to standard features for one week
                 </p>
               </div>
             </div>

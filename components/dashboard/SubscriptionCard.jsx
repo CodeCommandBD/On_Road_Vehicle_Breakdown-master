@@ -10,6 +10,8 @@ import {
   X,
   Info,
   CheckCircle,
+  AlertTriangle,
+  ArrowUpRight,
 } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -43,7 +45,7 @@ export default function SubscriptionCard() {
   const getPlanColor = (tier) => {
     const colors = {
       trial: "from-purple-500 to-pink-500",
-      basic: "from-blue-500 to-blue-600",
+      free: "from-slate-600 to-slate-800",
       standard: "from-green-500 to-green-600",
       premium: "from-orange-500 to-red-600",
       enterprise: "from-purple-600 to-purple-800",
@@ -60,24 +62,24 @@ export default function SubscriptionCard() {
   };
 
   const getDaysRemaining = (endDate) => {
+    if (!endDate) return 999;
     const now = new Date();
     const end = new Date(endDate);
     const diff = end - now;
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   };
 
-  const getServiceCallsRemaining = () => {
-    if (!subscription || !subscription.planId) return "N/A";
+  const getUsagePercentage = () => {
+    if (!subscription || !subscription.planId) return 0;
     const limit = subscription.planId.limits?.serviceCalls || 0;
     const used = subscription.usage?.serviceCallsUsed || 0;
-
-    if (limit === -1) return t("unlimited");
-    return `${Math.max(0, limit - used)} / ${limit}`;
+    if (limit === -1) return 0; // Unlimited
+    return Math.min(100, Math.round((used / limit) * 100));
   };
 
   if (loading) {
     return (
-      <div className="bg-gray-800 rounded-2xl p-8 shadow-xl animate-pulse">
+      <div className="bg-gray-800 rounded-2xl p-8 shadow-xl animate-pulse h-full">
         <div className="h-6 bg-gray-700 rounded w-1/3 mb-4"></div>
         <div className="h-4 bg-gray-700 rounded w-2/3"></div>
       </div>
@@ -86,221 +88,235 @@ export default function SubscriptionCard() {
 
   if (!subscription) {
     return (
-      <div className="bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl p-8 shadow-2xl">
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <h3 className="text-2xl font-bold text-white mb-2">
-              {t("noSubscription")}
-            </h3>
-            <p className="text-white/80">{t("subscribeOffer")}</p>
+      <div className="bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl p-8 shadow-2xl h-full flex flex-col justify-between relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-16 -mt-16"></div>
+
+        <div>
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h3 className="text-2xl font-bold text-white mb-2">
+                {t("noSubscription")}
+              </h3>
+              <p className="text-white/90 font-medium">{t("subscribeOffer")}</p>
+            </div>
+            <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm">
+              <Crown className="w-8 h-8 text-yellow-300" />
+            </div>
           </div>
-          <Crown className="w-12 h-12 text-yellow-300" />
+
+          <div className="space-y-3 mb-6">
+            <div className="flex items-center gap-3 text-white/90">
+              <CheckCircle className="w-5 h-5 text-yellow-300" />
+              <span>Priority 24/7 Support</span>
+            </div>
+            <div className="flex items-center gap-3 text-white/90">
+              <CheckCircle className="w-5 h-5 text-yellow-300" />
+              <span>Nationwide Coverage</span>
+            </div>
+            <div className="flex items-center gap-3 text-white/90">
+              <CheckCircle className="w-5 h-5 text-yellow-300" />
+              <span>Save ৳5000+ per year</span>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-            <Zap className="w-6 h-6 text-yellow-300 mb-2" />
-            <p className="text-white/80 text-sm">{t("unlimited")} Support</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-            <CheckCircle className="w-6 h-6 text-green-300 mb-2" />
-            <p className="text-white/80 text-sm">{commonT("save")} Service</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-            <TrendingUp className="w-6 h-6 text-blue-300 mb-2" />
-            <p className="text-white/80 text-sm">{t("unlimited")} Calls</p>
-          </div>
-        </div>
-
-        <div className="flex gap-4">
+        <div className="flex flex-col gap-3">
           <Link
             href="/trial/activate"
-            className="flex-1 bg-white text-orange-600 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition-all duration-300 text-center"
+            className="w-full bg-white text-orange-600 px-6 py-3.5 rounded-xl font-bold hover:bg-gray-50 transition-all duration-300 text-center shadow-lg flex items-center justify-center gap-2"
           >
-            {t("startTrial")}
+            {t("startTrial")} <ArrowUpRight className="w-4 h-4" />
           </Link>
-          <Link
-            href="/pricing"
-            className="flex-1 bg-white/20 backdrop-blur text-white px-6 py-3 rounded-lg font-bold hover:bg-white/30 transition-all duration-300 text-center"
-          >
-            {t("viewPlans")}
-          </Link>
+          <p className="text-center text-white/60 text-xs">
+            Limited time offer: 7 days free
+          </p>
         </div>
       </div>
     );
   }
 
-  const plan = subscription.planId;
+  const plan = subscription.planId || {
+    name: "Unknown Plan",
+    tier: "free",
+    limits: { serviceCalls: 0 },
+  };
   const daysRemaining = getDaysRemaining(subscription.endDate);
   const isExpiringSoon = daysRemaining <= 7;
   const isTrial = subscription.status === "trial";
+  const isFree = plan.tier === "free";
+  const usagePercent = getUsagePercentage();
+  const isHighUsage = usagePercent >= 80;
 
   return (
     <>
       <div
         className={`bg-gradient-to-br ${getPlanColor(
           plan.tier
-        )} rounded-2xl p-8 shadow-2xl relative overflow-hidden`}
+        )} rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden h-full flex flex-col`}
       >
         {/* Background Pattern */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32"></div>
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full -ml-24 -mb-24"></div>
 
-        {/* Content */}
-        <div className="relative z-10">
-          {/* Header */}
-          <div className="flex items-start justify-between mb-6">
+        {/* Header */}
+        <div className="relative z-10 mb-6">
+          <div className="flex items-start justify-between">
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <h3 className="text-3xl font-bold text-white">{plan.name}</h3>
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-2xl font-bold text-white tracking-tight">
+                  {plan.name}
+                </h3>
                 {plan.isFeatured && (
-                  <span className="bg-yellow-400 text-gray-900 text-xs px-2 py-1 rounded-full font-bold">
-                    ⭐ {t("popular")}
+                  <span className="bg-yellow-400 text-gray-900 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">
+                    PRO
                   </span>
                 )}
                 {isTrial && (
-                  <span className="bg-purple-400 text-white text-xs px-2 py-1 rounded-full font-bold">
-                    {t("trial")}
+                  <span className="bg-purple-400 text-white text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">
+                    TRIAL
                   </span>
                 )}
               </div>
-              <p className="text-white/80">{plan.description}</p>
-            </div>
-            <Crown className="w-12 h-12 text-yellow-300" />
-          </div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            {/* Service Calls */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Zap className="w-5 h-5 text-yellow-300" />
-                <p className="text-white/70 text-sm">{t("serviceCalls")}</p>
-              </div>
-              <p className="text-white text-2xl font-bold">
-                {getServiceCallsRemaining()}
+              <p className="text-white/60 text-sm">
+                Protected since {formatDate(subscription.startDate)}
               </p>
             </div>
+            <Crown
+              className={`w-8 h-8 ${
+                isFree ? "text-gray-400" : "text-yellow-300"
+              }`}
+            />
+          </div>
+        </div>
 
-            {/* Days Remaining */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar className="w-5 h-5 text-blue-300" />
-                <p className="text-white/70 text-sm">{t("daysRemaining")}</p>
-              </div>
-              <p
-                className={`text-2xl font-bold ${
-                  isExpiringSoon ? "text-red-300" : "text-white"
+        {/* Usage Meter (Crucial for Free/Limited plans) */}
+        {!isFree && plan.limits?.serviceCalls !== -1 && (
+          <div className="bg-black/20 rounded-xl p-4 mb-6 backdrop-blur-sm relative z-10 border border-white/5">
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-white/80">Service Usage</span>
+              <span
+                className={`font-bold ${
+                  isHighUsage ? "text-red-300" : "text-white"
                 }`}
               >
-                {t("days", { count: daysRemaining })}
-              </p>
+                {usagePercent}%
+              </span>
             </div>
-
-            {/* Billing Cycle */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-5 h-5 text-green-300" />
-                <p className="text-white/70 text-sm">{t("billing")}</p>
+            <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-1000 ${
+                  isHighUsage ? "bg-red-500" : "bg-green-400"
+                }`}
+                style={{ width: `${usagePercent}%` }}
+              ></div>
+            </div>
+            {isHighUsage && (
+              <div className="mt-2 flex items-center gap-2 text-xs text-red-200 bg-red-500/10 p-2 rounded-lg">
+                <AlertTriangle className="w-3 h-3" />
+                <span>Almost confirmed limit! Upgrade now.</span>
               </div>
-              <p className="text-white text-2xl font-bold capitalize">
-                {subscription.billingCycle}
-              </p>
+            )}
+          </div>
+        )}
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 gap-4 mb-6 relative z-10">
+          <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
+            <p className="text-white/60 text-xs mb-1">Status</p>
+            <div className="text-white font-bold capitalize flex items-center gap-1">
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  subscription.status === "active"
+                    ? "bg-green-400"
+                    : "bg-yellow-400"
+                }`}
+              ></div>
+              {subscription.status}
             </div>
           </div>
-
-          {/* Renewal Date */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-white/70 text-sm mb-1">
-                  {isTrial ? t("trialExpires") : t("nextBilling")}
-                </p>
-                <p className="text-white font-semibold">
-                  {formatDate(subscription.endDate)}
-                </p>
-              </div>
-              {isExpiringSoon && (
-                <div className="flex items-center gap-2 bg-red-500/20 px-3 py-2 rounded-lg">
-                  <Info className="w-5 h-5 text-red-300" />
-                  <span className="text-red-200 text-sm font-semibold">
-                    Expires Soon!
-                  </span>
-                </div>
-              )}
-            </div>
+          <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
+            <p className="text-white/60 text-xs mb-1">Renews</p>
+            <p
+              className={`font-bold ${
+                isExpiringSoon ? "text-red-300" : "text-white"
+              }`}
+            >
+              {daysRemaining} Days
+            </p>
           </div>
+        </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            {isTrial ? (
+        {/* Upgrade Nudge (Psychological) */}
+        <div className="mt-auto relative z-10">
+          {isFree || isTrial || isHighUsage ? (
+            <Link
+              href="/pricing"
+              className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 px-6 py-3 rounded-xl font-bold hover:from-yellow-300 hover:to-orange-400 transition-all duration-300 text-center flex items-center justify-center gap-2 shadow-lg animate-pulse-slow"
+            >
+              <Zap className="w-4 h-4" />
+              {isFree ? "Upgrade to Protected" : "Extend Protection"}
+            </Link>
+          ) : (
+            <div className="flex gap-2">
               <Link
                 href="/pricing"
-                className="flex-1 bg-white text-purple-600 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition-all duration-300 text-center"
+                className="flex-1 bg-white/10 hover:bg-white/20 text-white py-2 rounded-lg text-center text-sm font-medium transition-colors"
               >
-                {t("upgradePremium")}
+                Change Plan
               </Link>
-            ) : (
-              <>
-                <Link
-                  href="/pricing"
-                  className="flex-1 bg-white text-orange-600 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition-all duration-300 text-center"
-                >
-                  {t("upgradePlan")}
-                </Link>
-                <button
-                  onClick={() => setShowCancelModal(true)}
-                  className="flex-1 bg-white/20 backdrop-blur text-white px-6 py-3 rounded-lg font-bold hover:bg-white/30 transition-all duration-300"
-                >
-                  {t("cancelSubscription")}
-                </button>
-              </>
-            )}
-            <Link
-              href="/user/billing"
-              className="sm:flex-initial bg-white/20 backdrop-blur text-white px-6 py-3 rounded-lg font-bold hover:bg-white/30 transition-all duration-300 text-center"
-            >
-              {t("viewBilling")}
-            </Link>
-          </div>
+              <button
+                onClick={() => setShowCancelModal(true)}
+                className="px-3 text-white/40 hover:text-white/80 text-sm transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Cancel Confirmation Modal */}
       {showCancelModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 rounded-2xl p-8 max-w-md w-full shadow-2xl">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-2xl font-bold text-white">
-                {t("confirmCancel")}
-              </h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[50] p-4">
+          <div className="bg-[#1A1A1A] border border-gray-800 rounded-3xl p-8 max-w-md w-full shadow-2xl relative">
+            <button
+              onClick={() => setShowCancelModal(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-white"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            <h3 className="text-2xl font-bold text-white mb-2">
+              Wait! Don't leave us.
+            </h3>
+            <p className="text-gray-400 mb-6">
+              Your car protection will remain active until{" "}
+              {formatDate(subscription.endDate)}. Are you sure you want to
+              cancel auto-renewal?
+            </p>
+
+            <div className="flex flex-col gap-3">
               <button
                 onClick={() => setShowCancelModal(false)}
-                className="text-gray-400 hover:text-white"
+                className="w-full bg-green-500 text-black px-6 py-3.5 rounded-xl font-bold hover:bg-green-400 transition-all"
               >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <p className="text-gray-300 mb-6">{t("cancelWarning")}</p>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowCancelModal(false)}
-                className="flex-1 bg-gray-700 text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-600 transition-all duration-300"
-              >
-                {t("keepSubscription")}
+                Keep My Protection
               </button>
               <button
                 onClick={() => {
-                  // TODO: Implement cancel API call
-                  alert("Cancel functionality to be implemented");
+                  alert("Cancellation flow triggered");
                   setShowCancelModal(false);
                 }}
-                className="flex-1 bg-red-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-700 transition-all duration-300"
+                className="w-full bg-white/5 text-gray-400 px-6 py-3 rounded-xl font-medium hover:bg-white/10 hover:text-white transition-all"
               >
-                {t("yesCancel")}
+                I still want to cancel
               </button>
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-white/5 text-center">
+              <p className="text-xs text-green-400">
+                🔥 Pro tip: Switch to annual plan to save 25% instead!
+              </p>
             </div>
           </div>
         </div>

@@ -5,8 +5,15 @@ import Garage from "@/lib/db/models/Garage";
 import Notification from "@/lib/db/models/Notification";
 import User from "@/lib/db/models/User";
 import PointsRecord from "@/lib/db/models/PointsRecord";
+import Subscription from "@/lib/db/models/Subscription";
+import Plan from "@/lib/db/models/Plan";
 import { verifyToken } from "@/lib/utils/auth";
-import { sendSOSEmail, sendAssignmentEmail } from "@/lib/utils/email";
+import {
+  sendSOSEmail,
+  sendAssignmentEmail,
+  sendQuotaWarningEmail,
+  sendWelcomeEmail,
+} from "@/lib/utils/email";
 import mongoose from "mongoose";
 
 export async function POST(request) {
@@ -34,6 +41,58 @@ export async function POST(request) {
       );
     }
 
+    // --- SUBSCRIPTION & LIMIT CHECK ---
+    const subscription = await Subscription.findOne({
+      userId: decoded.userId,
+      status: { $in: ["active", "trial"] },
+    }).populate("planId");
+
+    let hasAccess = false;
+    let plan = null;
+
+    // Logic: If no sub, allow basic access (pay-per-use or free tier logic) OR block?
+    // Project Requirement: "Free Plan: Core features with strict limits"
+    // Assuming if no active sub, they might be on a default free tier or we should block.
+    // For safety, if no sub found, we fetch the 'free' plan and check usage against a default tracking or create a free sub.
+    // To simplify: If no active sub found, assume 'Free' limits if user exists, else block.
+    // BUT, usually 'Free' is an active subscription of tier 'free'.
+    // If NO sub document at all, create one for 'free' tier (auto-onboarding).
+
+    if (!subscription) {
+      // Attempt to find or create free plan subscription auto-assignment logic could go here
+      // For now, if no subscription, we might default to allow 1 emergency call or block.
+      // Let's assume user must have a plan. If not, block with "Please upgrade".
+      // However, to reduce friction, let's look for a 'free' plan and see if we can assign it?
+      // Better: Just check if user exists. If yes, check if they have a 'free' sub.
+      // If totally null, block.
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "No active coverage. Please activate the Free Plan to continue.",
+          action: "/pricing", // Frontend redirect
+        },
+        { status: 403 }
+      );
+    }
+
+    plan = subscription.planId;
+    const limit = plan.limits?.serviceCalls ?? 1; // Default to 1 if missing
+    const used = subscription.usage?.serviceCallsUsed || 0;
+
+    // Check Limit
+    if (limit !== -1 && used >= limit) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `You have reached your limit of ${limit} requests. Upgrade for unlimited access!`,
+          action: "/pricing",
+        },
+        { status: 403 }
+      );
+    }
+    // ----------------------------------
+
     const sosAlert = await SOS.create({
       user: decoded.userId,
       location: {
@@ -45,6 +104,29 @@ export async function POST(request) {
       vehicleType: vehicleType || "other",
       status: "pending",
     });
+
+    // --- INCREMENT USAGE & TRIGGER WARNINGS ---
+    try {
+      subscription.usage.serviceCallsUsed = used + 1;
+      subscription.usage.lastServiceCallDate = new Date();
+      await subscription.save();
+
+      // Psychological Trigger: Quota Warning
+      // If limited plan (not -1) and usage is high (>= 50% or <= 1 left)
+      if (limit !== -1) {
+        const remaining = limit - (used + 1);
+        if (remaining === 1 || (used + 1) / limit >= 0.5) {
+          // Send warning email
+          const userObj = await User.findById(decoded.userId);
+          if (userObj?.email) {
+            sendQuotaWarningEmail(userObj.email, userObj.name, remaining);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error updating usage:", err);
+    }
+    // ------------------------------------------
 
     // Create notifications and send emails
     try {
@@ -416,6 +498,7 @@ export async function PATCH(request) {
       success: true,
       message: `SOS alert updated to ${sos.status}`,
       data: sos,
+      action: status === "cancelled" ? "cancelled" : undefined,
     });
   } catch (error) {
     console.error("SOS PATCH error:", error);

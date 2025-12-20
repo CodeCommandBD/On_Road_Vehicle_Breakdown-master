@@ -165,37 +165,6 @@ export default function SubscriptionPage() {
             </Link>
           </div>
 
-          {/* Basic Plan */}
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-orange-500/50 transition-all">
-            <h3 className="text-lg font-bold text-white mb-2">Basic</h3>
-            <div className="text-3xl font-bold text-white mb-1">৳499</div>
-            <p className="text-white/60 text-sm mb-6">per month</p>
-            <ul className="space-y-3 mb-6">
-              <li className="flex items-start gap-2 text-white/80 text-sm">
-                <CheckCircle className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
-                15 service calls/month
-              </li>
-              <li className="flex items-start gap-2 text-white/80 text-sm">
-                <CheckCircle className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
-                30 min response time
-              </li>
-              <li className="flex items-start gap-2 text-white/80 text-sm">
-                <CheckCircle className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
-                Email & chat support
-              </li>
-              <li className="flex items-start gap-2 text-white/80 text-sm">
-                <CheckCircle className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
-                Basic analytics
-              </li>
-            </ul>
-            <Link
-              href="/checkout?plan=basic&cycle=monthly"
-              className="block w-full py-3 text-center bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium"
-            >
-              Upgrade Now
-            </Link>
-          </div>
-
           {/* Premium Plan */}
           <div className="bg-gradient-to-br from-orange-500/10 to-purple-500/10 border-2 border-orange-500 rounded-xl p-6 relative">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
