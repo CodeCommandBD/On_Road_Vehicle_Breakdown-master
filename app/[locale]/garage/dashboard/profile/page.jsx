@@ -369,7 +369,7 @@ export default function GarageProfilePage() {
             className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-bold transition-all text-center flex items-center justify-center gap-2"
           >
             <FileText size={16} />
-            {t("manageZone")}
+            {t("viewDetails")}
           </Link>
         </div>
       </div>
