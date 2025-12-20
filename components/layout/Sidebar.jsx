@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, usePathname } from "@/i18n/routing";
+import { useTranslations } from "next-intl";
 import { useSelector, useDispatch } from "react-redux";
 import {
   LayoutDashboard,
@@ -23,54 +23,84 @@ import {
 import { selectUserRole, logout } from "@/store/slices/authSlice";
 import { cn } from "@/lib/utils/helpers";
 
-const sidebarLinks = {
-  user: [
-    { href: "/user/dashboard", label: "Overview", icon: LayoutDashboard },
-    { href: "/user/dashboard/bookings", label: "My Bookings", icon: Calendar },
-    { href: "/user/dashboard/profile", label: "My Profile", icon: User },
-    {
-      href: "/user/dashboard/messages",
-      label: "Messages",
-      icon: MessageSquare,
-    },
-    { href: "/user/dashboard/settings", label: "Settings", icon: Settings },
-  ],
-  garage: [
-    { href: "/garage/dashboard", label: "Overview", icon: LayoutDashboard },
-    { href: "/garage/dashboard/bookings", label: "Bookings", icon: Calendar },
-    { href: "/garage/dashboard/services", label: "My Services", icon: Wrench },
-    { href: "/garage/dashboard/profile", label: "Garage Profile", icon: User },
-    {
-      href: "/garage/dashboard/navigation",
-      label: "Mission Control",
-      icon: Activity,
-    },
-    {
-      href: "/garage/dashboard/messages",
-      label: "Messages",
-      icon: MessageSquare,
-    },
-    {
-      href: "/garage/dashboard/subscription",
-      label: "Subscription",
-      icon: CreditCard,
-    },
-    { href: "/garage/dashboard/settings", label: "Settings", icon: Settings },
-  ],
-  admin: [
-    { href: "/admin/dashboard", label: "Overview", icon: LayoutDashboard },
-    { href: "/admin/users", label: "Users", icon: User },
-    { href: "/admin/garages", label: "Garages", icon: Wrench },
-    { href: "/admin/bookings", label: "Bookings", icon: Calendar },
-    { href: "/admin/settings", label: "Settings", icon: Settings },
-  ],
-};
-
 export default function Sidebar() {
+  const t = useTranslations("Navigation");
+  const commonT = useTranslations("Common");
   const pathname = usePathname();
   const dispatch = useDispatch();
   const sidebarOpen = useSelector(selectSidebarOpen);
   const role = useSelector(selectUserRole) || "user";
+
+  const sidebarLinks = {
+    user: [
+      { href: "/user/dashboard", label: t("dashboard"), icon: LayoutDashboard },
+      {
+        href: "/user/dashboard/bookings",
+        label: t("bookings"),
+        icon: Calendar,
+      },
+      { href: "/user/dashboard/profile", label: t("profile"), icon: User },
+      {
+        href: "/user/dashboard/messages",
+        label: t("messages"),
+        icon: MessageSquare,
+      },
+      {
+        href: "/user/dashboard/settings",
+        label: t("settings"),
+        icon: Settings,
+      },
+    ],
+    garage: [
+      {
+        href: "/garage/dashboard",
+        label: t("dashboard"),
+        icon: LayoutDashboard,
+      },
+      {
+        href: "/garage/dashboard/bookings",
+        label: t("bookings"),
+        icon: Calendar,
+      },
+      {
+        href: "/garage/dashboard/services",
+        label: t("services"),
+        icon: Wrench,
+      },
+      { href: "/garage/dashboard/profile", label: t("profile"), icon: User },
+      {
+        href: "/garage/dashboard/navigation",
+        label: t("missionControl"),
+        icon: Activity,
+      },
+      {
+        href: "/garage/dashboard/messages",
+        label: t("messages"),
+        icon: MessageSquare,
+      },
+      {
+        href: "/garage/dashboard/subscription",
+        label: t("subscription"),
+        icon: CreditCard,
+      },
+      {
+        href: "/garage/dashboard/settings",
+        label: t("settings"),
+        icon: Settings,
+      },
+    ],
+    admin: [
+      {
+        href: "/admin/dashboard",
+        label: t("dashboard"),
+        icon: LayoutDashboard,
+      },
+      { href: "/admin/users", label: "Users", icon: User },
+      { href: "/admin/garages", label: "Garages", icon: Wrench },
+      { href: "/admin/bookings", label: t("bookings"), icon: Calendar },
+      { href: "/admin/settings", label: t("settings"), icon: Settings },
+    ],
+  };
 
   const links = sidebarLinks[role] || sidebarLinks.user;
 
@@ -105,7 +135,9 @@ export default function Sidebar() {
         <div className="h-full flex flex-col">
           {/* Mobile Header */}
           <div className="flex items-center justify-between p-4 border-b border-white/10 lg:hidden">
-            <span className="font-bold text-xl text-orange-500">Menu</span>
+            <span className="font-bold text-xl text-orange-500">
+              {t("menu")}
+            </span>
             <button
               onClick={() => dispatch(toggleSidebar())}
               className="p-1 hover:bg-white/10 rounded-md text-white"
@@ -124,17 +156,19 @@ export default function Sidebar() {
                     <Link
                       href={link.href}
                       className={cn(
-                        "flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-colors",
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all group",
                         isActive
-                          ? "bg-primary/10 text-primary"
-                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                          ? "bg-orange-500/10 text-orange-500 shadow-[0_4px_12px_rgba(249,115,22,0.1)]"
+                          : "text-white/60 hover:bg-white/5 hover:text-white"
                       )}
                       onClick={() => dispatch(setSidebarOpen(false))}
                     >
                       <link.icon
                         className={cn(
                           "w-5 h-5",
-                          isActive ? "text-primary" : "text-gray-400"
+                          isActive
+                            ? "text-orange-500"
+                            : "text-white/40 group-hover:text-white transition-colors"
                         )}
                       />
                       {link.label}
@@ -152,7 +186,7 @@ export default function Sidebar() {
               className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg font-medium text-red-400 hover:bg-red-500/20 transition-colors"
             >
               <LogOut className="w-5 h-5" />
-              Logout
+              {t("logout")}
             </button>
           </div>
         </div>

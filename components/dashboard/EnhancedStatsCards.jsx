@@ -2,8 +2,10 @@
 
 import { Activity, DollarSign, Award, Clock } from "lucide-react";
 import { formatPrice } from "@/lib/utils/helpers";
+import { useTranslations } from "next-intl";
 
 export default function EnhancedStatsCards({ stats }) {
+  const t = useTranslations("Dashboard");
   const data = stats || {
     totalBookings: 0,
     totalSpent: 0,
@@ -13,33 +15,33 @@ export default function EnhancedStatsCards({ stats }) {
 
   const statItems = [
     {
-      title: "Total Bookings",
+      title: t("totalBookings"),
       value: data.totalBookings,
-      description: "All time services",
+      description: t("allTime"),
       icon: Activity,
       gradient: "from-blue-500 to-cyan-500",
       bgGradient: "bg-gradient-to-br from-blue-500/20 to-cyan-500/20",
     },
     {
-      title: "Total Spent",
+      title: t("totalSpent"),
       value: formatPrice(data.totalSpent),
-      description: "Lifetime expenses",
+      description: t("lifetimeExpenses"),
       icon: DollarSign,
       gradient: "from-green-500 to-emerald-500",
       bgGradient: "bg-gradient-to-br from-green-500/20 to-emerald-500/20",
     },
     {
-      title: "Reward Points",
+      title: t("rewardPoints"),
       value: data.points,
-      description: "Cashback points",
+      description: t("cashbackPoints"),
       icon: Award,
       gradient: "from-purple-500 to-pink-500",
       bgGradient: "bg-gradient-to-br from-purple-500/20 to-pink-500/20",
     },
     {
-      title: "Active Requests",
+      title: t("activeRequests"),
       value: data.activeRequests,
-      description: "In progress now",
+      description: t("inProgressNow"),
       icon: Clock,
       gradient: "from-orange-500 to-red-500",
       bgGradient: "bg-gradient-to-br from-orange-500/20 to-red-500/20",
@@ -126,7 +128,9 @@ export default function EnhancedStatsCards({ stats }) {
             <div className="mt-4 pt-4 border-t border-white/10">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
-                <span className="text-xs text-white/60">Live updates</span>
+                <span className="text-xs text-white/60">
+                  {t("liveUpdates")}
+                </span>
               </div>
             </div>
           )}

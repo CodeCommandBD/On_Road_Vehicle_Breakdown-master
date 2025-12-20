@@ -3,8 +3,11 @@
 import { useEffect, useState } from "react";
 import { Trophy, Medal, Star, User, Loader2, Award } from "lucide-react";
 import axios from "axios";
+import { useTranslations } from "next-intl";
 
 export default function LeaderboardWidget({ role = "user" }) {
+  const t = useTranslations("Dashboard");
+  const commonT = useTranslations("Common");
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -32,7 +35,7 @@ export default function LeaderboardWidget({ role = "user" }) {
     return (
       <div className="bg-white/5 border border-white/5 rounded-3xl p-6 flex flex-col items-center justify-center min-h-[300px]">
         <Loader2 className="animate-spin text-orange-500 mb-2" />
-        <p className="text-white/40 text-xs">Loading Leaderboard...</p>
+        <p className="text-white/40 text-xs">{t("loadingLeaderboard")}</p>
       </div>
     );
   }
@@ -44,10 +47,10 @@ export default function LeaderboardWidget({ role = "user" }) {
       <div className="p-6 border-b border-white/5 flex items-center justify-between relative z-10">
         <h3 className="text-white font-bold flex items-center gap-2">
           <Trophy className="text-orange-500" size={18} />
-          {role === "garage" ? "Top Service Heroes" : "Top Contributors"}
+          {role === "garage" ? t("topGarages") : t("topUsers")}
         </h3>
         <span className="text-[10px] text-white/40 uppercase font-black tracking-widest">
-          Global
+          {t("global")}
         </span>
       </div>
 
@@ -55,7 +58,7 @@ export default function LeaderboardWidget({ role = "user" }) {
         {data.length === 0 ? (
           <div className="py-10 text-center opacity-40">
             <Star size={32} className="mx-auto mb-2" />
-            <p className="text-sm">No rankings yet</p>
+            <p className="text-sm">{t("noRankings")}</p>
           </div>
         ) : (
           <div className="space-y-1">
@@ -100,7 +103,7 @@ export default function LeaderboardWidget({ role = "user" }) {
                     {item.name}
                   </p>
                   <p className="text-[10px] text-white/40 uppercase tracking-tighter">
-                    Level {item.level} • {item.membershipTier}
+                    {t("level")} {item.level} • {item.membershipTier}
                   </p>
                 </div>
 
@@ -110,7 +113,7 @@ export default function LeaderboardWidget({ role = "user" }) {
                     <Award size={12} className="text-orange-500" />
                   </div>
                   <p className="text-[9px] text-white/20 font-bold uppercase tracking-widest">
-                    Points
+                    {t("points")}
                   </p>
                 </div>
               </div>
@@ -121,7 +124,7 @@ export default function LeaderboardWidget({ role = "user" }) {
 
       <div className="p-4 bg-white/5 border-t border-white/5">
         <button className="w-full py-2 rounded-xl text-[10px] font-bold text-white/40 hover:text-orange-500 transition-colors uppercase tracking-[0.2em]">
-          View Full Leaderboard
+          {t("viewFullLeaderboard")}
         </button>
       </div>
     </div>

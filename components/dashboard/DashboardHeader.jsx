@@ -23,11 +23,16 @@ import BreadcrumbNav from "./Breadcrumb";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
+import { useTranslations } from "next-intl";
+import LanguageSwitcher from "../common/LanguageSwitcher";
 import { cn } from "@/lib/utils/helpers";
 import RewardsInfoModal from "./RewardsInfoModal";
 
 export default function DashboardHeader() {
+  const t = useTranslations("Common");
+  const navT = useTranslations("Navigation");
+  const dashT = useTranslations("Dashboard");
   const dispatch = useDispatch();
   const router = useRouter();
   const user = useSelector(selectUser);
@@ -143,7 +148,7 @@ export default function DashboardHeader() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
           <input
             type="text"
-            placeholder="Search..."
+            placeholder={t("search")}
             value={searchTerm}
             onChange={(e) => dispatch(setSearchTerm(e.target.value))}
             className="bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-orange-500 w-48 lg:w-64 transition-all"
@@ -152,6 +157,9 @@ export default function DashboardHeader() {
 
         {/* Action icons */}
         <div className="flex items-center gap-2">
+          {/* Language Switcher */}
+          <LanguageSwitcher />
+
           {/* Reward Points - Visible on tablet and desktop */}
           {user?.role !== "admin" && (
             <div
@@ -187,10 +195,10 @@ export default function DashboardHeader() {
               <div className="absolute top-12 right-0 w-80 bg-[#1E1E1E] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
                 <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
                   <h4 className="text-sm font-bold text-white">
-                    Notifications
+                    {t("notifications")}
                   </h4>
                   <span className="text-[10px] text-orange-500 uppercase font-bold tracking-wider">
-                    {unreadCount} New
+                    {unreadCount} {navT("new")}
                   </span>
                 </div>
                 <div className="max-h-96 overflow-y-auto scrollbar-hide">
@@ -228,7 +236,7 @@ export default function DashboardHeader() {
                   ) : (
                     <div className="p-8 text-center">
                       <p className="text-sm text-white/40">
-                        No notifications yet
+                        {t("noNotifications")}
                       </p>
                     </div>
                   )}
@@ -247,10 +255,10 @@ export default function DashboardHeader() {
             >
               <div className="hidden lg:block text-right">
                 <p className="text-sm font-bold text-white group-hover:text-orange-500 transition-colors">
-                  {user?.name || "Guest User"}
+                  {user?.name || dashT("welcome", { name: "Guest" })}
                 </p>
                 <p className="text-[10px] text-white/40 uppercase tracking-widest leading-none font-bold">
-                  {user?.role || "Member"}
+                  {user?.role || navT("member")}
                 </p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 p-[1px]">
@@ -280,7 +288,9 @@ export default function DashboardHeader() {
                   onClick={() => setIsProfileOpen(false)}
                 >
                   <User className="w-4 h-4" />
-                  <span className="text-sm font-medium">My Profile</span>
+                  <span className="text-sm font-medium">
+                    {navT("myProfile")}
+                  </span>
                 </Link>
                 <Link
                   href={
@@ -292,7 +302,9 @@ export default function DashboardHeader() {
                   onClick={() => setIsProfileOpen(false)}
                 >
                   <Settings className="w-4 h-4" />
-                  <span className="text-sm font-medium">Settings</span>
+                  <span className="text-sm font-medium">
+                    {navT("settings")}
+                  </span>
                 </Link>
                 <div className="h-[1px] bg-white/10 my-1 mx-2"></div>
                 <button
@@ -300,7 +312,7 @@ export default function DashboardHeader() {
                   className="flex items-center gap-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors w-full text-left"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span className="text-sm font-medium">Logout</span>
+                  <span className="text-sm font-medium">{navT("logout")}</span>
                 </button>
               </div>
             )}
