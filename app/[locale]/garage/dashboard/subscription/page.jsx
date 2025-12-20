@@ -12,28 +12,35 @@ export default function SubscriptionPage() {
   const user = useSelector(selectUser);
   const [isLoading, setIsLoading] = useState(true);
   const [subscription, setSubscription] = useState(null);
+  const [plans, setPlans] = useState([]);
 
   useEffect(() => {
-    const fetchSubscription = async () => {
-      if (!user) return;
-
+    const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch current subscription
-        const response = await axios.get(
-          `/api/subscriptions?userId=${user._id}`
-        );
-        if (response.data.success && response.data.subscriptions?.length > 0) {
-          setSubscription(response.data.subscriptions[0]);
+        // Fetch plans
+        const plansRes = await axios.get("/api/plans");
+        if (plansRes.data.success) {
+          setPlans(plansRes.data.data.plans);
+        }
+
+        if (user) {
+          // Fetch current subscription
+          const subRes = await axios.get(
+            `/api/subscriptions?userId=${user._id}`
+          );
+          if (subRes.data.success && subRes.data.subscriptions?.length > 0) {
+            setSubscription(subRes.data.subscriptions[0]);
+          }
         }
       } catch (error) {
-        console.error("Error fetching subscription:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchSubscription();
+    fetchData();
   }, [user]);
 
   if (isLoading) {
@@ -138,72 +145,85 @@ export default function SubscriptionPage() {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Trial Plan */}
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-orange-500/50 transition-all">
-            <h3 className="text-lg font-bold text-white mb-2">Trial</h3>
-            <div className="text-3xl font-bold text-white mb-1">৳0</div>
-            <p className="text-white/60 text-sm mb-6">7 days free trial</p>
-            <ul className="space-y-3 mb-6">
-              <li className="flex items-start gap-2 text-white/80 text-sm">
-                <CheckCircle className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
-                5 service calls limit
-              </li>
-              <li className="flex items-start gap-2 text-white/80 text-sm">
-                <CheckCircle className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
-                60 min response time
-              </li>
-              <li className="flex items-start gap-2 text-white/80 text-sm">
-                <CheckCircle className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
-                Email support
-              </li>
-            </ul>
-            <Link
-              href="/trial/activate"
-              className="block w-full py-3 text-center bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
-            >
-              Start Trial
-            </Link>
-          </div>
+          {plans.map((plan) => {
+            const isCurrent = user?.membershipTier === plan.tier;
 
-          {/* Premium Plan */}
-          <div className="bg-gradient-to-br from-orange-500/10 to-purple-500/10 border-2 border-orange-500 rounded-xl p-6 relative">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-              <span className="px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded-full">
-                POPULAR
-              </span>
-            </div>
-            <h3 className="text-lg font-bold text-white mb-2">Premium</h3>
-            <div className="text-3xl font-bold text-white mb-1">৳1,999</div>
-            <p className="text-white/60 text-sm mb-6">per month</p>
-            <ul className="space-y-3 mb-6">
-              <li className="flex items-start gap-2 text-white/80 text-sm">
-                <CheckCircle className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
-                Unlimited service calls
-              </li>
-              <li className="flex items-start gap-2 text-white/80 text-sm">
-                <CheckCircle className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
-                15 min response time
-              </li>
-              <li className="flex items-start gap-2 text-white/80 text-sm">
-                <CheckCircle className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
-                Priority 24/7 support
-              </li>
-              <li className="flex items-start gap-2 text-white/80 text-sm">
-                <CheckCircle className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
-                Advanced analytics & insights
-              </li>
-              <li className="flex items-start gap-2 text-white/80 text-sm">
-                <CheckCircle className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
-                Featured listing
-              </li>
-            </ul>
-            <Link
-              href="/checkout?plan=premium&cycle=monthly"
-              className="block w-full py-3 text-center bg-gradient-to-r from-orange-500 to-purple-500 hover:shadow-lg hover:shadow-orange-500/30 text-white rounded-lg transition-all font-medium"
-            >
-              Upgrade Now
-            </Link>
-          </div>
+            // Skip displaying current plan if desired, or style it differently
+            // For now, we'll show all but disable the button for current plan
+
+            return (
+              <div
+                key={plan._id}
+                className={`border rounded-xl p-6 relative transition-all ${
+                  plan.isFeatured
+                    ? "bg-gradient-to-br from-orange-500/10 to-purple-500/10 border-orange-500"
+                    : "bg-white/5 border-white/10 hover:border-orange-500/50"
+                }`}
+              >
+                {plan.isFeatured && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded-full">
+                      {plan.highlightFeature || "POPULAR"}
+                    </span>
+                  </div>
+                )}
+
+                <h3 className="text-lg font-bold text-white mb-2 uppercase">
+                  {plan.name}
+                </h3>
+                <div className="text-3xl font-bold text-white mb-1">
+                  ৳{plan.price.monthly}
+                </div>
+                <p className="text-white/60 text-sm mb-6">per month</p>
+
+                <ul className="space-y-3 mb-6">
+                  {plan.features.map((feature, idx) => (
+                    <li
+                      key={idx}
+                      className="flex items-center gap-2 text-white/80 text-sm"
+                    >
+                      <CheckCircle className="w-5 h-5 text-green-400 shrink-0" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {isCurrent ? (
+                  <button
+                    disabled
+                    className="block w-full py-3 text-center bg-white/10 text-white/40 rounded-lg cursor-not-allowed font-medium"
+                  >
+                    Current Plan
+                  </button>
+                ) : plan.tier === "enterprise" ? (
+                  <Link
+                    href="/contact"
+                    className="block w-full py-3 text-center bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors font-medium"
+                  >
+                    Contact Sales
+                  </Link>
+                ) : plan.tier === "trial" ? (
+                  <Link
+                    href="/trial/activate"
+                    className="block w-full py-3 text-center bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors font-medium"
+                  >
+                    Start Trial
+                  </Link>
+                ) : (
+                  <Link
+                    href={`/checkout?plan=${plan.tier}&cycle=monthly`}
+                    className={`block w-full py-3 text-center rounded-lg transition-all font-medium ${
+                      plan.isFeatured
+                        ? "bg-gradient-to-r from-orange-500 to-purple-500 hover:shadow-lg hover:shadow-orange-500/30 text-white"
+                        : "bg-white/10 hover:bg-white/20 text-white"
+                    }`}
+                  >
+                    Upgrade Now
+                  </Link>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 

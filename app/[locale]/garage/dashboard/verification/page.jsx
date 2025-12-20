@@ -19,6 +19,7 @@ import {
 import { toast } from "react-toastify";
 import { useTranslations } from "next-intl";
 import axios from "axios";
+import ImageUpload from "@/components/common/ImageUpload";
 
 const EQUIPMENT_SUGGESTIONS = [
   "Computer Diagnostic (OBD-II)",
@@ -250,7 +251,7 @@ export default function GarageVerificationPage() {
             formData.verification.status === "verified"
               ? "bg-green-500/20"
               : "bg-orange-500/20"
-          }`}
+            }`}
         >
           <BadgeCheck size={20} />
         </div>
@@ -302,17 +303,11 @@ export default function GarageVerificationPage() {
               <label className="text-white/80 text-sm font-medium">
                 {t("tradeLicenseImage")}
               </label>
-              <input
-                type="text"
+              <ImageUpload
                 value={formData.verification.tradeLicense.imageUrl}
-                onChange={(e) =>
-                  handleVerificationChange(
-                    "tradeLicense",
-                    "imageUrl",
-                    e.target.value
-                  )
+                onChange={(val) =>
+                  handleVerificationChange("tradeLicense", "imageUrl", val)
                 }
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50"
                 placeholder={t("imgUrlPlaceholder")}
               />
             </div>
@@ -334,13 +329,11 @@ export default function GarageVerificationPage() {
               <label className="text-white/80 text-sm font-medium">
                 {t("nidImg")}
               </label>
-              <input
-                type="text"
+              <ImageUpload
                 value={formData.verification.nid.imageUrl}
-                onChange={(e) =>
-                  handleVerificationChange("nid", "imageUrl", e.target.value)
+                onChange={(val) =>
+                  handleVerificationChange("nid", "imageUrl", val)
                 }
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50"
                 placeholder={t("imgUrlPlaceholder")}
               />
             </div>
@@ -350,14 +343,13 @@ export default function GarageVerificationPage() {
             <label className="text-white/80 text-sm font-medium">
               {t("ownerPhoto")}
             </label>
-            <input
-              type="text"
+            <ImageUpload
               value={formData.verification.ownerPhoto}
-              onChange={(e) =>
-                handleVerificationChange("ownerPhoto", null, e.target.value)
+              onChange={(val) =>
+                handleVerificationChange("ownerPhoto", null, val)
               }
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50"
               placeholder={t("photoPlaceholder")}
+              showPreview={true}
             />
           </div>
         </section>
@@ -542,14 +534,13 @@ export default function GarageVerificationPage() {
                   <label className="text-white/40 text-[10px] uppercase font-bold tracking-wider">
                     {t("imgUrl")}
                   </label>
-                  <input
-                    type="text"
+                  <ImageUpload
                     value={cert.imageUrl}
-                    onChange={(e) =>
-                      updateCertification(index, "imageUrl", e.target.value)
+                    onChange={(val) =>
+                      updateCertification(index, "imageUrl", val)
                     }
-                    className="w-full bg-transparent border-b border-white/10 py-1 text-white text-sm focus:outline-none focus:border-orange-500"
                     placeholder={t("imgUrlPlaceholder")}
+                    className="-mt-1"
                   />
                 </div>
               </div>
@@ -573,40 +564,38 @@ export default function GarageVerificationPage() {
               <label className="text-white/80 text-sm font-medium">
                 {t("frontView")}
               </label>
-              <input
-                type="text"
+              <ImageUpload
                 value={formData.garageImages.frontView}
-                onChange={(e) =>
+                onChange={(val) =>
                   setFormData((p) => ({
                     ...p,
                     garageImages: {
                       ...p.garageImages,
-                      frontView: e.target.value,
+                      frontView: val,
                     },
                   }))
                 }
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white"
                 placeholder={t("frontPlaceholder")}
+                showPreview={true}
               />
             </div>
             <div className="space-y-2">
               <label className="text-white/80 text-sm font-medium">
                 {t("indoorView")}
               </label>
-              <input
-                type="text"
+              <ImageUpload
                 value={formData.garageImages.indoorView}
-                onChange={(e) =>
+                onChange={(val) =>
                   setFormData((p) => ({
                     ...p,
                     garageImages: {
                       ...p.garageImages,
-                      indoorView: e.target.value,
+                      indoorView: val,
                     },
                   }))
                 }
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white"
                 placeholder={t("indoorPlaceholder")}
+                showPreview={true}
               />
             </div>
           </div>

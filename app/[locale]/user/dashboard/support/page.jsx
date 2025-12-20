@@ -1,8 +1,30 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import axios from "axios";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import Sidebar from "@/components/layout/Sidebar";
 import SupportForm from "@/components/dashboard/SupportForm";
+import { User, Phone, Mail, Crown } from "lucide-react";
 
 export default function SupportPage() {
+  const [manager, setManager] = useState(null);
+
+  useEffect(() => {
+    fetchSupportData();
+  }, []);
+
+  const fetchSupportData = async () => {
+    try {
+      const res = await axios.get("/api/support");
+      if (res.data.success) {
+        setManager(res.data.data.accountManager);
+      }
+    } catch (error) {
+      console.error("Failed to fetch support data", error);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-[#121212] text-white overflow-hidden font-outfit">
       <Sidebar />
@@ -19,6 +41,63 @@ export default function SupportPage() {
                 road.
               </p>
             </div>
+
+            {/* Dedicated Manager Card (Premium Only) */}
+            {manager && (
+              <div className="bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-500/30 rounded-2xl p-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                  <Crown className="w-32 h-32" />
+                </div>
+
+                <div className="flex items-center gap-6 relative z-10">
+                  {manager.avatar ? (
+                    <img
+                      src={manager.avatar}
+                      alt={manager.name}
+                      className="w-20 h-20 rounded-full border-2 border-purple-500 object-cover"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-full border-2 border-purple-500 flex items-center justify-center bg-purple-500/20">
+                      <User className="w-8 h-8 text-purple-300" />
+                    </div>
+                  )}
+
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-bold uppercase tracking-wider bg-purple-500 text-white px-2 py-0.5 rounded-full">
+                        Dedicated Manager
+                      </span>
+                    </div>
+                    <h2 className="text-2xl font-bold text-white">
+                      {manager.name}
+                    </h2>
+                    <p className="text-purple-200 text-sm">
+                      Priority Support Specialist
+                    </p>
+
+                    <div className="flex items-center gap-3 mt-4">
+                      {manager.phone && (
+                        <a
+                          href={`https://wa.me/${manager.phone}`}
+                          target="_blank"
+                          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                        >
+                          <Phone className="w-4 h-4" />
+                          WhatsApp
+                        </a>
+                      )}
+                      <a
+                        href={`mailto:${manager.email}`}
+                        className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        <Mail className="w-4 h-4" />
+                        Email Direct
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <SupportForm />
 

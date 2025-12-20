@@ -9,7 +9,10 @@ import {
   Eye,
   Award,
   Loader2,
+  FileText,
+  X,
 } from "lucide-react";
+import ImageUpload from "@/components/common/ImageUpload";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -17,6 +20,68 @@ export default function UserTable() {
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Contract Modal State
+  const [showContractModal, setShowContractModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [contractForm, setContractForm] = useState({
+    documentUrl: "",
+    startDate: "",
+    endDate: "",
+    status: "pending",
+    customTerms: "",
+  });
+
+  const openContractModal = (user) => {
+    setSelectedUser(user);
+    if (user.contract) {
+      setContractForm({
+        documentUrl: user.contract.documentUrl || "",
+        startDate: user.contract.startDate
+          ? new Date(user.contract.startDate).toISOString().split("T")[0]
+          : "",
+        endDate: user.contract.endDate
+          ? new Date(user.contract.endDate).toISOString().split("T")[0]
+          : "",
+        status: user.contract.status || "pending",
+        customTerms: user.contract.customTerms || "",
+      });
+    } else {
+      setContractForm({
+        documentUrl: "",
+        startDate: "",
+        endDate: "",
+        status: "pending",
+        customTerms: "",
+      });
+    }
+    setShowContractModal(true);
+  };
+
+  const handleContractSave = async (e) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+    setIsSaving(true);
+
+    try {
+      const res = await axios.post("/api/admin/users/contract", {
+        userId: selectedUser._id,
+        ...contractForm,
+      });
+
+      if (res.data.success) {
+        toast.success("Contract updated successfully");
+        setShowContractModal(false);
+        fetchUsers(); // Refresh list to show updated data if visualized
+      }
+    } catch (error) {
+      console.error("Contract Save Error:", error);
+      toast.error("Failed to save contract");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const fetchUsers = async () => {
     setIsLoading(true);
@@ -202,6 +267,13 @@ export default function UserTable() {
                     >
                       <Trash2 size={16} />
                     </button>
+                    <button
+                      onClick={() => openContractModal(user)}
+                      className="p-2 text-white/40 hover:text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors"
+                      title="Manage Contract"
+                    >
+                      <FileText size={16} />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -225,6 +297,137 @@ export default function UserTable() {
           </button>
         </div>
       </div>
+      {/* Contract Management Modal */}
+      {showContractModal && selectedUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#1E1E1E] border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-white/10 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <FileText className="w-5 h-5 text-blue-500" />
+                Manage Contract
+              </h3>
+              <button
+                onClick={() => setShowContractModal(false)}
+                className="text-white/40 hover:text-white"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleContractSave} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-white/60 mb-1">
+                  Contract PDF
+                </label>
+                <ImageUpload
+                  value={contractForm.documentUrl}
+                  onChange={(val) =>
+                    setContractForm({
+                      ...contractForm,
+                      documentUrl: val,
+                    })
+                  }
+                  placeholder="Upload Contract PDF"
+                  accept=".pdf"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-white/60 mb-1">
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={contractForm.startDate}
+                    onChange={(e) =>
+                      setContractForm({
+                        ...contractForm,
+                        startDate: e.target.value,
+                      })
+                    }
+                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-white/60 mb-1">
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={contractForm.endDate}
+                    onChange={(e) =>
+                      setContractForm({
+                        ...contractForm,
+                        endDate: e.target.value,
+                      })
+                    }
+                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white/60 mb-1">
+                  Status
+                </label>
+                <select
+                  value={contractForm.status}
+                  onChange={(e) =>
+                    setContractForm({ ...contractForm, status: e.target.value })
+                  }
+                  className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="active">Active</option>
+                  <option value="expired">Expired</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white/60 mb-1">
+                  Custom Terms Summary
+                </label>
+                <textarea
+                  rows="3"
+                  value={contractForm.customTerms}
+                  onChange={(e) =>
+                    setContractForm({
+                      ...contractForm,
+                      customTerms: e.target.value,
+                    })
+                  }
+                  placeholder="e.g. Net 30 payment terms, 20% discount on all services..."
+                  className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 mt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowContractModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-white/60 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
+                >
+                  {isSaving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "Save Contract"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

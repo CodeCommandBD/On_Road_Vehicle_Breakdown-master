@@ -18,6 +18,7 @@ import {
   LifeBuoy,
   TrendingUp,
   Webhook,
+  FileText,
 } from "lucide-react";
 import {
   selectSidebarOpen,
@@ -72,6 +73,12 @@ export default function Sidebar() {
         href: "/user/dashboard/messages",
         label: t("messages"),
         icon: MessageSquare,
+      },
+      {
+        href: "/user/dashboard/reports",
+        label: "Reports",
+        icon: FileText,
+        locked: user?.planTier !== "enterprise",
       },
       {
         href: "/user/dashboard/support",
