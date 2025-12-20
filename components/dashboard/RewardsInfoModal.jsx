@@ -37,7 +37,7 @@ export default function RewardsInfoModal({ isOpen, onClose }) {
 
   const tiers = [
     { name: "Free", limit: "0 Pts", perk: t("freePerk") },
-    { name: "Basic", limit: "500 Pts", perk: t("basicPerk") },
+
     {
       name: "Standard",
       limit: "1500 Pts",

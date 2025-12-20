@@ -15,17 +15,11 @@ export default function UserRewardsCard({ user, stats }) {
     free: {
       name: t("tiers.free"),
       color: "from-gray-500 to-gray-600",
-      nextTier: t("tiers.basic"),
+      nextTier: t("tiers.standard"),
       pointsNeeded: 500,
       benefits: ["Basic support", "Standard booking"],
     },
-    basic: {
-      name: t("tiers.basic"),
-      color: "from-blue-500 to-blue-600",
-      nextTier: t("tiers.standard"),
-      pointsNeeded: 1500,
-      benefits: ["Priority support", "5% cashback", "Faster response"],
-    },
+
     standard: {
       name: t("tiers.standard"),
       color: "from-purple-500 to-purple-600",

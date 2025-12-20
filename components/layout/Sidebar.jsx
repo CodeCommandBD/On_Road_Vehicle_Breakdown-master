@@ -14,6 +14,7 @@ import {
   CreditCard,
   MessageSquare,
   Activity,
+  BrainCircuit,
 } from "lucide-react";
 import {
   selectSidebarOpen,
@@ -38,6 +39,11 @@ export default function Sidebar() {
         href: "/user/dashboard/bookings",
         label: t("bookings"),
         icon: Calendar,
+      },
+      {
+        href: "/user/dashboard/predictive-maintenance",
+        label: t("aiMaintenance") || "AI Diagnosis", // Fallback if translation missing
+        icon: BrainCircuit,
       },
       { href: "/user/dashboard/profile", label: t("profile"), icon: User },
       {
