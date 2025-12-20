@@ -16,8 +16,8 @@ import {
   User,
   Award,
 } from "lucide-react";
-import axios from "axios";
 import { toast } from "react-toastify";
+import { useTranslations } from "next-intl";
 
 const EQUIPMENT_SUGGESTIONS = [
   "Computer Diagnostic (OBD-II)",
@@ -33,6 +33,7 @@ const EQUIPMENT_SUGGESTIONS = [
 ];
 
 export default function GarageVerificationPage() {
+  const t = useTranslations("Verification");
   const user = useSelector(selectUser);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -89,7 +90,7 @@ export default function GarageVerificationPage() {
         }
       } catch (error) {
         console.error("Error fetching profile:", error);
-        toast.error("Failed to load verification data");
+        toast.error(t("loadFailed"));
       } finally {
         setIsLoading(false);
       }
@@ -183,11 +184,11 @@ export default function GarageVerificationPage() {
       const response = await axios.put("/api/garages/profile", formData);
 
       if (response.data.success) {
-        toast.success("Verification details updated!");
+        toast.success(t("updateSuccess"));
       }
     } catch (error) {
       console.error("Error saving verification:", error);
-      toast.error(error.response?.data?.message || "Failed to update details");
+      toast.error(error.response?.data?.message || t("updateFailed"));
     } finally {
       setIsSaving(false);
     }
@@ -214,11 +215,9 @@ export default function GarageVerificationPage() {
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-white">
-              Garage Verification
+              {t("garageVerif")}
             </h1>
-            <p className="text-white/60 text-sm">
-              Submit documents for official badge
-            </p>
+            <p className="text-white/60 text-sm">{t("documentsDesc")}</p>
           </div>
         </div>
         <button
@@ -231,7 +230,7 @@ export default function GarageVerificationPage() {
           ) : (
             <Save size={18} />
           )}
-          Save Details
+          {t("save")}
         </button>
       </div>
 
@@ -254,7 +253,10 @@ export default function GarageVerificationPage() {
         </div>
         <div>
           <h3 className="font-bold uppercase text-sm">
-            Status: {formData.verification.status || "Pending Review"}
+            {t("status")}:{" "}
+            {formData.verification.status
+              ? t(formData.verification.status)
+              : t("pending")}
           </h3>
           <p className="text-xs text-white/60">
             {formData.verification.status === "verified"
@@ -271,13 +273,13 @@ export default function GarageVerificationPage() {
             <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-500">
               <FileText size={20} />
             </div>
-            <h2 className="text-xl font-bold text-white">Legal Documents</h2>
+            <h2 className="text-xl font-bold text-white">{t("legalDocs")}</h2>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6 pb-6 border-b border-white/5 mb-6">
             <div className="space-y-2">
               <label className="text-white/80 text-sm font-medium">
-                Trade License Number
+                {t("tradeLicenseNumber")}
               </label>
               <input
                 type="text"
@@ -290,12 +292,12 @@ export default function GarageVerificationPage() {
                   )
                 }
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50"
-                placeholder="Enter license no."
+                placeholder={t("licenseNoPlaceholder")}
               />
             </div>
             <div className="space-y-2">
               <label className="text-white/80 text-sm font-medium">
-                Trade License Image URL
+                {t("tradeLicenseImage")}
               </label>
               <input
                 type="text"

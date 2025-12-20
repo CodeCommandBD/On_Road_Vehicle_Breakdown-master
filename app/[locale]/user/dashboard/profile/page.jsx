@@ -22,18 +22,23 @@ import {
 import { toast } from "react-toastify";
 import axios from "axios";
 import PasswordChangeModal from "@/components/profile/PasswordChangeModal";
+import { useTranslations } from "next-intl";
 
 // Dynamically import MapComponent to avoid SSR issues
 const MapComponent = dynamic(() => import("@/components/maps/MapComponent"), {
   ssr: false,
-  loading: () => (
-    <div className="h-[300px] w-full bg-white/5 animate-pulse rounded-xl flex items-center justify-center border border-white/10">
-      <p className="text-white/40">Initializing Map...</p>
-    </div>
-  ),
+  loading: () => {
+    const t = useTranslations("Profile");
+    return (
+      <div className="h-[300px] w-full bg-white/5 animate-pulse rounded-xl flex items-center justify-center border border-white/10">
+        <p className="text-white/40">{t("loading", { namespace: "Common" })}</p>
+      </div>
+    );
+  },
 });
 
 export default function ProfilePage() {
+  const t = useTranslations("Profile");
   const user = useSelector(selectUser);
   const dispatch = useDispatch();
   const [isEditing, setIsEditing] = useState(false);
@@ -111,7 +116,7 @@ export default function ProfilePage() {
     const { street, city, district } = profileFormData;
     const query = `${street}, ${city}, ${district}`;
     if (!street || !city) {
-      toast.info("Please enter street and city to find on map");
+      toast.info(t("enterStreetCity"));
       return;
     }
 
@@ -130,13 +135,13 @@ export default function ProfilePage() {
             coordinates: [parseFloat(lon), parseFloat(lat)],
           },
         }));
-        toast.success("Location found on map!");
+        toast.success(t("foundOnMap"));
       } else {
-        toast.error("Could not find location on map. Please pick manually.");
+        toast.error(t("notFound"));
       }
     } catch (error) {
       console.error("Geocoding error:", error);
-      toast.error("Failed to search location");
+      toast.error(t("searchFailed"));
     }
   };
 
@@ -190,11 +195,7 @@ export default function ProfilePage() {
             : [],
         }));
 
-        toast.success(
-          `Profile updated successfully! ${
-            response.data.user.vehicles?.length || 0
-          } vehicles saved.`
-        );
+        toast.success(t("updateSuccess"));
 
         // Update global state
         dispatch(updateUser(updatedUser));
@@ -202,7 +203,7 @@ export default function ProfilePage() {
       }
     } catch (error) {
       console.error("Profile update error:", error);
-      toast.error(error.response?.data?.message || "Failed to update profile");
+      toast.error(error.response?.data?.message || t("updateFailed"));
     } finally {
       setIsLoading(false);
     }
@@ -230,7 +231,7 @@ export default function ProfilePage() {
 
   const handleAddVehicle = () => {
     if (!newVehicle.make || !newVehicle.model || !newVehicle.licensePlate) {
-      toast.warning("Please fill vehicle details");
+      toast.warning(t("fillDetails"));
       return;
     }
     setProfileFormData((prev) => ({
@@ -244,9 +245,7 @@ export default function ProfilePage() {
       licensePlate: "",
       vehicleType: "Car",
     });
-    toast.success(
-      `${newVehicle.make} added to your list. Don't forget to click "Save All Changes" below to save permanently!`
-    );
+    toast.success(`${newVehicle.make} added to your list.`);
   };
 
   const handleRemoveVehicle = (index) => {
@@ -280,9 +279,9 @@ export default function ProfilePage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white">
-            My Profile
+            {t("title")}
           </h1>
-          <p className="text-white/60 mt-1">Manage your personal information</p>
+          <p className="text-white/60 mt-1">{t("personalInfo")}</p>
         </div>
       </div>
 
@@ -320,7 +319,7 @@ export default function ProfilePage() {
                 )} text-white font-semibold flex items-center gap-2`}
               >
                 <Award className="w-4 h-4" />
-                {user.membershipTier?.toUpperCase() || "FREE"} Member
+                {user.membershipTier?.toUpperCase() || "FREE"} {t("member")}
               </div>
               {!isEditing && (
                 <button
@@ -328,7 +327,7 @@ export default function ProfilePage() {
                   className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl flex items-center gap-2 transition-colors border border-white/20"
                 >
                   <Edit2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">Edit</span>
+                  <span className="hidden sm:inline">{t("edit")}</span>
                 </button>
               )}
             </div>
@@ -340,23 +339,23 @@ export default function ProfilePage() {
               <p className="text-2xl font-bold text-white">
                 {user.totalBookings || 0}
               </p>
-              <p className="text-xs text-white/60 mt-1">Bookings</p>
+              <p className="text-xs text-white/60 mt-1">{t("bookings")}</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-orange-400">৳0</p>
-              <p className="text-xs text-white/60 mt-1">Total Spent</p>
+              <p className="text-xs text-white/60 mt-1">{t("totalSpent")}</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-purple-400">
                 {user.points || 0}
               </p>
-              <p className="text-xs text-white/60 mt-1">Points</p>
+              <p className="text-xs text-white/60 mt-1">{t("points")}</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-green-400">
-                {user.isVerified ? "Yes" : "No"}
+                {user.isVerified ? t("yes") : t("no")}
               </p>
-              <p className="text-xs text-white/60 mt-1">Verified</p>
+              <p className="text-xs text-white/60 mt-1">{t("verified")}</p>
             </div>
           </div>
         </div>
@@ -367,7 +366,7 @@ export default function ProfilePage() {
         <div className="bg-[#1E1E1E] border border-white/10 rounded-2xl p-4 sm:p-8">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-semibold text-white">
-              Personal Information
+              {t("personalInformation")}
             </h3>
             {isEditing && (
               <div className="flex items-center gap-2">
@@ -377,7 +376,7 @@ export default function ProfilePage() {
                   className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg flex items-center gap-2 transition-colors"
                 >
                   <X className="w-4 h-4" />
-                  Cancel
+                  {t("cancel")}
                 </button>
                 <button
                   type="submit"
@@ -389,7 +388,7 @@ export default function ProfilePage() {
                   ) : (
                     <Save className="w-4 h-4" />
                   )}
-                  Save
+                  {t("save")}
                 </button>
               </div>
             )}
@@ -400,7 +399,7 @@ export default function ProfilePage() {
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-white/80 mb-2">
                 <User className="w-4 h-4" />
-                Full Name
+                {t("fullName")}
               </label>
               <input
                 type="text"
@@ -409,7 +408,7 @@ export default function ProfilePage() {
                 onChange={handleChange}
                 disabled={!isEditing}
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                placeholder="Enter your full name"
+                placeholder={t("namePlaceholder")}
               />
             </div>
 
@@ -417,7 +416,7 @@ export default function ProfilePage() {
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-white/80 mb-2">
                 <Mail className="w-4 h-4" />
-                Email Address
+                {t("email")}
               </label>
               <input
                 type="email"
@@ -426,16 +425,14 @@ export default function ProfilePage() {
                 disabled
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white/60 cursor-not-allowed"
               />
-              <p className="text-xs text-white/40 mt-1">
-                Email cannot be changed
-              </p>
+              <p className="text-xs text-white/40 mt-1">{t("emailFixed")}</p>
             </div>
 
             {/* Phone */}
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-white/80 mb-2">
                 <Phone className="w-4 h-4" />
-                Phone Number
+                {t("phone")}
               </label>
               <input
                 type="tel"
@@ -443,7 +440,7 @@ export default function ProfilePage() {
                 value={profileFormData.phone}
                 onChange={handleChange}
                 disabled={!isEditing}
-                placeholder="+880 1712-345678"
+                placeholder={t("phonePlaceholder")}
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               />
             </div>
@@ -452,7 +449,7 @@ export default function ProfilePage() {
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-white/80 mb-2">
                 <Shield className="w-4 h-4" />
-                Account Type
+                {t("accountType")}
               </label>
               <input
                 type="text"
@@ -466,7 +463,7 @@ export default function ProfilePage() {
             <div className="md:col-span-2">
               <label className="flex items-center gap-2 text-sm font-medium text-white/80 mb-2">
                 <MapPin className="w-4 h-4" />
-                Street Address
+                {t("address")}
               </label>
               <input
                 type="text"
@@ -474,7 +471,7 @@ export default function ProfilePage() {
                 value={profileFormData.street}
                 onChange={handleChange}
                 disabled={!isEditing}
-                placeholder="123 Main Street"
+                placeholder={t("streetPlaceholder")}
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               />
             </div>
@@ -490,7 +487,7 @@ export default function ProfilePage() {
                 value={profileFormData.city}
                 onChange={handleChange}
                 disabled={!isEditing}
-                placeholder="Dhaka"
+                placeholder={t("cityPlaceholder")}
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               />
             </div>
@@ -506,7 +503,7 @@ export default function ProfilePage() {
                 value={profileFormData.district}
                 onChange={handleChange}
                 disabled={!isEditing}
-                placeholder="Dhaka"
+                placeholder={t("districtPlaceholder")}
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               />
             </div>
@@ -522,7 +519,7 @@ export default function ProfilePage() {
                 value={profileFormData.postalCode}
                 onChange={handleChange}
                 disabled={!isEditing}
-                placeholder="1200"
+                placeholder={t("postalPlaceholder")}
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/40 focus:outline-none focus:border-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               />
             </div>
@@ -606,12 +603,12 @@ export default function ProfilePage() {
               <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
                 <Award className="w-5 h-5" />
               </div>
-              <h3 className="text-xl font-semibold text-white">My Vehicles</h3>
+              <h3 className="text-xl font-semibold text-white">
+                {t("myVehicles")}
+              </h3>
             </div>
             {isEditing && (
-              <p className="text-xs text-white/40">
-                Don't forget to click Save above after adding vehicles
-              </p>
+              <p className="text-xs text-white/40">{t("saveAll")}</p>
             )}
           </div>
 
@@ -650,7 +647,7 @@ export default function ProfilePage() {
               ))
             ) : (
               <div className="sm:col-span-2 py-8 text-center bg-white/5 border border-dashed border-white/10 rounded-xl">
-                <p className="text-white/40">No vehicles added yet</p>
+                <p className="text-white/40">{t("noVehicles")}</p>
               </div>
             )}
           </div>
@@ -659,7 +656,7 @@ export default function ProfilePage() {
           {isEditing && (
             <div className="bg-white/5 border-2 border-dashed border-white/10 p-5 rounded-2xl">
               <h4 className="text-sm font-bold text-white/80 mb-4">
-                Add New Vehicle
+                {t("addVehicle")}
               </h4>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <input
@@ -713,7 +710,7 @@ export default function ProfilePage() {
                 onClick={handleAddVehicle}
                 className="mt-4 w-full py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition-all border border-white/10"
               >
-                Confirm and Add to List
+                {t("confirmAdd")}
               </button>
             </div>
           )}
@@ -731,7 +728,7 @@ export default function ProfilePage() {
                 ) : (
                   <Save className="w-5 h-5" />
                 )}
-                Save All Changes
+                {t("saveAll")}
               </button>
             </div>
           )}
@@ -741,12 +738,12 @@ export default function ProfilePage() {
       {/* Account Security Section */}
       <div className="bg-[#1E1E1E] border border-white/10 rounded-2xl p-4 sm:p-8">
         <h3 className="text-xl font-semibold text-white mb-4">
-          Account Security
+          {t("accountSecurity")}
         </h3>
-        <p className="text-white/60 mb-6">Keep your account secure</p>
+        <p className="text-white/60 mb-6">{t("keepSecure")}</p>
 
         <button className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors border border-white/20">
-          Change Password
+          {t("changePassword")}
         </button>
       </div>
     </div>

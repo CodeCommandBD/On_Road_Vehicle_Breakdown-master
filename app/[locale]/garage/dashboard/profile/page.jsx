@@ -21,15 +21,18 @@ import {
   Image as ImageIcon,
   Wrench,
 } from "lucide-react";
-import axios from "axios";
 import { toast } from "react-toastify";
+import { useTranslations } from "next-intl";
 
 // Dynamically import MapComponent to avoid SSR issues
 const MapComponent = dynamic(() => import("@/components/maps/MapComponent"), {
   ssr: false,
-  loading: () => (
-    <div className="h-[300px] w-full bg-white/5 animate-pulse rounded-xl" />
-  ),
+  loading: () => {
+    const t = useTranslations("Profile");
+    return (
+      <div className="h-[300px] w-full bg-white/5 animate-pulse rounded-xl" />
+    );
+  },
 });
 
 const DAYS = [
@@ -53,6 +56,7 @@ const VEHICLE_TYPES = [
 ];
 
 export default function GarageProfilePage() {
+  const t = useTranslations("Profile");
   const user = useSelector(selectUser);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -144,7 +148,7 @@ export default function GarageProfilePage() {
         }
       } catch (error) {
         console.error("Error fetching profile:", error);
-        toast.error("Failed to load profile");
+        toast.error(t("loadFailed"));
       } finally {
         setIsLoading(false);
       }
@@ -174,13 +178,13 @@ export default function GarageProfilePage() {
             coordinates: [parseFloat(lon), parseFloat(lat)],
           },
         }));
-        toast.success("Location found on map!");
+        toast.success(t("foundOnMap"));
       } else {
-        toast.warning("Could not find address on map. Please pick manually.");
+        toast.warning(t("notFound"));
       }
     } catch (error) {
       console.error("Geocoding error:", error);
-      toast.error("Failed to lookup address coordinates.");
+      toast.error(t("searchFailed"));
     } finally {
       setIsGeocoding(false);
     }
@@ -248,11 +252,11 @@ export default function GarageProfilePage() {
       const response = await axios.put("/api/garages/profile", formData);
 
       if (response.data.success) {
-        toast.success("Profile updated successfully!");
+        toast.success(t("updateSuccess"));
       }
     } catch (error) {
       console.error("Error saving profile:", error);
-      toast.error(error.response?.data?.message || "Failed to update profile");
+      toast.error(error.response?.data?.message || t("updateFailed"));
     } finally {
       setIsSaving(false);
     }
@@ -271,10 +275,10 @@ export default function GarageProfilePage() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Garage Profile</h1>
-          <p className="text-white/60">
-            Manage your garage business information and operating hours
-          </p>
+          <h1 className="text-3xl font-bold text-white mb-2">
+            {t("garageTitle")}
+          </h1>
+          <p className="text-white/60">{t("garageInfo")}</p>
         </div>
         <button
           type="submit"
@@ -284,12 +288,12 @@ export default function GarageProfilePage() {
           {isSaving ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" />
-              Saving...
+              {t("saving")}
             </>
           ) : (
             <>
               <Save className="w-5 h-5" />
-              Save Changes
+              {t("save")}
             </>
           )}
         </button>
@@ -305,7 +309,7 @@ export default function GarageProfilePage() {
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white leading-tight">
-                  {membership.tier?.toUpperCase()} Plan Active
+                  {membership.tier?.toUpperCase()} {t("member")}
                 </h2>
                 <p className="text-white/60 text-sm">
                   {membership.expiry
@@ -320,7 +324,7 @@ export default function GarageProfilePage() {
               href="/garage/dashboard/subscription"
               className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-medium transition-all text-center"
             >
-              Manage Subscription
+              {t("manageZone")}
             </Link>
           </div>
         </div>
@@ -341,7 +345,7 @@ export default function GarageProfilePage() {
             </div>
             <div>
               <h2 className="text-xl font-bold text-white leading-tight">
-                Legal Verification
+                {t("legalDocs")}
               </h2>
               <p className="text-white/60 text-sm mt-1">
                 Status:{" "}
@@ -352,7 +356,9 @@ export default function GarageProfilePage() {
                       : "text-orange-500"
                   }`}
                 >
-                  {formData.verification?.status || "Not Verified"}
+                  {formData.verification?.status
+                    ? t(formData.verification.status)
+                    : t("pending")}
                 </span>
               </p>
             </div>
@@ -362,7 +368,7 @@ export default function GarageProfilePage() {
             className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-bold transition-all text-center flex items-center justify-center gap-2"
           >
             <FileText size={16} />
-            Manage Verification
+            {t("manageZone")}
           </Link>
         </div>
       </div>
@@ -373,13 +379,15 @@ export default function GarageProfilePage() {
           <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center">
             <Info className="w-5 h-5 text-orange-500" />
           </div>
-          <h2 className="text-xl font-bold text-white">Basic Information</h2>
+          <h2 className="text-xl font-bold text-white">
+            {t("personalInformation")}
+          </h2>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
           <div>
             <label className="block text-white/80 text-sm font-medium mb-2">
-              Garage Name *
+              {t("garageName")} *
             </label>
             <input
               type="text"
@@ -387,14 +395,14 @@ export default function GarageProfilePage() {
               onChange={(e) => handleChange("name", e.target.value)}
               required
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50 transition-colors"
-              placeholder="Enter garage name"
+              placeholder={t("garageNamePlaceholder")}
             />
           </div>
 
           <div>
             <label className="block text-white/80 text-sm font-medium mb-2">
               <Mail className="w-4 h-4 inline mr-2" />
-              Email *
+              {t("email")} *
             </label>
             <input
               type="email"
@@ -402,14 +410,14 @@ export default function GarageProfilePage() {
               onChange={(e) => handleChange("email", e.target.value)}
               required
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50 transition-colors"
-              placeholder="garage@example.com"
+              placeholder={t("emailPlaceholder")}
             />
           </div>
 
           <div>
             <label className="block text-white/80 text-sm font-medium mb-2">
               <Phone className="w-4 h-4 inline mr-2" />
-              Phone Number *
+              {t("phone")} *
             </label>
             <input
               type="tel"
@@ -417,13 +425,13 @@ export default function GarageProfilePage() {
               onChange={(e) => handleChange("phone", e.target.value)}
               required
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50 transition-colors"
-              placeholder="+880 1XXX-XXXXXX"
+              placeholder={t("garagePhonePlaceholder")}
             />
           </div>
 
           <div className="md:col-span-2">
             <label className="block text-white/80 text-sm font-medium mb-2">
-              Description
+              {t("description")}
             </label>
             <textarea
               value={formData.description}
@@ -431,10 +439,10 @@ export default function GarageProfilePage() {
               rows={4}
               maxLength={1000}
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50 transition-colors resize-none"
-              placeholder="Describe your garage services and specialties..."
+              placeholder={t("descPlaceholder")}
             />
             <p className="text-white/40 text-xs mt-1">
-              {formData.description.length}/1000 characters
+              {formData.description.length}/1000 {t("chars")}
             </p>
           </div>
         </div>
@@ -446,14 +454,14 @@ export default function GarageProfilePage() {
           <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
             <MapPin className="w-5 h-5 text-blue-500" />
           </div>
-          <h2 className="text-xl font-bold text-white">Location Setup</h2>
+          <h2 className="text-xl font-bold text-white">{t("locationSetup")}</h2>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
           <div className="space-y-6">
             <div className="md:col-span-2">
               <label className="block text-white/80 text-sm font-medium mb-2">
-                Street Address *
+                {t("address")} *
               </label>
               <input
                 type="text"
@@ -461,14 +469,14 @@ export default function GarageProfilePage() {
                 onChange={(e) => handleAddressChange("street", e.target.value)}
                 required
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50 transition-colors"
-                placeholder="Ex: Gazipur, Tongi"
+                placeholder={t("garageStreetPlaceholder")}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-white/80 text-sm font-medium mb-2">
-                  City *
+                  {t("city")} *
                 </label>
                 <input
                   type="text"
@@ -476,13 +484,13 @@ export default function GarageProfilePage() {
                   onChange={(e) => handleAddressChange("city", e.target.value)}
                   required
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50 transition-colors"
-                  placeholder="Dhaka"
+                  placeholder={t("cityPlaceholder")}
                 />
               </div>
 
               <div>
                 <label className="block text-white/80 text-sm font-medium mb-2">
-                  District *
+                  {t("district")} *
                 </label>
                 <input
                   type="text"
@@ -492,14 +500,14 @@ export default function GarageProfilePage() {
                   }
                   required
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50 transition-colors"
-                  placeholder="Dhaka"
+                  placeholder={t("districtPlaceholder")}
                 />
               </div>
             </div>
 
             <div>
               <label className="block text-white/80 text-sm font-medium mb-2">
-                Postal Code
+                {t("postalCode")}
               </label>
               <input
                 type="text"
@@ -508,7 +516,7 @@ export default function GarageProfilePage() {
                   handleAddressChange("postalCode", e.target.value)
                 }
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50 transition-colors"
-                placeholder="1200"
+                placeholder={t("postalPlaceholder")}
               />
             </div>
 
@@ -523,7 +531,7 @@ export default function GarageProfilePage() {
               ) : (
                 <Search size={18} />
               )}
-              Find Location on Map
+              {t("findOnMap")}
             </button>
             <p className="text-[10px] text-white/40 italic">
               * After clicking, we will pinpoint your address on the map. You
@@ -534,7 +542,7 @@ export default function GarageProfilePage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <label className="block text-white/80 text-sm font-medium">
-                Map Picker
+                {t("mapPicker")}
               </label>
               <button
                 type="button"
@@ -546,9 +554,9 @@ export default function GarageProfilePage() {
                 }`}
               >
                 {isLocationLocked ? (
-                  <>🛠️ Edit Location</>
+                  <>🛠️ {t("editLocation")}</>
                 ) : (
-                  <>✅ Confirm Location</>
+                  <>✅ {t("confirmLocation")}</>
                 )}
               </button>
             </div>
@@ -574,8 +582,8 @@ export default function GarageProfilePage() {
                     lat: formData.location.coordinates[1],
                     lng: formData.location.coordinates[0],
                     content: isLocationLocked
-                      ? "Location Locked"
-                      : "Click to Move Marker",
+                      ? t("pointOnMap")
+                      : t("pointOnMapDesc"),
                   },
                 ]}
                 className="h-[350px] w-full"
@@ -583,20 +591,18 @@ export default function GarageProfilePage() {
               {isLocationLocked && (
                 <div className="absolute inset-0 z-[1001] bg-black/5 cursor-not-allowed group">
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/80 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <p className="text-[10px] text-white">
-                      Click "Edit Location" to change
-                    </p>
+                    <p className="text-[10px] text-white">{t("clickEdit")}</p>
                   </div>
                 </div>
               )}
             </div>
             <div className="flex items-center gap-4 text-xs text-white/40 bg-white/5 p-3 rounded-lg">
               <div className="flex-1">
-                <span className="block font-bold">Longitude</span>
+                <span className="block font-bold">{t("coordinates")}</span>
                 <code>{formData.location.coordinates[0].toFixed(6)}</code>
               </div>
               <div className="flex-1">
-                <span className="block font-bold">Latitude</span>
+                <span className="block font-bold">{t("coordinates")}</span>
                 <code>{formData.location.coordinates[1].toFixed(6)}</code>
               </div>
             </div>
@@ -610,7 +616,9 @@ export default function GarageProfilePage() {
           <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
             <Clock className="w-5 h-5 text-green-500" />
           </div>
-          <h2 className="text-xl font-bold text-white">Operating Hours</h2>
+          <h2 className="text-xl font-bold text-white">
+            {t("operatingHours")}
+          </h2>
         </div>
 
         {/* 24 Hours Toggle */}
@@ -622,7 +630,7 @@ export default function GarageProfilePage() {
               onChange={(e) => handleChange("is24Hours", e.target.checked)}
               className="w-5 h-5 rounded accent-orange-500"
             />
-            <span className="text-white/80">Open 24/7</span>
+            <span className="text-white/80">{t("open247")}</span>
           </label>
         </div>
 
@@ -664,7 +672,7 @@ export default function GarageProfilePage() {
                         />
                       </div>
                       <div className="col-span-1 text-center text-white/40">
-                        to
+                        {t("to")}
                       </div>
                       <div className="col-span-4">
                         <input
@@ -679,7 +687,7 @@ export default function GarageProfilePage() {
                     </>
                   ) : (
                     <div className="col-span-9 text-white/40 text-sm">
-                      Closed
+                      {t("closed")}
                     </div>
                   )}
                 </div>
@@ -696,7 +704,7 @@ export default function GarageProfilePage() {
             <Car className="w-5 h-5 text-purple-500" />
           </div>
           <h2 className="text-xl font-bold text-white">
-            Supported Vehicle Types
+            {t("supportedVehicles")}
           </h2>
         </div>
 
