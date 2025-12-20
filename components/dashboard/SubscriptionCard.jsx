@@ -12,8 +12,11 @@ import {
   CheckCircle,
 } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 export default function SubscriptionCard() {
+  const t = useTranslations("Subscription");
+  const commonT = useTranslations("Common");
   const router = useRouter();
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -68,7 +71,7 @@ export default function SubscriptionCard() {
     const limit = subscription.planId.limits?.serviceCalls || 0;
     const used = subscription.usage?.serviceCallsUsed || 0;
 
-    if (limit === -1) return "Unlimited";
+    if (limit === -1) return t("unlimited");
     return `${Math.max(0, limit - used)} / ${limit}`;
   };
 
@@ -87,11 +90,9 @@ export default function SubscriptionCard() {
         <div className="flex items-start justify-between mb-6">
           <div>
             <h3 className="text-2xl font-bold text-white mb-2">
-              No Active Subscription
+              {t("noSubscription")}
             </h3>
-            <p className="text-white/80">
-              Subscribe to unlock premium features and 24/7 support
-            </p>
+            <p className="text-white/80">{t("subscribeOffer")}</p>
           </div>
           <Crown className="w-12 h-12 text-yellow-300" />
         </div>
@@ -99,15 +100,15 @@ export default function SubscriptionCard() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="bg-white/10 backdrop-blur rounded-lg p-4">
             <Zap className="w-6 h-6 text-yellow-300 mb-2" />
-            <p className="text-white/80 text-sm">24/7 Support</p>
+            <p className="text-white/80 text-sm">{t("unlimited")} Support</p>
           </div>
           <div className="bg-white/10 backdrop-blur rounded-lg p-4">
             <CheckCircle className="w-6 h-6 text-green-300 mb-2" />
-            <p className="text-white/80 text-sm">Priority Service</p>
+            <p className="text-white/80 text-sm">{commonT("save")} Service</p>
           </div>
           <div className="bg-white/10 backdrop-blur rounded-lg p-4">
             <TrendingUp className="w-6 h-6 text-blue-300 mb-2" />
-            <p className="text-white/80 text-sm">Unlimited Calls</p>
+            <p className="text-white/80 text-sm">{t("unlimited")} Calls</p>
           </div>
         </div>
 
@@ -116,13 +117,13 @@ export default function SubscriptionCard() {
             href="/trial/activate"
             className="flex-1 bg-white text-orange-600 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition-all duration-300 text-center"
           >
-            Start Free Trial
+            {t("startTrial")}
           </Link>
           <Link
             href="/pricing"
             className="flex-1 bg-white/20 backdrop-blur text-white px-6 py-3 rounded-lg font-bold hover:bg-white/30 transition-all duration-300 text-center"
           >
-            View Plans
+            {t("viewPlans")}
           </Link>
         </div>
       </div>
@@ -154,12 +155,12 @@ export default function SubscriptionCard() {
                 <h3 className="text-3xl font-bold text-white">{plan.name}</h3>
                 {plan.isFeatured && (
                   <span className="bg-yellow-400 text-gray-900 text-xs px-2 py-1 rounded-full font-bold">
-                    ⭐ Popular
+                    ⭐ {t("popular")}
                   </span>
                 )}
                 {isTrial && (
                   <span className="bg-purple-400 text-white text-xs px-2 py-1 rounded-full font-bold">
-                    Trial
+                    {t("trial")}
                   </span>
                 )}
               </div>
@@ -174,7 +175,7 @@ export default function SubscriptionCard() {
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Zap className="w-5 h-5 text-yellow-300" />
-                <p className="text-white/70 text-sm">Service Calls</p>
+                <p className="text-white/70 text-sm">{t("serviceCalls")}</p>
               </div>
               <p className="text-white text-2xl font-bold">
                 {getServiceCallsRemaining()}
@@ -185,14 +186,14 @@ export default function SubscriptionCard() {
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Calendar className="w-5 h-5 text-blue-300" />
-                <p className="text-white/70 text-sm">Days Remaining</p>
+                <p className="text-white/70 text-sm">{t("daysRemaining")}</p>
               </div>
               <p
                 className={`text-2xl font-bold ${
                   isExpiringSoon ? "text-red-300" : "text-white"
                 }`}
               >
-                {daysRemaining} days
+                {t("days", { count: daysRemaining })}
               </p>
             </div>
 
@@ -200,7 +201,7 @@ export default function SubscriptionCard() {
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
                 <TrendingUp className="w-5 h-5 text-green-300" />
-                <p className="text-white/70 text-sm">Billing</p>
+                <p className="text-white/70 text-sm">{t("billing")}</p>
               </div>
               <p className="text-white text-2xl font-bold capitalize">
                 {subscription.billingCycle}
@@ -213,7 +214,7 @@ export default function SubscriptionCard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-white/70 text-sm mb-1">
-                  {isTrial ? "Trial Expires" : "Next Billing Date"}
+                  {isTrial ? t("trialExpires") : t("nextBilling")}
                 </p>
                 <p className="text-white font-semibold">
                   {formatDate(subscription.endDate)}
@@ -237,7 +238,7 @@ export default function SubscriptionCard() {
                 href="/pricing"
                 className="flex-1 bg-white text-purple-600 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition-all duration-300 text-center"
               >
-                Upgrade to Premium
+                {t("upgradePremium")}
               </Link>
             ) : (
               <>
@@ -245,13 +246,13 @@ export default function SubscriptionCard() {
                   href="/pricing"
                   className="flex-1 bg-white text-orange-600 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition-all duration-300 text-center"
                 >
-                  Upgrade Plan
+                  {t("upgradePlan")}
                 </Link>
                 <button
                   onClick={() => setShowCancelModal(true)}
                   className="flex-1 bg-white/20 backdrop-blur text-white px-6 py-3 rounded-lg font-bold hover:bg-white/30 transition-all duration-300"
                 >
-                  Cancel Subscription
+                  {t("cancelSubscription")}
                 </button>
               </>
             )}
@@ -259,7 +260,7 @@ export default function SubscriptionCard() {
               href="/user/billing"
               className="sm:flex-initial bg-white/20 backdrop-blur text-white px-6 py-3 rounded-lg font-bold hover:bg-white/30 transition-all duration-300 text-center"
             >
-              View Billing
+              {t("viewBilling")}
             </Link>
           </div>
         </div>
@@ -271,7 +272,7 @@ export default function SubscriptionCard() {
           <div className="bg-gray-800 rounded-2xl p-8 max-w-md w-full shadow-2xl">
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-2xl font-bold text-white">
-                Cancel Subscription?
+                {t("confirmCancel")}
               </h3>
               <button
                 onClick={() => setShowCancelModal(false)}
@@ -281,18 +282,14 @@ export default function SubscriptionCard() {
               </button>
             </div>
 
-            <p className="text-gray-300 mb-6">
-              Are you sure you want to cancel your subscription? You'll lose
-              access to premium features at the end of your current billing
-              period.
-            </p>
+            <p className="text-gray-300 mb-6">{t("cancelWarning")}</p>
 
             <div className="flex gap-3">
               <button
                 onClick={() => setShowCancelModal(false)}
                 className="flex-1 bg-gray-700 text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-600 transition-all duration-300"
               >
-                Keep Subscription
+                {t("keepSubscription")}
               </button>
               <button
                 onClick={() => {
@@ -302,7 +299,7 @@ export default function SubscriptionCard() {
                 }}
                 className="flex-1 bg-red-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-700 transition-all duration-300"
               >
-                Yes, Cancel
+                {t("yesCancel")}
               </button>
             </div>
           </div>

@@ -16,8 +16,11 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { useTranslations } from "next-intl";
 
 export default function SettingsPage() {
+  const t = useTranslations("Settings");
+  const commonT = useTranslations("Common");
   const user = useSelector(selectUser);
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState("security");
@@ -64,7 +67,7 @@ export default function SettingsPage() {
       });
       const data = await res.json();
       if (data.success) {
-        toast.success("Password changed successfully!");
+        toast.success(t("passwordSecure"));
         setPasswordData({
           currentPassword: "",
           newPassword: "",
@@ -110,9 +113,9 @@ export default function SettingsPage() {
   };
 
   const tabs = [
-    { id: "security", label: "Security", icon: Lock },
-    { id: "notifications", label: "Notifications", icon: Bell },
-    { id: "account", label: "Account", icon: Shield },
+    { id: "security", label: t("security"), icon: Lock },
+    { id: "notifications", label: t("notifications"), icon: Bell },
+    { id: "account", label: t("account"), icon: Shield },
   ];
 
   return (
@@ -121,11 +124,9 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">
           <Settings className="w-8 h-8 text-orange-500" />
-          General Settings
+          {t("title")}
         </h1>
-        <p className="text-white/60 mt-1">
-          Manage your account security and preferences
-        </p>
+        <p className="text-white/60 mt-1">{t("manageAccount")}</p>
       </div>
 
       <div className="grid md:grid-cols-[240px_1fr] gap-8">
@@ -153,11 +154,9 @@ export default function SettingsPage() {
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div>
                 <h3 className="text-xl font-bold text-white mb-2">
-                  Change Password
+                  {t("changePassword")}
                 </h3>
-                <p className="text-white/40 text-sm">
-                  Update your password to keep your account secure
-                </p>
+                <p className="text-white/40 text-sm">{t("passwordSecure")}</p>
               </div>
 
               <form
@@ -167,7 +166,7 @@ export default function SettingsPage() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-white/60">
-                      Current Password
+                      {t("currentPassword")}
                     </label>
                     <div className="relative">
                       <input
@@ -198,7 +197,7 @@ export default function SettingsPage() {
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-white/60">
-                      New Password
+                      {t("newPassword")}
                     </label>
                     <div className="relative">
                       <input
@@ -229,7 +228,7 @@ export default function SettingsPage() {
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-white/60">
-                      Confirm New Password
+                      {t("confirmNewPassword")}
                     </label>
                     <input
                       type="password"
@@ -254,7 +253,7 @@ export default function SettingsPage() {
                   {loading ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
-                    "Update Password"
+                    t("updatePassword")
                   )}
                 </button>
               </form>
@@ -265,29 +264,27 @@ export default function SettingsPage() {
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div>
                 <h3 className="text-xl font-bold text-white mb-2">
-                  Notification Preferences
+                  {t("notifPrefs")}
                 </h3>
-                <p className="text-white/40 text-sm">
-                  Control how we communicate with you
-                </p>
+                <p className="text-white/40 text-sm">{t("controlComm")}</p>
               </div>
 
               <div className="space-y-4">
                 {[
                   {
                     key: "email",
-                    title: "Email Notifications",
-                    desc: "Receive booking updates via email",
+                    title: t("emailNotif"),
+                    desc: t("emailDesc"),
                   },
                   {
                     key: "push",
-                    title: "Push Notifications",
-                    desc: "Receive real-time alerts on your browser",
+                    title: t("pushNotif"),
+                    desc: t("pushDesc"),
                   },
                   {
                     key: "serviceReminders",
-                    title: "Service Reminders",
-                    desc: "Get notified when your vehicle needs maintenance",
+                    title: t("serviceReminders"),
+                    desc: t("serviceRemindersDesc"),
                   },
                 ].map((item, i) => (
                   <div
@@ -317,11 +314,9 @@ export default function SettingsPage() {
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div>
                 <h3 className="text-xl font-bold text-white mb-2 text-red-500">
-                  Danger Zone
+                  {t("dangerZone")}
                 </h3>
-                <p className="text-white/40 text-sm">
-                  Be careful, these actions are permanent
-                </p>
+                <p className="text-white/40 text-sm">{t("beCareful")}</p>
               </div>
 
               <div className="space-y-4">
@@ -332,14 +327,13 @@ export default function SettingsPage() {
                     </div>
                     <div>
                       <h4 className="font-bold text-white mb-1">
-                        Delete Account
+                        {t("deleteAccount")}
                       </h4>
                       <p className="text-sm text-white/40 mb-4">
-                        Once you delete your account, there is no going back.
-                        Please be certain.
+                        {t("deleteWarning")}
                       </p>
                       <button className="px-6 py-2.5 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-sm font-bold hover:bg-red-500 hover:text-white transition-all">
-                        Deactivate Account
+                        {t("deactivate")}
                       </button>
                     </div>
                   </div>
@@ -351,13 +345,14 @@ export default function SettingsPage() {
                       <AlertTriangle className="w-6 h-6 text-orange-500" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-white mb-1">Backup Data</h4>
+                      <h4 className="font-bold text-white mb-1">
+                        {t("backupData")}
+                      </h4>
                       <p className="text-sm text-white/40 mb-4">
-                        Request a download of all your personal data stored on
-                        our servers.
+                        {t("backupDesc")}
                       </p>
                       <button className="px-6 py-2.5 bg-white/10 text-white rounded-xl text-sm font-bold hover:bg-white/20 transition-all">
-                        Request Data Export
+                        {t("requestExport")}
                       </button>
                     </div>
                   </div>

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
+import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,6 +35,8 @@ const loginSchema = z.object({
 });
 
 export default function LoginForm() {
+  const t = useTranslations("Auth");
+  const commonT = useTranslations("Common");
   const [activeTab, setActiveTab] = useState("user");
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
@@ -126,7 +129,7 @@ export default function LoginForm() {
           </span>
         </h1>
         <p className="text-gray-400 text-base font-medium my-4!">
-          Securely access your dashboard
+          {t("authenticating")}
         </p>
       </div>
 
@@ -186,7 +189,7 @@ export default function LoginForm() {
           {/* Email Field */}
           <div className="space-y-3">
             <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">
-              Email Address
+              {t("email")}
             </label>
             <div
               className={`group flex items-center gap-4 bg-black/30 border border-white/5 rounded-2xl p-4!  my-2! transition-all duration-300 hover:bg-black/40 focus-within:bg-black/50 focus-within:border-[#ff4800] focus-within:ring-1 focus-within:ring-[#ff4800]/50 focus-within:shadow-[0_0_20px_rgba(255,72,0,0.1)] ${
@@ -218,7 +221,7 @@ export default function LoginForm() {
           {/* Password Field */}
           <div className="space-y-3">
             <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">
-              Password
+              {t("password")}
             </label>
             <div
               className={`group flex items-center gap-4 bg-black/30 border border-white/5 rounded-2xl p-4! my-2! transition-all duration-300 hover:bg-black/40 focus-within:bg-black/50 focus-within:border-[#ff4800] focus-within:ring-1 focus-within:ring-[#ff4800]/50 focus-within:shadow-[0_0_20px_rgba(255,72,0,0.1)] ${
@@ -279,7 +282,7 @@ export default function LoginForm() {
               href="/forgot-password"
               className="font-semibold text-[#ff4800] hover:text-[#ff8800] transition-colors hover:underline decoration-2 underline-offset-4"
             >
-              Forgot Password?
+              {t("forgotPassword")}
             </Link>
           </div>
 
@@ -292,22 +295,22 @@ export default function LoginForm() {
             {isLoading ? (
               <span className="flex items-center justify-center gap-3">
                 <Loader2 className="w-6 h-6 animate-spin" />
-                Authenticating...
+                {t("authenticating")}
               </span>
             ) : (
-              "Login Securely"
+              t("login")
             )}
           </button>
 
           {/* Sign Up Link */}
           <div className="text-center pt-4 border-t border-white/5">
             <p className="text-gray-400 font-medium">
-              New here?{" "}
+              {t("noAccount")}{" "}
               <Link
                 href="/signup"
                 className="text-white font-bold hover:text-[#ff4800] transition-colors ml-1"
               >
-                Create an account
+                {t("signup")}
               </Link>
             </p>
           </div>

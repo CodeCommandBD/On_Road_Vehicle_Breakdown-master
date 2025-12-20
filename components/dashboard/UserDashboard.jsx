@@ -10,10 +10,12 @@ import SubscriptionCard from "@/components/dashboard/SubscriptionCard";
 import { Loader2, Siren, Phone, AlertCircle, X } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { useDispatch } from "react-redux";
 import { updateUser } from "@/store/slices/authSlice";
+import { useTranslations } from "next-intl";
 
 export default function UserDashboard({ user }) {
+  const t = useTranslations("SOS");
+  const dashT = useTranslations("Dashboard");
   const dispatch = useDispatch();
   const [bookings, setBookings] = useState([]);
   const [activeSOS, setActiveSOS] = useState(null);
@@ -147,7 +149,7 @@ export default function UserDashboard({ user }) {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg sm:text-xl font-bold text-white">
-                  Emergency SOS Active
+                  {t("emergencySOS")}
                 </h2>
                 <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded animate-pulse">
                   LIVE
@@ -155,8 +157,10 @@ export default function UserDashboard({ user }) {
               </div>
               <p className="text-red-400 text-sm font-medium mt-1">
                 {activeSOS.status === "pending"
-                  ? "Looking for nearby garages to respond..."
-                  : `Help is coming! Accepted by ${activeSOS.assignedGarage?.name}`}
+                  ? t("lookingForHelp")
+                  : t("helpIsComing", {
+                      garageName: activeSOS.assignedGarage?.name,
+                    })}
               </p>
             </div>
           </div>
@@ -175,7 +179,7 @@ export default function UserDashboard({ user }) {
                 href={`tel:${activeSOS.assignedGarage.phone}`}
                 className="bg-green-500 hover:bg-green-600 text-white px-5 py-2.5 rounded-lg font-bold transition-all shadow-lg shadow-green-500/20 flex items-center gap-2 text-sm"
               >
-                <Phone size={16} /> Call Now
+                <Phone size={16} /> {t("callNow")}
               </a>
             </div>
           )}
@@ -189,12 +193,12 @@ export default function UserDashboard({ user }) {
             {isCancelling ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                Cancelling...
+                {t("cancelling")}
               </>
             ) : (
               <>
                 <X size={16} />
-                Cancel SOS
+                {t("cancelSOS")}
               </>
             )}
           </button>
@@ -211,7 +215,7 @@ export default function UserDashboard({ user }) {
               </div>
 
               <h3 className="text-2xl font-bold text-white mb-3">
-                Cancel SOS Alert?
+                {t("confirmCancel")}
               </h3>
               <p className="text-white/60 mb-8 leading-relaxed">
                 {activeSOS?.assignedGarage
@@ -225,7 +229,7 @@ export default function UserDashboard({ user }) {
                   disabled={isCancelling}
                   className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded-2xl font-bold transition-all border border-white/5"
                 >
-                  Keep Alert Active
+                  {t("keepActive")}
                 </button>
                 <button
                   onClick={executeCancelSOS}
@@ -235,12 +239,12 @@ export default function UserDashboard({ user }) {
                   {isCancelling ? (
                     <>
                       <Loader2 size={20} className="animate-spin" />
-                      Cancelling...
+                      {t("cancelling")}
                     </>
                   ) : (
                     <>
                       <X size={20} />
-                      Yes, Cancel SOS
+                      {t("yesCancel")}
                     </>
                   )}
                 </button>
@@ -272,7 +276,7 @@ export default function UserDashboard({ user }) {
         <div className="lg:col-span-2">
           <div className="bg-[#1E1E1E] border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 fade-in">
             <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">
-              All Bookings
+              {t("allBookings")}
             </h3>
             <BookingTable type="user" bookings={bookings} />
           </div>

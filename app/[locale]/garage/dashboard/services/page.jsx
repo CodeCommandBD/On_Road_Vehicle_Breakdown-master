@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useTranslations } from "next-intl";
 
 // Icon mapping for service categories
 const categoryIcons = {
@@ -37,6 +38,8 @@ const categoryIcons = {
 };
 
 export default function ServicesPage() {
+  const t = useTranslations("Garage");
+  const commonT = useTranslations("Common");
   const user = useSelector(selectUser);
   const [allServices, setAllServices] = useState([]);
   const [garageProfile, setGarageProfile] = useState(null);
@@ -147,15 +150,13 @@ export default function ServicesPage() {
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">
-            Manage Services
+            {t("servicesTitle")}
           </h1>
-          <p className="text-white/60">
-            Select the services your garage offers to customers
-          </p>
+          <p className="text-white/60">{t("missionDesc")}</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl">
-            <span className="text-white/60 text-sm">Selected: </span>
+            <span className="text-white/60 text-sm">{commonT("status")}: </span>
             <span className="text-white font-bold text-lg">
               {selectedServices.length}
             </span>
@@ -172,12 +173,12 @@ export default function ServicesPage() {
             {isSaving ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                Saving...
+                {commonT("loading")}
               </>
             ) : (
               <>
                 <CheckCircle2 className="w-5 h-5" />
-                Save Services
+                {t("addService")}
               </>
             )}
           </button>
@@ -190,7 +191,7 @@ export default function ServicesPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
           <input
             type="text"
-            placeholder="Search services..."
+            placeholder={commonT("search")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-orange-500/50 transition-colors"
@@ -287,16 +288,17 @@ export default function ServicesPage() {
       {filteredServices.length === 0 && (
         <div className="bg-white/5 rounded-xl border border-white/10 p-12 text-center">
           <Wrench className="w-16 h-16 text-white/30 mx-auto mb-4" />
-          <p className="text-white/60">No services found</p>
-          <p className="text-white/40 text-sm mt-2">
-            Try adjusting your search or filter
-          </p>
+          <p className="text-white/60">{t("noServices")}</p>
+          <p className="text-white/40 text-sm mt-2">{t("noServicesSub")}</p>
         </div>
       )}
 
       {/* Results count */}
       <div className="text-center text-white/40 text-sm">
-        Showing {filteredServices.length} of {allServices?.length || 0} services
+        {t("showingServices", {
+          count: filteredServices.length,
+          total: allServices?.length || 0,
+        })}
       </div>
     </div>
   );

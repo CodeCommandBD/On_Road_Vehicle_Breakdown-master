@@ -14,8 +14,11 @@ import { useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
+import { useTranslations } from "next-intl";
 
 export default function QuickActions({ onSOSSent }) {
+  const t = useTranslations("SOS");
+  const commonT = useTranslations("Common");
   const [loading, setLoading] = useState(false);
   const [showSOSModal, setShowSOSModal] = useState(false);
   const { user } = useSelector((state) => state.auth);
@@ -82,16 +85,16 @@ export default function QuickActions({ onSOSSent }) {
 
   const actions = [
     {
-      title: "New Request",
-      description: "Book a service",
+      title: t("newRequest"),
+      description: t("bookService"),
       icon: Plus,
       gradient: "gradient-orange",
       href: "/book",
       shadow: "shadow-glow-orange",
     },
     {
-      title: "Emergency SOS",
-      description: loading ? "Sending Alert..." : "Urgent assistance",
+      title: t("emergencySOS"),
+      description: loading ? t("sendingAlert") : t("urgentAssistance"),
       icon: loading ? Siren : AlertCircle,
       gradient: "gradient-red",
       href: "#sos",
@@ -100,16 +103,16 @@ export default function QuickActions({ onSOSSent }) {
       onClick: handleSOS,
     },
     {
-      title: "Find Garages",
-      description: "Nearby locations",
+      title: t("findGarages"),
+      description: t("nearbyLocations"),
       icon: MapPin,
       gradient: "gradient-blue",
       href: "/user/dashboard/garages",
       shadow: "shadow-glow-blue",
     },
     {
-      title: "Support",
-      description: "Get help",
+      title: t("support"),
+      description: t("getHelp"),
       icon: MessageCircle,
       gradient: "gradient-green",
       href: "/user/dashboard/messages?chat=support",
@@ -120,7 +123,7 @@ export default function QuickActions({ onSOSSent }) {
   return (
     <div className="mb-6 sm:mb-8 fade-in">
       <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">
-        Quick Actions
+        {t("quickActions")}
       </h3>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {actions.map((action, index) => {
@@ -174,11 +177,10 @@ export default function QuickActions({ onSOSSent }) {
               </div>
 
               <h3 className="text-2xl font-bold text-white mb-3">
-                Trigger Emergency SOS?
+                {t("triggerSOS")}
               </h3>
               <p className="text-white/60 mb-8 leading-relaxed">
-                This will immediately broadcast your location to nearby garages
-                and administrators. Only use this for real emergencies.
+                {t("sosWarning")}
               </p>
 
               <div className="flex flex-col gap-3">
@@ -187,19 +189,19 @@ export default function QuickActions({ onSOSSent }) {
                   className="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-bold transition-all shadow-lg shadow-red-600/20 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
                 >
                   <Siren size={20} />
-                  Yes, Send SOS Alert
+                  {t("yesSendSOS")}
                 </button>
                 <button
                   onClick={() => setShowSOSModal(false)}
                   className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/60 rounded-2xl font-bold transition-all border border-white/5"
                 >
-                  Cancel
+                  {commonT("cancel")}
                 </button>
               </div>
             </div>
 
             <div className="bg-red-500/5 p-4 border-t border-red-500/10 text-[10px] text-red-400 font-medium">
-              Note: Abuse of the SOS system may lead to account suspension.
+              {t("sosAbuseNote")}
             </div>
           </div>
         </div>

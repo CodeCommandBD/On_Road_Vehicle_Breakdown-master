@@ -3,36 +3,38 @@
 import { Award, TrendingUp, Gift, Info } from "lucide-react";
 import { useState } from "react";
 import RewardsInfoModal from "./RewardsInfoModal";
+import { useTranslations } from "next-intl";
 
 export default function UserRewardsCard({ user, stats }) {
+  const t = useTranslations("Rewards");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const points = stats?.points || 0;
   const tier = user?.membershipTier || "free";
 
   const tierConfig = {
     free: {
-      name: "Free",
+      name: t("tiers.free"),
       color: "from-gray-500 to-gray-600",
-      nextTier: "Basic",
+      nextTier: t("tiers.basic"),
       pointsNeeded: 500,
       benefits: ["Basic support", "Standard booking"],
     },
     basic: {
-      name: "Basic",
+      name: t("tiers.basic"),
       color: "from-blue-500 to-blue-600",
-      nextTier: "Standard",
+      nextTier: t("tiers.standard"),
       pointsNeeded: 1500,
       benefits: ["Priority support", "5% cashback", "Faster response"],
     },
     standard: {
-      name: "Standard",
+      name: t("tiers.standard"),
       color: "from-purple-500 to-purple-600",
-      nextTier: "Premium",
+      nextTier: t("tiers.premium"),
       pointsNeeded: 3000,
       benefits: ["24/7 support", "10% cashback", "Premium garages"],
     },
     premium: {
-      name: "Premium",
+      name: t("tiers.premium"),
       color: "from-yellow-400 to-orange-500",
       nextTier: null,
       pointsNeeded: null,
@@ -56,7 +58,7 @@ export default function UserRewardsCard({ user, stats }) {
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
           <Award className="w-5 h-5 text-orange-500" />
-          Rewards & Benefits
+          {t("title")}
         </h3>
         <button
           onClick={() => setIsModalOpen(true)}
@@ -66,7 +68,7 @@ export default function UserRewardsCard({ user, stats }) {
             size={14}
             className="group-hover:rotate-12 transition-transform"
           />
-          How it works
+          {t("howItWorks")}
         </button>
       </div>
 
@@ -76,7 +78,7 @@ export default function UserRewardsCard({ user, stats }) {
       >
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="text-white/80 text-sm mb-1">Your Points</p>
+            <p className="text-white/80 text-sm mb-1">{t("yourPoints")}</p>
             <h2 className="text-4xl font-bold text-white">{points}</h2>
           </div>
           <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
@@ -87,12 +89,15 @@ export default function UserRewardsCard({ user, stats }) {
         {/* Tier Badge */}
         <div className="flex items-center gap-2">
           <span className="px-3 py-1 bg-white/20 rounded-full text-white text-sm font-semibold">
-            {currentTier.name} Member
+            {t("member", { tier: currentTier.name })}
           </span>
           {currentTier.nextTier && (
             <span className="text-white/70 text-sm flex items-center gap-1">
               <TrendingUp className="w-3 h-3" />
-              {currentTier.pointsNeeded - points} to {currentTier.nextTier}
+              {t("pointsNeeded", {
+                count: currentTier.pointsNeeded - points,
+                tier: currentTier.nextTier,
+              })}
             </span>
           )}
         </div>
@@ -102,7 +107,7 @@ export default function UserRewardsCard({ user, stats }) {
       {currentTier.nextTier && (
         <div className="mb-6">
           <div className="flex items-center justify-between text-sm mb-2">
-            <span className="text-white/60">Next Tier Progress</span>
+            <span className="text-white/60">{t("progress")}</span>
             <span className="text-white font-semibold">
               {Math.round(progress)}%
             </span>
@@ -137,7 +142,7 @@ export default function UserRewardsCard({ user, stats }) {
       {/* Upgrade CTA */}
       {currentTier.nextTier && (
         <button className="w-full mt-6 py-3 bg-gradient-orange text-white font-semibold rounded-xl hover:shadow-glow-orange transition-all scale-hover">
-          Upgrade to {currentTier.nextTier}
+          {t("upgrade", { tier: currentTier.nextTier })}
         </button>
       )}
 

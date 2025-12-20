@@ -23,8 +23,12 @@ import LeaderboardWidget from "@/components/dashboard/LeaderboardWidget";
 import UserRewardsCard from "@/components/dashboard/UserRewardsCard";
 import { useDispatch } from "react-redux";
 import { updateUser } from "@/store/slices/authSlice";
+import { useTranslations } from "next-intl";
 
 export default function GarageDashboard({ user }) {
+  const t = useTranslations("Dashboard");
+  const garageT = useTranslations("Garage");
+  const bookingT = useTranslations("Bookings");
   const dispatch = useDispatch();
   const [bookings, setBookings] = useState([]);
   const [garageProfile, setGarageProfile] = useState(null);
@@ -140,15 +144,15 @@ export default function GarageDashboard({ user }) {
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-3xl font-bold text-white">
           {garageProfile?.name
-            ? `${garageProfile.name} Dashboard`
-            : "Garage Dashboard"}
+            ? `${garageProfile.name} ${t("dashboard")}`
+            : t("dashboard")}
         </h1>
         <Link
           href="/garage/dashboard/services/new"
           className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:shadow-lg hover:shadow-orange-500/30 transition-all font-medium whitespace-nowrap"
         >
           <Plus className="w-5 h-5" />
-          Add Service
+          {garageT("addService")}
         </Link>
       </div>
       {/* Mission Control Launch Layout */}
@@ -164,12 +168,11 @@ export default function GarageDashboard({ user }) {
               <Activity className="text-orange-500" size={28} />
             </div>
             <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
-              Launch Mission Control
+              {garageT("launchMission")}
               <ArrowUpRight className="text-white/20 group-hover:text-white group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
             </h2>
             <p className="text-white/60 text-sm leading-relaxed mb-6">
-              Access real-time service maps, live tracking for SOS emergencies,
-              and global navigation for all active bookings.
+              {garageT("missionDesc")}
             </p>
             <div className="flex items-center gap-4">
               <div className="flex -space-x-2">
@@ -183,7 +186,7 @@ export default function GarageDashboard({ user }) {
                 ))}
               </div>
               <span className="text-xs text-orange-400 font-bold uppercase tracking-widest">
-                Live Feed active
+                {t("liveFeed")}
               </span>
             </div>
           </div>
@@ -191,15 +194,19 @@ export default function GarageDashboard({ user }) {
 
         {/* Support/Resource Card */}
         <div className="bg-white/5 border border-white/10 rounded-3xl p-8">
-          <h3 className="text-lg font-bold text-white mb-4">Quick Resources</h3>
+          <h3 className="text-lg font-bold text-white mb-4">
+            {garageT("quickResources")}
+          </h3>
           <div className="space-y-4">
             <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-white/10 transition-all">
               <div className="flex items-center gap-3">
                 <MapPin size={18} className="text-blue-400" />
                 <div>
-                  <p className="text-sm font-bold text-white">Service Area</p>
+                  <p className="text-sm font-bold text-white">
+                    {garageT("serviceArea")}
+                  </p>
                   <p className="text-[10px] text-white/40">
-                    Manage your operational zone
+                    {garageT("manageZone")}
                   </p>
                 </div>
               </div>
@@ -208,9 +215,11 @@ export default function GarageDashboard({ user }) {
               <div className="flex items-center gap-3">
                 <Star size={18} className="text-orange-400" />
                 <div>
-                  <p className="text-sm font-bold text-white">Review Portal</p>
+                  <p className="text-sm font-bold text-white">
+                    {garageT("reviewPortal")}
+                  </p>
                   <p className="text-[10px] text-white/40">
-                    Check your latest feedback
+                    {garageT("checkFeedback")}
                   </p>
                 </div>
               </div>
@@ -221,7 +230,9 @@ export default function GarageDashboard({ user }) {
 
       {/* Active Bookings Table */}
       <div>
-        <h2 className="text-xl font-bold text-white mb-4">Active Bookings</h2>
+        <h2 className="text-xl font-bold text-white mb-4">
+          {bookingT("title")}
+        </h2>
         <BookingTable
           type="garage"
           bookings={bookings}

@@ -6,8 +6,10 @@ import { useSelector } from "react-redux";
 import { selectIsAuthenticated, selectUser } from "@/store/slices/authSlice";
 import Link from "next/link";
 import { Check, Sparkles, TrendingUp, Users, Crown } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export default function PricingPage() {
+  const t = useTranslations("Pricing");
   const router = useRouter();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const user = useSelector(selectUser);
@@ -100,7 +102,7 @@ export default function PricingPage() {
       <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-black flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white text-xl">Loading plans...</p>
+          <p className="text-white text-xl">{t("loading")}</p>
         </div>
       </div>
     );
@@ -111,11 +113,10 @@ export default function PricingPage() {
       {/* Header */}
       <div className="max-w-7xl mx-auto text-center mb-16">
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6">
-          Choose Your Perfect Plan
+          {t("title")}
         </h1>
         <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
-          Get 24/7 vehicle breakdown assistance with our flexible membership
-          plans. Save 17% with annual billing!
+          {t("description")}
         </p>
 
         {/* Billing Toggle */}
@@ -128,7 +129,7 @@ export default function PricingPage() {
                 : "text-gray-400 hover:text-white"
             }`}
           >
-            Monthly
+            {t("monthly")}
           </button>
           <button
             onClick={() => setBillingCycle("yearly")}
@@ -138,9 +139,9 @@ export default function PricingPage() {
                 : "text-gray-400 hover:text-white"
             }`}
           >
-            Yearly
+            {t("yearly")}
             <span className="absolute -top-3 -right-2 bg-green-500 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded-full animate-bounce">
-              Save 17%
+              {t("savePercent")}
             </span>
           </button>
         </div>
@@ -171,14 +172,14 @@ export default function PricingPage() {
               {plan.isFeatured && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-full text-center">
                   <span className="bg-yellow-400 text-gray-900 px-4 py-1 rounded-full text-xs font-bold shadow-lg uppercase tracking-wide">
-                    Most Popular
+                    {t("mostPopular")}
                   </span>
                 </div>
               )}
               {isTrial && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-full text-center">
                   <span className="bg-purple-500 text-white px-4 py-1 rounded-full text-xs font-bold shadow-lg uppercase tracking-wide">
-                    Free for 7 Days
+                    {t("freeTrial")}
                   </span>
                 </div>
               )}
@@ -225,7 +226,7 @@ export default function PricingPage() {
                       plan.isFeatured ? "text-white/80" : "text-gray-400"
                     }`}
                   >
-                    /mo
+                    {t("perMonth")}
                   </span>
                 </div>
                 {billingCycle === "yearly" && !isTrial && (
@@ -234,13 +235,11 @@ export default function PricingPage() {
                       plan.isFeatured ? "text-white/70" : "text-gray-500"
                     }`}
                   >
-                    Billed ৳{price} yearly
+                    {t("billedYearly", { price })}
                   </p>
                 )}
                 {isTrial && (
-                  <p className="text-xs mt-1 text-purple-400">
-                    No credit card required
-                  </p>
+                  <p className="text-xs mt-1 text-purple-400">{t("noCard")}</p>
                 )}
               </div>
 
@@ -269,7 +268,7 @@ export default function PricingPage() {
                 {plan.features.length > 5 && (
                   <li className="text-center pt-2">
                     <span className="text-xs text-gray-500">
-                      + {plan.features.length - 5} more features
+                      {t("moreFeatures", { count: plan.features.length - 5 })}
                     </span>
                   </li>
                 )}
@@ -286,7 +285,7 @@ export default function PricingPage() {
                     : "bg-gradient-to-r from-orange-500 to-red-600 text-white hover:from-orange-600 hover:to-red-700"
                 }`}
               >
-                {isTrial ? "Try Free Now" : "Choose Plan"}
+                {isTrial ? t("tryFree") : t("choosePlan")}
               </button>
             </div>
           );
@@ -295,18 +294,13 @@ export default function PricingPage() {
 
       {/* FAQ / Comparison Section */}
       <div className="max-w-7xl mx-auto mt-20 text-center">
-        <h2 className="text-3xl font-bold text-white mb-4">
-          Need help choosing?
-        </h2>
-        <p className="text-gray-400 mb-8">
-          All plans include mobile app access, real-time tracking, and secure
-          payments
-        </p>
+        <h2 className="text-3xl font-bold text-white mb-4">{t("needHelp")}</h2>
+        <p className="text-gray-400 mb-8">{t("helpDesc")}</p>
         <Link
           href="/contact"
           className="inline-block bg-gray-800 text-white px-8 py-4 rounded-lg hover:bg-gray-700 transition-colors duration-300"
         >
-          Contact Support
+          {t("contactSupport")}
         </Link>
       </div>
     </div>

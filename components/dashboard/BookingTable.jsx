@@ -17,12 +17,15 @@ import {
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectSearchTerm } from "@/store/slices/uiSlice";
+import { useTranslations } from "next-intl";
 
 export default function BookingTable({
   type = "user",
   bookings = [],
   onStatusUpdate,
 }) {
+  const t = useTranslations("Bookings");
+  const commonT = useTranslations("Common");
   const searchTerm = useSelector(selectSearchTerm);
 
   const filteredBookings = bookings.filter((booking) => {
@@ -45,11 +48,9 @@ export default function BookingTable({
     return (
       <div className="bg-white/5 rounded-xl border border-white/10 p-12 text-center">
         <Package className="w-16 h-16 text-white/30 mx-auto mb-4" />
-        <p className="text-white/60">No bookings found.</p>
+        <p className="text-white/60">{t("noBookings")}</p>
         <p className="text-white/40 text-sm mt-2">
-          {type === "garage"
-            ? "New service requests will appear here"
-            : "Create your first service request to get started"}
+          {type === "garage" ? t("newRequestsAppear") : t("createFirst")}
         </p>
       </div>
     );
@@ -60,10 +61,8 @@ export default function BookingTable({
     return (
       <div className="bg-white/5 rounded-xl border border-white/10 p-12 text-center">
         <Search className="w-16 h-16 text-white/30 mx-auto mb-4" />
-        <p className="text-white/60">No matching bookings found.</p>
-        <p className="text-white/40 text-sm mt-2">
-          Try searching for a different keyword or booking ID
-        </p>
+        <p className="text-white/60">{t("noMatching")}</p>
+        <p className="text-white/40 text-sm mt-2">{t("trySearching")}</p>
       </div>
     );
   }
@@ -86,25 +85,25 @@ export default function BookingTable({
           <thead className="border-b border-white/10">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                Booking ID
+                {t("id")}
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                {type === "user" ? "Garage" : "User"}
+                {type === "user" ? t("garage") : t("user")}
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                Service
+                {t("service")}
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                Date
+                {t("date")}
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                Status
+                {commonT("status")}
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
-                Cost
+                {t("cost")}
               </th>
               <th className="px-4 py-3 text-right text-xs font-semibold text-white/60 uppercase tracking-wider">
-                Actions
+                {commonT("actions")}
               </th>
             </tr>
           </thead>
@@ -164,7 +163,7 @@ export default function BookingTable({
                           : `/garage/dashboard/bookings/${booking._id}`
                       }
                       className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-white transition-all"
-                      title="View Details"
+                      title={t("viewDetails")}
                     >
                       <Eye className="w-4 h-4" />
                     </Link>
@@ -178,7 +177,7 @@ export default function BookingTable({
                             onStatusUpdate(booking._id, "accepted")
                           }
                           className="p-2 hover:bg-green-500/20 rounded-lg text-white/60 hover:text-green-400 transition-all"
-                          title="Accept Booking"
+                          title={t("accept")}
                         >
                           <Check className="w-4 h-4" />
                         </button>
@@ -192,7 +191,7 @@ export default function BookingTable({
                             onStatusUpdate(booking._id, "completed")
                           }
                           className="p-2 hover:bg-blue-500/20 rounded-lg text-white/60 hover:text-blue-400 transition-all"
-                          title="Mark as Completed"
+                          title={t("markCompleted")}
                         >
                           <Clock className="w-4 h-4" />
                         </button>
@@ -207,7 +206,7 @@ export default function BookingTable({
                             onStatusUpdate(booking._id, "canceled")
                           }
                           className="p-2 hover:bg-red-500/20 rounded-lg text-white/60 hover:text-red-400 transition-all"
-                          title="Cancel Booking"
+                          title={t("cancel")}
                         >
                           <XCircle className="w-4 h-4" />
                         </button>

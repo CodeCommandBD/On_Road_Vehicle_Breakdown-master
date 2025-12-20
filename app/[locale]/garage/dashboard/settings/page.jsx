@@ -19,8 +19,11 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useTranslations } from "next-intl";
 
 export default function GarageSettingsPage() {
+  const t = useTranslations("Settings");
+  const commonT = useTranslations("Common");
   const user = useSelector(selectUser);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -127,7 +130,7 @@ export default function GarageSettingsPage() {
 
       const response = await axios.put("/api/garages/settings", payload);
       if (response.data.success) {
-        toast.success("Settings updated successfully");
+        toast.success(t("saveChanges"));
         setPasswordForm({
           currentPassword: "",
           newPassword: "",
@@ -155,12 +158,9 @@ export default function GarageSettingsPage() {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">
-            Account Settings
+            {t("accountSettings")}
           </h1>
-          <p className="text-white/60">
-            Manage your business visibility, security, and notification
-            preferences
-          </p>
+          <p className="text-white/60">{t("manageBusiness")}</p>
         </div>
         <button
           onClick={saveSettings}
@@ -172,7 +172,7 @@ export default function GarageSettingsPage() {
           ) : (
             <Save className="w-5 h-5" />
           )}
-          Save Changes
+          {t("saveChanges")}
         </button>
       </div>
 
@@ -185,16 +185,16 @@ export default function GarageSettingsPage() {
                 <Shield className="w-5 h-5 text-orange-500" />
               </div>
               <h2 className="text-xl font-bold text-white">
-                Business Visibility
+                {t("businessVisibility")}
               </h2>
             </div>
 
             <div className="space-y-6">
               <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
                 <div>
-                  <p className="text-white font-medium">Garage Active Status</p>
+                  <p className="text-white font-medium">{t("garageActive")}</p>
                   <p className="text-xs text-white/50">
-                    Turn off to temporarily hide your garage from map
+                    {t("garageActiveDesc")}
                   </p>
                 </div>
                 <button
@@ -211,9 +211,9 @@ export default function GarageSettingsPage() {
 
               <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
                 <div>
-                  <p className="text-white font-medium">Account Status</p>
+                  <p className="text-white font-medium">{t("accountActive")}</p>
                   <p className="text-xs text-white/50">
-                    Keep your account active to receive dashboard updates
+                    {t("accountActiveDesc")}
                   </p>
                 </div>
                 <button
@@ -232,8 +232,8 @@ export default function GarageSettingsPage() {
                 <AlertCircle className="w-5 h-5 text-blue-400 shrink-0" />
                 <p className="text-xs text-blue-400">
                   {settings.garage.isVerified
-                    ? "Your garage is verified! You appear at the top of search results."
-                    : "Your garage is pending verification. Complete your profile to speed up the process."}
+                    ? t("verified")
+                    : t("pendingVerification")}
                 </p>
               </div>
             </div>
@@ -245,7 +245,9 @@ export default function GarageSettingsPage() {
               <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
                 <Bell className="w-5 h-5 text-blue-500" />
               </div>
-              <h2 className="text-xl font-bold text-white">Notifications</h2>
+              <h2 className="text-xl font-bold text-white">
+                {t("notifications")}
+              </h2>
             </div>
 
             <div className="space-y-4">
@@ -256,7 +258,13 @@ export default function GarageSettingsPage() {
                     className="flex items-center justify-between p-4 bg-white/5 rounded-xl cursor-pointer group hover:bg-white/10 transition-colors"
                   >
                     <span className="text-white capitalize">
-                      {key.replace(/([A-Z])/g, " $1")}
+                      {t(
+                        key.replace(/([A-Z])/g, " $1") === "email"
+                          ? "emailNotif"
+                          : key === "push"
+                          ? "pushNotif"
+                          : "serviceReminders"
+                      )}
                     </span>
                     <input
                       type="checkbox"
@@ -278,13 +286,13 @@ export default function GarageSettingsPage() {
               <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
                 <Lock className="w-5 h-5 text-purple-500" />
               </div>
-              <h2 className="text-xl font-bold text-white">Security</h2>
+              <h2 className="text-xl font-bold text-white">{t("security")}</h2>
             </div>
 
             <div className="space-y-4">
               <div className="relative">
                 <label className="text-xs text-white/50 mb-1 block">
-                  Current Password
+                  {t("currentPassword")}
                 </label>
                 <div className="relative">
                   <input
@@ -309,7 +317,7 @@ export default function GarageSettingsPage() {
 
               <div className="relative">
                 <label className="text-xs text-white/50 mb-1 block">
-                  New Password
+                  {t("newPassword")}
                 </label>
                 <div className="relative">
                   <input
@@ -334,7 +342,7 @@ export default function GarageSettingsPage() {
 
               <div className="relative">
                 <label className="text-xs text-white/50 mb-1 block">
-                  Confirm New Password
+                  {t("confirmNewPassword")}
                 </label>
                 <input
                   type="password"
@@ -353,16 +361,15 @@ export default function GarageSettingsPage() {
               <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
                 <Trash2 className="w-5 h-5 text-red-500" />
               </div>
-              <h2 className="text-xl font-bold text-red-500">Danger Zone</h2>
+              <h2 className="text-xl font-bold text-red-500">
+                {t("dangerZone")}
+              </h2>
             </div>
 
-            <p className="text-white/60 text-sm mb-6">
-              Deleting your account will remove all your garage data, history,
-              and active subscriptions. This action cannot be undone.
-            </p>
+            <p className="text-white/60 text-sm mb-6">{t("deleteWarning")}</p>
 
             <button className="w-full py-3 border border-red-500/50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all font-medium">
-              Delete Account
+              {t("deleteAccount")}
             </button>
           </div>
         </div>
