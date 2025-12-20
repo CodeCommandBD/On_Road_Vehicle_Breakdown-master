@@ -155,8 +155,10 @@ export default function GarageProfilePage() {
       }
     };
 
-    fetchProfile();
-  }, [user]);
+    if (user?._id) {
+      fetchProfile();
+    }
+  }, [user?._id]);
 
   // Handle geocoding (nominatim)
   const handleGeocode = async () => {

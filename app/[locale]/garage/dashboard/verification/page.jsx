@@ -97,8 +97,10 @@ export default function GarageVerificationPage() {
       }
     };
 
-    fetchProfile();
-  }, [user]);
+    if (user?._id) {
+      fetchProfile();
+    }
+  }, [user?._id]);
 
   // Handle nested verification change
   const handleVerificationChange = (section, field, value) => {
