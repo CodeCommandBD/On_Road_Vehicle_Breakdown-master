@@ -46,9 +46,76 @@ export async function POST(request) {
       public_id: result.public_id,
     });
   } catch (error) {
-    console.error("Upload Error:", error);
+    console.error("Upload Detailed Error:", {
+      message: error.message,
+      stack: error.stack,
+      envCheck: {
+        cloudName: !!process.env.CLOUDINARY_CLOUD_NAME,
+        apiKey: !!process.env.CLOUDINARY_API_KEY,
+        apiSecret: !!process.env.CLOUDINARY_API_SECRET,
+      },
+    });
     return NextResponse.json(
-      { success: false, message: "Upload failed", error: error.message },
+      {
+        success: false,
+        message: "Upload failed",
+        error: error.message || "Unknown error",
+        details: {
+          cloudNameSet: !!process.env.CLOUDINARY_CLOUD_NAME,
+          apiKeySet: !!process.env.CLOUDINARY_API_KEY,
+        },
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request) {
+  try {
+    const { public_id } = await request.json();
+
+    console.log("DELETE Request - Public ID:", public_id);
+
+    if (!public_id) {
+      return NextResponse.json(
+        { success: false, message: "Public ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Try deleting as image first (default)
+    let result = await cloudinary.uploader.destroy(public_id);
+
+    console.log("Cloudinary Destroy Result (Image):", result);
+
+    // If not found, try raw (for PDFs sometimes) or video
+    if (result.result !== "ok") {
+      console.log("Retrying delete as 'raw' resource type...");
+      const resultRaw = await cloudinary.uploader.destroy(public_id, {
+        resource_type: "raw",
+      });
+      console.log("Cloudinary Destroy Result (Raw):", resultRaw);
+      if (resultRaw.result === "ok") {
+        result = resultRaw;
+      }
+    }
+
+    // Return successfully even if not found, to clear local state?
+    // Or return error if strictly not found?
+    // For User Verify, maybe better to be permissive but log it.
+
+    return NextResponse.json({
+      success: result.result === "ok", // Only true if actually deleted
+      message:
+        result.result === "ok"
+          ? "File deleted successfully"
+          : "File not found or could not be deleted",
+      result,
+    });
+  } catch (error) {
+    console.error("Delete Error:", error);
+    return NextResponse.json(
+      { success: false, message: "Delete failed", error: error.message },
       { status: 500 }
     );
   }

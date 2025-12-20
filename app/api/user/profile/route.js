@@ -69,10 +69,11 @@ export async function PUT(request) {
     }
 
     const body = await request.json();
-    const { name, phone, address, location, vehicles, garageData } = body;
+    const body = await request.json();
+    const { name, phone, address, location, vehicles, garageData, avatar } =
+      body;
     console.log(
-      `API PUT /api/user/profile - Received ${vehicles?.length || 0} vehicles:`,
-      vehicles
+      `API PUT /api/user/profile - Received request. Avatar: ${!!avatar}`
     );
     if (location) console.log("Received location update:", location);
 
@@ -91,6 +92,7 @@ export async function PUT(request) {
     if (address) updateData.address = address;
     if (location) updateData.location = location;
     if (vehicles) updateData.vehicles = vehicles;
+    if (avatar !== undefined) updateData.avatar = avatar;
 
     // Perform atomic update
     const updatedUser = await User.findByIdAndUpdate(

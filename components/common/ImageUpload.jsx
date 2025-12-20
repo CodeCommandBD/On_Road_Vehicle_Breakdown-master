@@ -1,8 +1,6 @@
-"use client";
-
 import { useState } from "react";
-import { Upload, Loader2, ExternalLink, X } from "lucide-react";
 import axios from "axios";
+import { Upload, X, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 
 export default function ImageUpload({
@@ -15,6 +13,35 @@ export default function ImageUpload({
   showPreview = false,
 }) {
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const getPublicIdFromUrl = (url) => {
+    try {
+      if (!url) return null;
+
+      const uploadIndex = url.indexOf("/upload/");
+      if (uploadIndex === -1) return null;
+
+      // Get part after /upload/
+      let publicId = url.substring(uploadIndex + 8);
+
+      // Remove version prefix if exists (e.g., v123456789/)
+      if (publicId.match(/^v\d+\//)) {
+        publicId = publicId.replace(/^v\d+\//, "");
+      }
+
+      // Remove extension (everything after the last dot)
+      const lastDotIndex = publicId.lastIndexOf(".");
+      if (lastDotIndex !== -1) {
+        publicId = publicId.substring(0, lastDotIndex);
+      }
+
+      return publicId;
+    } catch (error) {
+      console.error("Error parsing public ID:", error);
+      return null;
+    }
+  };
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
@@ -24,6 +51,9 @@ export default function ImageUpload({
     const formData = new FormData();
     formData.append("file", file);
 
+    // Keep track of the old value to delete later
+    const oldUrl = value;
+
     try {
       const res = await axios.post("/api/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -31,6 +61,20 @@ export default function ImageUpload({
       if (res.data.success) {
         onChange(res.data.url);
         toast.success("File uploaded successfully");
+
+        // If there was an old image, delete it now
+        if (oldUrl) {
+          const publicId = getPublicIdFromUrl(oldUrl);
+          if (publicId) {
+            console.log("Auto-deleting replaced image:", publicId);
+            // Fire and forget delete request to avoid blocking UI
+            axios
+              .delete("/api/upload", { data: { public_id: publicId } })
+              .catch((err) =>
+                console.error("Failed to auto-delete old image:", err)
+              );
+          }
+        }
       }
     } catch (error) {
       console.error("Upload failed", error);
@@ -40,6 +84,45 @@ export default function ImageUpload({
       // Reset input value to allow selecting same file again
       e.target.value = "";
     }
+  };
+
+  const handleClear = async () => {
+    if (!value) return;
+
+    // Check if it's a cloudinary URL to attempt deletion
+    const publicId = getPublicIdFromUrl(value);
+    console.log("Attempting to delete. URL:", value, "Extracted ID:", publicId);
+
+    if (publicId) {
+      setDeleting(true);
+      try {
+        const res = await axios.delete("/api/upload", {
+          data: { public_id: publicId },
+        });
+
+        console.log("Delete Response:", res.data);
+
+        if (res.data.success) {
+          toast.info("Image deleted from cloud");
+        } else {
+          console.warn("Server reported delete failure:", res.data);
+          // Show error to user so they know it didn't strictly work
+          toast.warning(
+            `Cloud delete failed: ${res.data.message || "Unknown error"}`
+          );
+        }
+      } catch (error) {
+        console.error("Delete failed:", error);
+        toast.error("Failed to communicate with server for delete");
+      } finally {
+        setDeleting(false);
+      }
+    } else {
+      console.warn("Could not extract public ID from URL");
+      toast.warning("Could not identify image ID for cloud deletion");
+    }
+
+    onChange("");
   };
 
   return (
@@ -70,11 +153,16 @@ export default function ImageUpload({
               </a>
               <button
                 type="button"
-                onClick={() => onChange("")}
-                className="p-1.5 hover:bg-white/10 rounded-lg text-white/40 hover:text-red-400 transition-colors"
-                title="Clear"
+                onClick={handleClear}
+                disabled={deleting}
+                className="p-1.5 hover:bg-white/10 rounded-lg text-white/40 hover:text-red-400 transition-colors disabled:opacity-50"
+                title="Clear & Delete"
               >
-                <X size={16} />
+                {deleting ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <X size={16} />
+                )}
               </button>
             </div>
           )}
