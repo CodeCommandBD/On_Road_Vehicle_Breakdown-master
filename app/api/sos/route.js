@@ -4,6 +4,7 @@ import SOS from "@/lib/db/models/SOS";
 import Garage from "@/lib/db/models/Garage";
 import Notification from "@/lib/db/models/Notification";
 import User from "@/lib/db/models/User";
+import PointsRecord from "@/lib/db/models/PointsRecord";
 import { verifyToken } from "@/lib/utils/auth";
 import { sendSOSEmail, sendAssignmentEmail } from "@/lib/utils/email";
 import mongoose from "mongoose";
@@ -259,7 +260,53 @@ export async function PATCH(request) {
           console.error("Assignment email error:", err);
         }
       }
-      if (status === "resolved") sos.resolvedAt = new Date();
+      if (status === "resolved") {
+        sos.status = "resolved";
+        sos.resolvedAt = new Date();
+
+        // Award points on resolution (Admin manual resolution)
+        try {
+          // Resolve points for Garage Owner
+          if (sos.assignedGarage) {
+            const garage = await Garage.findById(sos.assignedGarage);
+            if (garage) {
+              await User.findByIdAndUpdate(garage.owner, {
+                $inc: { rewardPoints: 100 },
+              });
+              await PointsRecord.create({
+                user: garage.owner,
+                points: 100,
+                type: "earn",
+                reason: "Resolved emergency SOS (Admin-mediated)",
+                metadata: { sosId: sos._id },
+              });
+
+              await Notification.create({
+                recipient: garage.owner,
+                type: "system_alert",
+                title: "🏆 Hero Points Alert!",
+                message:
+                  "You've been rewarded 100 points for resolving an emergency SOS!",
+                link: `/garage/sos-navigation/${sos._id}`,
+              });
+            }
+          }
+
+          // Small reward for User too
+          await User.findByIdAndUpdate(sos.user, {
+            $inc: { rewardPoints: 20 },
+          });
+          await PointsRecord.create({
+            user: sos.user,
+            points: 20,
+            type: "earn",
+            reason: "Emergency SOS resolved",
+            metadata: { sosId: sos._id },
+          });
+        } catch (pointsErr) {
+          console.error("SOS points error:", pointsErr);
+        }
+      }
     } else if (decoded.role === "garage") {
       // Garage can only accept if it's pending, or mark as resolved if assigned to them
       const garage = await Garage.findOne({ owner: decoded.userId });
@@ -292,6 +339,44 @@ export async function PATCH(request) {
         }
         sos.status = "resolved";
         sos.resolvedAt = new Date();
+
+        // Award points on resolution (Garage resolution)
+        try {
+          // Resolve points for Garage Owner (the one who's logged in)
+          await User.findByIdAndUpdate(decoded.userId, {
+            $inc: { rewardPoints: 100 },
+          });
+          await PointsRecord.create({
+            user: decoded.userId,
+            points: 100,
+            type: "earn",
+            reason: "Resolved emergency SOS",
+            metadata: { sosId: sos._id },
+          });
+
+          await Notification.create({
+            recipient: decoded.userId,
+            type: "system_alert",
+            title: "🏆 Hero Points Earned!",
+            message:
+              "Outstanding! You earned 100 points for resolving an emergency SOS.",
+            link: `/garage/sos-navigation/${sos._id}`,
+          });
+
+          // Small reward for User
+          await User.findByIdAndUpdate(sos.user, {
+            $inc: { rewardPoints: 20 },
+          });
+          await PointsRecord.create({
+            user: sos.user,
+            points: 20,
+            type: "earn",
+            reason: "Emergency SOS resolved",
+            metadata: { sosId: sos._id },
+          });
+        } catch (pointsErr) {
+          console.error("SOS points error (garage):", pointsErr);
+        }
       } else {
         return NextResponse.json(
           { success: false, message: "Forbidden transition for garage role" },
