@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, X, Eye, Filter, Loader2, Search } from "lucide-react";
+import { Check, X, Eye, Filter, Loader2, Search, Award } from "lucide-react";
 import GarageDetailModal from "./GarageDetailModal";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -124,6 +124,7 @@ export default function GarageTable() {
                 <th className="px-6 py-5">Garage Name</th>
                 <th className="px-6 py-5">Owner</th>
                 <th className="px-6 py-5">Status</th>
+                <th className="px-6 py-5 text-center">Pts</th>
                 <th className="px-6 py-5">Location</th>
                 <th className="px-6 py-5 text-right">Actions</th>
               </tr>
@@ -131,7 +132,7 @@ export default function GarageTable() {
             <tbody className="divide-y divide-white/5">
               {filteredGarages.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center">
+                  <td colSpan="6" className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center gap-2 opacity-40">
                       <Filter className="w-8 h-8" />
                       <p className="text-sm">
@@ -166,6 +167,12 @@ export default function GarageTable() {
                       >
                         {garage.status}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-1 font-bold text-orange-500">
+                        <Award size={14} />
+                        {garage.ownerPoints || 0}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-white/40 text-xs truncate max-w-[200px]">
                       {garage.address?.street}, {garage.address?.city}

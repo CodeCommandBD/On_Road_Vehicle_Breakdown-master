@@ -19,8 +19,13 @@ import {
 import Link from "next/link";
 import axios from "axios";
 import { toast } from "react-toastify";
+import LeaderboardWidget from "@/components/dashboard/LeaderboardWidget";
+import UserRewardsCard from "@/components/dashboard/UserRewardsCard";
+import { useDispatch } from "react-redux";
+import { updateUser } from "@/store/slices/authSlice";
 
 export default function GarageDashboard({ user }) {
+  const dispatch = useDispatch();
   const [bookings, setBookings] = useState([]);
   const [garageProfile, setGarageProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,6 +49,15 @@ export default function GarageDashboard({ user }) {
 
       if (garageRes.data.success) {
         setGarageProfile(garageRes.data.garage);
+        // Sync points to redux
+        if (garageRes.data.garage?.owner?.rewardPoints !== undefined) {
+          dispatch(
+            updateUser({
+              rewardPoints: garageRes.data.garage.owner.rewardPoints,
+              level: garageRes.data.garage.owner.level || 1,
+            })
+          );
+        }
       }
 
       if (bookingsRes.data.success) {
@@ -125,7 +139,9 @@ export default function GarageDashboard({ user }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-3xl font-bold text-white">
-          {garageProfile?.name ? `${garageProfile.name} Dashboard` : "Garage Dashboard"}
+          {garageProfile?.name
+            ? `${garageProfile.name} Dashboard`
+            : "Garage Dashboard"}
         </h1>
         <Link
           href="/garage/dashboard/services/new"
@@ -211,6 +227,14 @@ export default function GarageDashboard({ user }) {
           bookings={bookings}
           onRefresh={() => window.location.reload()}
         />
+      </div>
+      {/* Rewards & Leaderboard */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <UserRewardsCard
+          user={user}
+          stats={{ points: user?.rewardPoints || 0 }}
+        />
+        <LeaderboardWidget role="garage" />
       </div>
     </div>
   );

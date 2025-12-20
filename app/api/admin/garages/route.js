@@ -46,6 +46,7 @@ export async function GET(request) {
         mechanicDetails: g.mechanicDetails,
         isVerified: g.isVerified,
         ownerName: g.owner?.name || "Unknown",
+        ownerPoints: g.owner?.rewardPoints || 0,
         createdAt: g.createdAt,
       })),
     });
