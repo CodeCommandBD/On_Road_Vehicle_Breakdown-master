@@ -60,13 +60,7 @@ export default function UserDashboard({ user }) {
             const pointsRes = await axios.get("/api/user/points");
             if (pointsRes.data.success) {
               realPoints = pointsRes.data.rewardPoints;
-              // Sync to global Redux state so header updates instantly
-              dispatch(
-                updateUser({
-                  rewardPoints: realPoints,
-                  level: pointsRes.data.level,
-                })
-              );
+              // Points syncing is handled by DashboardHeader to prevent update loops
             }
           } catch (pErr) {
             console.warn("Points fetch failed, using fallback:", pErr);
@@ -90,7 +84,7 @@ export default function UserDashboard({ user }) {
 
     fetchData();
     fetchSOS();
-  }, [user]);
+  }, [user?._id]);
 
   const fetchSOS = async () => {
     try {
