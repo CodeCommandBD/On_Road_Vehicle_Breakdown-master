@@ -63,3 +63,36 @@ export async function POST(req) {
     );
   }
 }
+
+export async function GET(req) {
+  try {
+    await connectDB();
+    const token = req.cookies.get("token")?.value;
+    const user = await verifyToken(token);
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const userData = await User.findById(user.userId).populate(
+      "accountManager",
+      "name email phone avatar"
+    );
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        accountManager: userData?.accountManager || null,
+      },
+    });
+  } catch (error) {
+    console.error("Support GET Error:", error);
+    return NextResponse.json(
+      { success: false, message: "Server Error" },
+      { status: 500 }
+    );
+  }
+}

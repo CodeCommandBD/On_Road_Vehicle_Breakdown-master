@@ -28,10 +28,10 @@ import { useTranslations } from "next-intl";
 const MapComponent = dynamic(() => import("@/components/maps/MapComponent"), {
   ssr: false,
   loading: () => {
-    const t = useTranslations("Profile");
+    const t = useTranslations("Common");
     return (
       <div className="h-[300px] w-full bg-white/5 animate-pulse rounded-xl flex items-center justify-center border border-white/10">
-        <p className="text-white/40">{t("loading", { namespace: "Common" })}</p>
+        <p className="text-white/40">{t("loading")}</p>
       </div>
     );
   },

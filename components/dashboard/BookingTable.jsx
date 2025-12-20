@@ -137,8 +137,34 @@ export default function BookingTable({
                     booking.description?.substring(0, 30) ||
                     "General Service"}
                 </td>
-                <td className="px-4 py-4 text-white/60 text-xs">
-                  {formatDateTime(booking.createdAt)}
+                <td className="px-4 py-4">
+                  <div className="flex flex-col">
+                    <span className="text-white/60 text-xs">
+                      {formatDateTime(booking.createdAt)}
+                    </span>
+                    {booking.priority === "critical" && (
+                      <div className="flex items-center gap-1 mt-1 text-red-500 text-[10px] font-bold uppercase animate-pulse">
+                        <span className="w-2 h-2 bg-red-500 rounded-full" />
+                        VIP CRITICAL
+                      </div>
+                    )}
+                    {booking.priority === "high" && (
+                      <span className="text-orange-400 text-[10px] font-bold uppercase mt-1">
+                        HIGH PRIORITY
+                      </span>
+                    )}
+                    {booking.slaDeadline &&
+                      new Date(booking.slaDeadline) > new Date() &&
+                      booking.status === "pending" && (
+                        <div className="text-[10px] text-yellow-400 font-mono mt-1">
+                          Due:{" "}
+                          {new Date(booking.slaDeadline).toLocaleTimeString(
+                            [],
+                            { hour: "2-digit", minute: "2-digit" }
+                          )}
+                        </div>
+                      )}
+                  </div>
                 </td>
                 <td className="px-4 py-4">
                   <span

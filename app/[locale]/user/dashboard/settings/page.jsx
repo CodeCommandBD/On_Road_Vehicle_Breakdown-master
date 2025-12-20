@@ -14,6 +14,7 @@ import {
   Loader2,
   CheckCircle2,
   AlertTriangle,
+  FileText,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useTranslations } from "next-intl";
@@ -117,6 +118,10 @@ export default function SettingsPage() {
     { id: "notifications", label: t("notifications"), icon: Bell },
     { id: "account", label: t("account"), icon: Shield },
   ];
+
+  if (user?.contract) {
+    tabs.push({ id: "legal", label: "Legal & Contracts", icon: FileText });
+  }
 
   return (
     <div className="max-w-4xl space-y-8 pb-10">
@@ -357,6 +362,69 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "legal" && user?.contract && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div>
+                <h3 className="text-xl font-bold text-white mb-2">
+                  Legal & Contracts
+                </h3>
+                <p className="text-white/40 text-sm">
+                  Review your active agreements with On-Road Help.
+                </p>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                <div className="flex justify-between items-start mb-6">
+                  <div>
+                    <div className="flex items-center gap-3 mb-1">
+                      <h4 className="text-lg font-semibold text-white">
+                        Enterprise SLA Contract
+                      </h4>
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
+                          user.contract.status === "active"
+                            ? "bg-green-500/10 border-green-500/30 text-green-400"
+                            : user.contract.status === "pending"
+                            ? "bg-yellow-500/10 border-yellow-500/30 text-yellow-400"
+                            : "bg-red-500/10 border-red-500/30 text-red-400"
+                        }`}
+                      >
+                        {user.contract.status}
+                      </span>
+                    </div>
+                    <p className="text-sm text-white/50">
+                      Valid from{" "}
+                      {new Date(user.contract.startDate).toLocaleDateString()}{" "}
+                      to {new Date(user.contract.endDate).toLocaleDateString()}
+                    </p>
+                  </div>
+                  {user.contract.documentUrl && (
+                    <a
+                      href={user.contract.documentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-xl transition-all flex items-center gap-2"
+                    >
+                      <FileText className="w-4 h-4" />
+                      View PDF
+                    </a>
+                  )}
+                </div>
+
+                {user.contract.customTerms && (
+                  <div className="bg-black/20 rounded-xl p-4 border border-white/5">
+                    <h5 className="text-sm font-semibold text-white/80 mb-2">
+                      Custom Terms Summary
+                    </h5>
+                    <p className="text-sm text-white/60 leading-relaxed">
+                      {user.contract.customTerms}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}

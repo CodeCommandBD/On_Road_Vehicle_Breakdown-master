@@ -94,6 +94,19 @@ export async function POST(request) {
     }
     // ----------------------------------
 
+    // --- CALCULATE SLA & PRIORITY ---
+    const planTier = plan.tier || "free";
+    let priority = "normal";
+    let slaMinutes = 60; // Default Standard
+
+    if (planTier === "enterprise") {
+      priority = "critical";
+      slaMinutes = 5;
+    }
+
+    const slaDeadline = new Date(Date.now() + slaMinutes * 60000);
+    // --------------------------------
+
     const sosAlert = await SOS.create({
       user: decoded.userId,
       location: {
@@ -104,6 +117,8 @@ export async function POST(request) {
       phone,
       vehicleType: vehicleType || "other",
       status: "pending",
+      priority,
+      slaDeadline,
     });
 
     // --- INCREMENT USAGE & TRIGGER WARNINGS ---
@@ -182,10 +197,12 @@ export async function POST(request) {
         Notification.create({
           recipient: g.owner?._id || g.owner,
           type: "system_alert",
-          title: "🚨 EMERGENCY SOS ALERT",
-          message: `${
-            user?.name || "A user"
-          } needs immediate help! Check the SOS dashboard.`,
+          title: `🚨 ${
+            priority === "critical" ? "URGENT VIP" : "EMERGENCY"
+          } SOS ALERT`,
+          message: `${user?.name || "A user"} (${
+            priority === "critical" ? "VIP" : "User"
+          }) needs help! Deadline: ${slaMinutes}m.`,
           link: `/garage/sos-navigation/${sosAlert._id}`,
         })
       );
