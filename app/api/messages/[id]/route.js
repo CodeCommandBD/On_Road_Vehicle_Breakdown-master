@@ -20,6 +20,8 @@ export async function GET(request, { params }) {
     }
 
     const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const since = searchParams.get("since");
 
     // Check if user is a participant in this conversation
     const conversation = await Conversation.findById(id);
@@ -30,7 +32,12 @@ export async function GET(request, { params }) {
       );
     }
 
-    const messages = await Message.find({ conversation: id }).sort({
+    let query = { conversation: id };
+    if (since) {
+      query.createdAt = { $gt: new Date(since) };
+    }
+
+    const messages = await Message.find(query).sort({
       createdAt: 1,
     });
 

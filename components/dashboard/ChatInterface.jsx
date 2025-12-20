@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Search,
   Send,
@@ -11,6 +12,9 @@ import {
   Clock,
   Loader2,
   Inbox,
+  PlusCircle,
+  MessageSquare,
+  X,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { formatDateTime } from "@/lib/utils/helpers";
@@ -22,17 +26,61 @@ export default function ChatInterface({ userId }) {
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [showNewChatModal, setShowNewChatModal] = useState(false);
+  const [recipients, setRecipients] = useState({
+    support: [],
+    garages: [],
+    customers: [],
+    searchResult: [],
+  });
+  const [fetchingRecipients, setFetchingRecipients] = useState(false);
+  const [recipientSearch, setRecipientSearch] = useState("");
   const messagesEndRef = useRef(null);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     fetchConversations();
+    const convInterval = setInterval(fetchConversations, 5000); // Poll list every 5s
+    return () => clearInterval(convInterval);
   }, []);
 
   useEffect(() => {
     if (activeConversation) {
       fetchMessages(activeConversation._id);
+
+      // Real-time polling for messages in active chat
+      const msgInterval = setInterval(() => {
+        pollNewMessages(activeConversation._id);
+      }, 3000); // Poll messages every 3s
+
+      return () => clearInterval(msgInterval);
     }
   }, [activeConversation]);
+
+  useEffect(() => {
+    if (conversations.length > 0) {
+      const chatType = searchParams.get("chat");
+      const chatId = searchParams.get("chatId");
+
+      if (chatId) {
+        const targetConv = conversations.find((c) => c._id === chatId);
+        if (targetConv) {
+          setActiveConversation(targetConv);
+        }
+      } else if (chatType === "support") {
+        const supportConv = conversations.find((c) =>
+          c.participants.some((p) => p.role === "admin")
+        );
+        if (supportConv) {
+          setActiveConversation(supportConv);
+        } else {
+          // If no existing support chat, open the modal and fetch recipients
+          setShowNewChatModal(true);
+          fetchRecipients();
+        }
+      }
+    }
+  }, [conversations, searchParams]);
 
   useEffect(() => {
     scrollToBottom();
@@ -44,17 +92,68 @@ export default function ChatInterface({ userId }) {
 
   const fetchConversations = async () => {
     try {
-      setLoading(true);
       const res = await fetch("/api/messages");
       const data = await res.json();
       if (data.success) {
         setConversations(data.conversations);
       }
     } catch (error) {
-      toast.error("Failed to load conversations");
+      console.error("Failed to load conversations:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchRecipients = async (search = "") => {
+    try {
+      setFetchingRecipients(true);
+      const url = search
+        ? `/api/messages/recipients?search=${encodeURIComponent(search)}`
+        : "/api/messages/recipients";
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.success) {
+        setRecipients(data.recipients);
+      }
+    } catch (error) {
+      toast.error("Failed to load recipients");
+    } finally {
+      setFetchingRecipients(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showNewChatModal) {
+      const delayDebounceFn = setTimeout(() => {
+        fetchRecipients(recipientSearch);
+      }, 500);
+
+      return () => clearTimeout(delayDebounceFn);
+    }
+  }, [recipientSearch, showNewChatModal]);
+
+  const startNewChat = async (recipient) => {
+    // Check if conversation already exists
+    const existing = conversations.find((c) =>
+      c.participants.some((p) => p._id === recipient._id)
+    );
+
+    if (existing) {
+      setActiveConversation(existing);
+      setShowNewChatModal(false);
+      return;
+    }
+
+    // Create a "virtual" conversation to show in UI immediately
+    const virtualConv = {
+      _id: "new-" + recipient._id,
+      participants: [{ _id: userId }, recipient],
+      isNew: true,
+    };
+
+    setActiveConversation(virtualConv);
+    setMessages([]);
+    setShowNewChatModal(false);
   };
 
   const fetchMessages = async (id) => {
@@ -69,13 +168,52 @@ export default function ChatInterface({ userId }) {
     }
   };
 
+  const pollNewMessages = async (id) => {
+    if (messages.length === 0) return;
+
+    // Get timestamp of last message
+    const lastMsgTime = messages[messages.length - 1].createdAt;
+
+    try {
+      const res = await fetch(
+        `/api/messages/${id}?since=${encodeURIComponent(lastMsgTime)}`
+      );
+      const data = await res.json();
+      if (data.success && data.messages.length > 0) {
+        // Only append messages that aren't already in the list (sanity check)
+        const newOnes = data.messages.filter(
+          (nm) => !messages.find((m) => m._id === nm._id)
+        );
+        if (newOnes.length > 0) {
+          setMessages((prev) => [...prev, ...newOnes]);
+        }
+      }
+    } catch (error) {
+      console.error("Polling error:", error);
+    }
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() || !activeConversation) return;
 
+    const messageText = newMessage;
+    setNewMessage("");
+
     const recipient = activeConversation.participants.find(
       (p) => p._id !== userId
     );
+
+    // Optimistic Update
+    const tempId = "temp-" + Date.now();
+    const optimisticMsg = {
+      _id: tempId,
+      text: messageText,
+      sender: userId,
+      createdAt: new Date().toISOString(),
+      isOptimistic: true,
+    };
+    setMessages((prev) => [...prev, optimisticMsg]);
 
     try {
       setSending(true);
@@ -84,18 +222,23 @@ export default function ChatInterface({ userId }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           recipientId: recipient._id,
-          text: newMessage,
+          text: messageText,
           bookingId: activeConversation.booking,
         }),
       });
       const data = await res.json();
       if (data.success) {
-        setMessages([...messages, data.messageData]);
-        setNewMessage("");
-        fetchConversations(); // Refresh list to update last message
+        // Replace optimistic message with actual data
+        setMessages((prev) =>
+          prev.map((m) => (m._id === tempId ? data.messageData : m))
+        );
+        fetchConversations(); // Sync sidebar
       }
     } catch (error) {
       toast.error("Failed to send message");
+      // Remove failed message
+      setMessages((prev) => prev.filter((m) => m._id !== tempId));
+      setNewMessage(messageText); // Restore input
     } finally {
       setSending(false);
     }
@@ -113,8 +256,8 @@ export default function ChatInterface({ userId }) {
     <div className="bg-[#1E1E1E] border border-white/10 rounded-3xl overflow-hidden h-[calc(100vh-200px)] flex">
       {/* Sidebar: Conversations List */}
       <div className="w-1/3 border-r border-white/10 flex flex-col">
-        <div className="p-6 border-b border-white/10">
-          <div className="relative">
+        <div className="p-6 border-b border-white/10 flex items-center gap-2">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
             <input
               type="text"
@@ -122,6 +265,16 @@ export default function ChatInterface({ userId }) {
               className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-orange-500"
             />
           </div>
+          <button
+            onClick={() => {
+              setShowNewChatModal(true);
+              fetchRecipients();
+            }}
+            className="p-2.5 bg-orange-500/10 text-orange-500 hover:bg-orange-500 hover:text-white rounded-xl transition-all"
+            title="Start New Chat"
+          >
+            <PlusCircle className="w-5 h-5" />
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -300,26 +453,186 @@ export default function ChatInterface({ userId }) {
           </div>
         )}
       </div>
-    </div>
-  );
-}
 
-// Helper icon
-function MessageSquare(props) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </svg>
+      {/* New Chat Modal */}
+      {showNewChatModal && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-[#1A1A1A] border border-white/10 rounded-3xl w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh]">
+            <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#1A1A1A]">
+              <div>
+                <h3 className="text-xl font-bold text-white">Start New Chat</h3>
+                <p className="text-xs text-white/40">
+                  Select someone to message
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowNewChatModal(false);
+                  setRecipientSearch("");
+                }}
+                className="text-white/40 hover:text-white"
+              >
+                <X />
+              </button>
+            </div>
+
+            <div className="p-4 bg-[#1E1E1E] border-b border-white/10">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <input
+                  type="text"
+                  value={recipientSearch}
+                  onChange={(e) => setRecipientSearch(e.target.value)}
+                  placeholder="Search by name or email..."
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-orange-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+              {/* Search Results */}
+              {recipientSearch.length > 2 && (
+                <div>
+                  <h4 className="text-xs font-bold text-white/40 uppercase tracking-widest px-2 mb-3">
+                    Search Results
+                  </h4>
+                  <div className="space-y-2">
+                    {fetchingRecipients ? (
+                      <div className="p-4 text-center">
+                        <Loader2 className="animate-spin mx-auto w-5 h-5 text-orange-500" />
+                      </div>
+                    ) : recipients.searchResult?.length > 0 ? (
+                      recipients.searchResult.map((u) => (
+                        <button
+                          key={u._id}
+                          onClick={() => startNewChat(u)}
+                          className="w-full p-3 flex items-center gap-4 rounded-xl hover:bg-white/5 transition-colors border border-white/5"
+                        >
+                          <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40">
+                            <User size={18} />
+                          </div>
+                          <div className="text-left">
+                            <p className="font-bold text-white text-sm">
+                              {u.name}
+                            </p>
+                            <p className="text-[10px] text-white/40 uppercase tracking-wider">
+                              {u.role}
+                            </p>
+                          </div>
+                        </button>
+                      ))
+                    ) : (
+                      <p className="text-white/40 text-xs px-2 italic">
+                        No users found for "{recipientSearch}"
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Support Section */}
+              {!recipientSearch && (
+                <div>
+                  <h4 className="text-xs font-bold text-orange-500 uppercase tracking-widest px-2 mb-3">
+                    Support Team
+                  </h4>
+                  <div className="space-y-2">
+                    {fetchingRecipients && !recipientSearch ? (
+                      <div className="p-4 text-center">
+                        <Loader2 className="animate-spin mx-auto w-5 h-5 text-orange-500" />
+                      </div>
+                    ) : recipients.support?.length > 0 ? (
+                      recipients.support.map((admin) => (
+                        <button
+                          key={admin._id}
+                          onClick={() => startNewChat(admin)}
+                          className="w-full p-3 flex items-center gap-4 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/5"
+                        >
+                          <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-500">
+                            <User />
+                          </div>
+                          <div className="text-left">
+                            <p className="font-bold text-white text-sm">
+                              {admin.name}
+                            </p>
+                            <p className="text-[10px] text-orange-500 font-bold uppercase">
+                              Official Support
+                            </p>
+                          </div>
+                        </button>
+                      ))
+                    ) : (
+                      <p className="text-white/40 text-xs px-2 italic">
+                        Support offline
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Customers Section (For Garages) */}
+              {!recipientSearch && recipients.customers?.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold text-green-500 uppercase tracking-widest px-2 mb-3">
+                    My Customers
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {recipients.customers.map((user) => (
+                      <button
+                        key={user._id}
+                        onClick={() => startNewChat(user)}
+                        className="p-3 flex items-center gap-3 rounded-xl hover:bg-white/5 transition-colors border border-white/5"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-500 font-bold text-xs">
+                          {user.name?.charAt(0)}
+                        </div>
+                        <div className="text-left min-w-0">
+                          <p className="font-bold text-white text-xs truncate">
+                            {user.name}
+                          </p>
+                          <p className="text-[10px] text-white/40 truncate">
+                            {user.email}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Garages Section (For Users) */}
+              {!recipientSearch && recipients.garages?.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold text-blue-500 uppercase tracking-widest px-2 mb-3">
+                    Verified Garages
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {recipients.garages.map((garage) => (
+                      <button
+                        key={garage._id}
+                        onClick={() => startNewChat(garage)}
+                        className="p-3 flex items-center gap-3 rounded-xl hover:bg-white/5 transition-colors border border-white/5"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-500 font-bold text-xs">
+                          {garage.name?.charAt(0)}
+                        </div>
+                        <div className="text-left min-w-0">
+                          <p className="font-bold text-white text-xs truncate">
+                            {garage.name}
+                          </p>
+                          <p className="text-[10px] text-white/40 truncate">
+                            Verified Mechanical Support
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

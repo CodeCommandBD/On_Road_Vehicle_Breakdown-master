@@ -46,6 +46,11 @@ const sidebarLinks = {
       icon: Activity,
     },
     {
+      href: "/garage/dashboard/messages",
+      label: "Messages",
+      icon: MessageSquare,
+    },
+    {
       href: "/garage/dashboard/subscription",
       label: "Subscription",
       icon: CreditCard,

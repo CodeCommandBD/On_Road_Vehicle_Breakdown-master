@@ -76,13 +76,23 @@ export async function GET(req) {
       isRead: false,
     });
 
-    // Always add a "System Ready" notification for garages
+    // Dynamic status notifications based on role
     if (decoded.role === "garage") {
       finalNotifications.unshift({
-        _id: "system-check",
+        _id: "system-check-garage",
         title: "📡 SOS SYSTEM ACTIVE",
         message: "You are connected to the live emergency network.",
         link: "/garage/dashboard",
+        createdAt: new Date(),
+        isRead: false,
+      });
+    } else if (decoded.role === "admin") {
+      finalNotifications.unshift({
+        _id: "system-check-admin",
+        title: "🛡️ ADMIN OVERWATCH ACTIVE",
+        message:
+          "System monitoring and emergency protocols are fully operational.",
+        link: "/admin/dashboard",
         createdAt: new Date(),
         isRead: false,
       });

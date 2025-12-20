@@ -1,6 +1,20 @@
 "use client";
 
-import { X, MapPin, Phone, Mail, Clock, ShieldCheck, Star, FileText, Award, User, Wrench, ImageIcon, ExternalLink } from "lucide-react";
+import {
+  X,
+  MapPin,
+  Phone,
+  Mail,
+  Clock,
+  ShieldCheck,
+  Star,
+  FileText,
+  Award,
+  User,
+  Wrench,
+  ImageIcon,
+  ExternalLink,
+} from "lucide-react";
 
 export default function GarageDetailModal({ garage, onClose, onAction }) {
   if (!garage) return null;
@@ -45,7 +59,8 @@ export default function GarageDetailModal({ garage, onClose, onAction }) {
                   <Mail size={16} /> {garage.email}
                 </div>
                 <div className="flex items-center gap-3">
-                  <MapPin size={16} /> {garage.address?.street}, {garage.address?.city}
+                  <MapPin size={16} /> {garage.address?.street},{" "}
+                  {garage.address?.city}
                 </div>
               </div>
             </div>
@@ -90,7 +105,7 @@ export default function GarageDetailModal({ garage, onClose, onAction }) {
           <div>
             <h3 className="text-white/80 font-semibold border-b border-white/5 pb-2 mb-4">
               Services Offered
-            </div>
+            </h3>
           </div>
 
           {/* Legal Documents */}
@@ -100,30 +115,40 @@ export default function GarageDetailModal({ garage, onClose, onAction }) {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {garage.verification?.tradeLicense?.imageUrl && (
-                <a 
-                  href={garage.verification.tradeLicense.imageUrl} 
-                  target="_blank" 
+                <a
+                  href={garage.verification.tradeLicense.imageUrl}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="p-4 bg-white/5 rounded-xl border border-white/10 hover:border-orange-500/50 transition-all group"
                 >
-                  <p className="text-[10px] text-white/40 uppercase font-bold mb-2">Trade License</p>
+                  <p className="text-[10px] text-white/40 uppercase font-bold mb-2">
+                    Trade License
+                  </p>
                   <div className="flex items-center justify-between text-white text-sm">
                     <span>View Document</span>
-                    <ExternalLink size={14} className="group-hover:text-orange-500" />
+                    <ExternalLink
+                      size={14}
+                      className="group-hover:text-orange-500"
+                    />
                   </div>
                 </a>
               )}
               {garage.verification?.nid?.imageUrl && (
-                <a 
-                  href={garage.verification.nid.imageUrl} 
-                  target="_blank" 
+                <a
+                  href={garage.verification.nid.imageUrl}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="p-4 bg-white/5 rounded-xl border border-white/10 hover:border-orange-500/50 transition-all group"
                 >
-                  <p className="text-[10px] text-white/40 uppercase font-bold mb-2">NID (Owner)</p>
+                  <p className="text-[10px] text-white/40 uppercase font-bold mb-2">
+                    NID (Owner)
+                  </p>
                   <div className="flex items-center justify-between text-white text-sm">
                     <span>View Document</span>
-                    <ExternalLink size={14} className="group-hover:text-orange-500" />
+                    <ExternalLink
+                      size={14}
+                      className="group-hover:text-orange-500"
+                    />
                   </div>
                 </a>
               )}
@@ -137,13 +162,21 @@ export default function GarageDetailModal({ garage, onClose, onAction }) {
             </h3>
             <div className="space-y-4">
               <div className="p-4 bg-white/5 rounded-xl border border-white/5">
-                <p className="text-xs text-white/40 mb-1">Professional Summary ({garage.experience?.years || 0} Years Exp)</p>
-                <p className="text-sm text-white/90">{garage.experience?.description || "No description provided."}</p>
+                <p className="text-xs text-white/40 mb-1">
+                  Professional Summary ({garage.experience?.years || 0} Years
+                  Exp)
+                </p>
+                <p className="text-sm text-white/90">
+                  {garage.experience?.description || "No description provided."}
+                </p>
               </div>
-              
+
               <div className="flex flex-wrap gap-2">
                 {(garage.specializedEquipments || []).map((equip, idx) => (
-                  <span key={idx} className="bg-purple-500/10 text-purple-400 px-3 py-1 rounded-full text-[10px] font-bold border border-purple-500/20 uppercase tracking-wider">
+                  <span
+                    key={idx}
+                    className="bg-purple-500/10 text-purple-400 px-3 py-1 rounded-full text-[10px] font-bold border border-purple-500/20 uppercase tracking-wider"
+                  >
                     {equip}
                   </span>
                 ))}
@@ -159,13 +192,23 @@ export default function GarageDetailModal({ garage, onClose, onAction }) {
             <div className="p-4 bg-orange-500/5 rounded-xl border border-orange-500/10">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h4 className="text-white font-bold">{garage.mechanicDetails?.leadName || "N/A"}</h4>
-                  <p className="text-xs text-white/60">Lead Mechanic • {garage.mechanicDetails?.experienceYears || 0} Years Experience</p>
+                  <h4 className="text-white font-bold">
+                    {garage.mechanicDetails?.leadName || "N/A"}
+                  </h4>
+                  <p className="text-xs text-white/60">
+                    Lead Mechanic •{" "}
+                    {garage.mechanicDetails?.experienceYears || 0} Years
+                    Experience
+                  </p>
                 </div>
                 {garage.mechanicDetails?.certifications?.length > 0 && (
                   <div className="flex -space-x-2">
                     {garage.mechanicDetails.certifications.map((cert, idx) => (
-                      <div key={idx} className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center border-2 border-[#1E1E1E] text-white" title={cert.title}>
+                      <div
+                        key={idx}
+                        className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center border-2 border-[#1E1E1E] text-white"
+                        title={cert.title}
+                      >
                         <Award size={14} />
                       </div>
                     ))}
@@ -182,10 +225,18 @@ export default function GarageDetailModal({ garage, onClose, onAction }) {
             </h3>
             <div className="grid grid-cols-2 gap-4">
               {garage.garageImages?.frontView && (
-                <img src={garage.garageImages.frontView} alt="Front View" className="w-full h-32 object-cover rounded-xl border border-white/10" />
+                <img
+                  src={garage.garageImages.frontView}
+                  alt="Front View"
+                  className="w-full h-32 object-cover rounded-xl border border-white/10"
+                />
               )}
               {garage.garageImages?.indoorView && (
-                <img src={garage.garageImages.indoorView} alt="Indoor View" className="w-full h-32 object-cover rounded-xl border border-white/10" />
+                <img
+                  src={garage.garageImages.indoorView}
+                  alt="Indoor View"
+                  className="w-full h-32 object-cover rounded-xl border border-white/10"
+                />
               )}
             </div>
           </div>
