@@ -5,6 +5,7 @@ import QuickActions from "@/components/dashboard/QuickActions";
 import BookingTimeline from "@/components/dashboard/BookingTimeline";
 import LiveGarageTracker from "@/components/dashboard/LiveGarageTracker";
 import UserRewardsCard from "@/components/dashboard/UserRewardsCard";
+import LeaderboardWidget from "@/components/dashboard/LeaderboardWidget";
 import SubscriptionCard from "@/components/dashboard/SubscriptionCard";
 import { Loader2, Siren, Phone, AlertCircle, X } from "lucide-react";
 import axios from "axios";
@@ -278,9 +279,10 @@ export default function UserDashboard({ user }) {
         </div>
       </div>
 
-      {/* Rewards Card - Moved to bottom */}
-      <div className="mb-6 sm:mb-8">
+      {/* Rewards & Leaderboard */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <UserRewardsCard user={user} stats={stats} />
+        <LeaderboardWidget role="user" />
       </div>
     </div>
   );

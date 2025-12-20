@@ -81,6 +81,12 @@ export default function GarageDetailModal({ garage, onClose, onAction }) {
                   <span className="text-white">{garage.ownerName}</span>
                 </div>
                 <div className="flex justify-between">
+                  <span>Owner Points:</span>
+                  <span className="text-orange-500 font-bold flex items-center gap-1">
+                    <Award size={14} /> {garage.ownerPoints || 0}
+                  </span>
+                </div>
+                <div className="flex justify-between">
                   <span>Rating:</span>
                   <span className="text-yellow-500 flex items-center gap-1">
                     <Star size={14} fill="currentColor" /> {garage.rating || 0}
@@ -99,13 +105,6 @@ export default function GarageDetailModal({ garage, onClose, onAction }) {
               Detailed operating hours can be found in the garage's profile
               submission.
             </p>
-          </div>
-
-          {/* Services Offered */}
-          <div>
-            <h3 className="text-white/80 font-semibold border-b border-white/5 pb-2 mb-4">
-              Services Offered
-            </h3>
           </div>
 
           {/* Legal Documents */}

@@ -270,9 +270,12 @@ export async function PATCH(request) {
           if (sos.assignedGarage) {
             const garage = await Garage.findById(sos.assignedGarage);
             if (garage) {
-              await User.findByIdAndUpdate(garage.owner, {
-                $inc: { rewardPoints: 100 },
-              });
+              const garageOwner = await User.findById(garage.owner);
+              if (garageOwner) {
+                garageOwner.rewardPoints =
+                  (garageOwner.rewardPoints || 0) + 100;
+                await garageOwner.save();
+              }
               await PointsRecord.create({
                 user: garage.owner,
                 points: 100,
@@ -293,9 +296,11 @@ export async function PATCH(request) {
           }
 
           // Small reward for User too
-          await User.findByIdAndUpdate(sos.user, {
-            $inc: { rewardPoints: 20 },
-          });
+          const userObj = await User.findById(sos.user);
+          if (userObj) {
+            userObj.rewardPoints = (userObj.rewardPoints || 0) + 20;
+            await userObj.save();
+          }
           await PointsRecord.create({
             user: sos.user,
             points: 20,
@@ -343,9 +348,11 @@ export async function PATCH(request) {
         // Award points on resolution (Garage resolution)
         try {
           // Resolve points for Garage Owner (the one who's logged in)
-          await User.findByIdAndUpdate(decoded.userId, {
-            $inc: { rewardPoints: 100 },
-          });
+          const garageOwner = await User.findById(decoded.userId);
+          if (garageOwner) {
+            garageOwner.rewardPoints = (garageOwner.rewardPoints || 0) + 100;
+            await garageOwner.save();
+          }
           await PointsRecord.create({
             user: decoded.userId,
             points: 100,
@@ -364,9 +371,11 @@ export async function PATCH(request) {
           });
 
           // Small reward for User
-          await User.findByIdAndUpdate(sos.user, {
-            $inc: { rewardPoints: 20 },
-          });
+          const userObj = await User.findById(sos.user);
+          if (userObj) {
+            userObj.rewardPoints = (userObj.rewardPoints || 0) + 20;
+            await userObj.save();
+          }
           await PointsRecord.create({
             user: sos.user,
             points: 20,

@@ -1,8 +1,11 @@
 "use client";
 
-import { Award, TrendingUp, Gift } from "lucide-react";
+import { Award, TrendingUp, Gift, Info } from "lucide-react";
+import { useState } from "react";
+import RewardsInfoModal from "./RewardsInfoModal";
 
 export default function UserRewardsCard({ user, stats }) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const points = stats?.points || 0;
   const tier = user?.membershipTier || "free";
 
@@ -52,9 +55,19 @@ export default function UserRewardsCard({ user, stats }) {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-          <Award className="w-5 h-5" />
+          <Award className="w-5 h-5 text-orange-500" />
           Rewards & Benefits
         </h3>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="text-xs text-white/40 hover:text-orange-500 flex items-center gap-1.5 transition-colors group"
+        >
+          <Info
+            size={14}
+            className="group-hover:rotate-12 transition-transform"
+          />
+          How it works
+        </button>
       </div>
 
       {/* Points Display */}
@@ -127,6 +140,11 @@ export default function UserRewardsCard({ user, stats }) {
           Upgrade to {currentTier.nextTier}
         </button>
       )}
+
+      <RewardsInfoModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 }

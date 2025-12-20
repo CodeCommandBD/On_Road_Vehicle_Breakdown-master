@@ -113,9 +113,12 @@ export async function PATCH(request, { params }) {
         // Award points to user
         try {
           const pointsAwarded = 50;
-          await User.findByIdAndUpdate(booking.user, {
-            $inc: { rewardPoints: pointsAwarded },
-          });
+          const pointUser = await User.findById(booking.user);
+          if (pointUser) {
+            pointUser.rewardPoints =
+              (pointUser.rewardPoints || 0) + pointsAwarded;
+            await pointUser.save();
+          }
 
           await PointsRecord.create({
             user: booking.user,

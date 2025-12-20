@@ -25,6 +25,7 @@ import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils/helpers";
+import RewardsInfoModal from "./RewardsInfoModal";
 
 export default function DashboardHeader() {
   const dispatch = useDispatch();
@@ -35,6 +36,7 @@ export default function DashboardHeader() {
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotifyOpen, setIsNotifyOpen] = useState(false);
+  const [isRewardsModalOpen, setIsRewardsModalOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
   const profileRef = useRef(null);
@@ -152,7 +154,10 @@ export default function DashboardHeader() {
         <div className="flex items-center gap-2">
           {/* Reward Points - Visible on tablet and desktop */}
           {user?.role !== "admin" && (
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-xl mr-2 group cursor-help transition-all hover:border-orange-500/40">
+            <div
+              onClick={() => setIsRewardsModalOpen(true)}
+              className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-xl mr-2 group cursor-pointer transition-all hover:border-orange-500/40 hover:scale-105 active:scale-95"
+            >
               <Award className="w-4 h-4 text-orange-500 group-hover:scale-110 transition-transform" />
               <span className="text-sm font-bold text-white">
                 {user?.rewardPoints || 0}
@@ -302,6 +307,11 @@ export default function DashboardHeader() {
           </div>
         </div>
       </div>
+
+      <RewardsInfoModal
+        isOpen={isRewardsModalOpen}
+        onClose={() => setIsRewardsModalOpen(false)}
+      />
     </header>
   );
 }
