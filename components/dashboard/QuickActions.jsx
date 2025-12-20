@@ -112,7 +112,7 @@ export default function QuickActions({ onSOSSent }) {
       description: "Get help",
       icon: MessageCircle,
       gradient: "gradient-green",
-      href: "#support",
+      href: "/user/dashboard/messages?chat=support",
       shadow: "shadow-glow-green",
     },
   ];

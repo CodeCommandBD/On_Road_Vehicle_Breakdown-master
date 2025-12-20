@@ -2,17 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  LayoutDashboard, 
-  Users, 
-  Car, 
-  CalendarDays, 
-  DollarSign, 
-  Star, 
-  Settings, 
-  MessageSquareWarning, 
+import {
+  LayoutDashboard,
+  Users,
+  Car,
+  CalendarDays,
+  DollarSign,
+  Star,
+  Settings,
+  MessageSquareWarning,
+  MessageSquare,
   LogOut,
-  X
+  X,
 } from "lucide-react";
 
 const menuItems = [
@@ -24,6 +25,7 @@ const menuItems = [
   { name: "Reviews", href: "/admin/reviews", icon: Star },
   { name: "Services", href: "/admin/services", icon: Settings },
   { name: "Support", href: "/admin/support", icon: MessageSquareWarning },
+  { name: "Messages", href: "/admin/messages", icon: MessageSquare },
 ];
 
 export default function AdminSidebar({ isOpen, onClose }) {
@@ -33,7 +35,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
     <>
       {/* Overlay for mobile */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={onClose}
         />
@@ -46,15 +48,18 @@ export default function AdminSidebar({ isOpen, onClose }) {
       >
         {/* Logo Area */}
         <div className="h-20 flex items-center justify-between px-8 border-b border-[#222]">
-          <Link href="/admin/dashboard" className="flex items-center gap-2 group">
-             <div className="w-8 h-8 rounded-lg bg-[#FF532D] flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform">
-               A
-             </div>
+          <Link
+            href="/admin/dashboard"
+            className="flex items-center gap-2 group"
+          >
+            <div className="w-8 h-8 rounded-lg bg-[#FF532D] flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform">
+              A
+            </div>
             <span className="text-xl font-bold text-white tracking-wide">
               Admin<span className="text-[#FF532D]">Panel</span>
             </span>
           </Link>
-          <button 
+          <button
             onClick={onClose}
             className="lg:hidden text-white/50 hover:text-white transition-colors"
           >
@@ -64,8 +69,10 @@ export default function AdminSidebar({ isOpen, onClose }) {
 
         {/* Navigation */}
         <nav className="p-6 space-y-2 overflow-y-auto h-[calc(100vh-80px)]">
-          <div className="text-xs font-semibold text-white/30 uppercase tracking-wider mb-4 px-3">Main Menu</div>
-          
+          <div className="text-xs font-semibold text-white/30 uppercase tracking-wider mb-4 px-3">
+            Main Menu
+          </div>
+
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -81,15 +88,26 @@ export default function AdminSidebar({ isOpen, onClose }) {
                 }`}
                 onClick={() => onClose && window.innerWidth < 1024 && onClose()}
               >
-                <Icon size={20} className={`${isActive ? "text-white" : "text-white/60 group-hover:text-white transition-colors"}`} />
+                <Icon
+                  size={20}
+                  className={`${
+                    isActive
+                      ? "text-white"
+                      : "text-white/60 group-hover:text-white transition-colors"
+                  }`}
+                />
                 <span className="font-medium">{item.name}</span>
-                {isActive && <div className="absolute right-0 top-0 bottom-0 w-1 bg-white/20"></div>}
+                {isActive && (
+                  <div className="absolute right-0 top-0 bottom-0 w-1 bg-white/20"></div>
+                )}
               </Link>
             );
           })}
 
           <div className="pt-8 mt-8 border-t border-[#222]">
-            <div className="text-xs font-semibold text-white/30 uppercase tracking-wider mb-4 px-3">Settings</div>
+            <div className="text-xs font-semibold text-white/30 uppercase tracking-wider mb-4 px-3">
+              Settings
+            </div>
             <button className="flex items-center gap-3 px-4 py-3.5 text-white/60 hover:bg-red-500/10 hover:text-red-500 w-full rounded-xl transition-all duration-200 text-left group">
               <LogOut size={20} />
               <span className="font-medium">Logout</span>

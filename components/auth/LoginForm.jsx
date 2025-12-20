@@ -162,6 +162,21 @@ export default function LoginForm() {
             />
             <span className="font-bold text-sm tracking-wide">GARAGE</span>
           </Tabs.Trigger>
+          <Tabs.Trigger
+            value="admin"
+            className={`flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl transition-all duration-300 ${
+              activeTab === "admin"
+                ? "bg-gradient-to-r from-[#ff4800] to-[#ff6a3d] text-white shadow-lg shadow-orange-900/40 transform scale-[1.02]"
+                : "text-gray-400 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <Lock
+              className={`w-5 h-5 ${
+                activeTab === "admin" ? "fill-white" : "fill-current"
+              }`}
+            />
+            <span className="font-bold text-sm tracking-wide">ADMIN</span>
+          </Tabs.Trigger>
         </Tabs.List>
 
         <form

@@ -74,7 +74,25 @@ export async function POST(request) {
         })
       );
 
-      await Promise.all([...notificationPromises, ...emailPromises]);
+      // Also notify all admins
+      const admins = await User.find({ role: "admin" }).select("_id");
+      const adminNotificationPromises = admins.map((admin) =>
+        Notification.create({
+          recipient: admin._id,
+          type: "system_alert",
+          title: "🚨 GLOBAL SOS ALERT",
+          message: `${user?.name || "A user"} reported an emergency: ${
+            address || "GPS Location"
+          }`,
+          link: `/admin/dashboard`, // Admin sees all SOS in dashboard
+        })
+      );
+
+      await Promise.all([
+        ...notificationPromises,
+        ...adminNotificationPromises,
+        ...emailPromises,
+      ]);
     } catch (notifyErr) {
       console.error("Failed to send SOS alerts:", notifyErr);
     }

@@ -3,6 +3,7 @@ import connectDB from "@/lib/db/connect";
 import Conversation from "@/lib/db/models/Conversation";
 import Message from "@/lib/db/models/Message";
 import User from "@/lib/db/models/User";
+import Notification from "@/lib/db/models/Notification";
 import { verifyToken } from "@/lib/utils/auth";
 
 // GET: Fetch all conversations for the logged-in user
@@ -90,6 +91,37 @@ export async function POST(request) {
       createdAt: new Date(),
     };
     await conversation.save();
+
+    // Create Notification for the recipient
+    try {
+      const sender = await User.findById(decoded.userId).select("name");
+      const recipientUser = await User.findById(recipientId).select("role");
+
+      if (recipientUser) {
+        let dashboardLink = "/user/dashboard/messages";
+        if (recipientUser.role === "admin") {
+          dashboardLink = "/admin/messages";
+        } else if (recipientUser.role === "garage") {
+          dashboardLink = "/garage/dashboard/messages";
+        }
+
+        await Notification.create({
+          recipient: recipientId,
+          sender: decoded.userId,
+          type: "message_new",
+          title: `New message from ${sender?.name || "Someone"}`,
+          message: text.length > 50 ? text.substring(0, 47) + "..." : text,
+          link: `${dashboardLink}?chatId=${conversation._id}`,
+          metadata: {
+            conversationId: conversation._id,
+            messageId: message._id,
+          },
+        });
+      }
+    } catch (notifyError) {
+      console.error("Failed to create message notification:", notifyError);
+      // Don't fail the message send if notification fails
+    }
 
     return NextResponse.json({
       success: true,
