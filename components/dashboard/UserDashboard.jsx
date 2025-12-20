@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
 import EnhancedStatsCards from "@/components/dashboard/EnhancedStatsCards";
 import BookingTable from "@/components/dashboard/BookingTable";
 import QuickActions from "@/components/dashboard/QuickActions";
