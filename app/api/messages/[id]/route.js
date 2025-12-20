@@ -34,22 +34,29 @@ export async function GET(request, { params }) {
 
     let query = { conversation: id };
     if (since) {
-      query.createdAt = { $gt: new Date(since) };
+      // Poll for messages created OR updated (e.g. read status changed) since last poll
+      query.updatedAt = { $gt: new Date(since) };
     }
 
     const messages = await Message.find(query).sort({
       createdAt: 1,
     });
 
-    // Mark messages as read (optional but recommended)
+    // Mark messages as read and clear unread count for the current user
     await Message.updateMany(
       { conversation: id, sender: { $ne: decoded.userId }, isRead: false },
-      { $set: { isRead: true } }
+      { $set: { isRead: true, updatedAt: new Date() } }
     );
+
+    const unreadKey = `unreadCount.${decoded.userId}`;
+    await Conversation.findByIdAndUpdate(id, {
+      $set: { [unreadKey]: 0 },
+    });
 
     return NextResponse.json({
       success: true,
       messages,
+      serverTime: new Date().toISOString(),
     });
   } catch (error) {
     console.error("Message details GET error:", error);
