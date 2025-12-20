@@ -22,6 +22,7 @@ import {
 import { toast } from "react-toastify";
 import axios from "axios";
 import PasswordChangeModal from "@/components/profile/PasswordChangeModal";
+import ImageUpload from "@/components/common/ImageUpload";
 import { useTranslations } from "next-intl";
 
 // Dynamically import MapComponent to avoid SSR issues
@@ -44,6 +45,7 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [profileFormData, setProfileFormData] = useState({
     name: "",
     email: "",
@@ -155,6 +157,7 @@ export default function ProfilePage() {
     const payload = {
       name: currentData.name || "",
       phone: currentData.phone || "",
+      avatar: currentData.avatar || "",
       address: {
         street: currentData.street || "",
         city: currentData.city || "",
@@ -295,13 +298,72 @@ export default function ProfilePage() {
         {/* Profile Info */}
         <div className="relative px-4 sm:px-8 pb-6">
           {/* Avatar */}
-          <div className="relative -mt-16 sm:-mt-20 mb-4">
-            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gradient-orange flex items-center justify-center text-white font-bold text-4xl sm:text-5xl border-4 border-[#1E1E1E] shadow-glow-orange">
-              {user.name?.charAt(0).toUpperCase() || "U"}
+          {/* Avatar */}
+          <div className="relative -mt-16 sm:-mt-20 mb-4 group">
+            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gradient-orange flex items-center justify-center text-white font-bold text-4xl sm:text-5xl border-4 border-[#1E1E1E] shadow-glow-orange overflow-hidden">
+              {profileFormData.avatar ? (
+                <img
+                  src={profileFormData.avatar}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                user.name?.charAt(0).toUpperCase() || "U"
+              )}
             </div>
-            <button className="absolute bottom-0 right-0 p-2 bg-orange-500 rounded-full hover:bg-orange-600 transition-colors">
-              <Camera className="w-4 h-4 text-white" />
-            </button>
+            {isEditing && (
+              <button
+                type="button"
+                onClick={() => setShowAvatarModal(true)}
+                className="absolute bottom-0 right-0 p-2 bg-orange-500 rounded-full hover:bg-orange-600 transition-colors shadow-lg z-10"
+              >
+                <Camera className="w-4 h-4 text-white" />
+              </button>
+            )}
+
+            {/* Avatar Upload Modal */}
+            {showAvatarModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                <div className="bg-[#1E1E1E] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-bold text-white">
+                      Update Profile Photo
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setShowAvatarModal(false)}
+                      className="text-white/60 hover:text-white transition-colors"
+                    >
+                      <X size={24} />
+                    </button>
+                  </div>
+
+                  <div className="space-y-6">
+                    <ImageUpload
+                      label="Upload New Photo"
+                      value={profileFormData.avatar}
+                      onChange={(url) =>
+                        setProfileFormData((prev) => ({
+                          ...prev,
+                          avatar: url,
+                        }))
+                      }
+                      showPreview={true}
+                    />
+
+                    <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                      <button
+                        type="button"
+                        onClick={() => setShowAvatarModal(false)}
+                        className="px-6 py-2 bg-gradient-orange text-white rounded-xl font-medium transition-all hover:shadow-glow-orange"
+                      >
+                        Done
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Name and Membership */}
