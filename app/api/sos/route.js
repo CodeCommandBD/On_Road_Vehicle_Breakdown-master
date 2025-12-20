@@ -14,6 +14,7 @@ import {
   sendQuotaWarningEmail,
   sendWelcomeEmail,
 } from "@/lib/utils/email";
+import { triggerWebhook } from "@/lib/utils/webhook";
 import mongoose from "mongoose";
 
 export async function POST(request) {
@@ -128,10 +129,42 @@ export async function POST(request) {
     }
     // ------------------------------------------
 
+    // --- TRIGGER WEBHOOK (Fire & Forget) ---
+    triggerWebhook(decoded.userId, "sos.created", {
+      sosId: sosAlert._id,
+      location: sosAlert.location,
+      status: sosAlert.status,
+      vehicleType: sosAlert.vehicleType,
+      createdAt: sosAlert.createdAt,
+    });
+    // ---------------------------------------
+
+    // --- SEARCH LOGIC UPDATED FOR COVERAGE LIMITS ---
+    const serviceRadiusKm = plan.limits?.serviceRadius || 5; // Default 5km if missing
+
+    // If radius is huge (e.g., > 10000 km), it's "Nationwide" -> Find all active garages
+    // Else, use Geospatial query
+    const isNationwide = serviceRadiusKm > 10000;
+
+    let garageQuery = { isActive: true }; // Base query
+
+    if (!isNationwide) {
+      garageQuery.location = {
+        $near: {
+          $geometry: {
+            type: "Point",
+            coordinates: [longitude, latitude],
+          },
+          $maxDistance: serviceRadiusKm * 1000, // Convert km to meters
+        },
+      };
+    }
+
     // Create notifications and send emails
     try {
       const user = await User.findById(decoded.userId);
-      const garages = await Garage.find({}).populate("owner");
+      // Execute the query
+      const garages = await Garage.find(garageQuery).populate("owner");
 
       const emailPromises = garages.map((g) => {
         if (g.owner?.email) {

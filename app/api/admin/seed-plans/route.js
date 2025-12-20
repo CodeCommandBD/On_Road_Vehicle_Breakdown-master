@@ -13,7 +13,7 @@ export async function GET() {
         price: { monthly: 0, yearly: 0 },
         features: [
           "2 Service Requests / Month",
-          "5 km Service Radius",
+          "20 km Service Radius",
           "AI Mechanic (3 Diagnoses)",
           "Standard Response Time",
           "Community Support",
@@ -22,7 +22,7 @@ export async function GET() {
         highlightFeature: "Try it out",
         limits: {
           serviceCalls: 2,
-          serviceRadius: 5,
+          serviceRadius: 20,
           responseTime: 60, // 1 hour
           vehicles: 1,
           aiDiagnosis: 3,
@@ -35,10 +35,10 @@ export async function GET() {
       {
         name: "STANDARD Plan",
         tier: "standard",
-        price: { monthly: 1200, yearly: 10800 }, // 1200 * 9 = 25% off approx? adjusted to prompt 10800
+        price: { monthly: 1200, yearly: 10800 },
         features: [
           "Unlimited Service Requests",
-          "20 km Service Radius",
+          "50 km Service Radius",
           "Unlimited AI Mechanic",
           "Priority Response (24-48h)",
           "Ad-Free Experience",
@@ -49,7 +49,7 @@ export async function GET() {
         highlightFeature: "MOST POPULAR",
         limits: {
           serviceCalls: -1, // Unlimited
-          serviceRadius: 20,
+          serviceRadius: 50,
           responseTime: 45,
           vehicles: 1,
           aiDiagnosis: -1,
@@ -77,8 +77,8 @@ export async function GET() {
         highlightFeature: "For Pros",
         limits: {
           serviceCalls: -1,
-          serviceRadius: 9999, // Nationwide
-          responseTime: 15, // 15 mins for assigning? Prompt said 4-6h response for support, but breakdown is immediate.
+          serviceRadius: 99999, // Nationwide
+          responseTime: 15,
           vehicles: 5,
           aiDiagnosis: -1,
         },
@@ -104,7 +104,7 @@ export async function GET() {
         highlightFeature: "Scale Up",
         limits: {
           serviceCalls: -1,
-          serviceRadius: 9999,
+          serviceRadius: 99999,
           responseTime: 5,
           aiDiagnosis: -1,
         },
