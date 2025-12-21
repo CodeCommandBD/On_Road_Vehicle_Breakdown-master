@@ -1,45 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import ServiceCard from "./ServiceCard";
-
-const carServices = [
-  { name: "Windshields", icon: "/images/nav/nav-one.png" },
-  { name: "Door", icon: "/images/nav/nav-two.png" },
-  { name: "Air Condition", icon: "/images/nav/nav-three.png" },
-  { name: "Batteries", icon: "/images/nav/nav-four.png" },
-  { name: "Brake", icon: "/images/nav/nav-five.png" },
-  { name: "Car Check", icon: "/images/nav/nav-six.png" },
-  { name: "Oil Change", icon: "/images/nav/nav-seven.png" },
-  { name: "Suspension", icon: "/images/nav/nav-eight.png" },
-  { name: "Tire", icon: "/images/nav/nav-nine.png" },
-  { name: "Looking Glass", icon: "/images/nav/nav-ten.png" },
-  { name: "Cleaning", icon: "/images/nav/nav-eleven.png" },
-  { name: "Painting", icon: "/images/nav/nav-twelve.png" },
-];
-
-const bikeServices = [
-  { name: "Windshields", icon: "/images/nav/nav-one.png" },
-  { name: "Door", icon: "/images/nav/nav-two.png" },
-  { name: "Air Condition", icon: "/images/nav/nav-three.png" },
-  { name: "Batteries", icon: "/images/nav/nav-four.png" },
-  { name: "Brake", icon: "/images/nav/nav-five.png" },
-  { name: "Bike Check", icon: "/images/nav/nav-six.png" },
-  { name: "Oil Change", icon: "/images/nav/nav-seven.png" },
-  { name: "Suspension", icon: "/images/nav/nav-eight.png" },
-  { name: "Tire", icon: "/images/nav/nav-nine.png" },
-  { name: "Looking Glass", icon: "/images/nav/nav-ten.png" },
-  { name: "Cleaning", icon: "/images/nav/nav-eleven.png" },
-  { name: "Painting", icon: "/images/nav/nav-twelve.png" },
-];
+import axios from "axios";
 
 export default function RepairServices() {
-  const [activeTab, setActiveTab] = useState("bikes");
+  const [activeTab, setActiveTab] = useState("cars");
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation();
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const currentServices = activeTab === "cars" ? carServices : bikeServices;
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        // Fetch specific car services or just all active ones
+        // Since we seeded general ones, we'll just fetch all active, filtered by limit
+        const response = await axios.get(
+          "/api/services?isActive=true&limit=12&sort=order"
+        );
+        if (response.data.success) {
+          setServices(response.data.data.services);
+        }
+      } catch (error) {
+        console.error("Failed to fetch homepage services:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchServices();
+  }, []);
+
+  // For now, mapping same services to both or just cars as requested.
+  // User said "only for cars". We can leave bikes empty or static for now,
+  // or just show the same services if they apply to both.
+  // Attempting to filter or just use the fetched list for Cars.
+  const currentServices = activeTab === "cars" ? services : [];
 
   return (
     <section
@@ -121,16 +119,46 @@ export default function RepairServices() {
         </div>
 
         {/* Services Grid - Centered */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5 md:gap-6">
-          {currentServices.map((service, index) => (
-            <ServiceCard
-              key={`${activeTab}-${index}`}
-              icon={service.icon}
-              title={service.name}
-              link="/services"
-            />
-          ))}
-        </div>
+        {activeTab === "cars" ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5 md:gap-6">
+            {loading ? (
+              <div className="col-span-full flex justify-center py-12">
+                <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : currentServices.length > 0 ? (
+              currentServices.map((service, index) => (
+                <ServiceCard
+                  key={`${activeTab}-${service._id || index}`}
+                  icon={service.image || "/images/nav/nav-one.png"}
+                  title={service.name}
+                  link={`/garages?service=${service.slug}`}
+                />
+              ))
+            ) : (
+              <div className="col-span-full text-center py-8 text-gray-500">
+                No services found for {activeTab}.
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
+            <div className="w-24 h-24 mb-6 relative opacity-30 grayscale">
+              <Image
+                src="/images/nav/nav-one.png"
+                alt="Coming Soon"
+                fill
+                className="object-contain"
+              />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              Coming Soon!
+            </h3>
+            <p className="text-gray-500 max-w-md mx-auto">
+              We are working hard to bring Bike Repair services to our platform.
+              Checks back soon!
+            </p>
+          </div>
+        )}
       </div>
     </section>
   );

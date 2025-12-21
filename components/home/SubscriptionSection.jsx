@@ -15,6 +15,8 @@ if (typeof window !== "undefined") {
 export default function SubscriptionSection() {
   const [packageData, setPackageData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [timeLeft, setTimeLeft] = useState("");
+  const [isExpired, setIsExpired] = useState(false);
 
   // Refs for GSAP animations
   const sectionRef = useRef(null);
@@ -24,6 +26,33 @@ export default function SubscriptionSection() {
   useEffect(() => {
     fetchPremiumPackage();
   }, []);
+
+  // Timer Logic
+  useEffect(() => {
+    if (!packageData?.promoEndsAt) return;
+
+    const interval = setInterval(() => {
+      const now = new Date().getTime();
+      const distance = new Date(packageData.promoEndsAt).getTime() - now;
+
+      if (distance < 0) {
+        clearInterval(interval);
+        setIsExpired(true);
+        setTimeLeft("EXPIRED");
+      } else {
+        setIsExpired(false);
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor(
+          (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+        );
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [packageData]);
 
   // GSAP ScrollTrigger animations
   useEffect(() => {
@@ -65,7 +94,7 @@ export default function SubscriptionSection() {
       if (data.success && data.data.packages?.length > 0) {
         setPackageData(data.data.packages[0]);
       } else {
-        // Fallback data if no package found
+        // Fallback data
         setPackageData({
           name: "Premium Membership",
           discount: 34,
@@ -141,26 +170,47 @@ export default function SubscriptionSection() {
 
         <div className="absolute top-0 right-0 w-1/2 h-full opacity-[0.03] pointer-events-none bg-[repeating-linear-gradient(45deg,transparent,transparent_35px,rgba(255,255,255,0.1)_35px,rgba(255,255,255,0.1)_70px),repeating-linear-gradient(-45deg,transparent,transparent_35px,rgba(255,255,255,0.1)_35px,rgba(255,255,255,0.1)_70px)] z-10"></div>
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 relative z-[1]">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center">
+          <div
+            className={`grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-center transition-all duration-500 ${
+              isExpired
+                ? "grayscale opacity-70 pointer-events-none select-none"
+                : ""
+            }`}
+          >
             {/* Left Content */}
             <div
               className="flex flex-col items-center lg:items-start"
               ref={leftContentRef}
             >
-              <div className="flex gap-2.5 mb-5 items-center">
-                <Settings className="w-4 h-4 text-[#FF6644] animate-[scaleAnimation_3s_ease-in-out_infinite]" />
-                <div>
-                  <h5 className="text-[#F23C13] text-xs font-normal tracking-[0.7px] uppercase m-0">
-                    TESTIMONIAL
-                  </h5>
+              {isExpired ? (
+                <div className="mb-5 bg-red-600 text-white px-6 py-2 rounded-full font-bold text-lg animate-pulse shadow-[0_0_20px_rgba(220,38,38,0.6)]">
+                  OFFER EXPIRED
                 </div>
-              </div>
+              ) : (
+                <div className="flex gap-2.5 mb-5 items-center">
+                  <Settings className="w-4 h-4 text-[#FF6644] animate-[scaleAnimation_3s_ease-in-out_infinite]" />
+                  <div>
+                    <h5 className="text-[#F23C13] text-xs font-normal tracking-[0.7px] uppercase m-0">
+                      MEMBERSHIP PLAN
+                    </h5>
+                  </div>
+                </div>
+              )}
 
               <div className="mb-10 text-center lg:text-left">
                 <h1 className="text-white text-[32px] lg:text-[45px] font-bold tracking-[0.5px] leading-[1.2]">
-                  {packageData?.name ||
-                    "Great Subscription \n for Repair Service"}
+                  {packageData?.name || "Premium Membership"}
                 </h1>
+
+                {/* PROMO TIMER DISPLAY */}
+                {packageData?.promoEndsAt && !isExpired && (
+                  <div className="mt-4 inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/30 px-4 py-2 rounded-lg">
+                    <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
+                    <span className="text-orange-400 font-mono font-bold tracking-wider">
+                      Ends in: {timeLeft}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="mb-10 w-full text-center lg:text-left">
@@ -168,10 +218,12 @@ export default function SubscriptionSection() {
                   PREMIUM BEST
                 </h3>
                 <h2 className="text-[#F23C13] text-[40px] font-bold tracking-[2px]">
-                  {/* Handle price being an object or number safely */}$
+                  {/* Currency Symbol Logic */}
+                  {packageData?.currency === "BDT" ? "৳" : "$"}
+                  {/* Handle price being an object or number safely */}
                   {typeof packageData?.price === "object"
                     ? packageData.price.monthly
-                    : packageData?.price || 400}
+                    : packageData?.price || 2500}
                   <span className="text-white text-[25px] font-medium tracking-[1.4px]">
                     /Monthly
                   </span>
@@ -179,16 +231,7 @@ export default function SubscriptionSection() {
               </div>
 
               <div className="flex flex-col gap-5 mb-10 w-full">
-                {(
-                  packageData?.benefits ||
-                  packageData?.features?.map((f) => f.name) || [
-                    "Latest technology",
-                    "24/7 service & quick car",
-                    "Always repairable vehicles",
-                    "Emergency priority support",
-                    "Technician 24/7 day & car",
-                  ]
-                ).map((benefit, index) => (
+                {(packageData?.benefits || []).map((benefit, index) => (
                   <div key={index} className="flex items-center gap-5">
                     <div className="flex flex-col items-end gap-1.5 mr-5">
                       <div className="w-[26px] h-[2px] bg-[#00F50C] animate-[linePulse1_2s_linear_infinite]"></div>
@@ -206,17 +249,25 @@ export default function SubscriptionSection() {
               <div className="mt-10">
                 <Link
                   href="/pricing"
-                  className="relative inline-block text-white text-shadow-[0_6px_12px_rgba(201,203,208,0.25)] text-xl font-semibold leading-[160%] rounded-md bg-[#F23C13] shadow-[0_5px_20px_0_rgba(0,0,0,0.05)] px-6 py-3 overflow-hidden transition-all duration-600 z-[2] border-none cursor-pointer hover:text-black hover:-translate-y-[3px] hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)] group"
+                  className={`relative inline-block text-white text-shadow-[0_6px_12px_rgba(201,203,208,0.25)] text-xl font-semibold leading-[160%] rounded-md bg-[#F23C13] shadow-[0_5px_20px_0_rgba(0,0,0,0.05)] px-6 py-3 overflow-hidden transition-all duration-600 z-[2] border-none cursor-pointer group ${
+                    !isExpired
+                      ? "hover:text-black hover:-translate-y-[3px] hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)]"
+                      : "cursor-not-allowed opacity-50"
+                  }`}
+                  onClick={(e) => isExpired && e.preventDefault()}
                 >
                   {/* Glow Effect Pseudo-elements */}
-                  <span className="absolute top-[-2em] left-[-2em] w-[50px] h-[50px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white -z-10 transition-all duration-1000 group-hover:w-[410px] group-hover:h-[410px]"></span>
-                  <span className="absolute top-[calc(100%+2em)] left-[calc(100%+2em)] w-[50px] h-[50px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white -z-10 transition-all duration-1000 group-hover:w-[410px] group-hover:h-[410px]"></span>
-                  {/* Animated Boarder Lines using Tailwind Arbitrary values */}
-                  <span className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#2a048b00] to-white animate-[borderRotate1_2s_linear_infinite]"></span>
-                  <span className="absolute top-0 right-0 w-[2px] h-full bg-gradient-to-b from-[#4800ff00] to-white animate-[borderRotate2_2s_linear_infinite]"></span>
-                  <span className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-l from-[#4800ff00] to-white animate-[borderRotate3_2s_linear_infinite]"></span>
-                  <span className="absolute top-0 left-0 w-[2px] h-full bg-gradient-to-t from-[#4800ff00] to-white animate-[borderRotate4_2s_linear_infinite]"></span>
-                  GET MEMBERSHIP
+                  {!isExpired && (
+                    <>
+                      <span className="absolute top-[-2em] left-[-2em] w-[50px] h-[50px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white -z-10 transition-all duration-1000 group-hover:w-[410px] group-hover:h-[410px]"></span>
+                      <span className="absolute top-[calc(100%+2em)] left-[calc(100%+2em)] w-[50px] h-[50px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white -z-10 transition-all duration-1000 group-hover:w-[410px] group-hover:h-[410px]"></span>
+                      <span className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#2a048b00] to-white animate-[borderRotate1_2s_linear_infinite]"></span>
+                      <span className="absolute top-0 right-0 w-[2px] h-full bg-gradient-to-b from-[#4800ff00] to-white animate-[borderRotate2_2s_linear_infinite]"></span>
+                      <span className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-l from-[#4800ff00] to-white animate-[borderRotate3_2s_linear_infinite]"></span>
+                      <span className="absolute top-0 left-0 w-[2px] h-full bg-gradient-to-t from-[#4800ff00] to-white animate-[borderRotate4_2s_linear_infinite]"></span>
+                    </>
+                  )}
+                  {isExpired ? "OFFER EXPIRED" : "GET MEMBERSHIP"}
                 </Link>
               </div>
             </div>
@@ -232,7 +283,9 @@ export default function SubscriptionSection() {
                   src="/images/mustang-car.png"
                   alt="Premium Package - Orange Sports Car"
                   fill
-                  className="relative z-[2] object-contain drop-shadow-[0_20px_40px_rgba(255,83,45,0.4)] animate-[float_6s_ease-in-out_infinite]"
+                  className={`relative z-[2] object-contain drop-shadow-[0_20px_40px_rgba(255,83,45,0.4)] animate-[float_6s_ease-in-out_infinite] ${
+                    isExpired ? "grayscale contrast-125" : ""
+                  }`}
                   priority
                 />
               </div>

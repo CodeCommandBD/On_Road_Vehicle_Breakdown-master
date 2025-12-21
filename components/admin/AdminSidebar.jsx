@@ -24,6 +24,7 @@ const menuItems = [
   { name: "Payments", href: "/admin/payments", icon: DollarSign },
   { name: "Reviews", href: "/admin/reviews", icon: Star },
   { name: "Services", href: "/admin/services", icon: Settings },
+  { name: "Plans", href: "/admin/plans", icon: DollarSign },
   { name: "Support", href: "/admin/support", icon: MessageSquareWarning },
   { name: "Messages", href: "/admin/messages", icon: MessageSquare },
 ];
