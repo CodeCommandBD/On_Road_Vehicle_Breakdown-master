@@ -60,6 +60,7 @@ export default function ServiceList() {
     category: "general",
     description: "",
     isActive: true,
+    image: null,
   });
   const [editingId, setEditingId] = useState(null);
 
@@ -89,6 +90,7 @@ export default function ServiceList() {
       category: "general",
       description: "",
       isActive: true,
+      image: null,
     });
     setEditingId(null);
   };
@@ -106,6 +108,7 @@ export default function ServiceList() {
       category: service.category || "general",
       description: service.description || "",
       isActive: service.isActive,
+      image: service.image || null,
     });
     setEditingId(service._id);
     setIsModalOpen(true);
@@ -363,6 +366,50 @@ export default function ServiceList() {
                       </button>
                     );
                   })}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-white/60 mb-1">
+                  Service Image (for Navbar)
+                </label>
+                <div className="grid grid-cols-4 gap-2 bg-black/20 p-2 rounded-lg border border-white/10 h-40 overflow-y-auto custom-scrollbar">
+                  {[
+                    "nav-one.png",
+                    "nav-two.png",
+                    "nav-three.png",
+                    "nav-four.png",
+                    "nav-five.png",
+                    "nav-six.png",
+                    "nav-seven.png",
+                    "nav-eight.png",
+                    "nav-nine.png",
+                    "nav-ten.png",
+                    "nav-eleven.png",
+                    "nav-twelve.png",
+                  ].map((img) => (
+                    <button
+                      key={img}
+                      type="button"
+                      onClick={() =>
+                        setFormData({
+                          ...formData,
+                          image: `/images/nav/${img}`,
+                        })
+                      }
+                      className={`p-1 rounded flex items-center justify-center transition-all border-2 ${
+                        formData.image === `/images/nav/${img}`
+                          ? "border-orange-500 bg-orange-500/20"
+                          : "border-transparent hover:bg-white/10"
+                      }`}
+                    >
+                      <img
+                        src={`/images/nav/${img}`}
+                        alt={img}
+                        className="w-full h-auto object-contain"
+                      />
+                    </button>
+                  ))}
                 </div>
               </div>
 

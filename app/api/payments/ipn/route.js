@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/db/connect";
 import Payment from "@/lib/db/models/Payment";
 import Subscription from "@/lib/db/models/Subscription";
 import User from "@/lib/db/models/User";
+import Garage from "@/lib/db/models/Garage";
 
 // IPN (Instant Payment Notification) - Server to server validation
 export async function POST(request) {
@@ -64,6 +65,27 @@ export async function POST(request) {
       }
 
       console.log("IPN: Payment validated successfully");
+
+      // Upgrade Garage Membership (Top Listing Benefit)
+      if (
+        plan.planId.tier === "premium" ||
+        plan.planId.tier === "standard" ||
+        plan.planId.isFeatured
+      ) {
+        await Garage.updateMany(
+          { owner: subscription.userId },
+          {
+            $set: {
+              isFeatured: true, // Auto-Feature for Top Listing
+              membershipTier: plan.planId.tier,
+            },
+          }
+        );
+        console.log(
+          "IPN: Upgraded garage membership for user:",
+          subscription.userId
+        );
+      }
     } else if (status === "FAILED") {
       // Payment failed
       await Payment.findByIdAndUpdate(payment._id, {

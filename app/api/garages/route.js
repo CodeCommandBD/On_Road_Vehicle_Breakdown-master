@@ -39,6 +39,15 @@ export async function GET(request) {
       query.is24Hours = searchParams.get("is24Hours") === "true";
     }
 
+    // Filter by Service Slug
+    const serviceSlug = searchParams.get("service");
+    if (serviceSlug) {
+      const service = await Service.findOne({ slug: serviceSlug });
+      if (service) {
+        query.services = service._id;
+      }
+    }
+
     // Add geospatial search if lat/lng are provided
     if (!isNaN(lat) && !isNaN(lng)) {
       query.location = {
@@ -56,15 +65,17 @@ export async function GET(request) {
     let sortObj = {};
     if (!isNaN(lat) && !isNaN(lng)) {
       // Mongo automatically sorts by distance for $near
+      // We can't easily override this with $near unless we use aggregate
       sortObj = {};
     } else if (sort === "rating") {
-      sortObj = { "rating.average": -1, "rating.count": -1 };
+      sortObj = { isFeatured: -1, "rating.average": -1, "rating.count": -1 };
     } else if (sort === "bookings") {
-      sortObj = { completedBookings: -1 };
+      sortObj = { isFeatured: -1, completedBookings: -1 };
     } else if (sort === "name") {
-      sortObj = { name: 1 };
+      sortObj = { isFeatured: -1, name: 1 };
     } else {
-      sortObj = { createdAt: -1 };
+      // Default: Featured first, then newest
+      sortObj = { isFeatured: -1, createdAt: -1 };
     }
 
     // Fetch garages

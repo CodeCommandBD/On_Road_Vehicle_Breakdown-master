@@ -31,8 +31,28 @@ export default function GarageDetailModal({ garage, onClose, onAction }) {
                 <ShieldCheck className="text-blue-500" size={20} />
               )}
             </h2>
-            <p className="text-white/60 text-sm mt-1">
-              Status: <span className="capitalize">{garage.status}</span>
+            <p className="text-white/60 text-sm mt-1 flex items-center gap-3">
+              <span>
+                Status: <span className="capitalize">{garage.status}</span>
+              </span>
+              <span className="w-1 h-1 bg-white/20 rounded-full" />
+              <span>
+                Plan:{" "}
+                <span
+                  className={`uppercase font-bold ${
+                    garage.membershipTier === "premium"
+                      ? "text-purple-400"
+                      : "text-white"
+                  }`}
+                >
+                  {garage.membershipTier || "Free"}
+                </span>
+              </span>
+              {garage.isFeatured && (
+                <span className="text-[10px] bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-2 py-0.5 rounded ml-2">
+                  Featured
+                </span>
+              )}
             </p>
           </div>
           <button

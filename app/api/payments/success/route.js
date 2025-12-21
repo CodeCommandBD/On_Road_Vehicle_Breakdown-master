@@ -4,6 +4,7 @@ import Payment from "@/lib/db/models/Payment";
 import Subscription from "@/lib/db/models/Subscription";
 import User from "@/lib/db/models/User";
 import Plan from "@/lib/db/models/Plan";
+import Garage from "@/lib/db/models/Garage";
 
 export async function POST(request) {
   try {
@@ -97,6 +98,27 @@ export async function POST(request) {
       }
 
       console.log("Payment successful:", tran_id);
+
+      // Upgrade Garage Membership (Top Listing Benefit)
+      if (
+        subscription.planId.tier === "premium" ||
+        subscription.planId.tier === "standard" ||
+        subscription.planId.isFeatured
+      ) {
+        await Garage.updateMany(
+          { owner: subscription.userId },
+          {
+            $set: {
+              isFeatured: true, // Auto-Feature for Top Listing
+              membershipTier: subscription.planId.tier,
+            },
+          }
+        );
+        console.log(
+          "Upgraded garage membership for user:",
+          subscription.userId
+        );
+      }
 
       // Redirect to success page
       return NextResponse.redirect(
