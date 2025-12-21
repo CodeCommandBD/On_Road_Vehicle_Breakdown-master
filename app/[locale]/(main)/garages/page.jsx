@@ -1,111 +1,105 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Star, MapPin, Search, Filter, Clock, Phone } from "lucide-react";
-
-const garages = [
-  {
-    id: 1,
-    name: "Auto Care Center",
-    image: "/images/garage-1.jpg",
-    rating: 4.9,
-    reviews: 256,
-    distance: "1.2 km",
-    location: "Gulshan 1, Dhaka",
-    specialties: ["Engine", "Electrical", "AC"],
-    is24Hours: true,
-  },
-  {
-    id: 2,
-    name: "Quick Fix Garage",
-    image: "/images/garage-2.jpg",
-    rating: 4.8,
-    reviews: 189,
-    distance: "2.5 km",
-    location: "Dhanmondi 27, Dhaka",
-    specialties: ["Tire", "Battery", "Brake"],
-    is24Hours: true,
-  },
-  {
-    id: 3,
-    name: "Pro Mechanics",
-    image: "/images/garage-3.jpg",
-    rating: 4.7,
-    reviews: 312,
-    distance: "3.8 km",
-    location: "Agrabad, Chittagong",
-    specialties: ["General", "Towing"],
-    is24Hours: false,
-  },
-  {
-    id: 4,
-    name: "Bike Master",
-    image: "/images/garage-4.jpg",
-    rating: 4.6,
-    reviews: 120,
-    distance: "4.1 km",
-    location: "Mirpur 10, Dhaka",
-    specialties: ["Motorcycle", "Oil Change"],
-    is24Hours: false,
-  },
-  {
-    id: 5,
-    name: "Sylhet Motors",
-    image: "/images/garage-5.jpg",
-    rating: 4.9,
-    reviews: 89,
-    distance: "5.5 km",
-    location: "Zindabazar, Sylhet",
-    specialties: ["Engine", "Body Work"],
-    is24Hours: true,
-  },
-  {
-    id: 6,
-    name: "Khulna Car Point",
-    image: "/images/garage-6.jpg",
-    rating: 4.5,
-    reviews: 156,
-    distance: "0.8 km",
-    location: "Sonadanga, Khulna",
-    specialties: ["AC Service", "General"],
-    is24Hours: false,
-  },
-];
+import {
+  Star,
+  MapPin,
+  Search,
+  Filter,
+  Clock,
+  Phone,
+  Wrench,
+  Loader2,
+} from "lucide-react";
+import axios from "axios";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 
 export default function GaragesPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filter24h, setFilter24h] = useState(false);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
 
-  const filteredGarages = garages.filter((garage) => {
-    const matchesSearch =
-      garage.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      garage.location.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filter24h ? garage.is24Hours : true;
-    return matchesSearch && matchesFilter;
-  });
+  const [garages, setGarages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState(
+    searchParams.get("search") || ""
+  );
+  const [filter24h, setFilter24h] = useState(
+    searchParams.get("is24Hours") === "true"
+  );
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchGarages();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, filter24h]);
+
+  const fetchGarages = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (searchQuery) params.append("search", searchQuery);
+      if (filter24h) params.append("is24Hours", "true");
+      params.append("isActive", "true"); // Always show active only
+      params.append("isVerified", "true"); // Always show verified only
+
+      // Update URL without refresh
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+
+      const response = await axios.get(`/api/garages?${params.toString()}`);
+
+      if (response.data.success) {
+        setGarages(response.data.data.garages);
+        setTotal(response.data.data.total);
+      }
+    } catch (error) {
+      console.error("Failed to fetch garages:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleFilter24h = () => {
+    setFilter24h((prev) => !prev);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
       <div className="bg-gray-900 text-white py-16 mb-8">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10">
-          <h1 className="text-3xl font-bold mb-6 text-center">Find Nearby Garages</h1>
-          
+          <h1 className="text-3xl font-bold mb-6 text-center">
+            Find Nearby Garages
+          </h1>
+
           {/* Search Box */}
           <div className="max-w-2xl mx-auto bg-white rounded-lg p-2 flex gap-2">
             <div className="flex-1 flex items-center gap-3 px-4 border-r">
               <MapPin className="w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by name or location..."
+                placeholder="Search by name, city, or district..."
                 className="w-full py-2 outline-none text-gray-800"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <button className="btn btn-primary px-8">
-              <Search className="w-5 h-5" />
+            <button
+              onClick={fetchGarages}
+              className="px-8 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors flex items-center justify-center"
+            >
+              {loading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Search className="w-5 h-5" />
+              )}
             </button>
           </div>
         </div>
@@ -115,14 +109,14 @@ export default function GaragesPage() {
         {/* Filters */}
         <div className="flex items-center justify-between mb-8">
           <p className="text-gray-600">
-            Showing <strong>{filteredGarages.length}</strong> garages
+            Showing <strong>{loading ? "..." : total}</strong> garages
           </p>
           <div className="flex items-center gap-4">
             <button
-              onClick={() => setFilter24h(!filter24h)}
+              onClick={toggleFilter24h}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
                 filter24h
-                  ? "bg-primary/10 border-primary text-primary"
+                  ? "bg-orange-50/50 border-orange-500 text-orange-600"
                   : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
               }`}
             >
@@ -138,83 +132,132 @@ export default function GaragesPage() {
 
         {/* Garages List */}
         <div className="space-y-4">
-          {filteredGarages.map((garage) => (
-            <div
-              key={garage.id}
-              className="bg-white rounded-xl p-4 md:p-6 shadow-sm border flex flex-col md:flex-row gap-6 hover:shadow-md transition-shadow"
-            >
-              {/* Image */}
-              <div className="w-full md:w-48 h-48 md:h-auto bg-gray-200 rounded-lg flex-shrink-0 relative overflow-hidden">
-                {/* Placeholder */}
-                <div className="absolute inset-0 bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center text-white/20">
-                  <Wrench className="w-12 h-12" />
-                </div>
-                {garage.is24Hours && (
-                  <div className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
-                    OPEN 24/7
+          {loading ? (
+            // Loading Skeletons
+            [1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="bg-white rounded-xl p-6 shadow-sm border h-48 animate-pulse"
+              >
+                <div className="flex gap-6">
+                  <div className="w-48 h-36 bg-gray-200 rounded-lg" />
+                  <div className="flex-1 space-y-4">
+                    <div className="h-6 bg-gray-200 rounded w-1/3" />
+                    <div className="h-4 bg-gray-200 rounded w-1/4" />
+                    <div className="h-4 bg-gray-200 rounded w-1/2" />
                   </div>
-                )}
+                </div>
               </div>
+            ))
+          ) : garages.length === 0 ? (
+            <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
+              <Wrench className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-gray-800 mb-2">
+                No garages found
+              </h3>
+              <p className="text-gray-500">
+                Try adjusting your search or filters.
+              </p>
+            </div>
+          ) : (
+            garages.map((garage) => (
+              <div
+                key={garage._id}
+                className="bg-white rounded-xl p-4 md:p-6 shadow-sm border flex flex-col md:flex-row gap-6 hover:shadow-md transition-shadow group"
+              >
+                {/* Image */}
+                <div className="w-full md:w-48 h-48 md:h-auto bg-gray-100 rounded-lg flex-shrink-0 relative overflow-hidden">
+                  {garage.garageImages?.frontView || garage.images?.[0]?.url ? (
+                    <img
+                      src={
+                        garage.garageImages?.frontView ||
+                        garage.images?.[0]?.url
+                      }
+                      alt={garage.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center text-white/20">
+                      <Wrench className="w-12 h-12" />
+                    </div>
+                  )}
 
-              {/* Content */}
-              <div className="flex-1">
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-2">
-                  <div>
-                    <h3 className="text-xl font-bold mb-1">{garage.name}</h3>
-                    <div className="flex items-center gap-2 text-gray-600 text-sm mb-2">
-                      <MapPin className="w-4 h-4" />
-                      {garage.location}
-                      <span className="text-gray-300">•</span>
-                      <span className="text-primary font-medium">{garage.distance} away</span>
+                  {garage.is24Hours && (
+                    <div className="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm">
+                      OPEN 24/7
+                    </div>
+                  )}
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 flex flex-col">
+                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-2">
+                    <div>
+                      <h3 className="text-xl font-bold mb-1 text-gray-900">
+                        {garage.name}
+                      </h3>
+                      <div className="flex items-center gap-2 text-gray-600 text-sm mb-2">
+                        <MapPin className="w-4 h-4 text-orange-500" />
+                        {garage.address?.street}, {garage.address?.city}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded border border-yellow-100">
+                      <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                      <span className="font-bold text-gray-900">
+                        {garage.rating?.average?.toFixed(1) || "5.0"}
+                      </span>
+                      <span className="text-gray-500 text-sm">
+                        ({garage.rating?.count || 0})
+                      </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded border border-yellow-100">
-                    <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                    <span className="font-bold text-gray-900">{garage.rating}</span>
-                    <span className="text-gray-500 text-sm">({garage.reviews})</span>
+
+                  {/* Specialties (Services) */}
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {garage.services && garage.services.length > 0 ? (
+                      garage.services.slice(0, 5).map((service, idx) => (
+                        <span
+                          key={idx}
+                          className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full border border-gray-200"
+                        >
+                          {service.name || service}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-xs text-gray-400 italic">
+                        No specific services listed
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-3 mt-auto">
+                    <Link
+                      href={`/book?garage=${garage._id}`}
+                      className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium text-sm"
+                    >
+                      Book Now
+                    </Link>
+                    <a
+                      href={`tel:${garage.phone}`}
+                      className="p-2 border border-gray-200 rounded-lg hover:border-orange-500 hover:text-orange-500 transition-colors"
+                      title="Call Garage"
+                    >
+                      <Phone className="w-4 h-4" />
+                    </a>
+                    <Link
+                      href={`/garages/${garage._id}`}
+                      className="px-6 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-700 text-sm font-medium ml-auto"
+                    >
+                      View Profile
+                    </Link>
                   </div>
                 </div>
-
-                {/* Specialties */}
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {garage.specialties.map((spec) => (
-                    <span
-                      key={spec}
-                      className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full"
-                    >
-                      {spec}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center gap-3 mt-auto">
-                  <Link
-                    href={`/book?garage=${garage.id}`}
-                    className="btn btn-primary py-2 px-6"
-                  >
-                    Book Now
-                  </Link>
-                  <a
-                    href="tel:+8801700000000"
-                    className="btn btn-outline py-2 px-4 border-gray-200 hover:border-primary hover:bg-primary hover:text-white"
-                  >
-                    <Phone className="w-4 h-4" />
-                  </a>
-                  <Link
-                    href={`/garages/${garage.id}`}
-                    className="btn btn-outline py-2 px-6 border-gray-200 hover:border-gray-300 ml-auto"
-                  >
-                    View Profile
-                  </Link>
-                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>
   );
 }
-// Import Wrench icon for placeholder
-import { Wrench } from "lucide-react";

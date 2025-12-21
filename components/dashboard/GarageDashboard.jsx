@@ -189,32 +189,45 @@ export default function GarageDashboard({ user }) {
             {garageT("quickResources")}
           </h3>
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-white/10 transition-all">
-              <div className="flex items-center gap-3">
-                <MapPin size={18} className="text-blue-400" />
-                <div>
-                  <p className="text-sm font-bold text-white">
-                    {garageT("serviceArea")}
-                  </p>
-                  <p className="text-[10px] text-white/40">
-                    {garageT("manageZone")}
-                  </p>
+            <Link href="/garage/dashboard/profile">
+              <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-white/10 transition-all cursor-pointer group/card">
+                <div className="flex items-center gap-3">
+                  <MapPin size={18} className="text-blue-400" />
+                  <div>
+                    <p className="text-sm font-bold text-white group-hover/card:text-blue-400 transition-colors">
+                      {garageT("serviceArea")}
+                    </p>
+                    <p className="text-[10px] text-white/40">
+                      {garageT("manageZone")}
+                    </p>
+                  </div>
                 </div>
+                <ArrowUpRight
+                  className="text-white/20 group-hover/card:text-white transition-colors"
+                  size={16}
+                />
               </div>
-            </div>
-            <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-white/10 transition-all">
-              <div className="flex items-center gap-3">
-                <Star size={18} className="text-orange-400" />
-                <div>
-                  <p className="text-sm font-bold text-white">
-                    {garageT("reviewPortal")}
-                  </p>
-                  <p className="text-[10px] text-white/40">
-                    {garageT("checkFeedback")}
-                  </p>
+            </Link>
+
+            <Link href="/garage/dashboard/reviews">
+              <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-white/10 transition-all cursor-pointer group/card">
+                <div className="flex items-center gap-3">
+                  <Star size={18} className="text-orange-400" />
+                  <div>
+                    <p className="text-sm font-bold text-white group-hover/card:text-orange-400 transition-colors">
+                      {garageT("reviewPortal")}
+                    </p>
+                    <p className="text-[10px] text-white/40">
+                      {garageT("checkFeedback")}
+                    </p>
+                  </div>
                 </div>
+                <ArrowUpRight
+                  className="text-white/20 group-hover/card:text-white transition-colors"
+                  size={16}
+                />
               </div>
-            </div>
+            </Link>
           </div>
         </div>
       </div>

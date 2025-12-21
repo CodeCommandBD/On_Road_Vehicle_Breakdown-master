@@ -10,9 +10,11 @@ export async function GET(request) {
     // Get query parameters
     const { searchParams } = new URL(request.url);
     const showInactive = searchParams.get("showInactive") === "true";
+    const type = searchParams.get("type") || "user";
 
     // Build query
     const query = showInactive ? {} : { isActive: true };
+    if (type) query.type = type;
 
     // Fetch plans sorted by display order
     const plans = await Plan.find(query).sort({ displayOrder: 1 });

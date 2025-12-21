@@ -46,7 +46,9 @@
     "serviceArea": "Service Area",
     "manageZone": "Manage your service zones and visibility",
     "reviewPortal": "Review Portal",
-    "checkFeedback": "Check your latest customer feedback and ratings"
+    "checkFeedback": "Check your latest customer feedback and ratings",
+    "customerReviews": "Customer Reviews",
+    "reviewsDesc": "See what your customers are saying about you."
   },
   "Auth": {
     "login": "Login",

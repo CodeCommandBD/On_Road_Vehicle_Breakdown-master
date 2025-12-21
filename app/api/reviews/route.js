@@ -81,3 +81,33 @@ export async function POST(request) {
     );
   }
 }
+
+export async function GET(request) {
+  try {
+    await connectDB();
+    const { searchParams } = new URL(request.url);
+    const garageId = searchParams.get("garageId");
+
+    if (!garageId) {
+      return NextResponse.json(
+        { success: false, message: "Garage ID required" },
+        { status: 400 }
+      );
+    }
+
+    const reviews = await Review.find({ garage: garageId })
+      .populate("user", "name")
+      .sort({ createdAt: -1 });
+
+    return NextResponse.json({
+      success: true,
+      reviews,
+    });
+  } catch (error) {
+    console.error("Review GET error:", error);
+    return NextResponse.json(
+      { success: false, message: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
