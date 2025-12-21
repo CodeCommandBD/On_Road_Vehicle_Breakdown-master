@@ -99,6 +99,55 @@ export async function POST(request) {
 
       console.log("Payment successful:", tran_id);
 
+      // --- AUTO-GENERATE INVOICE ---
+      try {
+        const Invoice = (await import("@/lib/db/models/Invoice")).default;
+
+        // Get plan details for invoice
+        const populatedSub = await subscription.populate("planId");
+        const plan = populatedSub.planId;
+
+        const invoice = new Invoice({
+          userId: subscription.userId,
+          subscriptionId: subscription._id,
+          items: [
+            {
+              description: `${plan.name} - ${subscription.billingCycle} Subscription`,
+              quantity: 1,
+              unitPrice: parseFloat(amount),
+              amount: parseFloat(amount),
+            },
+          ],
+          subtotal: parseFloat(amount),
+          tax: { rate: 0, amount: 0 },
+          discount: 0,
+          total: parseFloat(amount),
+          currency: "BDT",
+          status: "paid",
+          paymentId: tran_id,
+          paymentMethod: card_type || "sslcommerz",
+          paidAt: new Date(),
+          billingAddress: {
+            name: user?.name,
+            email: user?.email,
+            phone: user?.phone,
+          },
+        });
+
+        await invoice.save();
+
+        // Link invoice to subscription
+        await Subscription.findByIdAndUpdate(subscription._id, {
+          $push: { invoices: invoice._id },
+        });
+
+        console.log("Invoice auto-generated:", invoice.invoiceNumber);
+      } catch (invoiceError) {
+        console.error("Invoice generation failed:", invoiceError);
+        // Don't fail payment if invoice fails - just log
+      }
+      // ----------------------------
+
       // Upgrade Garage Membership (Top Listing Benefit)
       if (
         subscription.planId.tier === "premium" ||

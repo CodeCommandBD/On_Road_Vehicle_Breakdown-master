@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import {
   LayoutDashboard,
   Users,
@@ -14,6 +16,8 @@ import {
   MessageSquare,
   LogOut,
   X,
+  FileText,
+  Mail,
 } from "lucide-react";
 
 const menuItems = [
@@ -25,12 +29,70 @@ const menuItems = [
   { name: "Reviews", href: "/admin/reviews", icon: Star },
   { name: "Services", href: "/admin/services", icon: Settings },
   { name: "Plans", href: "/admin/plans", icon: DollarSign },
-  { name: "Support", href: "/admin/support", icon: MessageSquareWarning },
-  { name: "Messages", href: "/admin/messages", icon: MessageSquare },
+  { name: "Contracts", href: "/admin/contracts", icon: FileText },
+  {
+    name: "Inquiries",
+    href: "/admin/inquiries",
+    icon: Mail,
+    badge: "inquiries",
+  },
+  {
+    name: "Support",
+    href: "/admin/support",
+    icon: MessageSquareWarning,
+    badge: "support",
+  },
+  {
+    name: "Messages",
+    href: "/admin/messages",
+    icon: MessageSquare,
+    badge: "messages",
+  },
 ];
 
 export default function AdminSidebar({ isOpen, onClose }) {
   const pathname = usePathname();
+  const [counts, setCounts] = useState({
+    inquiries: 0,
+    support: 0,
+    messages: 0,
+  });
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const response = await axios.get("/api/admin/counts");
+        if (response.data.success) {
+          setCounts(response.data.counts);
+        }
+      } catch (error) {
+        console.error("Failed to fetch counts:", error);
+      }
+    };
+
+    fetchCounts();
+    // Poll every 30 seconds
+    const interval = setInterval(fetchCounts, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Reset counters when user visits the page
+  useEffect(() => {
+    setCounts((prev) => {
+      const newCounts = { ...prev };
+
+      // Reset counter for current page
+      if (pathname === "/admin/inquiries") {
+        newCounts.inquiries = 0;
+      } else if (pathname === "/admin/support") {
+        newCounts.support = 0;
+      } else if (pathname === "/admin/messages") {
+        newCounts.messages = 0;
+      }
+
+      return newCounts;
+    });
+  }, [pathname]);
 
   return (
     <>
@@ -77,6 +139,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
+            const badgeCount = item.badge ? counts[item.badge] : 0;
 
             return (
               <Link
@@ -97,7 +160,15 @@ export default function AdminSidebar({ isOpen, onClose }) {
                       : "text-white/60 group-hover:text-white transition-colors"
                   }`}
                 />
-                <span className="font-medium">{item.name}</span>
+                <span className="font-medium flex-1">{item.name}</span>
+
+                {/* Badge Counter */}
+                {badgeCount > 0 && (
+                  <span className="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
+                    {badgeCount > 99 ? "99+" : badgeCount}
+                  </span>
+                )}
+
                 {isActive && (
                   <div className="absolute right-0 top-0 bottom-0 w-1 bg-white/20"></div>
                 )}

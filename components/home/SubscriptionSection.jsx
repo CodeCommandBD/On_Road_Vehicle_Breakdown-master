@@ -32,22 +32,33 @@ export default function SubscriptionSection() {
     if (!packageData?.promoEndsAt) return;
 
     const interval = setInterval(() => {
-      const now = new Date().getTime();
-      const distance = new Date(packageData.promoEndsAt).getTime() - now;
+      // Get current time in Bangladesh (UTC+6)
+      const bdTime = new Date(
+        new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" })
+      );
+      const now = bdTime.getTime();
 
-      if (distance < 0) {
+      const promoDate = new Date(packageData.promoEndsAt).getTime();
+      const distance = promoDate - now;
+
+      if (distance <= 0) {
         clearInterval(interval);
         setIsExpired(true);
-        setTimeLeft("EXPIRED");
+        setTimeLeft("00:00:00");
       } else {
         setIsExpired(false);
-        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-        const hours = Math.floor(
-          (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-        );
+        const hours = Math.floor(distance / (1000 * 60 * 60));
         const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-        setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+
+        // Format: HH:MM:SS
+        const formatted = [
+          hours.toString().padStart(2, "0"),
+          minutes.toString().padStart(2, "0"),
+          seconds.toString().padStart(2, "0"),
+        ].join(":");
+
+        setTimeLeft(formatted);
       }
     }, 1000);
 

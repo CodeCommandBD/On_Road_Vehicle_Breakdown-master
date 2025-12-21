@@ -32,10 +32,18 @@ export default function PricingPage() {
     console.log("Pricing Page Auth Debug:", { isAuthenticated, user });
   }, [isAuthenticated, user]);
 
+  // Update current time every second (Bangladesh timezone)
   useEffect(() => {
-    const interval = setInterval(() => {
-      setNow(new Date().getTime());
-    }, 1000);
+    const updateBangladeshTime = () => {
+      // Get current time in Bangladesh (UTC+6)
+      const bdTime = new Date(
+        new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" })
+      );
+      setNow(bdTime.getTime());
+    };
+
+    updateBangladeshTime(); // Initial update
+    const interval = setInterval(updateBangladeshTime, 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -43,13 +51,20 @@ export default function PricingPage() {
     const fetchPlans = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/plans?type=${planType}`);
+        const response = await fetch(
+          `/api/packages?type=${planType}&isActive=true`
+        );
         const data = await response.json();
         if (data.success) {
-          setPlans(data.data.plans);
+          // Map Package model fields to match what PricingPage expects
+          const mappedPackages = data.data.packages.map((pkg) => ({
+            ...pkg,
+            features: pkg.benefits || [],
+          }));
+          setPlans(mappedPackages);
         }
       } catch (error) {
-        console.error("Error fetching plans:", error);
+        console.error("Failed to fetch plans:", error);
       } finally {
         setLoading(false);
       }
@@ -71,6 +86,12 @@ export default function PricingPage() {
 
     if (tier === "trial") {
       router.push("/trial/activate");
+      return;
+    }
+
+    // Enterprise plans - Contact Sales instead of checkout
+    if (tier === "enterprise") {
+      router.push("/contact-sales");
       return;
     }
 
@@ -216,125 +237,142 @@ export default function PricingPage() {
           const isPremium = plan.tier === "premium";
           const isFree = plan.tier === "free";
 
-          // Timer Calculation
+          // Timer Calculation - Robust Logic
           let timeLeft = "";
           let isExpired = false;
 
           if (plan.promoEndsAt) {
-            const distance = new Date(plan.promoEndsAt).getTime() - now;
-            if (distance < 0) {
+            const promoDate = new Date(plan.promoEndsAt).getTime();
+            const distance = promoDate - now;
+
+            if (distance <= 0) {
               isExpired = true;
-              timeLeft = "EXPIRED";
+              timeLeft = "00:00:00";
             } else {
-              const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-              const hours = Math.floor(
-                (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-              );
+              // Calculate H, M, S
+              const hours = Math.floor(distance / (1000 * 60 * 60));
               const minutes = Math.floor(
                 (distance % (1000 * 60 * 60)) / (1000 * 60)
               );
               const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-              timeLeft = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+
+              // Format: HH:MM:SS
+              timeLeft = [
+                hours.toString().padStart(2, "0"),
+                minutes.toString().padStart(2, "0"),
+                seconds.toString().padStart(2, "0"),
+              ].join(":");
             }
           }
 
           return (
             <div
               key={plan._id}
-              className={`relative rounded-3xl p-6 shadow-2xl transform transition-all duration-300 flex flex-col ${
+              className={`relative rounded-3xl p-6 shadow-2xl transition-all duration-500 flex flex-col ${
                 isStandard
-                  ? "bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-green-500/50 scale-105 z-10 shadow-green-900/20"
+                  ? "bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-green-500/50 scale-105 z-10 shadow-green-900/40"
                   : isPremium
-                  ? "bg-gray-800 border border-orange-500/30"
+                  ? "bg-gray-800 border-2 border-orange-500/30 shadow-orange-900/20"
                   : "bg-gray-800 border border-gray-700"
               } ${
                 isExpired
-                  ? "grayscale opacity-70 pointer-events-none select-none hover:scale-100"
-                  : "hover:scale-105"
+                  ? "opacity-60 scale-95 saturate-0 pointer-events-none"
+                  : "hover:scale-[1.07] hover:z-20 group"
               }`}
             >
+              {/* Expired Overlay */}
               {isExpired && (
-                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 z-50 text-center">
-                  <span className="bg-red-600 text-white px-6 py-2 rounded-full font-bold text-lg animate-pulse shadow-[0_0_20px_rgba(220,38,38,0.6)]">
-                    OFFER EXPIRED
-                  </span>
+                <div className="absolute inset-0 z-50 flex items-center justify-center p-4">
+                  <div className="bg-red-600/90 backdrop-blur-md text-white px-8 py-4 rounded-2xl font-black text-xl rotate-[-12deg] shadow-[0_0_30px_rgba(220,38,38,0.5)] border-4 border-white/20 uppercase tracking-tighter">
+                    Offer Expired
+                  </div>
                 </div>
               )}
 
-              {isStandard && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-full text-center">
-                  <span className="bg-green-500 text-black px-6 py-1.5 rounded-full text-xs font-bold shadow-lg uppercase tracking-wide flex items-center justify-center gap-1 w-max mx-auto">
+              {isStandard && !isExpired && (
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-full text-center z-10">
+                  <span className="bg-green-500 text-black px-6 py-1.5 rounded-full text-xs font-bold shadow-lg uppercase tracking-wide flex items-center justify-center gap-1 w-max mx-auto animate-bounce">
                     <TrendingUp className="w-3 h-3" /> MOST POPULAR
                   </span>
                 </div>
               )}
-              {isPremium && (
-                <div className="absolute -top-3 right-4">
-                  <span className="bg-red-500/20 text-red-300 border border-red-500/30 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3" /> Limited Slots
+
+              {isPremium && !isExpired && (
+                <div className="absolute -top-3 right-4 z-10">
+                  <span className="bg-red-500 text-white border border-white/20 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-red-900/40">
+                    <AlertTriangle className="w-3 h-3 animate-pulse" /> Limited
+                    Slots
                   </span>
                 </div>
               )}
 
               {/* Header Section */}
-              <div className="mb-6">
+              <div className="mb-6 relative">
                 <div
-                  className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${getPlanColor(
+                  className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${getPlanColor(
                     plan.tier
-                  )} flex items-center justify-center mb-4 text-white shadow-lg`}
+                  )} flex items-center justify-center mb-6 text-white shadow-xl group-hover:rotate-6 transition-transform`}
                 >
                   {getPlanIcon(plan.tier)}
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-2">
+
+                <h3 className="text-3xl font-black text-white mb-2 tracking-tight">
                   {plan.name}
                 </h3>
-                {/* Timer Display in Card Header */}
+
+                {/* Robust Timer Display */}
                 {plan.promoEndsAt && !isExpired && (
-                  <div className="mb-2 inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/30 px-3 py-1 rounded text-xs">
-                    <Clock className="w-3 h-3 text-orange-400" />
-                    <span className="text-orange-400 font-mono font-bold tracking-wider">
-                      Ends in: {timeLeft}
-                    </span>
+                  <div className="mt-2 mb-4 inline-flex items-center gap-3 bg-red-500/10 border border-red-500/40 px-4 py-2 rounded-xl group-hover:bg-red-500/20 transition-colors">
+                    <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-red-300 font-bold uppercase tracking-widest">
+                        Ending In
+                      </span>
+                      <span className="text-red-400 font-mono text-lg font-black tracking-tighter">
+                        {timeLeft}
+                      </span>
+                    </div>
                   </div>
                 )}
-                <p className="text-sm text-gray-400 h-10 line-clamp-2">
+
+                <p className="text-sm text-gray-400 h-10 line-clamp-2 leading-relaxed">
                   {plan.description}
                 </p>
               </div>
 
               {/* Price */}
-              <div className="mb-6 pb-6 border-b border-gray-700/50">
-                <div className="flex items-baseline">
-                  <span className="text-4xl font-bold text-white">
+              <div className="mb-8 p-6 bg-black/30 rounded-2xl border border-white/5 shadow-inner">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-5xl font-black text-white tracking-tighter">
                     {plan.tier === "enterprise" ? "Custom" : `৳${monthlyPrice}`}
                   </span>
                   {plan.tier !== "enterprise" && (
-                    <span className="ml-1 text-sm text-gray-400">
-                      {t("perMonth")}
+                    <span className="text-sm text-gray-500 font-bold uppercase">
+                      /mo
                     </span>
                   )}
                 </div>
-                {billingCycle === "yearly" &&
-                  plan.tier !== "free" &&
-                  plan.tier !== "enterprise" && (
-                    <p className="text-xs mt-2 text-green-400 font-medium">
-                      {t("billedYearly", { price: plan.price.yearly })}
-                    </p>
-                  )}
-                {isFree && (
-                  <p className="text-xs mt-2 text-gray-500">
-                    No credit card required
-                  </p>
+                {billingCycle === "yearly" && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <span className="text-xs text-green-400 font-black bg-green-500/10 px-2 py-1 rounded text-nowrap">
+                      SAVE {plan.discount || 25}%
+                    </span>
+                    <span className="text-[10px] text-gray-500 line-through">
+                      ৳{plan.price.monthly * 12}
+                    </span>
+                  </div>
                 )}
               </div>
 
-              {/* Features */}
+              {/* Features List */}
               <ul className="space-y-4 mb-8 flex-grow">
                 {plan.features.map((feature, idx) => (
-                  <li key={idx} className="flex items-start gap-3">
+                  <li key={idx} className="flex items-start gap-4 group/item">
                     <div
-                      className={`mt-0.5 p-0.5 rounded-full ${
-                        isStandard ? "bg-green-500/20" : "bg-gray-700"
+                      className={`mt-1 p-1 rounded-full transition-colors ${
+                        isStandard
+                          ? "bg-green-500/20 group-hover/item:bg-green-500/40"
+                          : "bg-gray-700 group-hover/item:bg-gray-600"
                       }`}
                     >
                       <Check
@@ -343,41 +381,34 @@ export default function PricingPage() {
                         }`}
                       />
                     </div>
-                    <span className="text-sm text-gray-300">{feature}</span>
+                    <span className="text-sm text-gray-300 font-medium leading-tight group-hover/item:text-white transition-colors">
+                      {feature}
+                    </span>
                   </li>
                 ))}
               </ul>
 
-              {/* CTA Button */}
+              {/* Action Button */}
               <button
                 onClick={() => handleSelectPlan(plan._id, plan.tier)}
                 disabled={isExpired}
-                className={`w-full py-4 rounded-xl font-bold text-sm transition-all duration-300 transform mt-auto flex items-center justify-center gap-2 ${
+                className={`w-full py-5 rounded-2xl font-black text-sm transition-all duration-300 transform mt-auto flex items-center justify-center gap-2 tracking-widest uppercase ${
                   isExpired
                     ? "bg-gray-700 text-gray-400 cursor-not-allowed"
                     : isStandard
-                    ? "bg-green-500 text-black hover:bg-green-400 hover:-translate-y-1 hover:shadow-xl"
+                    ? "bg-green-500 text-black hover:bg-green-400 hover:-translate-y-1 hover:shadow-[0_10px_40px_rgba(34,197,94,0.4)]"
                     : isPremium
-                    ? "bg-gradient-to-r from-orange-500 to-red-600 text-white hover:from-orange-600 hover:to-red-700 hover:-translate-y-1 hover:shadow-xl"
-                    : isFree
-                    ? "bg-white/10 text-white hover:bg-white/20 hover:-translate-y-1 hover:shadow-xl"
+                    ? "bg-gradient-to-r from-orange-500 to-red-600 text-white hover:from-orange-600 hover:to-red-700 hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(249,115,22,0.4)]"
                     : "bg-white text-black hover:bg-gray-100 hover:-translate-y-1 hover:shadow-xl"
                 }`}
               >
                 {isExpired
                   ? "OFFER EXPIRED"
                   : isFree
-                  ? "Start for Free"
+                  ? "Get Started"
                   : "Upgrade Now"}
-                {!isExpired && isStandard && <ArrowRight className="w-4 h-4" />}
+                {!isExpired && <ArrowRight className="w-4 h-4" />}
               </button>
-
-              {/* Guarantee */}
-              {plan.tier !== "free" && plan.tier !== "enterprise" && (
-                <p className="text-[10px] text-center text-gray-500 mt-4">
-                  7-day money-back guarantee
-                </p>
-              )}
             </div>
           );
         })}

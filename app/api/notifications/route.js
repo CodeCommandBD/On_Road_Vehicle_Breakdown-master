@@ -9,19 +9,38 @@ export async function GET(req) {
   try {
     const token = req.cookies.get("token")?.value;
     if (!token) {
+      console.log("No token found in cookies");
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    const decoded = await verifyToken(token);
-    if (!decoded || !decoded.userId) {
+    let decoded;
+    try {
+      decoded = await verifyToken(token);
+    } catch (verifyError) {
+      console.error("Token verification failed:", verifyError);
       return NextResponse.json(
         { success: false, message: "Invalid or expired token" },
         { status: 401 }
       );
     }
+
+    if (!decoded || !decoded.userId) {
+      console.log("Decoded token invalid or missing userId:", decoded);
+      return NextResponse.json(
+        { success: false, message: "Invalid or expired token" },
+        { status: 401 }
+      );
+    }
+
+    console.log(
+      "Fetching notifications for user:",
+      decoded.userId,
+      "role:",
+      decoded.role
+    );
 
     await connectDB();
 
@@ -30,39 +49,44 @@ export async function GET(req) {
 
     // If user is a garage, dynamically check for pending SOS alerts OR alerts assigned to them
     if (decoded.role === "garage") {
-      const garage = await Garage.findOne({ owner: decoded.userId });
+      try {
+        const garage = await Garage.findOne({ owner: decoded.userId });
 
-      const sosQueries = [
-        { status: "pending" }, // All garages see pending
-      ];
+        const sosQueries = [
+          { status: "pending" }, // All garages see pending
+        ];
 
-      if (garage) {
-        sosQueries.push({ status: "assigned", assignedGarage: garage._id }); // My assigned alerts
-      }
+        if (garage) {
+          sosQueries.push({ status: "assigned", assignedGarage: garage._id }); // My assigned alerts
+        }
 
-      const relevantSos = await SOS.find({
-        $or: sosQueries,
-      })
-        .sort({ createdAt: -1 })
-        .limit(10);
+        const relevantSos = await SOS.find({
+          $or: sosQueries,
+        })
+          .sort({ createdAt: -1 })
+          .limit(10);
 
-      relevantSos.forEach((sos) => {
-        const isAssignedToMe = sos.status === "assigned";
-        finalNotifications.push({
-          _id: "sos-" + sos._id,
-          title: isAssignedToMe
-            ? "🛠️ YOUR ASSIGNED SOS"
-            : "🚨 PENDING SOS ALERT",
-          message: isAssignedToMe
-            ? `Active mission: ${sos.location?.address || "Go to location"}`
-            : `${sos.location?.address || "Someone"} needs help!`,
-          link: `/garage/sos-navigation/${sos._id}`,
-          createdAt: sos.createdAt,
-          isRead: false,
-          isSos: true,
+        relevantSos.forEach((sos) => {
+          const isAssignedToMe = sos.status === "assigned";
+          finalNotifications.push({
+            _id: "sos-" + sos._id,
+            title: isAssignedToMe
+              ? "🛠️ YOUR ASSIGNED SOS"
+              : "🚨 PENDING SOS ALERT",
+            message: isAssignedToMe
+              ? `Active mission: ${sos.location?.address || "Go to location"}`
+              : `${sos.location?.address || "Someone"} needs help!`,
+            link: `/garage/sos-navigation/${sos._id}`,
+            createdAt: sos.createdAt,
+            isRead: false,
+            isSos: true,
+          });
+          extraUnread++;
         });
-        extraUnread++;
-      });
+      } catch (garageError) {
+        console.error("Error fetching garage SOS:", garageError);
+        // Continue without SOS notifications
+      }
     }
 
     const dbNotifications = await Notification.find({
