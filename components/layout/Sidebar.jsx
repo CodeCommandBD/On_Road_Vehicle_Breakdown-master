@@ -44,13 +44,17 @@ export default function Sidebar() {
         href: "/user/dashboard/analytics",
         label: "Analytics",
         icon: TrendingUp,
-        locked: user?.planTier !== "premium" && user?.planTier !== "enterprise",
+        locked:
+          user?.membershipTier !== "premium" &&
+          user?.membershipTier !== "enterprise",
       },
       {
         href: "/user/dashboard/integrations",
         label: "CRM / Integrations",
         icon: Webhook,
-        locked: user?.planTier !== "premium" && user?.planTier !== "enterprise",
+        locked:
+          user?.membershipTier !== "premium" &&
+          user?.membershipTier !== "enterprise",
       },
       {
         href: "/user/dashboard/bookings",
@@ -66,7 +70,9 @@ export default function Sidebar() {
         href: "/user/dashboard/automation",
         label: "Automation",
         icon: Activity,
-        locked: role === "user" && true, // Placeholder logic, needs real subscription check
+        locked:
+          user?.membershipTier !== "premium" &&
+          user?.membershipTier !== "enterprise",
       },
       { href: "/user/dashboard/profile", label: t("profile"), icon: User },
       {
@@ -78,7 +84,7 @@ export default function Sidebar() {
         href: "/user/dashboard/reports",
         label: "Reports",
         icon: FileText,
-        locked: user?.planTier !== "enterprise",
+        locked: user?.membershipTier !== "enterprise",
       },
       {
         href: "/user/dashboard/support",

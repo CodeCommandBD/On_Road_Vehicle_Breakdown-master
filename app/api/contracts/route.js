@@ -254,6 +254,57 @@ export async function PATCH(request) {
         name: decoded.name,
         designation: "Client",
       };
+
+      // AUTOMATIC MEMBERSHIP ACTIVATION
+      try {
+        const user = await User.findById(contract.userId);
+        if (user) {
+          // Update user membership
+          user.membershipTier = "enterprise";
+          user.membershipStatus = "active";
+          user.membershipStartDate = contract.startDate;
+          user.membershipEndDate = contract.endDate;
+          user.currentPlan = contract.planId;
+          await user.save();
+
+          // Send activation email
+          try {
+            const { sendContractEmail } = await import("@/lib/utils/email");
+            await sendContractEmail({
+              userEmail: user.email,
+              userName: user.name,
+              contractNumber: contract.contractNumber,
+              amount: contract.pricing.amount,
+              currency: contract.pricing.currency,
+              startDate: contract.startDate,
+              endDate: contract.endDate,
+              contractId: contract._id,
+            });
+          } catch (emailError) {
+            console.error("Failed to send activation email:", emailError);
+          }
+
+          // Create notification
+          try {
+            const Notification = (await import("@/lib/db/models/Notification"))
+              .default;
+            await Notification.create({
+              recipient: user._id,
+              type: "success",
+              title: "🎉 Enterprise Membership Activated!",
+              message: `Your enterprise membership is now active. Enjoy unlimited access and premium support until ${new Date(
+                contract.endDate
+              ).toLocaleDateString()}.`,
+              link: "/user/dashboard",
+            });
+          } catch (notifyError) {
+            console.error("Failed to create notification:", notifyError);
+          }
+        }
+      } catch (membershipError) {
+        console.error("Membership activation error:", membershipError);
+        // Don't fail the signing if membership update fails
+      }
     } else if (action === "activate" && isAdmin) {
       contract.status = "active";
     } else if (action === "cancel") {
