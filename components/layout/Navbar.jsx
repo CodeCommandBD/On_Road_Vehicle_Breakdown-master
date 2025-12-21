@@ -28,98 +28,13 @@ const WaveText = ({ text }) => {
   );
 };
 
-const servicesData = {
-  cars: [
-    {
-      title: "Windshields",
-      description: "Service description",
-      imgSrc: "/images/nav/nav-one.png",
-    },
-    {
-      title: "Door",
-      description: "Service description",
-      imgSrc: "/images/nav/nav-two.png",
-    },
-    {
-      title: "Air Condition",
-      description: "Service description",
-      imgSrc: "/images/nav/nav-three.png",
-    },
-    {
-      title: "Batteries",
-      description: "Service description",
-      imgSrc: "/images/nav/nav-four.png",
-    },
-    {
-      title: "Brake",
-      description: "Service description",
-      imgSrc: "/images/nav/nav-five.png",
-    },
-    {
-      title: "Car Check",
-      description: "Service description",
-      imgSrc: "/images/nav/nav-six.png",
-    },
-    {
-      title: "Oil Change",
-      description: "Service description",
-      imgSrc: "/images/nav/nav-seven.png",
-    },
-    {
-      title: "Suspension",
-      description: "Service description",
-      imgSrc: "/images/nav/nav-eight.png",
-    },
-  ],
-  bikes: [
-    {
-      title: "Windshields",
-      description: "Service description",
-      imgSrc: "/images/nav/nav-one.png",
-    },
-    {
-      title: "Door",
-      description: "Service description",
-      imgSrc: "/images/nav/nav-two.png",
-    },
-    {
-      title: "Air Condition",
-      description: "Service description",
-      imgSrc: "/images/nav/nav-three.png",
-    },
-    {
-      title: "Batteries",
-      description: "Service description",
-      imgSrc: "/images/nav/nav-four.png",
-    },
-    {
-      title: "Brake",
-      description: "Service description",
-      imgSrc: "/images/nav/nav-five.png",
-    },
-    {
-      title: "Bike Check",
-      description: "Service description",
-      imgSrc: "/images/nav/nav-six.png",
-    },
-    {
-      title: "Oil Change",
-      description: "Service description",
-      imgSrc: "/images/nav/nav-seven.png",
-    },
-    {
-      title: "Suspension",
-      description: "Service description",
-      imgSrc: "/images/nav/nav-eight.png",
-    },
-  ],
-};
-
 export default function Navbar() {
   const [isServicesOpen, setIsServicesOpen] = useState(false);
-  const [activeServiceTab, setActiveServiceTab] = useState("cars");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  // Dynamic Services State
+  const [services, setServices] = useState([]);
 
   const dispatch = useDispatch();
   const router = useRouter();
@@ -128,6 +43,24 @@ export default function Navbar() {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const user = useSelector(selectUser);
   const userRole = useSelector(selectUserRole);
+
+  // Fetch Services on Mount
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const response = await fetch(
+          "/api/services?limit=12&isActive=true&sort=order"
+        );
+        const data = await response.json();
+        if (data.success) {
+          setServices(data.data.services || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch services:", error);
+      }
+    };
+    fetchServices();
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -179,6 +112,14 @@ export default function Navbar() {
             </li>
             <li>
               <Link
+                href="/garages"
+                className="group inline-block text-[18px] font-semibold cursor-pointer relative text-white no-underline transition-colors duration-300 hover:text-[#ff4800]"
+              >
+                <WaveText text="FIND GARAGE" />
+              </Link>
+            </li>
+            <li>
+              <Link
                 href="/about"
                 className="group inline-block text-[18px] font-semibold cursor-pointer relative text-white no-underline transition-colors duration-300 hover:text-[#ff4800]"
               >
@@ -186,86 +127,59 @@ export default function Navbar() {
               </Link>
             </li>
             <li className="relative group">
-              <div className="flex items-center gap-[5px] bg-none border-none cursor-pointer">
+              <div
+                className="flex items-center gap-[5px] bg-none border-none cursor-pointer"
+                onClick={() => setIsServicesOpen(!isServicesOpen)}
+                onMouseEnter={() => setIsServicesOpen(true)}
+              >
                 <span className="group inline-block text-[18px] font-semibold cursor-pointer relative text-white no-underline transition-colors duration-300 hover:text-[#ff4800]">
                   <WaveText text="SERVICES" />
                 </span>
-                <button
-                  className="text-[23px] text-[#ff4800] font-bold ml-[7px] transition-all duration-300 ease-in-out"
-                  onClick={() => setIsServicesOpen(!isServicesOpen)}
-                  onMouseEnter={() => setIsServicesOpen(true)}
-                >
+                <span className="text-[23px] text-[#ff4800] font-bold ml-[7px] transition-all duration-300 ease-in-out">
                   {isServicesOpen ? "-" : "+"}
-                </button>
+                </span>
               </div>
 
               {isServicesOpen && (
                 <div
-                  className={`absolute top-[80px] left-1/2 -translate-x-1/2 flex gap-[40px] min-w-[800px] bg-[#141414fa] backdrop-blur-[20px] border border-[#ff480033] rounded-xl p-[30px] text-[18px] font-semibold shadow-[0_20px_60px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,72,0,0.1)] z-[1000] overflow-hidden transition-all duration-500 ease-in-out ${
+                  className={`absolute top-[80px] left-1/2 -translate-x-1/2 min-w-[600px] bg-[#141414fa] backdrop-blur-[20px] border border-[#ff480033] rounded-xl p-[30px] text-[18px] font-semibold shadow-[0_20px_60px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,72,0,0.1)] z-[1000] overflow-hidden transition-all duration-500 ease-in-out ${
                     isServicesOpen
                       ? "opacity-100 max-h-[500px] translate-y-0"
                       : "opacity-0 max-h-0 -translate-y-[15px]"
                   }`}
                   onMouseLeave={() => setIsServicesOpen(false)}
                 >
-                  <div className="flex flex-col gap-[15px] min-w-[180px] p-[20px] bg-[#ff48000d] rounded-[10px] border-r-[2px] border-[#ff48004d]">
-                    <button
-                      className={`bg-none border-none p-[12px_20px] cursor-pointer text-left text-[20px] font-bold tracking-[1px] rounded-[8px] transition-all duration-300 relative overflow-hidden group/tab ${
-                        activeServiceTab === "cars"
-                          ? "text-[#ff4800] bg-[#ff480026]"
-                          : "text-[#ffffffb3] hover:text-[#ff4800] hover:bg-[#ff48001a] hover:translate-x-[5px]"
-                      }`}
-                      onClick={() => setActiveServiceTab("cars")}
-                    >
-                      <span
-                        className={`absolute left-0 top-0 h-full w-[4px] bg-[#ff4800] scale-y-0 transition-transform duration-300 group-hover/tab:scale-y-100 ${
-                          activeServiceTab === "cars" ? "scale-y-100" : ""
-                        }`}
-                      ></span>
-                      <WaveText text="CARS" />
-                    </button>
-                    <button
-                      className={`bg-none border-none p-[12px_20px] cursor-pointer text-left text-[20px] font-bold tracking-[1px] rounded-[8px] transition-all duration-300 relative overflow-hidden group/tab ${
-                        activeServiceTab === "bikes"
-                          ? "text-[#ff4800] bg-[#ff480026]"
-                          : "text-[#ffffffb3] hover:text-[#ff4800] hover:bg-[#ff48001a] hover:translate-x-[5px]"
-                      }`}
-                      onClick={() => setActiveServiceTab("bikes")}
-                    >
-                      <span
-                        className={`absolute left-0 top-0 h-full w-[4px] bg-[#ff4800] scale-y-0 transition-transform duration-300 group-hover/tab:scale-y-100 ${
-                          activeServiceTab === "bikes" ? "scale-y-100" : ""
-                        }`}
-                      ></span>
-                      <WaveText text="BIKES" />
-                    </button>
-                  </div>
-
-                  <div className="w-[1px] h-auto bg-gradient-to-b from-transparent via-[#ff480080] to-transparent"></div>
-
-                  <div className="grid grid-cols-4 gap-[15px] p-[10px]">
-                    {servicesData[activeServiceTab].map((service, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-[12px] p-[12px] rounded-[8px] transition-all duration-300 cursor-pointer border border-transparent hover:bg-[#ff48001a] hover:border-[#ff48004d] hover:-translate-y-[2px] hover:shadow-[0_4px_12px_rgba(255,72,0,0.2)] group/item"
-                      >
-                        <Image
-                          src={service.imgSrc}
-                          alt={service.title}
-                          width={40}
-                          height={40}
-                          className="w-[45px] h-[45px] p-[8px] bg-[#ff48001a] rounded-[8px] transition-all duration-300 group-hover/item:bg-[#ff480033] group-hover/item:rotate-[5deg] group-hover/item:scale-110"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-white text-[15px] font-semibold mb-[4px] transition-colors duration-300 whitespace-nowrap overflow-hidden text-ellipsis group-hover/item:text-[#ff4800]">
-                            {service.title}
-                          </h4>
-                          <p className="text-[#ffffff99] text-[11px] font-normal m-0 whitespace-nowrap overflow-hidden text-ellipsis">
-                            {service.description}
-                          </p>
-                        </div>
+                  <div className="grid grid-cols-2 gap-[15px] p-[10px] max-h-[400px] overflow-y-auto custom-scrollbar">
+                    {services.length > 0 ? (
+                      services.map((service, index) => (
+                        <Link
+                          key={service._id || index}
+                          href={`/garages?service=${service.slug}`}
+                          className="flex items-center gap-[12px] p-[12px] rounded-[8px] transition-all duration-300 cursor-pointer border border-transparent hover:bg-[#ff48001a] hover:border-[#ff48004d] hover:-translate-y-[2px] hover:shadow-[0_4px_12px_rgba(255,72,0,0.2)] group/item"
+                          onClick={() => setIsServicesOpen(false)}
+                        >
+                          <Image
+                            src={service.image || "/images/nav/nav-one.png"}
+                            alt={service.name}
+                            width={40}
+                            height={40}
+                            className="w-[45px] h-[45px] p-[8px] bg-[#ff48001a] rounded-[8px] transition-all duration-300 group-hover/item:bg-[#ff480033] group-hover/item:rotate-[5deg] group-hover/item:scale-110 object-contain"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-white text-[15px] font-semibold mb-[4px] transition-colors duration-300 whitespace-nowrap overflow-hidden text-ellipsis group-hover/item:text-[#ff4800]">
+                              {service.name}
+                            </h4>
+                            <p className="text-[#ffffff99] text-[11px] font-normal m-0 whitespace-nowrap overflow-hidden text-ellipsis">
+                              {service.category || "General Service"}
+                            </p>
+                          </div>
+                        </Link>
+                      ))
+                    ) : (
+                      <div className="col-span-2 text-center text-white/50 py-4">
+                        No services available
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               )}
@@ -274,29 +188,6 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-[15px] md:gap-[28px]">
-          {/* Default Cart Icon */}
-          <Link href="/cart" className="relative group">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="white"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="transition-colors duration-300 group-hover:stroke-[#ff4800]"
-            >
-              <circle cx="9" cy="21" r="1"></circle>
-              <circle cx="20" cy="21" r="1"></circle>
-              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-            </svg>
-            <span className="absolute -top-1 -right-1 bg-[#ff4800] text-white text-[10px] w-[15px] h-[15px] flex items-center justify-center rounded-full font-bold">
-              0
-            </span>
-          </Link>
-
           {/* User Profile / Login */}
           {isAuthenticated && user ? (
             <div className="relative" ref={dropdownRef}>

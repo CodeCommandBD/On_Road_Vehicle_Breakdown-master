@@ -11,9 +11,32 @@ import {
   Phone,
   Wrench,
   Loader2,
+  ShieldCheck,
+  Navigation,
 } from "lucide-react";
 import axios from "axios";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+
+// Haversine formula to calculate distance
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) *
+      Math.cos(deg2rad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c; // Distance in km
+  return d.toFixed(1);
+};
+
+const deg2rad = (deg) => {
+  return deg * (Math.PI / 180);
+};
 
 export default function GaragesPage() {
   const searchParams = useSearchParams();
@@ -31,6 +54,12 @@ export default function GaragesPage() {
   const [filter24h, setFilter24h] = useState(
     searchParams.get("is24Hours") === "true"
   );
+  const [filterService, setFilterService] = useState(
+    searchParams.get("service") || null
+  );
+
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationError, setLocationError] = useState(null);
 
   // Debounce search
   useEffect(() => {
@@ -39,7 +68,7 @@ export default function GaragesPage() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, filter24h]);
+  }, [searchQuery, filter24h, filterService, userLocation]);
 
   const fetchGarages = async () => {
     setLoading(true);
@@ -47,8 +76,14 @@ export default function GaragesPage() {
       const params = new URLSearchParams();
       if (searchQuery) params.append("search", searchQuery);
       if (filter24h) params.append("is24Hours", "true");
+      if (filterService) params.append("service", filterService);
       params.append("isActive", "true"); // Always show active only
-      params.append("isVerified", "true"); // Always show verified only
+
+      if (userLocation) {
+        params.append("lat", userLocation.lat);
+        params.append("lng", userLocation.lng);
+        params.append("distance", "10000"); // 10km radius default
+      }
 
       // Update URL without refresh
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
@@ -68,6 +103,29 @@ export default function GaragesPage() {
 
   const toggleFilter24h = () => {
     setFilter24h((prev) => !prev);
+  };
+
+  const handleNearMe = () => {
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+        setLocationError(null);
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        setLocationError("Unable to retrieve your location");
+        setLoading(false);
+      }
+    );
   };
 
   return (
@@ -113,6 +171,17 @@ export default function GaragesPage() {
           </p>
           <div className="flex items-center gap-4">
             <button
+              onClick={handleNearMe}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
+                userLocation
+                  ? "bg-blue-50/50 border-blue-500 text-blue-600 shadow-md"
+                  : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              <Navigation className="w-4 h-4" />
+              {userLocation ? "Near Me (Active)" : "Near Me"}
+            </button>
+            <button
               onClick={toggleFilter24h}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
                 filter24h
@@ -123,6 +192,15 @@ export default function GaragesPage() {
               <Clock className="w-4 h-4" />
               24/7 Only
             </button>
+            {filterService && (
+              <button
+                onClick={() => setFilterService(null)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border bg-orange-50/50 border-orange-500 text-orange-600 hover:bg-red-50 hover:border-red-500 hover:text-red-500 transition-colors"
+              >
+                <Wrench className="w-4 h-4" />
+                Service: {filterService} (x)
+              </button>
+            )}
             <button className="flex items-center gap-2 px-4 py-2 rounded-lg border bg-white border-gray-200 text-gray-600 hover:bg-gray-50">
               <Filter className="w-4 h-4" />
               More Filters
@@ -193,13 +271,34 @@ export default function GaragesPage() {
                 <div className="flex-1 flex flex-col">
                   <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-2">
                     <div>
-                      <h3 className="text-xl font-bold mb-1 text-gray-900">
+                      <h3 className="text-xl font-bold mb-1 text-gray-900 flex items-center gap-2">
                         {garage.name}
+                        {garage.isVerified && (
+                          <div className="group relative">
+                            <ShieldCheck className="w-5 h-5 text-blue-500 fill-blue-500/10" />
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                              Verified Garage
+                            </div>
+                          </div>
+                        )}
                       </h3>
                       <div className="flex items-center gap-2 text-gray-600 text-sm mb-2">
                         <MapPin className="w-4 h-4 text-orange-500" />
                         {garage.address?.street}, {garage.address?.city}
                       </div>
+
+                      {userLocation && garage.location?.coordinates && (
+                        <div className="flex items-center gap-1 text-blue-600 text-sm font-medium bg-blue-50 w-fit px-2 py-0.5 rounded border border-blue-100">
+                          <Navigation className="w-3 h-3 fill-blue-600" />
+                          {calculateDistance(
+                            userLocation.lat,
+                            userLocation.lng,
+                            garage.location.coordinates[1], // Latitude
+                            garage.location.coordinates[0] // Longitude
+                          )}{" "}
+                          km away
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded border border-yellow-100">
                       <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />

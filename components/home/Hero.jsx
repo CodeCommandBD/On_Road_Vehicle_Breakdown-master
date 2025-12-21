@@ -90,7 +90,7 @@ export default function Hero() {
                     {/* CTA Buttons */}
                     <div className="flex flex-wrap items-center gap-3 pt-2 sm:pt-4">
                       <Link
-                        href="/book"
+                        href="/garages"
                         className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-orange-600 to-orange-700 px-6 sm:px-8 py-3 sm:py-3.5 text-sm sm:text-base text-white font-semibold shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:from-orange-700 hover:to-orange-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
                       >
                         Get Started

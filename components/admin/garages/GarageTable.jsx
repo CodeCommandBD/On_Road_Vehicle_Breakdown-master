@@ -124,6 +124,7 @@ export default function GarageTable() {
                 <th className="px-6 py-5">Garage Name</th>
                 <th className="px-6 py-5">Owner</th>
                 <th className="px-6 py-5">Status</th>
+                <th className="px-6 py-5">Plan</th>
                 <th className="px-6 py-5 text-center">Pts</th>
                 <th className="px-6 py-5">Location</th>
                 <th className="px-6 py-5 text-right">Actions</th>
@@ -167,6 +168,25 @@ export default function GarageTable() {
                       >
                         {garage.status}
                       </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col gap-1">
+                        <span
+                          className={`text-xs font-bold uppercase ${
+                            garage.membershipTier === "premium" ||
+                            garage.membershipTier === "standard"
+                              ? "text-purple-400"
+                              : "text-white/60"
+                          }`}
+                        >
+                          {garage.membershipTier || "Free"}
+                        </span>
+                        {garage.isFeatured && (
+                          <span className="text-[10px] bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-1.5 py-0.5 rounded w-fit">
+                            Featured
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center gap-1 font-bold text-orange-500">
