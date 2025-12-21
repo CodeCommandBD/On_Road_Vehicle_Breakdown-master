@@ -42,7 +42,7 @@ export async function GET(request) {
 
     return NextResponse.json({
       success: true,
-      user: user.toPublicJSON(),
+      data: user.toPublicJSON(),
       garage: garage,
     });
   } catch (error) {
@@ -68,7 +68,6 @@ export async function PUT(request) {
       );
     }
 
-    const body = await request.json();
     const body = await request.json();
     const { name, phone, address, location, vehicles, garageData, avatar } =
       body;
