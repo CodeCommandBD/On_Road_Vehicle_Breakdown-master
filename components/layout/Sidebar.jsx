@@ -8,6 +8,7 @@ import {
   Calendar,
   Wrench,
   User,
+  Users,
   Settings,
   LogOut,
   X,
@@ -37,6 +38,13 @@ export default function Sidebar() {
   const role = useSelector(selectUserRole) || "user";
   const user = useSelector(selectUser);
 
+  // Debug: Log user membership tier
+  console.log("Sidebar - User data:", {
+    hasUser: !!user,
+    membershipTier: user?.membershipTier,
+    email: user?.email,
+  });
+
   const sidebarLinks = {
     user: [
       { href: "/user/dashboard", label: t("dashboard"), icon: LayoutDashboard },
@@ -52,6 +60,14 @@ export default function Sidebar() {
         href: "/user/dashboard/integrations",
         label: "CRM / Integrations",
         icon: Webhook,
+        locked:
+          user?.membershipTier !== "premium" &&
+          user?.membershipTier !== "enterprise",
+      },
+      {
+        href: "/user/dashboard/team",
+        label: "Team Management",
+        icon: Users,
         locked:
           user?.membershipTier !== "premium" &&
           user?.membershipTier !== "enterprise",

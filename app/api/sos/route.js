@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/db/connect";
+import { connectDB } from "@/lib/db/connect";
 import SOS from "@/lib/db/models/SOS";
 import Garage from "@/lib/db/models/Garage";
 import Notification from "@/lib/db/models/Notification";
@@ -43,7 +43,7 @@ export async function POST(request) {
     }
 
     // --- SUBSCRIPTION & LIMIT CHECK ---
-    const subscription = await Subscription.findOne({
+    let subscription = await Subscription.findOne({
       userId: decoded.userId,
       status: { $in: ["active", "trial"] },
     }).populate("planId");
@@ -51,35 +51,143 @@ export async function POST(request) {
     let hasAccess = false;
     let plan = null;
 
-    // Logic: If no sub, allow basic access (pay-per-use or free tier logic) OR block?
-    // Project Requirement: "Free Plan: Core features with strict limits"
-    // Assuming if no active sub, they might be on a default free tier or we should block.
-    // For safety, if no sub found, we fetch the 'free' plan and check usage against a default tracking or create a free sub.
-    // To simplify: If no active sub found, assume 'Free' limits if user exists, else block.
-    // BUT, usually 'Free' is an active subscription of tier 'free'.
-    // If NO sub document at all, create one for 'free' tier (auto-onboarding).
-
+    // Auto-create Free Plan subscription if user doesn't have one
     if (!subscription) {
-      // Attempt to find or create free plan subscription auto-assignment logic could go here
-      // For now, if no subscription, we might default to allow 1 emergency call or block.
-      // Let's assume user must have a plan. If not, block with "Please upgrade".
-      // However, to reduce friction, let's look for a 'free' plan and see if we can assign it?
-      // Better: Just check if user exists. If yes, check if they have a 'free' sub.
-      // If totally null, block.
+      try {
+        // Find the free/trial plan
+        const freePlan = await Plan.findOne({
+          tier: { $in: ["free", "trial"] },
+        }).sort({ tier: 1 });
+
+        if (freePlan) {
+          // Create a free subscription automatically
+          const now = new Date();
+          const endDate = new Date();
+          endDate.setDate(endDate.getDate() + 30); // 30 days free access
+
+          subscription = await Subscription.create({
+            userId: decoded.userId,
+            planId: freePlan._id,
+            status: freePlan.tier === "trial" ? "trial" : "active",
+            billingCycle: "monthly",
+            startDate: now,
+            endDate: endDate,
+            amount: 0,
+            usage: {
+              serviceCallsUsed: 0,
+              lastServiceCallDate: null,
+            },
+          });
+
+          // Manually assign the plan object (instead of re-querying)
+          subscription.planId = freePlan;
+          plan = freePlan;
+
+          console.log(
+            `✅ Auto-created ${freePlan.tier} subscription for user: ${decoded.userId}`
+          );
+        } else {
+          // No free plan found in database
+          return NextResponse.json(
+            {
+              success: false,
+              message: "No service plans available. Please contact support.",
+            },
+            { status: 500 }
+          );
+        }
+      } catch (autoSubError) {
+        console.error("Failed to auto-create subscription:", autoSubError);
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Unable to process request. Please try again or contact support.",
+          },
+          { status: 500 }
+        );
+      }
+    } else {
+      // Subscription exists, get the plan
+      plan = subscription.planId;
+
+      // Fix corrupted subscription (planId is null)
+      if (!plan) {
+        console.warn(
+          "⚠️ Found subscription with null planId, attempting to fix..."
+        );
+        try {
+          // Determine plan based on amount or status
+          let planToAssign;
+
+          if (subscription.status === "trial" || subscription.amount === 0) {
+            // Trial or free
+            planToAssign = await Plan.findOne({
+              tier: { $in: ["trial", "free"] },
+            }).sort({ tier: 1 });
+          } else {
+            // Find plan by amount
+            planToAssign = await Plan.findOne({
+              $or: [
+                { "pricing.monthly": subscription.amount },
+                { "pricing.yearly": subscription.amount },
+              ],
+            });
+
+            // If not found by amount, default to standard plan
+            if (!planToAssign) {
+              planToAssign = await Plan.findOne({ tier: "standard" });
+            }
+          }
+
+          if (planToAssign) {
+            // Update the subscription
+            subscription.planId = planToAssign._id;
+            await subscription.save();
+
+            // Assign plan for current request
+            plan = planToAssign;
+            console.log(`✅ Fixed subscription planId: ${planToAssign.tier}`);
+          } else {
+            console.error(
+              "❌ No plans available in database to fix subscription"
+            );
+            return NextResponse.json(
+              {
+                success: false,
+                message: "Service configuration error. Please contact support.",
+              },
+              { status: 500 }
+            );
+          }
+        } catch (fixError) {
+          console.error("Failed to fix subscription:", fixError);
+          return NextResponse.json(
+            {
+              success: false,
+              message: "Service configuration error. Please try again.",
+            },
+            { status: 500 }
+          );
+        }
+      }
+    }
+
+    // Double check if plan is populated
+    if (!plan) {
+      console.error("Plan not populated for subscription:", subscription);
       return NextResponse.json(
         {
           success: false,
-          message:
-            "No active coverage. Please activate the Free Plan to continue.",
-          action: "/pricing", // Frontend redirect
+          message: "Service configuration error. Please try again.",
         },
-        { status: 403 }
+        { status: 500 }
       );
     }
 
-    plan = subscription.planId;
     const limit = plan.limits?.serviceCalls ?? 1; // Default to 1 if missing
     const used = subscription.usage?.serviceCallsUsed || 0;
+    // ----------------------------------
 
     // Check Limit
     if (limit !== -1 && used >= limit) {
@@ -145,13 +253,17 @@ export async function POST(request) {
     // ------------------------------------------
 
     // --- TRIGGER WEBHOOK (Fire & Forget) ---
-    triggerWebhook(decoded.userId, "sos.created", {
-      sosId: sosAlert._id,
-      location: sosAlert.location,
-      status: sosAlert.status,
-      vehicleType: sosAlert.vehicleType,
-      createdAt: sosAlert.createdAt,
-    });
+    try {
+      await triggerWebhook(decoded.userId, "sos.created", {
+        sosId: sosAlert._id,
+        location: sosAlert.location,
+        status: sosAlert.status,
+        vehicleType: sosAlert.vehicleType,
+        createdAt: sosAlert.createdAt,
+      });
+    } catch (webhookErr) {
+      console.error("Webhook trigger failed (non-blocking):", webhookErr);
+    }
     // ---------------------------------------
 
     // --- SEARCH LOGIC UPDATED FOR COVERAGE LIMITS ---
@@ -236,11 +348,17 @@ export async function POST(request) {
       message: "Emergency alert sent successfully. Help is on the way!",
     });
   } catch (error) {
-    console.error("SOS POST Error:", error);
+    console.error("============ SOS POST Error ============");
+    console.error("Error Message:", error.message);
+    console.error("Error Stack:", error.stack);
+    console.error("Error:", error);
+    console.error("========================================");
+
     return NextResponse.json(
       {
         success: false,
         message: error.message || "Internal server error",
+        error: process.env.NODE_ENV === "development" ? error.stack : undefined,
       },
       { status: 500 }
     );
