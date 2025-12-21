@@ -23,6 +23,22 @@ export async function GET(request) {
       query.isVerified = searchParams.get("isVerified") === "true";
     }
 
+    // Text search
+    const search = searchParams.get("search");
+    if (search) {
+      const searchRegex = new RegExp(search, "i");
+      query.$or = [
+        { name: searchRegex },
+        { "address.city": searchRegex },
+        { "address.street": searchRegex },
+        { "address.district": searchRegex },
+      ];
+    }
+
+    if (searchParams.get("is24Hours")) {
+      query.is24Hours = searchParams.get("is24Hours") === "true";
+    }
+
     // Add geospatial search if lat/lng are provided
     if (!isNaN(lat) && !isNaN(lng)) {
       query.location = {

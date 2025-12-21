@@ -24,6 +24,7 @@ export default function PricingPage() {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [billingCycle, setBillingCycle] = useState("monthly"); // monthly or yearly
+  const [planType, setPlanType] = useState("user");
 
   // Debug logs
   useEffect(() => {
@@ -31,22 +32,22 @@ export default function PricingPage() {
   }, [isAuthenticated, user]);
 
   useEffect(() => {
-    fetchPlans();
-  }, []);
-
-  const fetchPlans = async () => {
-    try {
-      const response = await fetch("/api/plans");
-      const data = await response.json();
-      if (data.success) {
-        setPlans(data.data.plans);
+    const fetchPlans = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/plans?type=${planType}`);
+        const data = await response.json();
+        if (data.success) {
+          setPlans(data.data.plans);
+        }
+      } catch (error) {
+        console.error("Error fetching plans:", error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching plans:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    fetchPlans();
+  }, [planType]);
 
   const handleSelectPlan = (planId, tier) => {
     if (!isAuthenticated) {
@@ -137,6 +138,32 @@ export default function PricingPage() {
         <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
           {t("description")}
         </p>
+
+        {/* User vs Garage Toggle */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-gray-800 p-1 rounded-xl inline-flex">
+            <button
+              onClick={() => setPlanType("user")}
+              className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
+                planType === "user"
+                  ? "bg-white text-black shadow-lg"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              Vehicle Owners
+            </button>
+            <button
+              onClick={() => setPlanType("garage")}
+              className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
+                planType === "garage"
+                  ? "bg-white text-black shadow-lg"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              Garage Owners
+            </button>
+          </div>
+        </div>
 
         {/* Billing Toggle */}
         <div className="inline-flex items-center bg-gray-800 rounded-full p-1 shadow-lg border border-gray-700">
