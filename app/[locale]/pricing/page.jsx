@@ -25,11 +25,19 @@ export default function PricingPage() {
   const [loading, setLoading] = useState(true);
   const [billingCycle, setBillingCycle] = useState("monthly"); // monthly or yearly
   const [planType, setPlanType] = useState("user");
+  const [now, setNow] = useState(new Date().getTime());
 
   // Debug logs
   useEffect(() => {
     console.log("Pricing Page Auth Debug:", { isAuthenticated, user });
   }, [isAuthenticated, user]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(new Date().getTime());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const fetchPlans = async () => {
@@ -208,17 +216,51 @@ export default function PricingPage() {
           const isPremium = plan.tier === "premium";
           const isFree = plan.tier === "free";
 
+          // Timer Calculation
+          let timeLeft = "";
+          let isExpired = false;
+
+          if (plan.promoEndsAt) {
+            const distance = new Date(plan.promoEndsAt).getTime() - now;
+            if (distance < 0) {
+              isExpired = true;
+              timeLeft = "EXPIRED";
+            } else {
+              const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+              const hours = Math.floor(
+                (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+              );
+              const minutes = Math.floor(
+                (distance % (1000 * 60 * 60)) / (1000 * 60)
+              );
+              const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+              timeLeft = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+            }
+          }
+
           return (
             <div
               key={plan._id}
-              className={`relative rounded-3xl p-6 shadow-2xl transform transition-all duration-300 hover:scale-105 flex flex-col ${
+              className={`relative rounded-3xl p-6 shadow-2xl transform transition-all duration-300 flex flex-col ${
                 isStandard
                   ? "bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-green-500/50 scale-105 z-10 shadow-green-900/20"
                   : isPremium
                   ? "bg-gray-800 border border-orange-500/30"
                   : "bg-gray-800 border border-gray-700"
+              } ${
+                isExpired
+                  ? "grayscale opacity-70 pointer-events-none select-none hover:scale-100"
+                  : "hover:scale-105"
               }`}
             >
+              {isExpired && (
+                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 z-50 text-center">
+                  <span className="bg-red-600 text-white px-6 py-2 rounded-full font-bold text-lg animate-pulse shadow-[0_0_20px_rgba(220,38,38,0.6)]">
+                    OFFER EXPIRED
+                  </span>
+                </div>
+              )}
+
               {isStandard && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-full text-center">
                   <span className="bg-green-500 text-black px-6 py-1.5 rounded-full text-xs font-bold shadow-lg uppercase tracking-wide flex items-center justify-center gap-1 w-max mx-auto">
@@ -246,6 +288,15 @@ export default function PricingPage() {
                 <h3 className="text-2xl font-bold text-white mb-2">
                   {plan.name}
                 </h3>
+                {/* Timer Display in Card Header */}
+                {plan.promoEndsAt && !isExpired && (
+                  <div className="mb-2 inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/30 px-3 py-1 rounded text-xs">
+                    <Clock className="w-3 h-3 text-orange-400" />
+                    <span className="text-orange-400 font-mono font-bold tracking-wider">
+                      Ends in: {timeLeft}
+                    </span>
+                  </div>
+                )}
                 <p className="text-sm text-gray-400 h-10 line-clamp-2">
                   {plan.description}
                 </p>
@@ -300,18 +351,25 @@ export default function PricingPage() {
               {/* CTA Button */}
               <button
                 onClick={() => handleSelectPlan(plan._id, plan.tier)}
-                className={`w-full py-4 rounded-xl font-bold text-sm transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl mt-auto flex items-center justify-center gap-2 ${
-                  isStandard
-                    ? "bg-green-500 text-black hover:bg-green-400"
+                disabled={isExpired}
+                className={`w-full py-4 rounded-xl font-bold text-sm transition-all duration-300 transform mt-auto flex items-center justify-center gap-2 ${
+                  isExpired
+                    ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                    : isStandard
+                    ? "bg-green-500 text-black hover:bg-green-400 hover:-translate-y-1 hover:shadow-xl"
                     : isPremium
-                    ? "bg-gradient-to-r from-orange-500 to-red-600 text-white hover:from-orange-600 hover:to-red-700"
+                    ? "bg-gradient-to-r from-orange-500 to-red-600 text-white hover:from-orange-600 hover:to-red-700 hover:-translate-y-1 hover:shadow-xl"
                     : isFree
-                    ? "bg-white/10 text-white hover:bg-white/20"
-                    : "bg-white text-black hover:bg-gray-100"
+                    ? "bg-white/10 text-white hover:bg-white/20 hover:-translate-y-1 hover:shadow-xl"
+                    : "bg-white text-black hover:bg-gray-100 hover:-translate-y-1 hover:shadow-xl"
                 }`}
               >
-                {isFree ? "Start for Free" : "Upgrade Now"}
-                {isStandard && <ArrowRight className="w-4 h-4" />}
+                {isExpired
+                  ? "OFFER EXPIRED"
+                  : isFree
+                  ? "Start for Free"
+                  : "Upgrade Now"}
+                {!isExpired && isStandard && <ArrowRight className="w-4 h-4" />}
               </button>
 
               {/* Guarantee */}
