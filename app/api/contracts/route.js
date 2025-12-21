@@ -134,10 +134,44 @@ export async function POST(request) {
 
     await contract.populate("userId planId accountManager");
 
+    // Auto-send email to user
+    try {
+      const { sendContractEmail } = await import("@/lib/utils/email");
+      await sendContractEmail({
+        userEmail: user.email,
+        userName: user.name,
+        contractNumber: contract.contractNumber,
+        amount: contract.pricing.amount,
+        currency: contract.pricing.currency,
+        startDate: contract.startDate,
+        endDate: contract.endDate,
+        contractId: contract._id,
+      });
+    } catch (emailError) {
+      console.error("Failed to send contract email:", emailError);
+      // Don't fail the request if email fails
+    }
+
+    // Create notification for user
+    try {
+      const Notification = (await import("@/lib/db/models/Notification"))
+        .default;
+      await Notification.create({
+        recipient: userId,
+        type: "system_alert",
+        title: "📄 Enterprise Contract Ready",
+        message: `Your custom enterprise contract ${contract.contractNumber} is ready for review and signature.`,
+        link: `/user/dashboard/contracts`,
+      });
+    } catch (notifyError) {
+      console.error("Failed to create notification:", notifyError);
+      // Don't fail the request
+    }
+
     return NextResponse.json({
       success: true,
       data: { contract },
-      message: "Contract created successfully",
+      message: "Contract created and email sent to user",
     });
   } catch (error) {
     console.error("Contract POST Error:", error);
