@@ -703,6 +703,48 @@ export async function PATCH(request) {
 
     await sos.save();
 
+    // --- TRIGGER WEBHOOK (sos.updated) ---
+    try {
+      const updatedSos = await SOS.findById(sos._id)
+        .populate("user")
+        .populate("assignedGarage");
+      const webhookPayload = {
+        sosId: sos._id,
+        status: sos.status,
+        previousStatus: sos.status === status ? undefined : status, // Simplified
+        updatedAt: new Date().toISOString(),
+        user: {
+          name: updatedSos.user?.name || "User",
+          phone: updatedSos.user?.phone || sos.phone,
+        },
+        garage: updatedSos.assignedGarage
+          ? {
+              name: updatedSos.assignedGarage.name,
+              phone: updatedSos.assignedGarage.phone,
+            }
+          : null,
+      };
+
+      // Notify the user who created the SOS
+      await triggerWebhook(sos.user, "sos.updated", webhookPayload);
+
+      // Notify the assigned garage if any
+      if (sos.assignedGarage) {
+        await triggerWebhook(
+          null,
+          "sos.updated",
+          webhookPayload,
+          sos.assignedGarage
+        );
+      }
+
+      // Notify Global Admins
+      await triggerGlobalSOSWebhooks("sos.updated", webhookPayload);
+    } catch (webhookErr) {
+      console.error("SOS Update webhook failed:", webhookErr);
+    }
+    // ------------------------------------
+
     return NextResponse.json({
       success: true,
       message: `SOS alert updated to ${sos.status}`,

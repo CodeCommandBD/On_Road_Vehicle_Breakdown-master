@@ -4,6 +4,7 @@ import Booking from "@/lib/db/models/Booking";
 import Garage from "@/lib/db/models/Garage";
 import Service from "@/lib/db/models/Service";
 import Notification from "@/lib/db/models/Notification";
+import { triggerWebhook } from "@/lib/utils/webhook";
 
 // Basic API route for creating bookings
 // Authentication details handled via searchParams or logic below
@@ -37,6 +38,35 @@ export async function POST(req) {
         console.error("Failed to create booking notification:", err);
       }
     }
+
+    // --- TRIGGER WEBHOOK (booking.created) ---
+    try {
+      const webhookPayload = {
+        bookingId: booking._id,
+        user: body.user,
+        garage: body.garage,
+        vehicleType: body.vehicleType,
+        service: body.service,
+        scheduledDate: body.scheduledDate,
+        createdAt: booking.createdAt,
+      };
+
+      // Notify User
+      await triggerWebhook(body.user, "booking.created", webhookPayload);
+
+      // Notify Garage
+      if (body.garage) {
+        await triggerWebhook(
+          null,
+          "booking.created",
+          webhookPayload,
+          body.garage
+        );
+      }
+    } catch (webhookErr) {
+      console.error("Booking creation webhook failed:", webhookErr);
+    }
+    // ----------------------------------------
 
     return NextResponse.json(
       { success: true, message: "Booking created successfully", booking },

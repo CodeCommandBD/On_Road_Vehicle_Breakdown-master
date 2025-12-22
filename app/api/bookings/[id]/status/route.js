@@ -3,6 +3,7 @@ import connectDB from "@/lib/db/connect";
 import Booking from "@/lib/db/models/Booking";
 import Garage from "@/lib/db/models/Garage";
 import { verifyToken } from "@/lib/utils/auth";
+import { triggerWebhook } from "@/lib/utils/webhook";
 
 // PATCH /api/bookings/[id]/status - Update booking status
 export async function PATCH(request, { params }) {
@@ -64,6 +65,47 @@ export async function PATCH(request, { params }) {
         $inc: { completedBookings: 1 },
       });
     }
+
+    // --- TRIGGER WEBHOOKS ---
+    const webhookPayload = {
+      bookingId: booking._id,
+      status: booking.status,
+      user: booking.user?._id || booking.user,
+      garage: booking.garage?._id || booking.garage,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Notify User
+    triggerWebhook(
+      booking.user?._id || booking.user,
+      "booking.updated",
+      webhookPayload
+    );
+    // Notify Garage
+    await triggerWebhook(
+      null,
+      "booking.updated",
+      webhookPayload,
+      booking.garage?._id || booking.garage
+    );
+
+    // Specifically Notify booking.completed if status is completed
+    if (status === "completed") {
+      await triggerWebhook(
+        booking.user?._id || booking.user,
+        "booking.completed",
+        webhookPayload
+      );
+      if (booking.garage) {
+        await triggerWebhook(
+          null,
+          "booking.completed",
+          webhookPayload,
+          booking.garage?._id || booking.garage
+        );
+      }
+    }
+    // ------------------------
 
     // Return updated booking
     const updatedBooking = await Booking.findById(id)
