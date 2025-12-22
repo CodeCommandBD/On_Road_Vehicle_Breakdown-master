@@ -11,6 +11,8 @@ import {
   canManageRole,
   PERMISSIONS,
 } from "@/lib/utils/permissions";
+import { sendInvitationEmail } from "@/lib/utils/email";
+import SOS from "@/lib/db/models/SOS";
 
 // GET: List organization members
 export async function GET(req, { params }) {
@@ -26,7 +28,7 @@ export async function GET(req, { params }) {
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // Check membership
     const membership = await TeamMember.findOne({
@@ -51,17 +53,33 @@ export async function GET(req, { params }) {
       .populate("invitedBy", "name")
       .sort({ role: 1, joinedAt: 1 });
 
-    const formattedMembers = members.map((member) => ({
-      id: member._id,
-      userId: member.user._id,
-      name: member.user.name,
-      email: member.user.email,
-      role: member.role,
-      joinedAt: member.joinedAt,
-      lastActiveAt: member.lastActiveAt,
-      invitedBy: member.invitedBy?.name,
-      canManage: canManageRole(membership.role, member.role),
-    }));
+    // Get SOS counts for each member in this organization context
+    // Although SOS are global to user, we show them here
+    const memberUserIds = members.map((m) => m.user._id);
+    const sosStats = await SOS.aggregate([
+      { $match: { user: { $in: memberUserIds } } },
+      { $group: { _id: "$user", count: { $sum: 1 } } },
+    ]);
+
+    const sosMap = sosStats.reduce((acc, curr) => {
+      acc[curr._id.toString()] = curr.count;
+      return acc;
+    }, {});
+
+    const formattedMembers = members
+      .filter((m) => m.user)
+      .map((member) => ({
+        id: member._id,
+        userId: member.user._id,
+        name: member.user.name,
+        email: member.user.email,
+        role: member.role,
+        joinedAt: member.joinedAt,
+        lastActiveAt: member.lastActiveAt,
+        invitedBy: member.invitedBy?.name,
+        sosCount: sosMap[member.user._id.toString()] || 0,
+        canManage: canManageRole(membership.role, member.role),
+      }));
 
     return NextResponse.json({
       success: true,
@@ -70,7 +88,11 @@ export async function GET(req, { params }) {
   } catch (error) {
     console.error("List Members Error:", error);
     return NextResponse.json(
-      { success: false, message: "Server Error" },
+      {
+        success: false,
+        message: error.message || "Server Error",
+        error: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      },
       { status: 500 }
     );
   }
@@ -90,7 +112,7 @@ export async function POST(req, { params }) {
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     const { email, role = "member", customMessage } = await req.json();
 
     // Validate email
@@ -107,6 +129,9 @@ export async function POST(req, { params }) {
       user: user.userId,
       isActive: true,
     });
+
+    // Fetch organization details for email
+    const organization = await Organization.findById(id).select("name");
 
     if (
       !membership ||
@@ -167,8 +192,12 @@ export async function POST(req, { params }) {
       req,
     });
 
-    // TODO: Send invitation email
-    // await sendInvitationEmail(email, invitation.token, organization.name);
+    // Send invitation email
+    await sendInvitationEmail(
+      email,
+      invitation.token,
+      organization?.name || "On-Road Vehicle Breakdown"
+    );
 
     return NextResponse.json({
       success: true,
@@ -183,7 +212,11 @@ export async function POST(req, { params }) {
   } catch (error) {
     console.error("Invite Member Error:", error);
     return NextResponse.json(
-      { success: false, message: "Server Error" },
+      {
+        success: false,
+        message: error.message || "Server Error",
+        error: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      },
       { status: 500 }
     );
   }
@@ -203,7 +236,7 @@ export async function DELETE(req, { params }) {
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     const { searchParams } = new URL(req.url);
     const memberUserId = searchParams.get("userId");
 
@@ -290,7 +323,113 @@ export async function DELETE(req, { params }) {
   } catch (error) {
     console.error("Remove Member Error:", error);
     return NextResponse.json(
-      { success: false, message: "Server Error" },
+      {
+        success: false,
+        message: error.message || "Server Error",
+        error: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH: Update member role
+export async function PATCH(req, { params }) {
+  try {
+    await connectDB();
+    const token = req.cookies.get("token")?.value;
+    const user = await verifyToken(token);
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const { id } = await params;
+    const { userId, role } = await req.json();
+
+    if (!userId || !role) {
+      return NextResponse.json(
+        { success: false, message: "User ID and role are required" },
+        { status: 400 }
+      );
+    }
+
+    // Check permission of acting user
+    const actingMember = await TeamMember.findOne({
+      organization: id,
+      user: user.userId,
+      isActive: true,
+    });
+
+    if (
+      !actingMember ||
+      !hasPermission(actingMember.role, PERMISSIONS.MEMBERS_CHANGE_ROLE)
+    ) {
+      return NextResponse.json(
+        { success: false, message: "Insufficient permissions" },
+        { status: 403 }
+      );
+    }
+
+    // Get target member
+    const targetMember = await TeamMember.findOne({
+      organization: id,
+      user: userId,
+      isActive: true,
+    });
+
+    if (!targetMember) {
+      return NextResponse.json(
+        { success: false, message: "Member not found" },
+        { status: 404 }
+      );
+    }
+
+    // Hierarchy check
+    if (!canManageRole(actingMember.role, targetMember.role)) {
+      return NextResponse.json(
+        { success: false, message: "Cannot manage member with higher role" },
+        { status: 403 }
+      );
+    }
+
+    // Can only promote to roles below acting user's role (except owner can do anything)
+    if (actingMember.role !== "owner") {
+      const ROLE_LEVELS = { admin: 4, manager: 3, member: 2, viewer: 1 };
+      if (ROLE_LEVELS[role] >= ROLE_LEVELS[actingMember.role]) {
+        return NextResponse.json(
+          { success: false, message: "Cannot promote to equal or higher role" },
+          { status: 403 }
+        );
+      }
+    }
+
+    const oldRole = targetMember.role;
+    targetMember.role = role;
+    await targetMember.save();
+
+    // Log activity
+    await logActivity({
+      organizationId: id,
+      userId: user.userId,
+      action: "member_role_changed",
+      targetUser: userId,
+      metadata: { oldRole, newRole: role },
+      req,
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Role updated successfully",
+      data: targetMember,
+    });
+  } catch (error) {
+    console.error("Update Member Role Error:", error);
+    return NextResponse.json(
+      { success: false, message: error.message || "Server Error" },
       { status: 500 }
     );
   }

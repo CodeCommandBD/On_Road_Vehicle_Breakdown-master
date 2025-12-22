@@ -8,13 +8,18 @@ import PointsRecord from "@/lib/db/models/PointsRecord";
 import Subscription from "@/lib/db/models/Subscription";
 import Plan from "@/lib/db/models/Plan";
 import { verifyToken } from "@/lib/utils/auth";
+import TeamMember from "@/lib/db/models/TeamMember";
 import {
   sendSOSEmail,
   sendAssignmentEmail,
   sendQuotaWarningEmail,
   sendWelcomeEmail,
 } from "@/lib/utils/email";
-import { triggerWebhook } from "@/lib/utils/webhook";
+import {
+  triggerWebhook,
+  triggerOrganizationWebhook,
+  triggerGlobalSOSWebhooks,
+} from "@/lib/utils/webhook";
 import mongoose from "mongoose";
 
 export async function POST(request) {
@@ -252,17 +257,53 @@ export async function POST(request) {
     }
     // ------------------------------------------
 
-    // --- TRIGGER WEBHOOK (Fire & Forget) ---
+    // --- TRIGGER WEBHOOKS (Multi-level, Fire & Forget) ---
+    const webhookPayload = {
+      sosId: sosAlert._id,
+      location: sosAlert.location,
+      status: sosAlert.status,
+      vehicleType: sosAlert.vehicleType,
+      createdAt: sosAlert.createdAt,
+      user: {
+        name: (await User.findById(decoded.userId))?.name || "Unknown",
+        phone: phone || "Not Provided",
+      },
+    };
+
+    // 1. Individual User Webhook
     try {
-      await triggerWebhook(decoded.userId, "sos.created", {
-        sosId: sosAlert._id,
-        location: sosAlert.location,
-        status: sosAlert.status,
-        vehicleType: sosAlert.vehicleType,
-        createdAt: sosAlert.createdAt,
-      });
+      console.log(`Triggering user webhook for: ${decoded.userId}`);
+      await triggerWebhook(decoded.userId, "sos.created", webhookPayload);
     } catch (webhookErr) {
-      console.error("Webhook trigger failed (non-blocking):", webhookErr);
+      console.error("User webhook trigger failed:", webhookErr);
+    }
+
+    // 2. Organization Webhooks
+    try {
+      const memberships = await TeamMember.find({
+        user: decoded.userId,
+        isActive: true,
+      });
+      console.log(`Found ${memberships.length} active memberships for user`);
+
+      const orgWebhookPromises = memberships.map((m) =>
+        triggerOrganizationWebhook(
+          m.organization,
+          "sos.created",
+          webhookPayload
+        )
+      );
+      await Promise.all(orgWebhookPromises);
+    } catch (orgWebhookErr) {
+      console.error("Org webhook trigger failed:", orgWebhookErr);
+    }
+
+    // 3. Global Admin/System Webhooks
+    try {
+      console.log("Triggering global SOS webhooks");
+      await triggerGlobalSOSWebhooks("sos.created", webhookPayload);
+    } catch (globalWebhookErr) {
+      console.error("Global webhook trigger failed:", globalWebhookErr);
     }
     // ---------------------------------------
 

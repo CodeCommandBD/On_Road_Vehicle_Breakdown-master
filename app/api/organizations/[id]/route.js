@@ -128,8 +128,36 @@ export async function PATCH(req, { params }) {
     }
 
     if (settings) {
-      changes.before.settings = { ...organization.settings };
-      organization.settings = { ...organization.settings, ...settings };
+      changes.before.settings = JSON.parse(
+        JSON.stringify(organization.settings || {})
+      );
+
+      // Deep merge for settings
+      if (!organization.settings) organization.settings = {};
+
+      if (settings.webhookUrl !== undefined)
+        organization.settings.webhookUrl = settings.webhookUrl;
+      if (settings.webhookSecret !== undefined)
+        organization.settings.webhookSecret = settings.webhookSecret;
+      if (settings.webhookEvents !== undefined)
+        organization.settings.webhookEvents = settings.webhookEvents;
+      if (settings.webhookActive !== undefined)
+        organization.settings.webhookActive = settings.webhookActive;
+
+      if (settings.branding) {
+        if (!organization.settings.branding)
+          organization.settings.branding = {};
+        if (settings.branding.logo !== undefined)
+          organization.settings.branding.logo = settings.branding.logo;
+        if (settings.branding.primaryColor !== undefined)
+          organization.settings.branding.primaryColor =
+            settings.branding.primaryColor;
+        if (settings.branding.secondaryColor !== undefined)
+          organization.settings.branding.secondaryColor =
+            settings.branding.secondaryColor;
+      }
+
+      organization.markModified("settings");
       changes.after.settings = organization.settings;
     }
 

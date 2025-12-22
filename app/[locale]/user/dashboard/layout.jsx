@@ -2,21 +2,42 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import {
   selectIsAuthenticated,
   selectAuthLoading,
   selectUser,
+  updateUser,
 } from "@/store/slices/authSlice";
 import Sidebar from "@/components/layout/Sidebar";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { Loader2 } from "lucide-react";
+import axios from "axios";
 
 export default function UserDashboardLayout({ children }) {
   const router = useRouter();
+  const dispatch = useDispatch();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const isLoading = useSelector(selectAuthLoading);
   const user = useSelector(selectUser);
+
+  // Sync profile data on mount
+  useEffect(() => {
+    const syncProfile = async () => {
+      try {
+        const res = await axios.get("/api/user/profile");
+        if (res.data.success) {
+          dispatch(updateUser(res.data.data));
+        }
+      } catch (error) {
+        console.error("Dashboard layout - Profile sync failed:", error);
+      }
+    };
+
+    if (isAuthenticated) {
+      syncProfile();
+    }
+  }, [isAuthenticated, dispatch]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {

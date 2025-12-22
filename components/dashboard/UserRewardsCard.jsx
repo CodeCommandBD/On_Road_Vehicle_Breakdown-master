@@ -15,11 +15,24 @@ export default function UserRewardsCard({ user, stats }) {
     free: {
       name: t("tiers.free"),
       color: "from-gray-500 to-gray-600",
-      nextTier: t("tiers.standard"),
+      nextTier: t("tiers.basic"),
       pointsNeeded: 500,
       benefits: ["Basic support", "Standard booking"],
     },
-
+    basic: {
+      name: t("tiers.basic"),
+      color: "from-blue-400 to-blue-600",
+      nextTier: t("tiers.standard"),
+      pointsNeeded: 1500,
+      benefits: ["5% cashback", "Priority support"],
+    },
+    trial: {
+      name: t("tiers.trial"),
+      color: "from-blue-400 to-cyan-500",
+      nextTier: t("tiers.standard"),
+      pointsNeeded: 1500,
+      benefits: ["Trial benefits", "Priority support"],
+    },
     standard: {
       name: t("tiers.standard"),
       color: "from-purple-500 to-purple-600",
@@ -30,8 +43,8 @@ export default function UserRewardsCard({ user, stats }) {
     premium: {
       name: t("tiers.premium"),
       color: "from-yellow-400 to-orange-500",
-      nextTier: null,
-      pointsNeeded: null,
+      nextTier: t("tiers.enterprise"),
+      pointsNeeded: 10000,
       benefits: [
         "VIP support",
         "15% cashback",
@@ -39,9 +52,21 @@ export default function UserRewardsCard({ user, stats }) {
         "Free towing",
       ],
     },
+    enterprise: {
+      name: t("tiers.enterprise"),
+      color: "from-orange-600 to-red-600",
+      nextTier: null,
+      pointsNeeded: null,
+      benefits: [
+        "Dedicated account manager",
+        "Unlimited cashback",
+        "Priority SOS dispatch",
+        "Fleet management",
+      ],
+    },
   };
 
-  const currentTier = tierConfig[tier];
+  const currentTier = tierConfig[tier] || tierConfig.free;
   const progress = currentTier.pointsNeeded
     ? Math.min((points / currentTier.pointsNeeded) * 100, 100)
     : 100;

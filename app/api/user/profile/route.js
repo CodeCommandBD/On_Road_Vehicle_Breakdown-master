@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db/connect";
 import User from "@/lib/db/models/User";
 import Garage from "@/lib/db/models/Garage";
+import TeamMember from "@/lib/db/models/TeamMember";
 import { verifyToken } from "@/lib/utils/auth";
 import fs from "fs";
 
@@ -40,15 +41,28 @@ export async function GET(request) {
       garage = await Garage.findOne({ owner: user._id });
     }
 
+    // Check if user is a member of any organization
+    const teamMembership = await TeamMember.findOne({
+      user: user._id,
+      isActive: true,
+    });
+
+    const publicUser = user.toPublicJSON();
+    publicUser.isTeamMember = !!teamMembership;
+
     return NextResponse.json({
       success: true,
-      data: user.toPublicJSON(),
+      data: publicUser,
       garage: garage,
     });
   } catch (error) {
     console.error("Profile GET error:", error);
     return NextResponse.json(
-      { success: false, message: "Internal server error" },
+      {
+        success: false,
+        message: error.message || "Internal server error",
+        error: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      },
       { status: 500 }
     );
   }

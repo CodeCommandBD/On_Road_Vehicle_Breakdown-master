@@ -29,15 +29,17 @@ export async function GET(req) {
       .populate("organization")
       .sort({ joinedAt: -1 });
 
-    const organizations = memberships.map((membership) => ({
-      id: membership.organization._id,
-      name: membership.organization.name,
-      slug: membership.organization.slug,
-      role: membership.role,
-      memberCount: membership.organization.memberCount,
-      isOwner: membership.role === "owner",
-      joinedAt: membership.joinedAt,
-    }));
+    const organizations = memberships
+      .filter((m) => m.organization) // Safety check: filter out if organization is deleted
+      .map((membership) => ({
+        id: membership.organization._id,
+        name: membership.organization.name,
+        slug: membership.organization.slug,
+        role: membership.role,
+        memberCount: membership.organization.memberCount || 0,
+        isOwner: membership.role === "owner",
+        joinedAt: membership.joinedAt,
+      }));
 
     return NextResponse.json({
       success: true,
@@ -46,7 +48,11 @@ export async function GET(req) {
   } catch (error) {
     console.error("List Organizations Error:", error);
     return NextResponse.json(
-      { success: false, message: "Server Error" },
+      {
+        success: false,
+        message: error.message || "Server Error",
+        error: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      },
       { status: 500 }
     );
   }

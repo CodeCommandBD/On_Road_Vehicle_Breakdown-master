@@ -14,7 +14,16 @@ import {
   Mail,
   Trash2,
   ChevronDown,
+  Search,
+  Filter,
+  RefreshCw,
+  Palette,
+  ExternalLink,
+  Info,
+  Save,
 } from "lucide-react";
+
+import { toast } from "react-toastify";
 
 export default function TeamManagementPage() {
   const router = useRouter();
@@ -24,11 +33,26 @@ export default function TeamManagementPage() {
   const [organizations, setOrganizations] = useState([]);
   const [selectedOrg, setSelectedOrg] = useState(null);
   const [members, setMembers] = useState([]);
+  const [invitations, setInvitations] = useState([]);
   const [activities, setActivities] = useState([]);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("member");
   const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteError, setInviteError] = useState("");
+
+  // New states for enhancements
+  const [activeTab, setActiveTab] = useState("members"); // "members", "branding"
+  const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [updatingRole, setUpdatingRole] = useState(null); // userId being updated
+  const [resendingInvitation, setResendingInvitation] = useState(null); // invitationId
+  const [brandingEditing, setBrandingEditing] = useState(false);
+  const [brandingData, setBrandingData] = useState({
+    name: "",
+    logo: "",
+    primaryColor: "#3B82F6",
+  });
 
   // Fetch user and check access
   useEffect(() => {
@@ -37,22 +61,43 @@ export default function TeamManagementPage() {
 
   const checkUserAccess = async () => {
     try {
-      console.log("Fetching user data from API...");
-      const res = await axios.get("/api/user/profile");
-      const userData = res.data.data;
+      console.log("Fetching user data and organizations...");
+      const [profileRes, orgsRes] = await Promise.all([
+        axios.get("/api/user/profile"),
+        axios.get("/api/organizations"),
+      ]);
 
-      console.log("User data received:", userData);
+      const userData = profileRes.data.data;
+      const orgs = orgsRes.data.data || [];
+
+      console.log("Access check:", {
+        tier: userData.membershipTier,
+        orgCount: orgs.length,
+      });
+
       setCurrentUser(userData);
+      setOrganizations(orgs);
 
       if (
         userData.membershipTier !== "enterprise" &&
-        userData.membershipTier !== "premium"
+        userData.membershipTier !== "premium" &&
+        orgs.length === 0
       ) {
-        console.log("Access denied - Not premium/enterprise user");
+        console.log("Access denied - Not premium/enterprise and no orgs");
         router.push("/user/dashboard");
       } else {
-        console.log("Access granted - Loading organizations");
-        loadOrganizations();
+        console.log("Access granted");
+        if (orgs.length > 0) {
+          const firstOrg = orgs[0];
+          setSelectedOrg(firstOrg);
+          setBrandingData({
+            name: firstOrg.name || "",
+            logo: firstOrg.settings?.branding?.logo || "",
+            primaryColor:
+              firstOrg.settings?.branding?.primaryColor || "#3B82F6",
+          });
+        }
+        setLoading(false);
       }
     } catch (error) {
       console.error("Failed to check user access:", error);
@@ -64,6 +109,7 @@ export default function TeamManagementPage() {
   useEffect(() => {
     if (selectedOrg) {
       loadMembers();
+      loadInvitations();
       loadActivities();
     }
   }, [selectedOrg]);
@@ -96,6 +142,17 @@ export default function TeamManagementPage() {
     }
   };
 
+  const loadInvitations = async () => {
+    try {
+      const res = await axios.get(
+        `/api/organizations/${selectedOrg.id}/invitations`
+      );
+      setInvitations(res.data.data);
+    } catch (error) {
+      console.error("Failed to load invitations:", error);
+    }
+  };
+
   const loadActivities = async () => {
     try {
       const res = await axios.get(
@@ -110,6 +167,7 @@ export default function TeamManagementPage() {
   const handleInviteMember = async (e) => {
     e.preventDefault();
     setInviteLoading(true);
+    setInviteError("");
 
     try {
       await axios.post(`/api/organizations/${selectedOrg.id}/members`, {
@@ -117,14 +175,19 @@ export default function TeamManagementPage() {
         role: inviteRole,
       });
 
-      alert("Invitation sent successfully!");
+      toast.success("Invitation sent successfully!");
       setInviteEmail("");
       setInviteRole("member");
       setShowInviteModal(false);
       loadMembers();
+      loadInvitations();
       loadActivities();
     } catch (error) {
-      alert(error.response?.data?.message || "Failed to send invitation");
+      console.error("Invite Error:", error);
+      const errorMessage =
+        error.response?.data?.message || "Failed to send invitation";
+      setInviteError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setInviteLoading(false);
     }
@@ -139,12 +202,94 @@ export default function TeamManagementPage() {
       await axios.delete(
         `/api/organizations/${selectedOrg.id}/members?userId=${userId}`
       );
-      alert("Member removed successfully");
+      toast.success("Member removed successfully");
       loadMembers();
       loadActivities();
     } catch (error) {
-      alert(error.response?.data?.message || "Failed to remove member");
+      toast.error(error.response?.data?.message || "Failed to remove member");
     }
+  };
+
+  const handleUpdateRole = async (userId, newRole) => {
+    setUpdatingRole(userId);
+    try {
+      await axios.patch(`/api/organizations/${selectedOrg.id}/members`, {
+        userId,
+        role: newRole,
+      });
+      toast.success("Member role updated");
+      loadMembers();
+      loadActivities();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to update role");
+    } finally {
+      setUpdatingRole(null);
+    }
+  };
+
+  const handleResendInvitation = async (invitationId) => {
+    setResendingInvitation(invitationId);
+    try {
+      await axios.patch(`/api/organizations/${selectedOrg.id}/invitations`, {
+        invitationId,
+      });
+      toast.success("Invitation resent successfully");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to resend invitation"
+      );
+    } finally {
+      setResendingInvitation(null);
+    }
+  };
+
+  const handleSaveBranding = async () => {
+    setBrandingEditing(true);
+    try {
+      await axios.patch(`/api/organizations/${selectedOrg.id}`, {
+        name: brandingData.name,
+        settings: {
+          branding: {
+            logo: brandingData.logo,
+            primaryColor: brandingData.primaryColor,
+          },
+        },
+      });
+      toast.success("Branding settings saved");
+      // Refresh org data
+      const res = await axios.get(`/api/organizations/${selectedOrg.id}`);
+      const updatedOrg = res.data.data;
+      setSelectedOrg(updatedOrg);
+      setOrganizations((prev) =>
+        prev.map((o) => (o.id === updatedOrg.id ? updatedOrg : o))
+      );
+    } catch (error) {
+      toast.error("Failed to save branding");
+    } finally {
+      setBrandingEditing(false);
+    }
+  };
+
+  const filteredMembers = members.filter((member) => {
+    const matchesSearch =
+      member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesRole = roleFilter === "all" || member.role === roleFilter;
+    return matchesSearch && matchesRole && member.role !== "owner"; // Exclude owner from general list
+  });
+
+  const ownerMember = members.find((m) => m.role === "owner");
+
+  const getMemberLimit = (tier) => {
+    const limits = {
+      enterprise: 9999,
+      premium: 50,
+      standard: 20,
+      trial: 10,
+      basic: 10,
+      free: 5,
+    };
+    return limits[tier.toLowerCase()] || 5;
   };
 
   const getRoleBadge = (role) => {
@@ -225,146 +370,594 @@ export default function TeamManagementPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Team Management</h1>
-        <p className="text-gray-400">
-          Manage your organization members and settings
-        </p>
+      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">
+            Team Management
+          </h1>
+          <p className="text-gray-400">
+            Manage your organization members and settings
+          </p>
+        </div>
+
+        <div className="flex bg-gray-800/50 p-1 rounded-xl border border-gray-700/50 w-fit">
+          <button
+            onClick={() => setActiveTab("members")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === "members"
+                ? "bg-blue-600 text-white shadow-lg"
+                : "text-gray-400 hover:text-white"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Members
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab("branding")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === "branding"
+                ? "bg-blue-600 text-white shadow-lg"
+                : "text-gray-400 hover:text-white"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Palette className="w-4 h-4" />
+              Branding
+            </div>
+          </button>
+        </div>
       </div>
 
       {/* Organization Selector (if multiple) */}
-      {organizations.length > 1 && (
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Select Organization
+      <div className="flex flex-col md:flex-row gap-6 mb-8">
+        <div className="flex-1 max-w-md">
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 px-1">
+            Current Organization
           </label>
-          <select
-            value={selectedOrg?.id}
-            onChange={(e) => {
-              const org = organizations.find((o) => o.id === e.target.value);
-              setSelectedOrg(org);
-            }}
-            className="w-full max-w-md px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {organizations.map((org) => (
-              <option key={org.id} value={org.id}>
-                {org.name} ({org.role})
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Members List */}
-        <div className="lg:col-span-2">
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 overflow-hidden">
-            <div className="p-6 border-b border-gray-700/50 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Team Members ({members.length})
-              </h2>
-              {selectedOrg?.role === "owner" ||
-              selectedOrg?.role === "admin" ? (
-                <button
-                  onClick={() => setShowInviteModal(true)}
-                  className="btn-primary flex items-center gap-2"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  Invite Member
-                </button>
-              ) : null}
-            </div>
-
-            <div className="divide-y divide-gray-700/50">
-              {members.map((member) => (
-                <div
-                  key={member.id}
-                  className="p-6 hover:bg-gray-700/20 transition-colors"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
-                          {member.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-white">
-                            {member.name}
-                          </h3>
-                          <p className="text-sm text-gray-400">
-                            {member.email}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4 mt-3">
-                        {getRoleBadge(member.role)}
-                        <span className="text-sm text-gray-500">
-                          Joined{" "}
-                          {new Date(member.joinedAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-
-                    {member.canManage && member.userId !== currentUser?._id && (
-                      <button
-                        onClick={() => handleRemoveMember(member.userId)}
-                        className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                        title="Remove member"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
+          <div className="relative">
+            <select
+              value={selectedOrg?.id}
+              onChange={(e) => {
+                const org = organizations.find((o) => o.id === e.target.value);
+                setSelectedOrg(org);
+                setBrandingData({
+                  name: org.name || "",
+                  logo: org.settings?.branding?.logo || "",
+                  primaryColor:
+                    org.settings?.branding?.primaryColor || "#3B82F6",
+                });
+              }}
+              className="w-full appearance-none px-4 py-3 bg-gray-800 border border-gray-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 pr-10"
+            >
+              {organizations.map((org) => (
+                <option key={org.id} value={org.id}>
+                  {org.name} ({org.role})
+                </option>
               ))}
-            </div>
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
           </div>
         </div>
 
-        {/* Activity Feed */}
-        <div className="lg:col-span-1">
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 overflow-hidden">
-            <div className="p-6 border-b border-gray-700/50">
-              <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-                <Activity className="w-5 h-5" />
-                Recent Activity
-              </h2>
+        {/* Member Limit Tracker */}
+        <div className="flex-1 bg-gray-800/30 p-4 rounded-xl border border-gray-700/30">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+              Team Capacity
+            </span>
+            <span className="text-xs text-blue-400 font-bold">
+              {members.length} / {getMemberLimit(currentUser?.membershipTier)}
+            </span>
+          </div>
+          <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+            <div
+              className={`h-full transition-all duration-500 rounded-full ${
+                members.length / getMemberLimit(currentUser?.membershipTier) >
+                0.9
+                  ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]"
+                  : "bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.3)]"
+              }`}
+              style={{
+                width: `${Math.min(
+                  (members.length /
+                    getMemberLimit(currentUser?.membershipTier)) *
+                    100,
+                  100
+                )}%`,
+              }}
+            ></div>
+          </div>
+          <p className="text-[10px] text-gray-500 mt-2 flex items-center gap-1">
+            <Info className="w-3 h-3" />
+            Plan: {currentUser?.membershipTier?.toUpperCase()} Tier
+          </p>
+        </div>
+      </div>
+
+      {activeTab === "members" ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Members List */}
+          <div className="lg:col-span-2">
+            {/* Organization Owner Section (Separated from list) */}
+            {ownerMember && (
+              <div className="mb-8 p-[1px] rounded-2xl bg-gradient-to-br from-yellow-500/50 via-gray-700/50 to-transparent">
+                <div className="bg-gray-900/90 backdrop-blur-xl rounded-2xl p-6 border border-yellow-500/10">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xs font-bold text-yellow-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                      <Crown className="w-3 h-3" />
+                      Organization Owner
+                    </h2>
+                    <div className="px-3 py-1 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+                      <span className="text-[10px] font-bold text-yellow-500 uppercase tracking-widest">
+                        Total Control
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white text-2xl font-bold shadow-[0_0_20px_rgba(234,179,8,0.3)]">
+                          {ownerMember.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="absolute -bottom-2 -right-2 w-7 h-7 bg-gray-900 rounded-lg border border-yellow-500/50 flex items-center justify-center shadow-lg">
+                          <Crown className="w-4 h-4 text-yellow-500" />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-xl font-bold text-white">
+                            {ownerMember.name}
+                          </h3>
+                          {ownerMember.userId === currentUser?._id && (
+                            <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-bold uppercase tracking-widest border border-blue-500/30">
+                              You
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-gray-400 font-medium">
+                          {ownerMember.email}
+                        </p>
+                        <div className="flex items-center gap-3 mt-2">
+                          <span className="text-[10px] text-gray-500 font-bold uppercase">
+                            Joined{" "}
+                            {new Date(
+                              ownerMember.joinedAt
+                            ).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 w-full sm:w-auto">
+                      <div className="flex-1 sm:flex-none flex flex-col items-center px-4 py-2 bg-yellow-500/5 rounded-xl border border-yellow-500/10">
+                        <span className="text-[10px] text-yellow-500/50 font-bold uppercase tracking-tight">
+                          SOS Activity
+                        </span>
+                        <span className="text-lg font-bold text-yellow-500">
+                          {ownerMember.sosCount}{" "}
+                          <span className="text-xs font-normal opacity-70">
+                            alerts
+                          </span>
+                        </span>
+                      </div>
+
+                      <div
+                        className="p-2 bg-gray-800/50 rounded-xl border border-gray-700/50 text-gray-400 hover:text-white transition-colors cursor-help"
+                        title="Organization owners have full management rights"
+                      >
+                        <Shield className="w-5 h-5 text-yellow-500/80" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Search and Filters */}
+            <div className="mb-4 flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <input
+                  type="text"
+                  placeholder="Search by name or email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-gray-800/40 border border-gray-700/50 rounded-xl text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+              <div className="relative sm:w-48">
+                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <select
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-gray-800/40 border border-gray-700/50 rounded-xl text-sm text-white focus:outline-none appearance-none"
+                >
+                  <option value="all">All Roles</option>
+                  <option value="owner">Owners</option>
+                  <option value="admin">Admins</option>
+                  <option value="manager">Managers</option>
+                  <option value="member">Members</option>
+                  <option value="viewer">Viewers</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-600 pointer-events-none" />
+              </div>
             </div>
 
-            <div className="max-h-[600px] overflow-y-auto">
-              {activities.length === 0 ? (
-                <div className="p-6 text-center text-gray-400">
-                  No recent activity
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-700/50">
-                  {activities.map((activity) => (
-                    <div key={activity._id} className="p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                          <Activity className="w-4 h-4 text-blue-400" />
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 overflow-hidden">
+              <div className="p-6 border-b border-gray-700/50 flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Team Members ({filteredMembers.length})
+                </h2>
+                {(selectedOrg?.role === "owner" ||
+                  selectedOrg?.role === "admin") && (
+                  <button
+                    onClick={() => setShowInviteModal(true)}
+                    className="btn-primary flex items-center gap-2"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    Invite Member
+                  </button>
+                )}
+              </div>
+
+              <div className="divide-y divide-gray-700/50">
+                {filteredMembers.length === 0 ? (
+                  <div className="p-12 text-center text-gray-500">
+                    No members match your search criteria.
+                  </div>
+                ) : (
+                  filteredMembers.map((member) => (
+                    <div
+                      key={member.id}
+                      className="p-6 hover:bg-gray-700/10 transition-colors"
+                    >
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-gray-700 flex items-center justify-center text-blue-400 font-bold shadow-inner">
+                            {member.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-white">
+                                {member.name}
+                              </h3>
+                              {member.userId === currentUser?._id && (
+                                <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-widest border border-blue-500/30">
+                                  You
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-400">
+                              {member.email}
+                            </p>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-300">
-                            <span className="font-medium text-white">
-                              {activity.user?.name}
-                            </span>{" "}
-                            {activity.action.replace(/_/g, " ")}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {new Date(activity.createdAt).toLocaleString()}
-                          </p>
+
+                        <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto">
+                          <div className="flex flex-col items-center px-3 py-1 bg-gray-800/40 rounded-lg border border-gray-700/50">
+                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tight">
+                              SOS Usage
+                            </span>
+                            <span className="text-sm font-bold text-red-500/80">
+                              {member.sosCount} alerts
+                            </span>
+                          </div>
+
+                          {member.canManage &&
+                          selectedOrg?.role === "owner" &&
+                          member.userId !== currentUser?._id ? (
+                            <div className="relative">
+                              <select
+                                disabled={updatingRole === member.userId}
+                                value={member.role}
+                                onChange={(e) =>
+                                  handleUpdateRole(
+                                    member.userId,
+                                    e.target.value
+                                  )
+                                }
+                                className="appearance-none bg-gray-800/80 text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-700 pr-8 focus:outline-none focus:border-blue-500 transition-all uppercase tracking-wide cursor-pointer"
+                              >
+                                <option value="admin">Admin</option>
+                                <option value="manager">Manager</option>
+                                <option value="member">Member</option>
+                                <option value="viewer">Viewer</option>
+                              </select>
+                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                              {updatingRole === member.userId && (
+                                <RefreshCw className="absolute -right-6 top-1/2 -translate-y-1/2 w-3 h-3 text-blue-500 animate-spin" />
+                              )}
+                            </div>
+                          ) : (
+                            getRoleBadge(member.role)
+                          )}
+
+                          {member.canManage && (
+                            <button
+                              onClick={() => handleRemoveMember(member.userId)}
+                              disabled={member.userId === currentUser?._id}
+                              className={`p-2 rounded-lg transition-colors ${
+                                member.userId === currentUser?._id
+                                  ? "opacity-20 cursor-not-allowed"
+                                  : "text-red-400/60 hover:text-red-400 hover:bg-red-500/10"
+                              }`}
+                              title="Remove member"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Pending Invitations Section */}
+            {invitations.length > 0 && (
+              <div className="mt-8 bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 overflow-hidden">
+                <div className="p-6 border-b border-gray-700/50">
+                  <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+                    <Mail className="w-5 h-5 text-blue-400" />
+                    Pending Invitations ({invitations.length})
+                  </h2>
+                </div>
+
+                <div className="divide-y divide-gray-700/50">
+                  {invitations.map((inv) => (
+                    <div
+                      key={inv.id}
+                      className="p-6 hover:bg-gray-700/10 transition-colors"
+                    >
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gray-700/40 flex items-center justify-center text-gray-500">
+                            <Mail className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-white">
+                              {inv.email}
+                            </h3>
+                            <p className="text-xs text-gray-500">
+                              Invited by {inv.invitedBy} &bull;{" "}
+                              {new Date(inv.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4 w-full sm:w-auto">
+                          {getRoleBadge(inv.role)}
+                          <div className="flex items-center gap-2">
+                            <button
+                              disabled={resendingInvitation === inv.id}
+                              onClick={() => handleResendInvitation(inv.id)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-400 text-xs font-bold rounded-lg border border-blue-500/20 hover:bg-blue-500/20 transition-all disabled:opacity-50"
+                            >
+                              {resendingInvitation === inv.id ? (
+                                <RefreshCw className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <RefreshCw className="w-3 h-3" />
+                              )}
+                              RESEND
+                            </button>
+                            {/* Invitation Link for manual copy */}
+                            <button
+                              onClick={() => {
+                                // Potentially copy a link if available or just toast
+                                toast.info("Invitation link sent to email");
+                              }}
+                              className="p-2 text-gray-500 hover:text-white"
+                              title="Email sent"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
-              )}
+              </div>
+            )}
+          </div>
+
+          {/* Activity Feed */}
+          <div className="lg:col-span-1">
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 overflow-hidden sticky top-6">
+              <div className="p-6 border-b border-gray-700/50">
+                <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-purple-400" />
+                  Recent Activity
+                </h2>
+              </div>
+
+              <div className="max-h-[600px] overflow-y-auto">
+                {activities.length === 0 ? (
+                  <div className="p-6 text-center text-gray-500">
+                    No recent activity
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-700/50">
+                    {activities.map((activity) => (
+                      <div
+                        key={activity._id}
+                        className="p-4 hover:bg-gray-700/10 transition-colors"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0 border border-blue-500/20">
+                            <Activity className="w-3 h-3 text-blue-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-gray-300">
+                              <span className="font-bold text-white">
+                                {activity.user?.name || "System"}
+                              </span>{" "}
+                              <span className="text-gray-400">
+                                {activity.action.replace(/_/g, " ")}
+                              </span>
+                            </p>
+                            <p className="text-[10px] text-gray-500 mt-1 uppercase font-bold tracking-tight">
+                              {new Date(activity.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      ) : (
+        // --- BRANDING TAB ---
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-gray-800/50 backdrop-blur-md border border-gray-700/50 rounded-2xl overflow-hidden shadow-2xl">
+            <div className="p-8 border-b border-gray-700/50">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                <Palette className="w-6 h-6 text-blue-500" />
+                Organization Branding
+              </h2>
+              <p className="text-gray-400 mt-1">
+                Customize how your organization appears to your team members
+              </p>
+            </div>
+
+            <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-bold text-gray-300 uppercase tracking-widest mb-2 px-1">
+                    Organization Name
+                  </label>
+                  <input
+                    type="text"
+                    value={brandingData.name}
+                    onChange={(e) =>
+                      setBrandingData({ ...brandingData, name: e.target.value })
+                    }
+                    className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+                    placeholder="Enter Org Name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-300 uppercase tracking-widest mb-2 px-1">
+                    Logo URL
+                  </label>
+                  <input
+                    type="text"
+                    value={brandingData.logo}
+                    onChange={(e) =>
+                      setBrandingData({ ...brandingData, logo: e.target.value })
+                    }
+                    className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-mono text-xs"
+                    placeholder="https://example.com/logo.png"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-300 uppercase tracking-widest mb-2 px-1">
+                    Primary Brand Color
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="color"
+                      value={brandingData.primaryColor}
+                      onChange={(e) =>
+                        setBrandingData({
+                          ...brandingData,
+                          primaryColor: e.target.value,
+                        })
+                      }
+                      className="w-12 h-12 rounded-lg bg-gray-900 border border-gray-700 cursor-pointer overflow-hidden p-0"
+                    />
+                    <input
+                      type="text"
+                      value={brandingData.primaryColor}
+                      onChange={(e) =>
+                        setBrandingData({
+                          ...brandingData,
+                          primaryColor: e.target.value,
+                        })
+                      }
+                      className="flex-1 px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-mono text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <label className="block text-sm font-bold text-gray-300 uppercase tracking-widest mb-2 px-1">
+                  Preview
+                </label>
+                <div className="p-6 bg-gray-900/80 rounded-2xl border border-gray-700/50 shadow-inner">
+                  <div className="flex items-center gap-3 mb-6">
+                    {brandingData.logo ? (
+                      <img
+                        src={brandingData.logo}
+                        alt="Logo"
+                        className="w-10 h-10 rounded-lg object-contain"
+                      />
+                    ) : (
+                      <div
+                        className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-xl font-bold"
+                        style={{ backgroundColor: brandingData.primaryColor }}
+                      >
+                        {brandingData.name.charAt(0) || "O"}
+                      </div>
+                    )}
+                    <span className="text-xl font-bold text-white">
+                      {brandingData.name || "Organization Name"}
+                    </span>
+                  </div>
+
+                  <div
+                    className="h-2 rounded-full mb-4 opacity-50"
+                    style={{ backgroundColor: brandingData.primaryColor }}
+                  ></div>
+                  <div
+                    className="btn-primary w-full text-center py-3 rounded-xl font-bold transition-all shadow-lg"
+                    style={{
+                      backgroundColor: brandingData.primaryColor,
+                      borderColor: brandingData.primaryColor,
+                    }}
+                  >
+                    Button Preview
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-8 bg-black/20 border-t border-gray-700/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-xs text-gray-500 max-w-sm">
+                * Note: Your organization's branding will be applied to team
+                dashboards and internal communications.
+              </p>
+              <button
+                disabled={brandingEditing}
+                onClick={handleSaveBranding}
+                className="btn-primary px-10 py-3 rounded-xl font-bold flex items-center gap-2 shadow-xl shadow-blue-500/10 min-w-[150px] justify-center"
+              >
+                {brandingEditing ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    SAVING...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    SAVE CHANGES
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Invite Modal */}
       {showInviteModal && (
@@ -373,6 +966,26 @@ export default function TeamManagementPage() {
             <h3 className="text-xl font-bold text-white mb-4">
               Invite Team Member
             </h3>
+
+            {inviteError && (
+              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-500 text-sm">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-4 h-4 flex-shrink-0"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                {inviteError}
+              </div>
+            )}
 
             <form onSubmit={handleInviteMember}>
               <div className="mb-4">
