@@ -42,6 +42,7 @@ export default function Sidebar() {
   console.log("Sidebar - User data:", {
     hasUser: !!user,
     membershipTier: user?.membershipTier,
+    isTeamMember: user?.isTeamMember,
     email: user?.email,
   });
 
@@ -70,7 +71,8 @@ export default function Sidebar() {
         icon: Users,
         locked:
           user?.membershipTier !== "premium" &&
-          user?.membershipTier !== "enterprise",
+          user?.membershipTier !== "enterprise" &&
+          !user?.isTeamMember,
       },
       {
         href: "/user/dashboard/bookings",

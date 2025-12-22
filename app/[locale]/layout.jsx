@@ -1,4 +1,3 @@
-import { Inter } from "next/font/google";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../globals.css";
@@ -7,8 +6,6 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { notFound } from "next/navigation";
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata = {
   title: "On Road Vehicle Breakdown Service",
@@ -37,7 +34,7 @@ export default async function RootLayout({ children, params }) {
 
   return (
     <html lang={locale} className="scroll-smooth">
-      <body className={`${inter.variable} font-sans antialiased bg-[#111]`}>
+      <body className={`font-sans antialiased bg-[#111]`}>
         <NextIntlClientProvider messages={messages}>
           <StoreProvider>
             {children}

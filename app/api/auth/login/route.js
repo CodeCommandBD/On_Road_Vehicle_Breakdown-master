@@ -49,7 +49,10 @@ export async function POST(request) {
     // Check role if specified
     if (role && user.role !== role) {
       return NextResponse.json(
-        { success: false, message: `This account is not registered as a ${role}` },
+        {
+          success: false,
+          message: `This account is not registered as a ${role}`,
+        },
         { status: 401 }
       );
     }
@@ -58,11 +61,82 @@ export async function POST(request) {
     user.lastLogin = new Date();
     await user.save();
 
-    // Create JWT token
+    // --- EFFECTIVE MEMBERSHIP TIER CALCULATION ---
+    // User might be a member of a Premium/Enterprise organization.
+    // We should give them access to features based on the highest tier they have access to.
+
+    // Import needed models dynamically to avoid circular deps if any
+    const TeamMember = (await import("@/lib/db/models/TeamMember")).default;
+    const Organization = (await import("@/lib/db/models/Organization")).default;
+    const Subscription = (await import("@/lib/db/models/Subscription")).default;
+    const Plan = (await import("@/lib/db/models/Plan")).default;
+
+    let effectiveTier = user.membershipTier || "free";
+
+    // Fetch active memberships
+    const memberships = await TeamMember.find({
+      user: user._id,
+      isActive: true,
+    }).populate({
+      path: "organization",
+      populate: {
+        path: "subscription",
+        match: { status: { $in: ["active", "trial"] } }, // Only active/trial subs
+        populate: {
+          path: "planId",
+          model: "Plan",
+        },
+      },
+    });
+
+    if (memberships && memberships.length > 0) {
+      const tierHierarchy = [
+        "free",
+        "basic",
+        "trial",
+        "standard",
+        "premium",
+        "enterprise",
+      ];
+
+      const getTierValue = (tier) => {
+        const index = tierHierarchy.indexOf(tier);
+        return index === -1 ? 0 : index;
+      };
+
+      let maxTierValue = getTierValue(effectiveTier);
+
+      memberships.forEach((member) => {
+        const org = member.organization;
+        if (org && org.subscription && org.subscription.planId) {
+          const planTier = org.subscription.planId.tier;
+          // Check if subscription is strictly valid by date (re-verify)
+          const now = new Date();
+          const sub = org.subscription;
+          const isActive =
+            new Date(sub.startDate) <= now && new Date(sub.endDate) >= now;
+
+          if (isActive) {
+            const planValue = getTierValue(planTier);
+            if (planValue > maxTierValue) {
+              maxTierValue = planValue;
+              effectiveTier = planTier;
+            }
+          }
+        }
+      });
+    }
+
+    // Override the user object for the response (don't save to DB to keep personal record clean)
+    const userPublic = user.toPublicJSON();
+    userPublic.membershipTier = effectiveTier;
+
+    // Create JWT token with effective tier
     const tokenPayload = {
       userId: user._id.toString(),
       email: user.email,
       role: user.role,
+      membershipTier: effectiveTier, // Add this to token for easier access if needed
     };
     const token = await createToken(tokenPayload);
 
@@ -74,7 +148,7 @@ export async function POST(request) {
       {
         success: true,
         message: "Login successful",
-        user: user.toPublicJSON(),
+        user: userPublic,
         token,
       },
       { status: 200 }

@@ -46,7 +46,11 @@ export async function GET(req, { params }) {
   } catch (error) {
     console.error("Get Activities Error:", error);
     return NextResponse.json(
-      { success: false, message: "Server Error" },
+      {
+        success: false,
+        message: error.message || "Server Error",
+        error: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      },
       { status: 500 }
     );
   }

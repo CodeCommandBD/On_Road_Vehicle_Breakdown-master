@@ -2,14 +2,52 @@ import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import connectDB from "@/lib/db/connection";
 import Diagnosis from "@/lib/db/models/Diagnosis";
-import { headers } from "next/headers";
+import { verifyToken } from "@/lib/utils/auth";
+import { logActivity } from "@/lib/utils/activity";
+import TeamMember from "@/lib/db/models/TeamMember";
+import User from "@/lib/db/models/User";
 
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "");
 
+export async function GET(req) {
+  try {
+    await connectDB();
+    const user = await verifyToken(req);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const diagnoses = await Diagnosis.find({ user: user.userId })
+      .sort({ createdAt: -1 })
+      .limit(20);
+
+    return NextResponse.json({
+      success: true,
+      data: diagnoses,
+    });
+  } catch (error) {
+    console.error("Fetch Diagnosis Error:", error);
+    return NextResponse.json(
+      { success: false, message: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(req) {
   try {
     await connectDB();
+    const verifiedUser = await verifyToken(req);
+    if (!verifiedUser) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
     const body = await req.json();
     const { userId, symptoms, vehicleContext } = body;
@@ -18,6 +56,39 @@ export async function POST(req) {
       return NextResponse.json(
         { success: false, message: "Missing required fields" },
         { status: 400 }
+      );
+    }
+
+    // Check Tier-based Limits
+    const userDoc = await User.findById(userId);
+    const tier = userDoc?.membershipTier || "free";
+
+    const limits = {
+      free: 2,
+      trial: 2,
+      standard: 10,
+      premium: 50,
+      enterprise: 9999,
+    };
+
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const usageCount = await Diagnosis.countDocuments({
+      user: userId,
+      createdAt: { $gte: startOfMonth },
+    });
+
+    const tierLimit = limits[tier] || 2;
+
+    if (usageCount >= tierLimit) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Monthly limit reached for ${tier} tier (${tierLimit} diagnoses). Please upgrade your plan.`,
+        },
+        { status: 403 }
       );
     }
 
@@ -33,34 +104,36 @@ export async function POST(req) {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `
-      Act as an expert automotive mechanic with 20 years of experience.
-      Analyze the following vehicle symptoms and provide a diagnosis.
+      Act as an expert automotive mechanic with 20 years of experience in the Bangladesh automotive industry.
+      Analyze the following vehicle symptoms and provide a comprehensive diagnosis.
       
       Vehicle: ${vehicleContext?.model || "Generic Car"} (${
       vehicleContext?.year || "Unknown Year"
     })
       Symptoms: "${symptoms}"
       
+      The user may provide symptoms in English or Bengali. You must analyze correctly regardless of the language.
+      
       Output MUST be valid JSON with this exact structure:
       {
-        "possibleCause": "Brief title of the issue (English + Bangla translation in brackets)",
-        "estimatedCost": "Estimated cost range in BDT (৳)",
-        "immediateAction": "One clear actionable step (English + Bangla)",
+        "possibleCause": "Title of the issue in English with clear Bangla translation in brackets",
+        "estimatedCost": "Estimated cost range in BDT (৳), realistic for reliable local workshops in Bangladesh",
+        "immediateAction": "One clear actionable step (English + robust Bangla translation)",
         "severity": "Low" | "Medium" | "High" | "Critical",
-        "preventiveMeasures": ["Measure 1", "Measure 2"]
+        "preventiveMeasures": ["Measure 1 (English + Bangla)", "Measure 2 (English + Bangla)"]
       }
 
       Example format:
       {
-        "possibleCause": "Worn Brake Pads (ক্ষয়প্রাপ্ত ব্রেক প্যাড)",
-        "estimatedCost": "৳2,500 - ৳4,000",
-        "immediateAction": "Inspect brake pads immediately (তাৎক্ষণিকভাবে ব্রেক প্যাড পরীক্ষা করুন)",
+        "possibleCause": "Worn Brake Pads (ব্রেক প্যাড ক্ষয়ে যাওয়া)",
+        "estimatedCost": "৳২,৫০০ - ৳৪,০০০",
+        "immediateAction": "Check brake pads immediately (তাৎক্ষণিকভাবে ব্রেক প্যাড পরীক্ষা করুন)",
         "severity": "High",
-        "preventiveMeasures": ["Check brake fluid", "Avoid hard braking"]
+        "preventiveMeasures": ["Check brake fluid (ব্রেক ফ্লুইড চেক করুন)", "Avoid hard braking (হঠাৎ জোরে ব্রেক করবেন না)"]
       }
       
-      Ensure the cost estimation is realistic for Bangladesh local reliable workshops.
-      Do not include markdown formatting or backticks in the response, just the raw JSON.
+      Ensure technical terms are explained simply in Bangla. 
+      Do not include any markdown formatting or backticks, just the raw JSON string.
     `;
 
     const result = await model.generateContent(prompt);
@@ -78,7 +151,6 @@ export async function POST(req) {
       analysis = JSON.parse(cleanJson);
     } catch (e) {
       console.error("AI JSON Parse Error:", e, "Raw Text:", text);
-      // Fallback if AI fails to return valid JSON
       analysis = {
         possibleCause: "Complex Issue (জটিল সমস্যা)",
         estimatedCost: "৳500 (Consultation)",
@@ -97,9 +169,28 @@ export async function POST(req) {
       vehicleType: vehicleContext?.type || "Car",
     });
 
+    // Logging activity for organizations
+    const teamMember = await TeamMember.findOne({ user: userId });
+    if (teamMember) {
+      await logActivity({
+        organizationId: teamMember.organization,
+        userId: userId,
+        action: "ai_diagnosis",
+        metadata: {
+          possibleCause: analysis.possibleCause,
+          vehicle: vehicleContext?.model,
+        },
+        req,
+      });
+    }
+
     return NextResponse.json({
       success: true,
       data: diagnosis,
+      usage: {
+        current: usageCount + 1,
+        limit: tierLimit,
+      },
     });
   } catch (error) {
     console.error("AI Diagnosis Error:", error);
