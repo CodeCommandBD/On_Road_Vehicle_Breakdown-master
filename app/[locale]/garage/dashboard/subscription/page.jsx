@@ -28,19 +28,18 @@ export default function SubscriptionPage() {
   const [billingCycle, setBillingCycle] = useState("monthly");
   const [now, setNow] = useState(new Date().getTime());
 
-  // Update current time every second for promo countdown
-  useEffect(() => {
-    const updateBangladeshTime = () => {
-      const bdTime = new Date(
-        new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" })
-      );
-      setNow(bdTime.getTime());
-    };
-
-    updateBangladeshTime();
-    const interval = setInterval(updateBangladeshTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
+  // COUNTDOWN TIMER DISABLED - No auto-reload
+  // useEffect(() => {
+  //   const updateBangladeshTime = () => {
+  //     const bdTime = new Date(
+  //       new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" })
+  //     );
+  //     setNow(bdTime.getTime());
+  //   };
+  //   updateBangladeshTime();
+  //   const interval = setInterval(updateBangladeshTime, 1000);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -297,7 +296,9 @@ export default function SubscriptionPage() {
               <div
                 key={plan._id}
                 className={`relative rounded-2xl p-6 transition-all duration-300 flex flex-col min-h-[500px] ${
-                  isStandard
+                  plan.isFeatured
+                    ? "bg-[#1a1a1a] border-2 border-yellow-500/60 shadow-[0_0_40px_rgba(234,179,8,0.25)] scale-105"
+                    : isStandard
                     ? "bg-[#1a1a1a] border-2 border-[#f97316] shadow-[0_0_30px_rgba(249,115,22,0.15)]"
                     : "bg-[#1a1a1a] border border-[#333] hover:border-[#444]"
                 } ${
@@ -306,6 +307,13 @@ export default function SubscriptionPage() {
                     : "hover:translate-y-[-4px]"
                 }`}
               >
+                {/* Featured Badge */}
+                {plan.isFeatured && !isExpired && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 px-6 py-2 rounded-full text-sm font-bold bg-gradient-to-r from-yellow-500 to-orange-500 text-white flex items-center gap-2 shadow-lg animate-pulse z-10">
+                    <Sparkles size={16} fill="white" />⭐ FEATURED
+                  </div>
+                )}
+
                 {/* Expired Overlay */}
                 {isExpired && (
                   <div className="absolute inset-0 z-50 flex items-center justify-center p-4">
