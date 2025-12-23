@@ -33,6 +33,18 @@ export async function GET(req) {
       );
     }
 
+    // Tier Check: Only Premium and Enterprise (and Admins obviously)
+    if (
+      user.role !== "admin" &&
+      user.membershipTier !== "premium" &&
+      user.membershipTier !== "enterprise"
+    ) {
+      return NextResponse.json(
+        { success: false, error: "Advanced Analytics is a Premium feature." },
+        { status: 403 }
+      );
+    }
+
     let query = {};
     let bookingQuery = {};
 

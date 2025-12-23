@@ -13,7 +13,7 @@ const checkAccess = async (user) => {
   if (!user) return false;
   if (user.role === "admin") return true;
 
-  const allowedTiers = ["premium", "enterprise"];
+  const allowedTiers = ["standard", "premium", "enterprise"];
   if (allowedTiers.includes(user.membershipTier)) return true;
 
   // Check if team member of an enterprise organization

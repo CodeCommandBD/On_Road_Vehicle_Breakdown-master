@@ -64,10 +64,10 @@ export async function POST(req) {
     const tier = userDoc?.membershipTier || "free";
 
     const limits = {
-      free: 2,
+      free: 6,
       trial: 2,
-      standard: 10,
-      premium: 50,
+      standard: 500,
+      premium: 9999,
       enterprise: 9999,
     };
 

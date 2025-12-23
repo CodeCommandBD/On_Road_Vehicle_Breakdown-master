@@ -143,6 +143,36 @@ export async function POST(req, { params }) {
       );
     }
 
+    // --- ENFORCE PLAN LIMITS (Premium: 5 Members) ---
+    const owner = await User.findById(organization.owner);
+    const tier = owner?.membershipTier || "free";
+
+    if (tier === "premium" || tier === "standard") {
+      const activeMembersCount = await TeamMember.countDocuments({
+        organization: id,
+        isActive: true,
+      });
+      const pendingInvitationsCount = await TeamInvitation.countDocuments({
+        organization: id,
+        status: "pending",
+        expiresAt: { $gt: new Date() },
+      });
+
+      const totalCount = activeMembersCount + pendingInvitationsCount;
+      const limit = tier === "premium" ? 5 : 2; // Assuming Standard has a lower limit or same
+
+      if (totalCount >= limit) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Member limit reached for your ${tier} plan (${limit} members). Please upgrade to Enterprise for unlimited members.`,
+          },
+          { status: 403 }
+        );
+      }
+    }
+    // -----------------------------------------------
+
     // Check if user already exists as member
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {

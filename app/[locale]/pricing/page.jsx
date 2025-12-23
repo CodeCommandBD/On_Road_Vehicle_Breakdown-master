@@ -13,6 +13,7 @@ import {
   Crown,
   AlertTriangle,
   Clock,
+  CheckCircle,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -100,31 +101,27 @@ export default function PricingPage() {
 
   const getPlanIcon = (tier) => {
     switch (tier) {
+      case "trial":
+        return <CheckCircle className="w-8 h-8 text-green-500" />;
       case "free":
-        return <Sparkles className="w-8 h-8" />;
+        return <CheckCircle className="w-8 h-8 text-green-500" />;
       case "standard":
-        return <TrendingUp className="w-8 h-8" />;
+        return <CheckCircle className="w-8 h-8 text-green-500" />;
       case "premium":
-        return <Crown className="w-8 h-8" />;
+        return <CheckCircle className="w-8 h-8 text-green-500" />;
       case "enterprise":
-        return <Users className="w-8 h-8" />;
+        return <CheckCircle className="w-8 h-8 text-green-500" />;
       default:
-        return <Check className="w-8 h-8" />;
+        return <CheckCircle className="w-8 h-8 text-green-500" />;
     }
   };
 
   const getPlanColor = (tier) => {
     switch (tier) {
-      case "free":
-        return "from-slate-500 to-slate-600";
       case "standard":
-        return "from-green-500 to-green-600";
-      case "premium":
-        return "from-orange-500 to-red-600";
-      case "enterprise":
-        return "from-purple-600 to-purple-800";
+        return "border-[#f97316]";
       default:
-        return "from-gray-500 to-gray-600";
+        return "border-[#333]";
     }
   };
 
@@ -216,14 +213,18 @@ export default function PricingPage() {
           >
             {t("yearly")}
             <span className="absolute -top-3 -right-2 bg-green-500 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded-full animate-bounce shadow-lg">
-              SAVE 25%
+              SAVE {planType === "garage" ? "20" : "25"}%
             </span>
           </button>
         </div>
       </div>
 
       {/* Pricing Cards */}
-      <div className="max-w-[95rem] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 px-2">
+      <div
+        className={`max-w-[95rem] mx-auto grid grid-cols-1 md:grid-cols-2 ${
+          planType === "user" ? "lg:grid-cols-5" : "lg:grid-cols-2"
+        } gap-4 lg:gap-6 px-2`}
+      >
         {plans.map((plan) => {
           const price =
             billingCycle === "monthly" ? plan.price.monthly : plan.price.yearly;
@@ -235,7 +236,8 @@ export default function PricingPage() {
           // Psychological Triggers
           const isStandard = plan.tier === "standard";
           const isPremium = plan.tier === "premium";
-          const isFree = plan.tier === "free";
+          const isFree = plan.tier === "free" || plan.tier === "trial";
+          const isTrial = plan.tier === "trial";
 
           // Timer Calculation - Robust Logic
           let timeLeft = "";
@@ -268,16 +270,14 @@ export default function PricingPage() {
           return (
             <div
               key={plan._id}
-              className={`relative rounded-3xl p-6 shadow-2xl transition-all duration-500 flex flex-col ${
+              className={`relative rounded-2xl p-8 transition-all duration-300 flex flex-col min-h-[500px] ${
                 isStandard
-                  ? "bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-green-500/50 scale-105 z-10 shadow-green-900/40"
-                  : isPremium
-                  ? "bg-gray-800 border-2 border-orange-500/30 shadow-orange-900/20"
-                  : "bg-gray-800 border border-gray-700"
+                  ? "bg-[#1a1a1a] border-2 border-[#f97316] shadow-[0_0_30px_rgba(249,115,22,0.15)]"
+                  : "bg-[#1a1a1a] border border-[#333] hover:border-[#444]"
               } ${
                 isExpired
-                  ? "opacity-60 scale-95 saturate-0 pointer-events-none"
-                  : "hover:scale-[1.07] hover:z-20 group"
+                  ? "opacity-60 saturate-0 pointer-events-none"
+                  : "hover:translate-y-[-4px]"
               }`}
             >
               {/* Expired Overlay */}
@@ -290,18 +290,9 @@ export default function PricingPage() {
               )}
 
               {isStandard && !isExpired && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-full text-center z-10">
-                  <span className="bg-green-500 text-black px-6 py-1.5 rounded-full text-xs font-bold shadow-lg uppercase tracking-wide flex items-center justify-center gap-1 w-max mx-auto animate-bounce">
-                    <TrendingUp className="w-3 h-3" /> MOST POPULAR
-                  </span>
-                </div>
-              )}
-
-              {isPremium && !isExpired && (
-                <div className="absolute -top-3 right-4 z-10">
-                  <span className="bg-red-500 text-white border border-white/20 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-red-900/40">
-                    <AlertTriangle className="w-3 h-3 animate-pulse" /> Limited
-                    Slots
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-[#f97316] text-white px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                    Most Popular
                   </span>
                 </div>
               )}
@@ -309,50 +300,32 @@ export default function PricingPage() {
               {/* Header Section */}
               <div className="mb-6 relative">
                 <div
-                  className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${getPlanColor(
+                  className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${getPlanColor(
                     plan.tier
-                  )} flex items-center justify-center mb-6 text-white shadow-xl group-hover:rotate-6 transition-transform`}
+                  )} flex items-center justify-center mb-8 text-white shadow-2xl group-hover:scale-110 transition-transform`}
                 >
                   {getPlanIcon(plan.tier)}
                 </div>
 
-                <h3 className="text-3xl font-black text-white mb-2 tracking-tight">
+                <h3 className="text-xl font-bold text-white mb-1 uppercase tracking-wider">
                   {plan.name}
                 </h3>
-
-                {/* Robust Timer Display */}
-                {plan.promoEndsAt && !isExpired && (
-                  <div className="mt-2 mb-4 inline-flex items-center gap-3 bg-red-500/10 border border-red-500/40 px-4 py-2 rounded-xl group-hover:bg-red-500/20 transition-colors">
-                    <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
-                    <div className="flex flex-col">
-                      <span className="text-[10px] text-red-300 font-bold uppercase tracking-widest">
-                        Ending In
-                      </span>
-                      <span className="text-red-400 font-mono text-lg font-black tracking-tighter">
-                        {timeLeft}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                <p className="text-sm text-gray-400 h-10 line-clamp-2 leading-relaxed">
-                  {plan.description}
-                </p>
               </div>
 
-              {/* Price */}
-              <div className="mb-8 p-6 bg-black/30 rounded-2xl border border-white/5 shadow-inner">
+              {/* Price Section */}
+              <div className="mb-6">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-5xl font-black text-white tracking-tighter">
-                    {plan.tier === "enterprise" ? "Custom" : `৳${monthlyPrice}`}
+                  <span className="text-4xl font-bold text-white">
+                    {plan.tier === "enterprise" ? "Custom" : `৳${price}`}
                   </span>
-                  {plan.tier !== "enterprise" && (
-                    <span className="text-sm text-gray-500 font-bold uppercase">
-                      /mo
-                    </span>
-                  )}
                 </div>
-                {billingCycle === "yearly" && (
+                {plan.tier !== "enterprise" && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    per {billingCycle === "yearly" ? "year" : "month"}
+                  </p>
+                )}
+
+                {billingCycle === "yearly" && plan.tier !== "trial" && (
                   <div className="mt-3 flex items-center gap-2">
                     <span className="text-xs text-green-400 font-black bg-green-500/10 px-2 py-1 rounded text-nowrap">
                       SAVE {plan.discount || 25}%
@@ -362,28 +335,19 @@ export default function PricingPage() {
                     </span>
                   </div>
                 )}
+                {isTrial && (
+                  <div className="mt-3 text-xs text-blue-400 font-bold bg-blue-500/10 px-3 py-2 rounded-lg border border-blue-500/20">
+                    * Credit Card Info Required
+                  </div>
+                )}
               </div>
 
               {/* Features List */}
               <ul className="space-y-4 mb-8 flex-grow">
                 {plan.features.map((feature, idx) => (
-                  <li key={idx} className="flex items-start gap-4 group/item">
-                    <div
-                      className={`mt-1 p-1 rounded-full transition-colors ${
-                        isStandard
-                          ? "bg-green-500/20 group-hover/item:bg-green-500/40"
-                          : "bg-gray-700 group-hover/item:bg-gray-600"
-                      }`}
-                    >
-                      <Check
-                        className={`w-3 h-3 ${
-                          isStandard ? "text-green-400" : "text-gray-300"
-                        }`}
-                      />
-                    </div>
-                    <span className="text-sm text-gray-300 font-medium leading-tight group-hover/item:text-white transition-colors">
-                      {feature}
-                    </span>
+                  <li key={idx} className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
+                    <span className="text-sm text-white/80">{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -392,22 +356,19 @@ export default function PricingPage() {
               <button
                 onClick={() => handleSelectPlan(plan._id, plan.tier)}
                 disabled={isExpired}
-                className={`w-full py-5 rounded-2xl font-black text-sm transition-all duration-300 transform mt-auto flex items-center justify-center gap-2 tracking-widest uppercase ${
-                  isExpired
-                    ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                    : isStandard
-                    ? "bg-green-500 text-black hover:bg-green-400 hover:-translate-y-1 hover:shadow-[0_10px_40px_rgba(34,197,94,0.4)]"
-                    : isPremium
-                    ? "bg-gradient-to-r from-orange-500 to-red-600 text-white hover:from-orange-600 hover:to-red-700 hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(249,115,22,0.4)]"
-                    : "bg-white text-black hover:bg-gray-100 hover:-translate-y-1 hover:shadow-xl"
+                className={`w-full py-4 rounded-xl font-bold text-sm transition-all duration-300 ${
+                  isStandard
+                    ? "bg-gradient-to-r from-[#f97316] to-[#a855f7] text-white hover:brightness-110 shadow-lg shadow-orange-500/20"
+                    : "bg-[#333] text-white hover:bg-[#444]"
                 }`}
               >
                 {isExpired
                   ? "OFFER EXPIRED"
+                  : isTrial
+                  ? "Start Trial"
                   : isFree
-                  ? "Get Started"
+                  ? "Current Plan"
                   : "Upgrade Now"}
-                {!isExpired && <ArrowRight className="w-4 h-4" />}
               </button>
             </div>
           );

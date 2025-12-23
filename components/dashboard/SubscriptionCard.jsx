@@ -246,6 +246,23 @@ export default function SubscriptionCard() {
           </div>
         </div>
 
+        {/* Dedicated Support indicator for Premium/Enterprise */}
+        {(plan.tier === "premium" || plan.tier === "enterprise") && (
+          <div className="mb-6 relative z-10">
+            <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm border border-white/5 flex items-center gap-3">
+              <div className="bg-green-500/20 p-2 rounded-lg">
+                <CheckCircle className="w-4 h-4 text-green-400" />
+              </div>
+              <div>
+                <p className="text-white font-bold text-xs">
+                  Dedicated Account Manager
+                </p>
+                <p className="text-white/60 text-[10px]">VIP Support Active</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Upgrade Nudge (Psychological) */}
         <div className="mt-auto relative z-10">
           {isFree || isTrial || isHighUsage ? (

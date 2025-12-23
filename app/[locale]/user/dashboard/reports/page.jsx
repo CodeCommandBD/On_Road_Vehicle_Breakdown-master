@@ -50,6 +50,7 @@ export default function ReportsPage() {
     companyName: "",
     logoUrl: "",
     primaryColor: "#EF4444",
+    removeWatermark: false,
   });
   const [reportData, setReportData] = useState(null);
   const [filterDays, setFilterDays] = useState(30);
@@ -63,6 +64,7 @@ export default function ReportsPage() {
         companyName: user.branding.companyName || "",
         logoUrl: user.branding.logoUrl || "",
         primaryColor: user.branding.primaryColor || "#EF4444",
+        removeWatermark: user.branding.removeWatermark || false,
       });
     }
   }, [user]);
@@ -182,7 +184,11 @@ export default function ReportsPage() {
       doc.setFontSize(10);
       doc.setTextColor(150);
       doc.text("Page " + i + " of " + pageCount, 105, 287, { align: "center" });
-      doc.text(`Powered by ${brandName}`, 105, 292, { align: "center" });
+
+      // Watermark logic
+      if (!(isEnterprise && brandingForm.removeWatermark)) {
+        doc.text(`Powered by ${brandName}`, 105, 292, { align: "center" });
+      }
     }
 
     doc.save(`${brandName.replace(/\s+/g, "_")}_Report.pdf`);
@@ -529,6 +535,34 @@ export default function ReportsPage() {
                     />
                   </div>
                 </div>
+
+                {/* White-label Toggle */}
+                {isEnterprise && (
+                  <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
+                    <div>
+                      <p className="text-sm font-medium text-white">
+                        White-labeling
+                      </p>
+                      <p className="text-xs text-white/40">
+                        Remove "Powered by" branding from PDF
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        checked={brandingForm.removeWatermark}
+                        onChange={(e) =>
+                          setBrandingForm({
+                            ...brandingForm,
+                            removeWatermark: e.target.checked,
+                          })
+                        }
+                      />
+                      <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+                )}
 
                 <button
                   type="submit"
