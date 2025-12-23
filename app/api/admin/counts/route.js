@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db/connect";
 import ContactInquiry from "@/lib/db/models/ContactInquiry";
+import User from "@/lib/db/models/User";
+import Garage from "@/lib/db/models/Garage";
+import Booking from "@/lib/db/models/Booking";
+import SOS from "@/lib/db/models/SOS";
 import { verifyToken } from "@/lib/utils/auth";
 
 async function checkAdmin(request) {
@@ -12,7 +16,7 @@ async function checkAdmin(request) {
 
 /**
  * GET /api/admin/counts
- * Get counts for sidebar badges (admin only)
+ * Get comprehensive dashboard statistics (admin only)
  */
 export async function GET(request) {
   try {
@@ -26,42 +30,102 @@ export async function GET(request) {
 
     await connectDB();
 
-    // Get new inquiries count (status = new)
-    const newInquiriesCount = await ContactInquiry.countDocuments({
-      status: "new",
-    });
+    // Date calculations
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
 
-    // Get pending support tickets count
-    let pendingSupportCount = 0;
-    try {
-      const Support = (await import("@/lib/db/models/Support")).default;
-      pendingSupportCount = await Support.countDocuments({
-        status: "pending",
-      });
-    } catch (supportError) {
-      console.log("Support model not found, skipping support count");
-    }
+    // Parallel queries for performance
+    const [
+      totalUsers,
+      usersLastMonth,
+      usersPreviousMonth,
+      totalGarages,
+      verifiedGarages,
+      garagesLastMonth,
+      garagesPreviousMonth,
+      totalBookings,
+      bookingsLastMonth,
+      bookingsPreviousMonth,
+      pendingBookings,
+      activeSOS,
+      newInquiries,
+      pendingSupport,
+    ] = await Promise.all([
+      // Users
+      User.countDocuments(),
+      User.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
+      User.countDocuments({
+        createdAt: { $gte: sixtyDaysAgo, $lt: thirtyDaysAgo },
+      }),
 
-    // Messages count - assuming you have a Message model
-    // If not, we'll skip this for now
-    let unreadMessagesCount = 0;
-    try {
-      const Message = (await import("@/lib/db/models/Message")).default;
-      unreadMessagesCount = await Message.countDocuments({
-        isRead: false,
-        recipientRole: "admin",
-      });
-    } catch (messageError) {
-      // Message model might not exist yet
-      console.log("Message model not found, skipping messages count");
-    }
+      // Garages
+      Garage.countDocuments(),
+      Garage.countDocuments({ isVerified: true }),
+      Garage.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
+      Garage.countDocuments({
+        createdAt: { $gte: sixtyDaysAgo, $lt: thirtyDaysAgo },
+      }),
+
+      // Bookings
+      Booking.countDocuments(),
+      Booking.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
+      Booking.countDocuments({
+        createdAt: { $gte: sixtyDaysAgo, $lt: thirtyDaysAgo },
+      }),
+      Booking.countDocuments({ status: "pending" }),
+
+      // SOS
+      SOS.countDocuments({ status: { $in: ["pending", "assigned"] } }),
+
+      // Inquiries
+      ContactInquiry.countDocuments({ status: "new" }),
+
+      // Support tickets
+      Support.countDocuments({ status: "pending" }).catch(() => 0),
+    ]);
+
+    // Calculate growth percentages
+    const calculateGrowth = (current, previous) => {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      return Math.round(((current - previous) / previous) * 100);
+    };
+
+    const userGrowth = calculateGrowth(usersLastMonth, usersPreviousMonth);
+    const garageGrowth = calculateGrowth(
+      garagesLastMonth,
+      garagesPreviousMonth
+    );
+    const bookingGrowth = calculateGrowth(
+      bookingsLastMonth,
+      bookingsPreviousMonth
+    );
 
     return NextResponse.json({
       success: true,
-      counts: {
-        inquiries: newInquiriesCount,
-        support: pendingSupportCount,
-        messages: unreadMessagesCount,
+      data: {
+        users: {
+          total: totalUsers,
+          growth: userGrowth,
+          newThisMonth: usersLastMonth,
+        },
+        garages: {
+          total: totalGarages,
+          verified: verifiedGarages,
+          growth: garageGrowth,
+          newThisMonth: garagesLastMonth,
+        },
+        bookings: {
+          total: totalBookings,
+          pending: pendingBookings,
+          growth: bookingGrowth,
+          thisMonth: bookingsLastMonth,
+        },
+        sos: {
+          active: activeSOS,
+        },
+        inquiries: newInquiries,
+        support: pendingSupport,
       },
     });
   } catch (error) {
@@ -72,3 +136,15 @@ export async function GET(request) {
     );
   }
 }
+
+// Import Support model dynamically to avoid errors if it doesn't exist
+const Support = {
+  countDocuments: async () => {
+    try {
+      const SupportModel = (await import("@/lib/db/models/Support")).default;
+      return SupportModel.countDocuments.apply(SupportModel, arguments);
+    } catch {
+      return 0;
+    }
+  },
+};
