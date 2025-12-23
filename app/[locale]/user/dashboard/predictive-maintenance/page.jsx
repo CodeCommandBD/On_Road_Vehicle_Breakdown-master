@@ -204,7 +204,9 @@ export default function PredictiveMaintenancePage() {
                 <div className="text-sm">
                   <span className="text-gray-400">Monthly Usage: </span>
                   <span className="text-white font-bold">
-                    {usage.current} / {usage.limit}
+                    {usage.limit >= 9999
+                      ? "Unlimited"
+                      : `${usage.current} / ${usage.limit}`}
                   </span>
                 </div>
               </div>

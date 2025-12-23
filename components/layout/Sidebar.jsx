@@ -89,8 +89,7 @@ export default function Sidebar() {
         label: "Automation",
         icon: Activity,
         locked:
-          user?.membershipTier !== "premium" &&
-          user?.membershipTier !== "enterprise",
+          user?.membershipTier === "free" || user?.membershipTier === "trial",
       },
       { href: "/user/dashboard/profile", label: t("profile"), icon: User },
       {
@@ -102,7 +101,9 @@ export default function Sidebar() {
         href: "/user/dashboard/reports",
         label: "Reports",
         icon: FileText,
-        locked: user?.membershipTier !== "enterprise",
+        locked:
+          user?.membershipTier !== "premium" &&
+          user?.membershipTier !== "enterprise",
       },
       {
         href: "/user/dashboard/support",

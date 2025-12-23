@@ -14,6 +14,32 @@ import { toast } from "react-toastify";
 import { updateUser } from "@/store/slices/authSlice";
 import { useTranslations } from "next-intl";
 
+// Internal Countdown Component for SLA
+const Countdown = ({ date }) => {
+  const [timeLeft, setTimeLeft] = useState("");
+
+  useEffect(() => {
+    const calculate = () => {
+      const difference = new Date(date) - new Date();
+      if (difference <= 0) {
+        setTimeLeft("EXPIRED");
+        return;
+      }
+      const mins = Math.floor((difference / 1000 / 60) % 60);
+      const secs = Math.floor((difference / 1000) % 60);
+      setTimeLeft(`${mins}m ${secs}s`);
+    };
+
+    calculate();
+    const interval = setInterval(calculate, 1000);
+    return () => clearInterval(interval);
+  }, [date]);
+
+  return (
+    <span className="text-xs font-mono text-white font-bold">{timeLeft}</span>
+  );
+};
+
 export default function UserDashboard({ user }) {
   const t = useTranslations("SOS");
   const dashT = useTranslations("Dashboard");
@@ -157,6 +183,19 @@ export default function UserDashboard({ user }) {
                       garageName: activeSOS.assignedGarage?.name,
                     })}
               </p>
+
+              {/* SLA Deadline Countdown */}
+              {activeSOS.slaDeadline && (
+                <div className="mt-2 flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 px-2 py-1 bg-white/5 rounded-md border border-white/5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                    <span className="text-[10px] font-bold text-white/60 uppercase tracking-tighter">
+                      SLA Deadline:
+                    </span>
+                    <Countdown date={activeSOS.slaDeadline} />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

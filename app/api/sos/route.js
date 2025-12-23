@@ -28,11 +28,22 @@ export async function POST(request) {
     const body = await request.json();
 
     const token = request.cookies.get("token")?.value;
-    const decoded = await verifyToken(token);
+    const apiKey = request.headers.get("x-api-key");
+
+    let decoded = await verifyToken(token);
+
+    // Fallback to API Key if token is missing or invalid
+    if (!decoded && apiKey) {
+      decoded = await verifyApiKey(apiKey);
+    }
 
     if (!decoded) {
       return NextResponse.json(
-        { success: false, message: "Unauthorized. Please login again." },
+        {
+          success: false,
+          message:
+            "Unauthorized. Please login again or provide a valid API Key.",
+        },
         { status: 401 }
       );
     }
@@ -209,15 +220,16 @@ export async function POST(request) {
 
     // --- CALCULATE SLA & PRIORITY ---
     const planTier = plan.tier || "free";
-    let priority = "normal";
-    let slaMinutes = 60; // Default Standard
+    const responseTimeLimit = plan.limits?.responseTime || 60; // Minutes
 
-    if (planTier === "enterprise") {
+    let priority = "normal";
+    if (planTier === "enterprise" || planTier === "premium") {
       priority = "critical";
-      slaMinutes = 5;
+    } else if (planTier === "standard") {
+      priority = "high";
     }
 
-    const slaDeadline = new Date(Date.now() + slaMinutes * 60000);
+    const slaDeadline = new Date(Date.now() + responseTimeLimit * 60000);
     // --------------------------------
 
     const sosAlert = await SOS.create({

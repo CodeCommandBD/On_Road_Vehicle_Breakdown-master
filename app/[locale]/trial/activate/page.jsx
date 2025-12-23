@@ -4,7 +4,14 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { selectIsAuthenticated } from "@/store/slices/authSlice";
-import { Sparkles, Check, Loader2, Clock } from "lucide-react";
+import {
+  Sparkles,
+  Check,
+  Loader2,
+  Clock,
+  CreditCard,
+  ShieldCheck,
+} from "lucide-react";
 
 export default function TrialActivatePage() {
   const router = useRouter();
@@ -58,7 +65,8 @@ export default function TrialActivatePage() {
             Start Your Free Trial
           </h1>
           <p className="text-xl text-gray-300">
-            Experience our Standard plan features for 7 days, absolutely free!
+            Experience full premium features for 7 days. Verification via credit
+            card is required to prevent misuse.
           </p>
         </div>
 
@@ -114,17 +122,81 @@ export default function TrialActivatePage() {
               </div>
             </div>
 
-            <div className="flex items-start gap-4 p-4 bg-gray-700/50 rounded-lg">
-              <Check className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
+            <div className="flex items-start gap-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <ShieldCheck className="w-6 h-6 text-blue-400 flex-shrink-0 mt-1" />
               <div>
                 <h3 className="text-white font-semibold mb-1">
-                  No Credit Card Required
+                  Card Verification Required
                 </h3>
                 <p className="text-gray-400 text-sm">
-                  Start your trial without any payment information
+                  We'll do a ৳0 authorization to verify your identity.
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Card Info Placeholder Section */}
+        <div className="bg-gray-800 rounded-2xl p-8 mb-8 border border-white/5 shadow-inner">
+          <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+            <CreditCard className="w-6 h-6 text-blue-500" />
+            Secure Verification
+          </h2>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-gray-400 text-xs font-bold uppercase mb-2 tracking-widest">
+                Card Holder Name
+              </label>
+              <input
+                type="text"
+                placeholder="JOHN DOE"
+                className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500/50 transition-colors"
+                disabled
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-gray-400 text-xs font-bold uppercase mb-2 tracking-widest">
+                  Card Number
+                </label>
+                <input
+                  type="text"
+                  placeholder="**** **** **** ****"
+                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500/50 transition-colors"
+                  disabled
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gray-400 text-xs font-bold uppercase mb-2 tracking-widest">
+                    Expiry
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="MM/YY"
+                    className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500/50 transition-colors"
+                    disabled
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-400 text-xs font-bold uppercase mb-2 tracking-widest">
+                    CVV
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="***"
+                    className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500/50 transition-colors"
+                    disabled
+                  />
+                </div>
+              </div>
+            </div>
+
+            <p className="text-[10px] text-gray-500 text-center mt-4 uppercase tracking-tighter">
+              🔒 Encrypted & Secured by SSLCommerz
+            </p>
           </div>
         </div>
 

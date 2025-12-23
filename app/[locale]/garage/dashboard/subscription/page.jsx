@@ -154,35 +154,35 @@ export default function SubscriptionPage() {
             return (
               <div
                 key={plan._id}
-                className={`border rounded-xl p-6 relative transition-all ${
+                className={`relative rounded-2xl p-8 transition-all duration-300 flex flex-col min-h-[450px] ${
                   plan.isFeatured
-                    ? "bg-gradient-to-br from-orange-500/10 to-purple-500/10 border-orange-500"
-                    : "bg-white/5 border-white/10 hover:border-orange-500/50"
+                    ? "bg-[#1a1a1a] border-2 border-[#f97316] shadow-[0_0_30px_rgba(249,115,22,0.15)]"
+                    : "bg-[#1a1a1a] border border-[#333] hover:border-[#444]"
                 }`}
               >
                 {plan.isFeatured && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded-full">
-                      {plan.highlightFeature || "POPULAR"}
+                    <span className="px-4 py-1 bg-[#f97316] text-white text-[10px] font-bold rounded-full uppercase tracking-wider">
+                      Most Popular
                     </span>
                   </div>
                 )}
 
-                <h3 className="text-lg font-bold text-white mb-2 uppercase">
+                <h3 className="text-xl font-bold text-white mb-1 uppercase tracking-wider">
                   {plan.name}
                 </h3>
-                <div className="text-3xl font-bold text-white mb-1">
+                <div className="text-4xl font-bold text-white mb-1">
                   ৳{plan.price.monthly}
                 </div>
-                <p className="text-white/60 text-sm mb-6">per month</p>
+                <p className="text-sm text-gray-500 mb-6">per month</p>
 
-                <ul className="space-y-3 mb-6">
+                <ul className="space-y-4 mb-8 flex-grow">
                   {plan.features.map((feature, idx) => (
                     <li
                       key={idx}
-                      className="flex items-center gap-2 text-white/80 text-sm"
+                      className="flex items-center gap-3 text-white/80 text-sm"
                     >
-                      <CheckCircle className="w-5 h-5 text-green-400 shrink-0" />
+                      <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
                       <span>{feature}</span>
                     </li>
                   ))}
@@ -191,31 +191,31 @@ export default function SubscriptionPage() {
                 {isCurrent ? (
                   <button
                     disabled
-                    className="block w-full py-3 text-center bg-white/10 text-white/40 rounded-lg cursor-not-allowed font-medium"
+                    className="w-full py-4 rounded-xl bg-[#333] text-white/40 font-bold text-sm cursor-not-allowed"
                   >
                     Current Plan
                   </button>
                 ) : plan.tier === "enterprise" ? (
                   <Link
                     href="/contact"
-                    className="block w-full py-3 text-center bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors font-medium"
+                    className="w-full py-4 text-center bg-[#333] hover:bg-[#444] text-white rounded-xl transition-colors font-bold text-sm"
                   >
                     Contact Sales
                   </Link>
                 ) : plan.tier === "trial" ? (
                   <Link
                     href="/trial/activate"
-                    className="block w-full py-3 text-center bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors font-medium"
+                    className="w-full py-4 text-center bg-[#333] hover:bg-[#444] text-white rounded-xl transition-colors font-bold text-sm"
                   >
                     Start Trial
                   </Link>
                 ) : (
                   <Link
                     href={`/checkout?plan=${plan.tier}&cycle=monthly`}
-                    className={`block w-full py-3 text-center rounded-lg transition-all font-medium ${
+                    className={`w-full py-4 text-center rounded-xl transition-all font-bold text-sm ${
                       plan.isFeatured
-                        ? "bg-gradient-to-r from-orange-500 to-purple-500 hover:shadow-lg hover:shadow-orange-500/30 text-white"
-                        : "bg-white/10 hover:bg-white/20 text-white"
+                        ? "bg-gradient-to-r from-[#f97316] to-[#a855f7] text-white hover:brightness-110 shadow-lg shadow-orange-500/20"
+                        : "bg-[#333] hover:bg-[#444] text-white"
                     }`}
                   >
                     Upgrade Now
