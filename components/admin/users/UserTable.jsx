@@ -20,6 +20,9 @@ export default function UserTable() {
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [openDropdown, setOpenDropdown] = useState(null); // Track which dropdown is open
 
   // Contract Modal State
   const [showContractModal, setShowContractModal] = useState(false);
@@ -102,11 +105,20 @@ export default function UserTable() {
     fetchUsers();
   }, []);
 
-  const filteredUsers = users.filter(
-    (user) =>
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      user.email.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesRole = roleFilter === "all" || user.role === roleFilter;
+
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "active" && user.isActive !== false) ||
+      (statusFilter === "banned" && user.isActive === false);
+
+    return matchesSearch && matchesRole && matchesStatus;
+  });
 
   const handleDelete = async (id) => {
     if (
@@ -156,20 +168,46 @@ export default function UserTable() {
   return (
     <div className="bg-[#1E1E1E] rounded-xl border border-white/5 overflow-hidden">
       {/* Table Header / Toolbar */}
-      <div className="p-6 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h2 className="text-xl font-bold text-white">All Users</h2>
-        <div className="relative">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40"
-            size={18}
-          />
-          <input
-            type="text"
-            placeholder="Search users..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-white text-sm focus:outline-none focus:border-[#FF532D]"
-          />
+      <div className="p-6 border-b border-white/10">
+        <h2 className="text-xl font-bold text-white mb-4">All Users</h2>
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Search */}
+          <div className="relative flex-1">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40"
+              size={18}
+            />
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#FF532D]"
+            />
+          </div>
+
+          {/* Role Filter */}
+          <select
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            className="bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#FF532D] min-w-[140px]"
+          >
+            <option value="all">All Roles</option>
+            <option value="user">User</option>
+            <option value="garage">Garage</option>
+            <option value="admin">Admin</option>
+          </select>
+
+          {/* Status Filter */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#FF532D] min-w-[140px]"
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="banned">Banned</option>
+          </select>
         </div>
       </div>
 
@@ -244,36 +282,85 @@ export default function UserTable() {
                   {new Date(user.createdAt).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="relative">
                     <button
-                      className="p-2 text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                      title="View Details"
+                      onClick={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setOpenDropdown(
+                          openDropdown === user._id
+                            ? null
+                            : {
+                                id: user._id,
+                                x: rect.right - 180,
+                                y: rect.bottom + 5,
+                              }
+                        );
+                      }}
+                      className="p-2 hover:bg-white/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                     >
-                      <Eye size={16} />
+                      <MoreVertical size={18} className="text-white/60" />
                     </button>
-                    <button
-                      onClick={() =>
-                        handleAdjustPoints(user._id, user.rewardPoints)
-                      }
-                      className="p-2 text-white/40 hover:text-orange-500 hover:bg-orange-500/10 rounded-lg transition-colors"
-                      title="Adjust Points"
-                    >
-                      <Award size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(user._id)}
-                      className="p-2 text-white/40 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-                      title="Delete User"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                    <button
-                      onClick={() => openContractModal(user)}
-                      className="p-2 text-white/40 hover:text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors"
-                      title="Manage Contract"
-                    >
-                      <FileText size={16} />
-                    </button>
+
+                    {/* Dropdown Menu */}
+                    {openDropdown?.id === user._id && (
+                      <>
+                        {/* Backdrop */}
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={() => setOpenDropdown(null)}
+                        ></div>
+
+                        {/* Dropdown Content */}
+                        <div
+                          className="fixed z-50 bg-[#1A1A1A] border border-white/20 rounded-xl shadow-2xl min-w-[180px] overflow-hidden"
+                          style={{
+                            left: `${openDropdown.x}px`,
+                            top: `${openDropdown.y}px`,
+                          }}
+                        >
+                          <button
+                            onClick={() => {
+                              setOpenDropdown(null);
+                              // View details action
+                            }}
+                            className="w-full px-4 py-3 text-left text-white/80 hover:bg-white/10 transition-colors flex items-center gap-2 text-sm"
+                          >
+                            <Eye size={16} />
+                            View Details
+                          </button>
+                          <button
+                            onClick={() => {
+                              handleAdjustPoints(user._id, user.rewardPoints);
+                              setOpenDropdown(null);
+                            }}
+                            className="w-full px-4 py-3 text-left text-orange-400 hover:bg-orange-500/10 transition-colors flex items-center gap-2 text-sm border-t border-white/10"
+                          >
+                            <Award size={16} />
+                            Adjust Points
+                          </button>
+                          <button
+                            onClick={() => {
+                              openContractModal(user);
+                              setOpenDropdown(null);
+                            }}
+                            className="w-full px-4 py-3 text-left text-blue-400 hover:bg-blue-500/10 transition-colors flex items-center gap-2 text-sm border-t border-white/10"
+                          >
+                            <FileText size={16} />
+                            Manage Contract
+                          </button>
+                          <button
+                            onClick={() => {
+                              handleDelete(user._id);
+                              setOpenDropdown(null);
+                            }}
+                            className="w-full px-4 py-3 text-left text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2 text-sm border-t border-white/10"
+                          >
+                            <Trash2 size={16} />
+                            Delete User
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </td>
               </tr>

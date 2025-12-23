@@ -20,6 +20,7 @@ import {
   Mail,
   BarChart3,
   Zap,
+  Crown,
 } from "lucide-react";
 
 const menuItems = [
@@ -37,6 +38,11 @@ const menuItems = [
   },
   { name: "Feature Usage", href: "/admin/features/usage", icon: Zap },
   { name: "Plans", href: "/admin/plans", icon: DollarSign },
+  {
+    name: "Subscriptions",
+    href: "/admin/dashboard/subscriptions",
+    icon: Crown,
+  },
   { name: "Contracts", href: "/admin/contracts", icon: FileText },
   {
     name: "Inquiries",

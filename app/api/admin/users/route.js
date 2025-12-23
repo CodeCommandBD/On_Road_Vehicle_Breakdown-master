@@ -5,10 +5,31 @@ import PointsRecord from "@/lib/db/models/PointsRecord";
 import { verifyToken } from "@/lib/utils/auth";
 
 async function checkAdmin(request) {
-  const token = request.cookies.get("token")?.value;
-  const decoded = await verifyToken(token);
-  if (!decoded || decoded.role !== "admin") return null;
-  return decoded;
+  try {
+    const token = request.cookies.get("token")?.value;
+    if (!token) {
+      console.log("No token found in cookies");
+      return null;
+    }
+
+    const decoded = await verifyToken(token);
+    console.log("Decoded token:", decoded?.email, "role:", decoded?.role);
+
+    if (!decoded) {
+      console.log("Token verification failed");
+      return null;
+    }
+
+    if (decoded.role !== "admin") {
+      console.log("User is not admin, role is:", decoded.role);
+      return null;
+    }
+
+    return decoded;
+  } catch (error) {
+    console.error("checkAdmin error:", error);
+    return null;
+  }
 }
 
 export async function GET(request) {
@@ -94,6 +115,47 @@ export async function PUT(request) {
     });
   } catch (error) {
     console.error("Admin User Update Error:", error);
+    return NextResponse.json(
+      { success: false, message: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request) {
+  try {
+    const admin = await checkAdmin(request);
+    if (!admin)
+      return NextResponse.json(
+        { success: false, message: "Forbidden" },
+        { status: 403 }
+      );
+
+    await connectDB();
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get("userId");
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, message: "User ID required" },
+        { status: 400 }
+      );
+    }
+
+    const user = await User.findByIdAndDelete(userId);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "User deleted successfully",
+    });
+  } catch (error) {
+    console.error("Admin User Delete Error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }
