@@ -144,6 +144,22 @@ export default function Sidebar() {
         icon: MessageSquare,
       },
       {
+        href: "/garage/dashboard/analytics",
+        label: "Analytics",
+        icon: TrendingUp,
+        locked:
+          user?.garage?.membershipTier !== "premium" &&
+          user?.garage?.membershipTier !== "enterprise",
+      },
+      {
+        href: "/garage/dashboard/team",
+        label: "Team Management",
+        icon: Users,
+        locked:
+          user?.garage?.membershipTier !== "premium" &&
+          user?.garage?.membershipTier !== "enterprise",
+      },
+      {
         href: "/garage/dashboard/subscription",
         label: t("subscription"),
         icon: CreditCard,
