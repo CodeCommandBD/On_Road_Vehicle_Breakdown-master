@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import {
   Users,
+  Building2,
   Search,
   Filter,
   ChevronLeft,
@@ -14,13 +15,15 @@ import {
   Edit,
   Calendar,
   Loader2,
+  MoreVertical,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import Link from "next/link";
 
-export default function UsersSubscriptionPage() {
-  const [users, setUsers] = useState([]);
+export default function SubscriptionsPage() {
+  const [activeTab, setActiveTab] = useState("users"); // 'users' or 'garages'
+  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -33,19 +36,20 @@ export default function UsersSubscriptionPage() {
     status: "all",
   });
   const [showModal, setShowModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null);
   const [modalAction, setModalAction] = useState(null);
   const [modalData, setModalData] = useState({
     membershipTier: "",
     membershipExpiry: "",
   });
   const [processing, setProcessing] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState(null); // Track which dropdown is open
 
   useEffect(() => {
-    fetchUsers();
-  }, [pagination.page, filters]);
+    fetchData();
+  }, [pagination.page, filters, activeTab]);
 
-  const fetchUsers = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -55,26 +59,33 @@ export default function UsersSubscriptionPage() {
         ...(filters.status !== "all" && { status: filters.status }),
       });
 
-      const res = await axios.get(`/api/admin/users/subscription?${params}`);
+      const endpoint =
+        activeTab === "users"
+          ? `/api/admin/users/subscription?${params}`
+          : `/api/admin/garages/subscription?${params}`;
+
+      const res = await axios.get(endpoint);
       if (res.data.success) {
-        setUsers(res.data.data.users);
+        setData(
+          activeTab === "users" ? res.data.data.users : res.data.data.garages
+        );
         setPagination(res.data.data.pagination);
       }
     } catch (error) {
-      console.error("Failed to fetch users:", error);
-      toast.error("Failed to load users");
+      console.error("Failed to fetch data:", error);
+      toast.error(`Failed to load ${activeTab}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const openModal = (user, action) => {
-    setSelectedUser(user);
+  const openModal = (item, action) => {
+    setSelectedItem(item);
     setModalAction(action);
     setModalData({
-      membershipTier: user.membershipTier || "standard",
-      membershipExpiry: user.membershipExpiry
-        ? new Date(user.membershipExpiry).toISOString().split("T")[0]
+      membershipTier: item.membershipTier || "standard",
+      membershipExpiry: item.membershipExpiry
+        ? new Date(item.membershipExpiry).toISOString().split("T")[0]
         : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
             .toISOString()
             .split("T")[0],
@@ -83,20 +94,30 @@ export default function UsersSubscriptionPage() {
   };
 
   const handleAction = async () => {
-    if (!selectedUser || !modalAction) return;
+    if (!selectedItem || !modalAction) return;
 
     setProcessing(true);
     try {
-      const res = await axios.patch("/api/admin/users/subscription", {
-        userId: selectedUser._id,
-        action: modalAction,
-        ...modalData,
-      });
+      const endpoint =
+        activeTab === "users"
+          ? "/api/admin/users/subscription"
+          : "/api/admin/garages/subscription";
+
+      const payload =
+        activeTab === "users"
+          ? { userId: selectedItem._id, action: modalAction, ...modalData }
+          : { garageId: selectedItem._id, action: modalAction, ...modalData };
+
+      const res = await axios.patch(endpoint, payload);
 
       if (res.data.success) {
-        toast.success(`User subscription ${modalAction}d successfully`);
+        toast.success(
+          `${
+            activeTab === "users" ? "User" : "Garage"
+          } subscription ${modalAction}d successfully`
+        );
         setShowModal(false);
-        fetchUsers();
+        fetchData();
       }
     } catch (error) {
       toast.error(
@@ -107,13 +128,13 @@ export default function UsersSubscriptionPage() {
     }
   };
 
-  const getStatusBadge = (user) => {
+  const getStatusBadge = (item) => {
     const now = new Date();
-    const expiry = user.membershipExpiry
-      ? new Date(user.membershipExpiry)
+    const expiry = item.membershipExpiry
+      ? new Date(item.membershipExpiry)
       : null;
 
-    if (!user.membershipTier || user.membershipTier === "free") {
+    if (!item.membershipTier || item.membershipTier === "free") {
       return (
         <span className="px-2 py-1 bg-gray-500/20 text-gray-400 text-xs rounded-full">
           Free
@@ -148,19 +169,63 @@ export default function UsersSubscriptionPage() {
     );
   };
 
+  const tabColor = activeTab === "users" ? "orange" : "purple";
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Users className="text-orange-500" />
-            User Subscriptions
+            <Crown className="text-yellow-500" />
+            Subscription Management
           </h1>
           <p className="text-white/60 text-sm">
-            Manage all user subscriptions and memberships
+            Manage all user and garage subscriptions
           </p>
         </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-2 border-b border-white/10">
+        <button
+          onClick={() => {
+            setActiveTab("users");
+            setPagination({ ...pagination, page: 1 });
+          }}
+          className={`px-6 py-3 font-medium transition-all relative ${
+            activeTab === "users"
+              ? "text-orange-500"
+              : "text-white/60 hover:text-white"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Users size={18} />
+            User Subscriptions
+          </div>
+          {activeTab === "users" && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500"></div>
+          )}
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab("garages");
+            setPagination({ ...pagination, page: 1 });
+          }}
+          className={`px-6 py-3 font-medium transition-all relative ${
+            activeTab === "garages"
+              ? "text-purple-500"
+              : "text-white/60 hover:text-white"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Building2 size={18} />
+            Garage Subscriptions
+          </div>
+          {activeTab === "garages" && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500"></div>
+          )}
+        </button>
       </div>
 
       {/* Filters */}
@@ -214,13 +279,10 @@ export default function UsersSubscriptionPage() {
             <thead className="bg-white/5 border-b border-white/10">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-bold text-white/60 uppercase tracking-wider">
-                  User
+                  {activeTab === "users" ? "User" : "Garage"}
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-white/60 uppercase tracking-wider">
                   Tier
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-white/60 uppercase tracking-wider">
-                  Plan
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-white/60 uppercase tracking-wider">
                   Status
@@ -236,69 +298,119 @@ export default function UsersSubscriptionPage() {
             <tbody className="divide-y divide-white/10">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
-                    <Loader2 className="w-8 h-8 animate-spin text-orange-500 mx-auto" />
+                  <td colSpan={5} className="px-6 py-12 text-center">
+                    <Loader2
+                      className={`w-8 h-8 animate-spin text-${tabColor}-500 mx-auto`}
+                    />
                   </td>
                 </tr>
-              ) : users.length === 0 ? (
+              ) : data.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={5}
                     className="px-6 py-12 text-center text-white/40"
                   >
-                    No users found
+                    No {activeTab} found
                   </td>
                 </tr>
               ) : (
-                users.map((user) => (
+                data.map((item) => (
                   <tr
-                    key={user._id}
+                    key={item._id}
                     className="hover:bg-white/5 transition-colors"
                   >
                     <td className="px-6 py-4">
                       <div>
-                        <p className="text-white font-medium">{user.name}</p>
-                        <p className="text-white/40 text-sm">{user.email}</p>
+                        <p className="text-white font-medium">{item.name}</p>
+                        <p className="text-white/40 text-sm">{item.email}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="px-3 py-1 bg-orange-500/20 text-orange-400 text-xs rounded-full uppercase">
-                        {user.membershipTier || "Free"}
+                      <span
+                        className={`px-3 py-1 bg-${tabColor}-500/20 text-${tabColor}-400 text-xs rounded-full uppercase`}
+                      >
+                        {item.membershipTier || "Free"}
                       </span>
                     </td>
+                    <td className="px-6 py-4">{getStatusBadge(item)}</td>
                     <td className="px-6 py-4">
                       <p className="text-white/80 text-sm">
-                        {user.currentSubscription?.planId?.name || "N/A"}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4">{getStatusBadge(user)}</td>
-                    <td className="px-6 py-4">
-                      <p className="text-white/80 text-sm">
-                        {user.membershipExpiry
-                          ? new Date(user.membershipExpiry).toLocaleDateString()
+                        {item.membershipExpiry
+                          ? new Date(item.membershipExpiry).toLocaleDateString()
                           : "N/A"}
                       </p>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
+                      <div className="relative">
                         <button
-                          onClick={() => openModal(user, "upgrade")}
-                          className="px-3 py-1.5 bg-green-500/20 hover:bg-green-500/30 text-green-400 text-xs rounded-lg transition-colors"
+                          onClick={(e) => {
+                            const rect =
+                              e.currentTarget.getBoundingClientRect();
+                            setOpenDropdown(
+                              openDropdown === item._id
+                                ? null
+                                : {
+                                    id: item._id,
+                                    x: rect.right - 160,
+                                    y: rect.bottom + 5,
+                                  }
+                            );
+                          }}
+                          className="p-2 hover:bg-white/10 rounded-lg transition-colors"
                         >
-                          Upgrade
+                          <MoreVertical size={18} className="text-white/60" />
                         </button>
-                        <button
-                          onClick={() => openModal(user, "extend")}
-                          className="px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 text-xs rounded-lg transition-colors"
-                        >
-                          Extend
-                        </button>
-                        <button
-                          onClick={() => openModal(user, "deactivate")}
-                          className="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs rounded-lg transition-colors"
-                        >
-                          Deactivate
-                        </button>
+
+                        {/* Dropdown Menu */}
+                        {openDropdown?.id === item._id && (
+                          <>
+                            {/* Backdrop to close dropdown */}
+                            <div
+                              className="fixed inset-0 z-40"
+                              onClick={() => setOpenDropdown(null)}
+                            ></div>
+
+                            {/* Dropdown Content - Fixed Position */}
+                            <div
+                              className="fixed z-50 bg-[#1A1A1A] border border-white/20 rounded-xl shadow-2xl min-w-[160px] overflow-hidden"
+                              style={{
+                                left: `${openDropdown.x}px`,
+                                top: `${openDropdown.y}px`,
+                              }}
+                            >
+                              <button
+                                onClick={() => {
+                                  openModal(item, "upgrade");
+                                  setOpenDropdown(null);
+                                }}
+                                className="w-full px-4 py-3 text-left text-green-400 hover:bg-green-500/10 transition-colors flex items-center gap-2 text-sm"
+                              >
+                                <CheckCircle size={16} />
+                                Upgrade
+                              </button>
+                              <button
+                                onClick={() => {
+                                  openModal(item, "extend");
+                                  setOpenDropdown(null);
+                                }}
+                                className="w-full px-4 py-3 text-left text-blue-400 hover:bg-blue-500/10 transition-colors flex items-center gap-2 text-sm border-t border-white/10"
+                              >
+                                <Calendar size={16} />
+                                Extend
+                              </button>
+                              <button
+                                onClick={() => {
+                                  openModal(item, "deactivate");
+                                  setOpenDropdown(null);
+                                }}
+                                className="w-full px-4 py-3 text-left text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2 text-sm border-t border-white/10"
+                              >
+                                <XCircle size={16} />
+                                Deactivate
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -311,7 +423,7 @@ export default function UsersSubscriptionPage() {
         {/* Pagination */}
         <div className="px-6 py-4 border-t border-white/10 flex items-center justify-between">
           <p className="text-white/60 text-sm">
-            Showing {users.length} of {pagination.total} users
+            Showing {data.length} of {pagination.total} {activeTab}
           </p>
           <div className="flex items-center gap-2">
             <button
@@ -396,7 +508,7 @@ export default function UsersSubscriptionPage() {
                 <button
                   onClick={handleAction}
                   disabled={processing}
-                  className="flex-1 px-4 py-3 bg-orange-500 hover:bg-orange-600 rounded-xl text-white font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className={`flex-1 px-4 py-3 bg-${tabColor}-500 hover:bg-${tabColor}-600 rounded-xl text-white font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2`}
                 >
                   {processing ? (
                     <>

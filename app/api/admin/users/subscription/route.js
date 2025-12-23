@@ -38,7 +38,17 @@ export async function GET(request) {
 
     const [users, total] = await Promise.all([
       User.find(query)
-        .select("name email phone membershipTier membershipExpiry createdAt")
+        .select(
+          "name email phone membershipTier membershipExpiry createdAt currentSubscription"
+        )
+        .populate({
+          path: "currentSubscription",
+          populate: {
+            path: "planId",
+            model: "Package",
+            select: "name tier",
+          },
+        })
         .sort({ membershipExpiry: -1 })
         .skip(skip)
         .limit(limit)
