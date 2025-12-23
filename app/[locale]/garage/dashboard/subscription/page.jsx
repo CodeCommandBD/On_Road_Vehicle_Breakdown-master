@@ -3,25 +3,60 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
-import { Loader2, Crown, Calendar, CheckCircle, Sparkles } from "lucide-react";
+import {
+  Loader2,
+  Crown,
+  Calendar,
+  CheckCircle,
+  Sparkles,
+  TrendingUp,
+  Users,
+  AlertTriangle,
+  Clock,
+} from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function SubscriptionPage() {
   const user = useSelector(selectUser);
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [subscription, setSubscription] = useState(null);
   const [plans, setPlans] = useState([]);
+  const [billingCycle, setBillingCycle] = useState("monthly");
+  const [now, setNow] = useState(new Date().getTime());
+
+  // Update current time every second for promo countdown
+  useEffect(() => {
+    const updateBangladeshTime = () => {
+      const bdTime = new Date(
+        new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" })
+      );
+      setNow(bdTime.getTime());
+    };
+
+    updateBangladeshTime();
+    const interval = setInterval(updateBangladeshTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch plans
-        const plansRes = await axios.get("/api/plans");
+        // Fetch garage-specific plans
+        const plansRes = await axios.get(
+          "/api/packages?type=garage&isActive=true"
+        );
         if (plansRes.data.success) {
-          setPlans(plansRes.data.data.plans);
+          // Map Package model fields to match component expectations
+          const mappedPlans = plansRes.data.data.packages.map((pkg) => ({
+            ...pkg,
+            features: pkg.benefits || [],
+          }));
+          setPlans(mappedPlans);
         }
 
         if (user) {
@@ -35,6 +70,7 @@ export default function SubscriptionPage() {
         }
       } catch (error) {
         console.error("Error fetching data:", error);
+        toast.error("Failed to load subscription data");
       } finally {
         setIsLoading(false);
       }
@@ -42,6 +78,52 @@ export default function SubscriptionPage() {
 
     fetchData();
   }, [user]);
+
+  const handleSelectPlan = (planId, tier) => {
+    if (tier === "trial") {
+      router.push("/trial/activate");
+      return;
+    }
+
+    if (tier === "enterprise") {
+      router.push("/contact-sales");
+      return;
+    }
+
+    router.push(`/checkout/${planId}?cycle=${billingCycle}`);
+  };
+
+  const getPlanIcon = (tier) => {
+    switch (tier) {
+      case "trial":
+        return <Clock className="w-8 h-8 text-blue-500" />;
+      case "free":
+        return <CheckCircle className="w-8 h-8 text-green-500" />;
+      case "standard":
+        return <TrendingUp className="w-8 h-8 text-orange-500" />;
+      case "premium":
+        return <Sparkles className="w-8 h-8 text-purple-500" />;
+      case "enterprise":
+        return <Crown className="w-8 h-8 text-yellow-500" />;
+      default:
+        return <CheckCircle className="w-8 h-8 text-green-500" />;
+    }
+  };
+
+  const getPlanColor = (tier) => {
+    switch (tier) {
+      case "trial":
+        return "from-blue-500 to-blue-600";
+      case "standard":
+        return "from-orange-500 to-orange-600";
+      case "premium":
+        return "from-purple-500 to-purple-600";
+      case "enterprise":
+        return "from-yellow-500 to-yellow-600";
+      default:
+        return "from-green-500 to-green-600";
+    }
+  };
 
   if (isLoading) {
     return (
@@ -60,7 +142,7 @@ export default function SubscriptionPage() {
     : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-white mb-2">Subscription</h1>
@@ -139,55 +221,179 @@ export default function SubscriptionPage() {
 
       {/* Upgrade Options */}
       <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <Sparkles className="w-6 h-6 text-orange-500" />
-          <h2 className="text-xl font-bold text-white">Upgrade Your Plan</h2>
+        <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <Sparkles className="w-6 h-6 text-orange-500" />
+            <h2 className="text-xl font-bold text-white">Upgrade Your Plan</h2>
+          </div>
+
+          {/* Billing Cycle Toggle */}
+          <div className="inline-flex items-center bg-gray-800 rounded-full p-1 shadow-lg border border-gray-700">
+            <button
+              onClick={() => setBillingCycle("monthly")}
+              className={`px-6 py-2 rounded-full font-semibold transition-all duration-300 text-sm ${
+                billingCycle === "monthly"
+                  ? "bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-lg"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBillingCycle("yearly")}
+              className={`px-6 py-2 rounded-full font-semibold transition-all duration-300 relative text-sm ${
+                billingCycle === "yearly"
+                  ? "bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-lg"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              Yearly
+              <span className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded-full shadow-lg">
+                SAVE 20%
+              </span>
+            </button>
+          </div>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Pricing Cards - Responsive Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           {plans.map((plan) => {
+            const price =
+              billingCycle === "monthly"
+                ? plan.price.monthly
+                : plan.price.yearly;
             const isCurrent = user?.membershipTier === plan.tier;
+            const isStandard = plan.tier === "standard";
+            const isTrial = plan.tier === "trial";
+            const isEnterprise = plan.tier === "enterprise";
 
-            // Skip displaying current plan if desired, or style it differently
-            // For now, we'll show all but disable the button for current plan
+            // Timer Calculation
+            let timeLeft = "";
+            let isExpired = false;
+
+            if (plan.promoEndsAt) {
+              const promoDate = new Date(plan.promoEndsAt).getTime();
+              const distance = promoDate - now;
+
+              if (distance <= 0) {
+                isExpired = true;
+                timeLeft = "00:00:00";
+              } else {
+                const hours = Math.floor(distance / (1000 * 60 * 60));
+                const minutes = Math.floor(
+                  (distance % (1000 * 60 * 60)) / (1000 * 60)
+                );
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                timeLeft = [
+                  hours.toString().padStart(2, "0"),
+                  minutes.toString().padStart(2, "0"),
+                  seconds.toString().padStart(2, "0"),
+                ].join(":");
+              }
+            }
 
             return (
               <div
                 key={plan._id}
-                className={`relative rounded-2xl p-8 transition-all duration-300 flex flex-col min-h-[450px] ${
-                  plan.isFeatured
+                className={`relative rounded-2xl p-6 transition-all duration-300 flex flex-col min-h-[500px] ${
+                  isStandard
                     ? "bg-[#1a1a1a] border-2 border-[#f97316] shadow-[0_0_30px_rgba(249,115,22,0.15)]"
                     : "bg-[#1a1a1a] border border-[#333] hover:border-[#444]"
+                } ${
+                  isExpired
+                    ? "opacity-60 saturate-0 pointer-events-none"
+                    : "hover:translate-y-[-4px]"
                 }`}
               >
-                {plan.isFeatured && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="px-4 py-1 bg-[#f97316] text-white text-[10px] font-bold rounded-full uppercase tracking-wider">
+                {/* Expired Overlay */}
+                {isExpired && (
+                  <div className="absolute inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="bg-red-600/90 backdrop-blur-md text-white px-8 py-4 rounded-2xl font-black text-xl rotate-[-12deg] shadow-[0_0_30px_rgba(220,38,38,0.5)] border-4 border-white/20 uppercase tracking-tighter">
+                      Offer Expired
+                    </div>
+                  </div>
+                )}
+
+                {/* Most Popular Badge */}
+                {isStandard && !isExpired && (
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                    <span className="bg-[#f97316] text-white px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
                       Most Popular
                     </span>
                   </div>
                 )}
 
-                <h3 className="text-xl font-bold text-white mb-1 uppercase tracking-wider">
-                  {plan.name}
-                </h3>
-                <div className="text-4xl font-bold text-white mb-1">
-                  ৳{plan.price.monthly}
-                </div>
-                <p className="text-sm text-gray-500 mb-6">per month</p>
+                {/* Promo Countdown */}
+                {plan.promoEndsAt && !isExpired && (
+                  <div className="absolute -top-3 -right-3 bg-red-600 text-white px-3 py-2 rounded-xl shadow-lg">
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      <span className="text-xs font-bold">{timeLeft}</span>
+                    </div>
+                  </div>
+                )}
 
-                <ul className="space-y-4 mb-8 flex-grow">
+                {/* Header Section */}
+                <div className="mb-6">
+                  <div
+                    className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${getPlanColor(
+                      plan.tier
+                    )} flex items-center justify-center mb-4 shadow-2xl hover:scale-110 transition-transform`}
+                  >
+                    {getPlanIcon(plan.tier)}
+                  </div>
+
+                  <h3 className="text-xl font-bold text-white mb-1 uppercase tracking-wider">
+                    {plan.name}
+                  </h3>
+                </div>
+
+                {/* Price Section */}
+                <div className="mb-6">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-bold text-white">
+                      {isEnterprise ? "Custom" : `৳${price}`}
+                    </span>
+                  </div>
+                  {!isEnterprise && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      per {billingCycle === "yearly" ? "year" : "month"}
+                    </p>
+                  )}
+
+                  {billingCycle === "yearly" && !isTrial && !isEnterprise && (
+                    <div className="mt-3 flex items-center gap-2">
+                      <span className="text-xs text-green-400 font-black bg-green-500/10 px-2 py-1 rounded">
+                        SAVE {plan.discount || 20}%
+                      </span>
+                      <span className="text-[10px] text-gray-500 line-through">
+                        ৳{plan.price.monthly * 12}
+                      </span>
+                    </div>
+                  )}
+
+                  {isTrial && (
+                    <div className="mt-3 text-xs text-blue-400 font-bold bg-blue-500/10 px-3 py-2 rounded-lg border border-blue-500/20">
+                      * Credit Card Info Required
+                    </div>
+                  )}
+                </div>
+
+                {/* Features List */}
+                <ul className="space-y-3 mb-8 flex-grow">
                   {plan.features.map((feature, idx) => (
                     <li
                       key={idx}
                       className="flex items-center gap-3 text-white/80 text-sm"
                     >
-                      <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
+                      <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
                       <span>{feature}</span>
                     </li>
                   ))}
                 </ul>
 
+                {/* Action Button */}
                 {isCurrent ? (
                   <button
                     disabled
@@ -195,31 +401,24 @@ export default function SubscriptionPage() {
                   >
                     Current Plan
                   </button>
-                ) : plan.tier === "enterprise" ? (
-                  <Link
-                    href="/contact"
-                    className="w-full py-4 text-center bg-[#333] hover:bg-[#444] text-white rounded-xl transition-colors font-bold text-sm"
-                  >
-                    Contact Sales
-                  </Link>
-                ) : plan.tier === "trial" ? (
-                  <Link
-                    href="/trial/activate"
-                    className="w-full py-4 text-center bg-[#333] hover:bg-[#444] text-white rounded-xl transition-colors font-bold text-sm"
-                  >
-                    Start Trial
-                  </Link>
                 ) : (
-                  <Link
-                    href={`/checkout?plan=${plan.tier}&cycle=monthly`}
-                    className={`w-full py-4 text-center rounded-xl transition-all font-bold text-sm ${
-                      plan.isFeatured
+                  <button
+                    onClick={() => handleSelectPlan(plan._id, plan.tier)}
+                    disabled={isExpired}
+                    className={`w-full py-4 rounded-xl font-bold text-sm transition-all duration-300 ${
+                      isStandard
                         ? "bg-gradient-to-r from-[#f97316] to-[#a855f7] text-white hover:brightness-110 shadow-lg shadow-orange-500/20"
-                        : "bg-[#333] hover:bg-[#444] text-white"
+                        : "bg-[#333] text-white hover:bg-[#444]"
                     }`}
                   >
-                    Upgrade Now
-                  </Link>
+                    {isExpired
+                      ? "OFFER EXPIRED"
+                      : isTrial
+                      ? "Start Trial"
+                      : isEnterprise
+                      ? "Contact Sales"
+                      : "Upgrade Now"}
+                  </button>
                 )}
               </div>
             );

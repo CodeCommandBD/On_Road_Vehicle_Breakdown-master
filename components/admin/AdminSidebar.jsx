@@ -18,6 +18,8 @@ import {
   X,
   FileText,
   Mail,
+  BarChart3,
+  Zap,
 } from "lucide-react";
 
 const menuItems = [
@@ -28,6 +30,12 @@ const menuItems = [
   { name: "Payments", href: "/admin/payments", icon: DollarSign },
   { name: "Reviews", href: "/admin/reviews", icon: Star },
   { name: "Services", href: "/admin/services", icon: Settings },
+  {
+    name: "Service Analytics",
+    href: "/admin/services/analytics",
+    icon: BarChart3,
+  },
+  { name: "Feature Usage", href: "/admin/features/usage", icon: Zap },
   { name: "Plans", href: "/admin/plans", icon: DollarSign },
   { name: "Contracts", href: "/admin/contracts", icon: FileText },
   {
@@ -63,7 +71,13 @@ export default function AdminSidebar({ isOpen, onClose }) {
       try {
         const response = await axios.get("/api/admin/counts");
         if (response.data.success) {
-          setCounts(response.data.counts);
+          // Extract counts from new API structure
+          const data = response.data.data;
+          setCounts({
+            inquiries: data.inquiries || 0,
+            support: data.support || 0,
+            messages: 0, // Not available in current API
+          });
         }
       } catch (error) {
         console.error("Failed to fetch counts:", error);

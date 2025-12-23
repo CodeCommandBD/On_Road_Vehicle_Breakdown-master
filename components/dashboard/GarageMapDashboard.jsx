@@ -157,7 +157,7 @@ export default function GarageMapDashboard({
         </div>
       </div>
 
-      <div className="relative group">
+      <div className="relative group z-0">
         <MapComponent
           center={
             garageLocation
