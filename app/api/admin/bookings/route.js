@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db/connect";
 import Booking from "@/lib/db/models/Booking";
+import "@/lib/db/models/Service";
+import "@/lib/db/models/User";
+import "@/lib/db/models/Garage";
 import { verifyToken } from "@/lib/utils/auth";
 
 async function checkAdmin(request) {
