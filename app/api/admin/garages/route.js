@@ -72,7 +72,8 @@ export async function PUT(request) {
       );
 
     await connectDB();
-    const { garageId, isVerified, isActive } = await request.json();
+    const { garageId, isVerified, isActive, isFeatured, rewardPoints } =
+      await request.json();
 
     if (!garageId) {
       return NextResponse.json(
@@ -89,10 +90,21 @@ export async function PUT(request) {
       );
     }
 
+    // Update Garage fields
     if (isVerified !== undefined) garage.isVerified = isVerified;
     if (isActive !== undefined) garage.isActive = isActive;
+    if (isFeatured !== undefined) garage.isFeatured = isFeatured;
 
     await garage.save();
+
+    // If rewardPoints are provided, update the owner user
+    if (rewardPoints !== undefined) {
+      const owner = await User.findById(garage.owner);
+      if (owner) {
+        owner.rewardPoints = (owner.rewardPoints || 0) + Number(rewardPoints);
+        await owner.save();
+      }
+    }
 
     return NextResponse.json({
       success: true,
