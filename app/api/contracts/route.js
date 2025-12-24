@@ -24,8 +24,27 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
+    const search = searchParams.get("search");
 
     let query = {};
+
+    // Search logic
+    if (search) {
+      // Find users matching search term
+      const users = await User.find({
+        $or: [
+          { name: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+        ],
+      }).select("_id");
+
+      const userIds = users.map((user) => user._id);
+
+      query.$or = [
+        { contractNumber: { $regex: search, $options: "i" } },
+        { userId: { $in: userIds } },
+      ];
+    }
 
     // Role-based filtering
     if (decoded.role === "admin") {

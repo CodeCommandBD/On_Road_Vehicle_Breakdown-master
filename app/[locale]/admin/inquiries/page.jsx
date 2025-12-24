@@ -9,12 +9,16 @@ import {
   CheckCircle2,
   Clock,
   X,
+  Search,
+  Download,
 } from "lucide-react";
 import axios from "axios";
 
 export default function AdminInquiriesPage() {
   const [inquiries, setInquiries] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [selectedInquiry, setSelectedInquiry] = useState(null);
   const [userNotFoundModal, setUserNotFoundModal] = useState({
     show: false,
@@ -22,23 +26,33 @@ export default function AdminInquiriesPage() {
   });
 
   useEffect(() => {
-    fetchInquiries();
+    const timer = setTimeout(() => {
+      fetchInquiries();
+    }, 500);
 
-    // Mark all new inquiries as contacted when page is viewed
-    const markAsViewed = async () => {
-      try {
-        await axios.patch("/api/admin/inquiries/mark-viewed");
-      } catch (error) {
-        console.error("Failed to mark as viewed:", error);
-      }
-    };
-
-    markAsViewed();
-  }, []);
+    // Mark all new inquiries as contacted when page is viewed (only on first load)
+    if (!search && statusFilter === "all") {
+      const markAsViewed = async () => {
+        try {
+          await axios.patch("/api/admin/inquiries/mark-viewed");
+        } catch (error) {
+          console.error("Failed to mark as viewed:", error);
+        }
+      };
+      markAsViewed();
+    }
+    return () => clearTimeout(timer);
+  }, [search, statusFilter]);
 
   const fetchInquiries = async () => {
     try {
-      const response = await axios.get("/api/admin/inquiries");
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+      if (statusFilter !== "all") params.append("status", statusFilter);
+
+      const response = await axios.get(
+        `/api/admin/inquiries?${params.toString()}`
+      );
       if (response.data.success) {
         setInquiries(response.data.inquiries);
       }
@@ -56,6 +70,47 @@ export default function AdminInquiriesPage() {
     } catch (error) {
       console.error("Failed to update status:", error);
     }
+  };
+
+  const handleExport = () => {
+    if (!inquiries.length) return alert("No inquiries to export");
+
+    const headers = [
+      "Date",
+      "Name",
+      "Company",
+      "Email",
+      "Phone",
+      "Status",
+      "Message",
+    ];
+
+    const csvContent = [
+      headers.join(","),
+      ...inquiries.map((i) =>
+        [
+          new Date(i.createdAt).toLocaleDateString(),
+          `"${i.name || ""}"`,
+          `"${i.company || ""}"`,
+          `"${i.email || ""}"`,
+          `"${i.phone || ""}"`,
+          i.status,
+          `"${i.message?.replace(/"/g, '""') || ""}"`,
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute(
+      "download",
+      `inquiries_export_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const getStatusBadge = (status) => {
@@ -103,6 +158,53 @@ export default function AdminInquiriesPage() {
           Enterprise Inquiries
         </h1>
         <p className="text-white/60 mt-1">Manage contact sales submissions</p>
+      </div>
+
+      {/* Actions */}
+      <div className="flex flex-col md:flex-row gap-4 justify-between bg-white/5 p-4 rounded-xl border border-white/10">
+        <div className="flex-1 flex gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40"
+              size={20}
+            />
+            <input
+              type="text"
+              placeholder="Search by name, email or company..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-white placeholder:text-white/30 focus:outline-none focus:border-white/20 transition-all"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-white/20"
+          >
+            <option value="all" className="bg-[#1A1A1A]">
+              All Status
+            </option>
+            <option value="new" className="bg-[#1A1A1A]">
+              New
+            </option>
+            <option value="contacted" className="bg-[#1A1A1A]">
+              Contacted
+            </option>
+            <option value="qualified" className="bg-[#1A1A1A]">
+              Qualified
+            </option>
+            <option value="closed" className="bg-[#1A1A1A]">
+              Closed
+            </option>
+          </select>
+        </div>
+        <button
+          onClick={handleExport}
+          className="flex items-center gap-2 px-4 py-2.5 bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 border border-orange-600/20 rounded-lg transition-colors font-medium"
+        >
+          <Download size={18} />
+          Export CSV
+        </button>
       </div>
 
       {/* Stats */}
@@ -204,10 +306,27 @@ export default function AdminInquiriesPage() {
                         }}
                         className="bg-black/40 border border-white/10 rounded px-3 py-1 text-white text-sm focus:border-orange-500 outline-none"
                       >
-                        <option value="new">New</option>
-                        <option value="contacted">Contacted</option>
-                        <option value="qualified">Qualified</option>
-                        <option value="closed">Closed</option>
+                        <option value="new" className="bg-[#1A1A1A] text-white">
+                          New
+                        </option>
+                        <option
+                          value="contacted"
+                          className="bg-[#1A1A1A] text-white"
+                        >
+                          Contacted
+                        </option>
+                        <option
+                          value="qualified"
+                          className="bg-[#1A1A1A] text-white"
+                        >
+                          Qualified
+                        </option>
+                        <option
+                          value="closed"
+                          className="bg-[#1A1A1A] text-white"
+                        >
+                          Closed
+                        </option>
                       </select>
                     </td>
                   </tr>

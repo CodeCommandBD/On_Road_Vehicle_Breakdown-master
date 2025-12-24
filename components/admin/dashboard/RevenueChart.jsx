@@ -63,10 +63,18 @@ export default function RevenueChart() {
           onChange={(e) => setPeriod(e.target.value)}
           className="bg-black/40 border border-white/10 text-white/70 text-xs rounded-lg px-3 py-2 outline-none focus:border-[#FF532D] transition-colors cursor-pointer hover:bg-white/5"
         >
-          <option value="7">Last 7 Days</option>
-          <option value="30">Last 30 Days</option>
-          <option value="90">Last 90 Days</option>
-          <option value="365">Last Year</option>
+          <option value="7" className="bg-[#1A1A1A] text-white">
+            Last 7 Days
+          </option>
+          <option value="30" className="bg-[#1A1A1A] text-white">
+            Last 30 Days
+          </option>
+          <option value="90" className="bg-[#1A1A1A] text-white">
+            Last 90 Days
+          </option>
+          <option value="365" className="bg-[#1A1A1A] text-white">
+            Last Year
+          </option>
         </select>
       </div>
 

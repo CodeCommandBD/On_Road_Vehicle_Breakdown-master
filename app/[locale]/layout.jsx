@@ -2,6 +2,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../globals.css";
 import StoreProvider from "@/store/provider";
+import NotificationListener from "@/components/providers/NotificationListener";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { routing } from "@/i18n/routing";
@@ -18,6 +19,7 @@ export const metadata = {
     description: "Get instant mechanic support anywhere, anytime.",
     type: "website",
   },
+  manifest: "/manifest.json",
 };
 
 export default async function RootLayout({ children, params }) {
@@ -38,6 +40,7 @@ export default async function RootLayout({ children, params }) {
         <NextIntlClientProvider messages={messages}>
           <StoreProvider>
             {children}
+            <NotificationListener />
             <ToastContainer position="bottom-right" theme="colored" />
           </StoreProvider>
         </NextIntlClientProvider>

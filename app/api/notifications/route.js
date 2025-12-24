@@ -1,9 +1,25 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db/connect";
 import Notification from "@/lib/db/models/Notification";
+
 import SOS from "@/lib/db/models/SOS";
 import Garage from "@/lib/db/models/Garage";
 import { verifyToken } from "@/lib/utils/auth";
+import { pusherServer } from "@/lib/pusher";
+
+// Helper to trigger real-time notification
+const notifyUser = async (userId, notification) => {
+  try {
+    await pusherServer.trigger(`user-${userId}`, "notification", {
+      message: notification.message,
+      title: notification.title,
+      link: notification.link,
+      createdAt: notification.createdAt,
+    });
+  } catch (error) {
+    console.error("Pusher Trigger Error:", error);
+  }
+};
 
 export async function GET(req) {
   try {

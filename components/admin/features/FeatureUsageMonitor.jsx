@@ -10,6 +10,7 @@ import {
   Loader2,
   BarChart3,
   PieChart as PieChartIcon,
+  Download,
 } from "lucide-react";
 import {
   BarChart,
@@ -45,6 +46,38 @@ export default function FeatureUsageMonitor() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleExport = () => {
+    if (!data?.featureUsage) return;
+
+    const headers = [
+      "Feature Name",
+      "Premium Users",
+      "Enterprise Users",
+      "Total Users",
+      "Adoption Rate",
+    ];
+
+    const rows = Object.entries(data.featureUsage).map(([feature, usage]) => [
+      feature.replace(/([A-Z])/g, " $1").trim(),
+      usage.premium,
+      usage.enterprise,
+      usage.total,
+      `${data.adoptionRates[feature] || 0}%`,
+    ]);
+
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "feature_usage.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const COLORS = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8"];
@@ -112,6 +145,16 @@ export default function FeatureUsageMonitor() {
         <p className="text-white/60 text-sm">
           Premium & Enterprise feature adoption tracking
         </p>
+      </div>
+
+      <div className="flex justify-end">
+        <button
+          onClick={handleExport}
+          className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-xl transition-colors"
+        >
+          <Download size={18} />
+          Export CSV
+        </button>
       </div>
 
       {/* Overview Cards */}
@@ -193,11 +236,15 @@ export default function FeatureUsageMonitor() {
               <YAxis stroke="#888" tick={{ fill: "#888" }} />
               <Tooltip
                 contentStyle={{
-                  background: "#1a1a1a",
-                  border: "1px solid #333",
-                  borderRadius: "8px",
+                  backgroundColor: "rgba(26, 26, 26, 0.95)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  borderRadius: "12px",
+                  padding: "12px",
+                  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
                   color: "#fff",
                 }}
+                itemStyle={{ color: "#fff" }}
+                cursor={{ fill: "rgba(255, 255, 255, 0.05)" }}
               />
               <Legend />
               <Bar dataKey="users" fill="#4ECDC4" radius={[8, 8, 0, 0]} />
@@ -231,11 +278,14 @@ export default function FeatureUsageMonitor() {
               </Pie>
               <Tooltip
                 contentStyle={{
-                  background: "#1a1a1a",
-                  border: "1px solid #333",
-                  borderRadius: "8px",
+                  backgroundColor: "rgba(26, 26, 26, 0.95)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  borderRadius: "12px",
+                  padding: "12px",
+                  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
                   color: "#fff",
                 }}
+                itemStyle={{ color: "#fff" }}
               />
             </PieChart>
           </ResponsiveContainer>

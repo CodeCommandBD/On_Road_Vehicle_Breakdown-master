@@ -14,7 +14,9 @@ import {
   XCircle,
   CheckCircle2,
   Clock,
+  Navigation,
 } from "lucide-react";
+import Link from "next/link";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -144,12 +146,24 @@ export default function BookingTable() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="bg-black/20 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-orange-500/50"
           >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="in_progress">In Progress</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
+            <option value="all" className="bg-[#1A1A1A] text-white">
+              All Status
+            </option>
+            <option value="pending" className="bg-[#1A1A1A] text-white">
+              Pending
+            </option>
+            <option value="confirmed" className="bg-[#1A1A1A] text-white">
+              Confirmed
+            </option>
+            <option value="in_progress" className="bg-[#1A1A1A] text-white">
+              In Progress
+            </option>
+            <option value="completed" className="bg-[#1A1A1A] text-white">
+              Completed
+            </option>
+            <option value="cancelled" className="bg-[#1A1A1A] text-white">
+              Cancelled
+            </option>
           </select>
 
           <select
@@ -157,13 +171,27 @@ export default function BookingTable() {
             onChange={(e) => setVehicleFilter(e.target.value)}
             className="bg-black/20 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-orange-500/50"
           >
-            <option value="all">All Vehicles</option>
-            <option value="car">Car</option>
-            <option value="motorcycle">Motorcycle</option>
-            <option value="bus">Bus</option>
-            <option value="truck">Truck</option>
-            <option value="cng">CNG</option>
-            <option value="rickshaw">Rickshaw</option>
+            <option value="all" className="bg-[#1A1A1A] text-white">
+              All Vehicles
+            </option>
+            <option value="car" className="bg-[#1A1A1A] text-white">
+              Car
+            </option>
+            <option value="motorcycle" className="bg-[#1A1A1A] text-white">
+              Motorcycle
+            </option>
+            <option value="bus" className="bg-[#1A1A1A] text-white">
+              Bus
+            </option>
+            <option value="truck" className="bg-[#1A1A1A] text-white">
+              Truck
+            </option>
+            <option value="cng" className="bg-[#1A1A1A] text-white">
+              CNG
+            </option>
+            <option value="rickshaw" className="bg-[#1A1A1A] text-white">
+              Rickshaw
+            </option>
           </select>
         </div>
 
@@ -276,6 +304,17 @@ export default function BookingTable() {
             <div className="px-3 py-2 text-[10px] font-bold text-white/30 uppercase tracking-widest border-b border-white/5 mb-1">
               Update Status
             </div>
+
+            {/* Tracking Button */}
+            <Link
+              href={`/admin/bookings/${openDropdown.id}/track`}
+              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-orange-400 hover:bg-white/5 transition-colors"
+            >
+              <Navigation size={14} />
+              Track Driver (Live)
+            </Link>
+
+            <div className="h-px bg-white/5 my-1" />
 
             <button
               onClick={() =>

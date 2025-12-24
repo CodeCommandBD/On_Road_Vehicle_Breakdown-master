@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
+import InvoiceDocument from "@/components/pdf/InvoiceDocument";
 
 export default function BillingPage() {
   const router = useRouter();
@@ -94,12 +95,34 @@ export default function BillingPage() {
     });
   };
 
-  const downloadInvoice = async (paymentId) => {
+  // Create a blob from the PDF component
+  const generatePdfBlob = async (payment) => {
     try {
-      // TODO: Implement invoice download
-      alert(`Download invoice for payment ${paymentId}`);
+      const { pdf } = await import("@react-pdf/renderer");
+      const blob = await pdf(
+        <InvoiceDocument payment={payment} user={user} />
+      ).toBlob();
+      return blob;
+    } catch (error) {
+      console.error("PDF Generation Error:", error);
+      throw error;
+    }
+  };
+
+  const downloadInvoice = async (payment) => {
+    try {
+      const blob = await generatePdfBlob(payment);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Invoice_${payment._id.substring(0, 8)}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error downloading invoice:", error);
+      alert("Failed to generate invoice. Please try again.");
     }
   };
 
@@ -282,7 +305,7 @@ export default function BillingPage() {
                       <td className="py-4 px-4">
                         {payment.status === "success" && (
                           <button
-                            onClick={() => downloadInvoice(payment._id)}
+                            onClick={() => downloadInvoice(payment)}
                             className="flex items-center gap-2 text-orange-500 hover:text-orange-400 transition-colors"
                           >
                             <Download className="w-4 h-4" />

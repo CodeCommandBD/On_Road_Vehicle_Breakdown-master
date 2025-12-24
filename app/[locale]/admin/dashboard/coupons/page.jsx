@@ -421,8 +421,15 @@ export default function CouponManagementPage() {
                     className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white"
                     required
                   >
-                    <option value="percentage">Percentage (%)</option>
-                    <option value="fixed">Fixed Amount (৳)</option>
+                    <option
+                      value="percentage"
+                      className="bg-[#1A1A1A] text-white"
+                    >
+                      Percentage (%)
+                    </option>
+                    <option value="fixed" className="bg-[#1A1A1A] text-white">
+                      Fixed Amount (৳)
+                    </option>
                   </select>
                 </div>
 
@@ -571,9 +578,15 @@ export default function CouponManagementPage() {
                     }
                     className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white"
                   >
-                    <option value="all">All (User & Garage)</option>
-                    <option value="user">Users Only</option>
-                    <option value="garage">Garages Only</option>
+                    <option value="all" className="bg-[#1A1A1A] text-white">
+                      All (User & Garage)
+                    </option>
+                    <option value="user" className="bg-[#1A1A1A] text-white">
+                      Users Only
+                    </option>
+                    <option value="garage" className="bg-[#1A1A1A] text-white">
+                      Garages Only
+                    </option>
                   </select>
                 </div>
 

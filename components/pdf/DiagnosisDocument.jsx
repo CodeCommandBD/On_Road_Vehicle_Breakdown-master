@@ -1,0 +1,205 @@
+import React from "react";
+import {
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+  Image,
+} from "@react-pdf/renderer";
+
+const styles = StyleSheet.create({
+  page: {
+    padding: 40,
+    backgroundColor: "#ffffff",
+    fontFamily: "Helvetica",
+  },
+  header: {
+    marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    paddingBottom: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  companyName: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#e85d04",
+  },
+  reportTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+    textTransform: "uppercase",
+  },
+  subHeader: {
+    fontSize: 10,
+    color: "#555",
+    marginTop: 4,
+  },
+  section: {
+    marginBottom: 15,
+    padding: 10,
+    backgroundColor: "#f9fafb",
+    borderRadius: 5,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 5,
+    textTransform: "uppercase",
+  },
+  row: {
+    flexDirection: "row",
+    marginBottom: 5,
+  },
+  label: {
+    width: 100,
+    fontSize: 10,
+    fontWeight: "bold",
+    color: "#555",
+  },
+  value: {
+    flex: 1,
+    fontSize: 10,
+    color: "#333",
+  },
+  severityBadge: {
+    padding: 4,
+    borderRadius: 3,
+    fontSize: 8,
+    fontWeight: "bold",
+    textTransform: "uppercase",
+    alignSelf: "flex-start",
+  },
+  footer: {
+    position: "absolute",
+    bottom: 30,
+    left: 40,
+    right: 40,
+    fontSize: 8,
+    textAlign: "center",
+    color: "#aaa",
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+    paddingTop: 10,
+  },
+  disclaimer: {
+    fontSize: 8,
+    color: "#777",
+    fontStyle: "italic",
+    marginTop: 10,
+  },
+});
+
+const DiagnosisDocument = ({ diagnosis, user }) => {
+  const { analysis, vehicleType, symptoms, createdAt } = diagnosis;
+  const severityColor =
+    analysis.severity === "High" || analysis.severity === "Critical"
+      ? "#ef4444"
+      : analysis.severity === "Medium"
+      ? "#f97316"
+      : "#22c55e";
+
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.companyName}>On-Road Help</Text>
+            <Text style={styles.subHeader}>AI Mechanic Diagnostic Report</Text>
+          </View>
+          <View>
+            <Text style={styles.reportTitle}>CONFIDENTIAL</Text>
+            <Text style={styles.subHeader}>
+              Date: {new Date(createdAt).toLocaleDateString()}
+            </Text>
+          </View>
+        </View>
+
+        {/* Vehicle & User Info */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Vehicle Information</Text>
+          <View style={styles.row}>
+            <Text style={styles.label}>Owner:</Text>
+            <Text style={styles.value}>{user?.name || "N/A"}</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Vehicle Type:</Text>
+            <Text style={styles.value}>{vehicleType}</Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Symptoms:</Text>
+            <Text style={styles.value}>{symptoms}</Text>
+          </View>
+        </View>
+
+        {/* Diagnosis Result */}
+        <View
+          style={[
+            styles.section,
+            { backgroundColor: "#fff", borderWidth: 1, borderColor: "#eee" },
+          ]}
+        >
+          <Text style={styles.sectionTitle}>Analysis Results</Text>
+
+          <View style={[styles.row, { alignItems: "center" }]}>
+            <Text style={styles.label}>Severity:</Text>
+            <View
+              style={[
+                styles.severityBadge,
+                { backgroundColor: severityColor, color: "white" },
+              ]}
+            >
+              <Text>{analysis.severity} SEVERITY</Text>
+            </View>
+          </View>
+
+          <View style={styles.row}>
+            <Text style={styles.label}>Possible Cause:</Text>
+            <Text style={[styles.value, { fontWeight: "bold" }]}>
+              {analysis.possibleCause}
+            </Text>
+          </View>
+
+          <View style={styles.row}>
+            <Text style={styles.label}>Estimated Cost:</Text>
+            <Text style={styles.value}>{analysis.estimatedCost}</Text>
+          </View>
+
+          <View style={styles.row}>
+            <Text style={styles.label}>Action:</Text>
+            <Text style={styles.value}>{analysis.immediateAction}</Text>
+          </View>
+        </View>
+
+        {/* Preventive Measures */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Recommended Actions</Text>
+          {analysis.preventiveMeasures?.map((measure, index) => (
+            <Text key={index} style={[styles.value, { marginBottom: 4 }]}>
+              • {measure}
+            </Text>
+          ))}
+        </View>
+
+        <Text style={styles.disclaimer}>
+          Disclaimer: This report is generated by Google Gemini AI. It is an
+          estimation based on provided symptoms and should not replace a
+          professional physical inspection.
+        </Text>
+
+        {/* Footer */}
+        <Text style={styles.footer}>
+          Generated by On-Road Vehicle Breakdown Service • www.onroadhelp.com
+        </Text>
+      </Page>
+    </Document>
+  );
+};
+
+export default DiagnosisDocument;

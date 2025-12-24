@@ -123,7 +123,11 @@ export default function CreatePlanModal({
                 required
               >
                 {tierOptions.map((tier) => (
-                  <option key={tier} value={tier}>
+                  <option
+                    key={tier}
+                    value={tier}
+                    className="bg-[#1A1A1A] text-white"
+                  >
                     {tier.charAt(0).toUpperCase() + tier.slice(1)}
                   </option>
                 ))}

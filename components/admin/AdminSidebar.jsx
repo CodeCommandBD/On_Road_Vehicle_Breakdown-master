@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, usePathname } from "@/i18n/routing";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import {
@@ -21,6 +20,7 @@ import {
   BarChart3,
   Zap,
   Crown,
+  Package,
 } from "lucide-react";
 
 const menuItems = [
@@ -37,7 +37,7 @@ const menuItems = [
     icon: BarChart3,
   },
   { name: "Feature Usage", href: "/admin/features/usage", icon: Zap },
-  { name: "Plans", href: "/admin/plans", icon: DollarSign },
+  { name: "Plans", href: "/admin/plans", icon: Package },
   {
     name: "Subscriptions",
     href: "/admin/dashboard/subscriptions",
@@ -158,7 +158,25 @@ export default function AdminSidebar({ isOpen, onClose }) {
 
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href;
+
+            // Find the best match for the current path
+            // This handles nested routes like /admin/services and /admin/services/analytics
+            // by prioritizing the longest matching href
+            const activeItem = menuItems
+              .filter(
+                (i) => pathname === i.href || pathname.startsWith(`${i.href}/`)
+              )
+              .sort((a, b) => b.href.length - a.href.length)[0];
+
+            // Fallback for direct matches if the strict slash check misses (e.g. simplified startsWith for non-nested)
+            // But actually, simpler logic:
+            // Just find specific active item by sorting all matches by length
+            const exactActiveItem = menuItems
+              .filter((i) => pathname.startsWith(i.href))
+              .sort((a, b) => b.href.length - a.href.length)[0];
+
+            const isActive = exactActiveItem?.href === item.href;
+
             const badgeCount = item.badge ? counts[item.badge] : 0;
 
             return (

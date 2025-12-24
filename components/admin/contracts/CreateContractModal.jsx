@@ -187,9 +187,15 @@ export default function CreateContractModal({ isOpen, onClose, onSuccess }) {
                 className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none transition-colors"
                 required
               >
-                <option value="">Choose user...</option>
+                <option value="" className="bg-[#1A1A1A] text-white">
+                  Choose user...
+                </option>
                 {users.map((user) => (
-                  <option key={user._id} value={user._id}>
+                  <option
+                    key={user._id}
+                    value={user._id}
+                    className="bg-[#1A1A1A] text-white"
+                  >
                     {user.name} ({user.email})
                   </option>
                 ))}
@@ -208,11 +214,17 @@ export default function CreateContractModal({ isOpen, onClose, onSuccess }) {
                 className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-orange-500 outline-none transition-colors"
                 required
               >
-                <option value="">Choose plan...</option>
+                <option value="" className="bg-[#1A1A1A] text-white">
+                  Choose plan...
+                </option>
                 {plans
                   .filter((p) => p.tier === "enterprise")
                   .map((plan) => (
-                    <option key={plan._id} value={plan._id}>
+                    <option
+                      key={plan._id}
+                      value={plan._id}
+                      className="bg-[#1A1A1A] text-white"
+                    >
                       {plan.name} ({plan.tier})
                     </option>
                   ))}
@@ -253,8 +265,12 @@ export default function CreateContractModal({ isOpen, onClose, onSuccess }) {
                   }
                   className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-orange-500 outline-none"
                 >
-                  <option value="BDT">BDT (৳)</option>
-                  <option value="USD">USD ($)</option>
+                  <option value="BDT" className="bg-[#1A1A1A] text-white">
+                    BDT (৳)
+                  </option>
+                  <option value="USD" className="bg-[#1A1A1A] text-white">
+                    USD ($)
+                  </option>
                 </select>
               </div>
               <div>
@@ -268,9 +284,15 @@ export default function CreateContractModal({ isOpen, onClose, onSuccess }) {
                   }
                   className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-orange-500 outline-none"
                 >
-                  <option value="monthly">Monthly</option>
-                  <option value="yearly">Yearly</option>
-                  <option value="custom">Custom</option>
+                  <option value="monthly" className="bg-[#1A1A1A] text-white">
+                    Monthly
+                  </option>
+                  <option value="yearly" className="bg-[#1A1A1A] text-white">
+                    Yearly
+                  </option>
+                  <option value="custom" className="bg-[#1A1A1A] text-white">
+                    Custom
+                  </option>
                 </select>
               </div>
             </div>

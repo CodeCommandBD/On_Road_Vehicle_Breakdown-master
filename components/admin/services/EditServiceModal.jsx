@@ -5,6 +5,7 @@ import { X, Loader2 } from "lucide-react";
 
 export default function EditServiceModal({ isOpen, onClose, onSave, service }) {
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -13,7 +14,29 @@ export default function EditServiceModal({ isOpen, onClose, onSave, service }) {
     basePrice: 0,
     icon: "wrench",
     isActive: true,
+    image: "",
   });
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    const data = new FormData();
+    data.append("file", file);
+
+    try {
+      const importAxios = (await import("axios")).default;
+      const response = await importAxios.post("/api/upload", data);
+      if (response.data.success) {
+        setFormData((prev) => ({ ...prev, image: response.data.url }));
+      }
+    } catch (error) {
+      console.error("Upload failed", error);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const categories = [
     "mechanical",
@@ -47,6 +70,7 @@ export default function EditServiceModal({ isOpen, onClose, onSave, service }) {
         basePrice: service.basePrice || 0,
         icon: service.icon || "wrench",
         isActive: service.isActive !== undefined ? service.isActive : true,
+        image: service.image || "",
       });
     }
   }, [service]);
@@ -134,7 +158,11 @@ export default function EditServiceModal({ isOpen, onClose, onSave, service }) {
                   required
                 >
                   {categories.map((cat) => (
-                    <option key={cat} value={cat}>
+                    <option
+                      key={cat}
+                      value={cat}
+                      className="bg-[#1A1A1A] text-white"
+                    >
                       {cat
                         .split("-")
                         .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -153,7 +181,11 @@ export default function EditServiceModal({ isOpen, onClose, onSave, service }) {
                   className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white"
                 >
                   {icons.map((icon) => (
-                    <option key={icon} value={icon}>
+                    <option
+                      key={icon}
+                      value={icon}
+                      className="bg-[#1A1A1A] text-white"
+                    >
                       {icon.charAt(0).toUpperCase() + icon.slice(1)}
                     </option>
                   ))}
@@ -213,6 +245,51 @@ export default function EditServiceModal({ isOpen, onClose, onSave, service }) {
                   Active (visible to users)
                 </span>
               </label>
+            </div>
+
+            {/* Image Upload */}
+            <div>
+              <label className="text-white/60 text-sm mb-2 block">
+                Service Image
+              </label>
+              <div className="flex items-center gap-4">
+                {formData.image ? (
+                  <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-white/20 group">
+                    <img
+                      src={formData.image}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, image: "" })}
+                      className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-24 h-24 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center text-white/20">
+                    <Loader2
+                      size={24}
+                      className={uploading ? "animate-spin" : "hidden"}
+                    />
+                    {!uploading && <span>No Img</span>}
+                  </div>
+                )}
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={uploading}
+                    onChange={handleImageUpload}
+                    className="w-full text-sm text-white/60 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-500/10 file:text-orange-500 hover:file:bg-orange-500/20 cursor-pointer"
+                  />
+                  <p className="text-xs text-white/40 mt-1">
+                    Supported: JPG, PNG, WEBP
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 

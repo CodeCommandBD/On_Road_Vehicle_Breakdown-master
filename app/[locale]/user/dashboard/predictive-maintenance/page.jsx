@@ -23,6 +23,8 @@ import {
 import { toast } from "react-toastify";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { Download } from "lucide-react";
+import DiagnosisDocument from "@/components/pdf/DiagnosisDocument";
 
 export default function PredictiveMaintenancePage() {
   const t = useTranslations("Dashboard"); // You might want to add specific translations later
@@ -120,10 +122,10 @@ export default function PredictiveMaintenancePage() {
   const handleBookNow = () => {
     if (!result) return;
     // Redirect to booking page with pre-filled note
+    // Redirect to booking page with pre-filled note
+    // We use the main /book page which handles new booking flows
     const note = `AI Diagnosis: ${result.possibleCause}. User reported: ${symptoms}`;
-    router.push(
-      `/user/dashboard/bookings/new?note=${encodeURIComponent(note)}`
-    );
+    router.push(`/book?note=${encodeURIComponent(note)}`);
   };
 
   const getSeverityColor = (severity) => {
@@ -137,6 +139,36 @@ export default function PredictiveMaintenancePage() {
         return "text-green-500 bg-green-500/10 border-green-500/20";
       default:
         return "text-blue-500 bg-blue-500/10 border-blue-500/20";
+    }
+  };
+
+  const downloadReport = async () => {
+    if (!result) return;
+    try {
+      const { pdf } = await import("@react-pdf/renderer");
+      const diagnosisData = {
+        analysis: result,
+        vehicleType: activeVehicle
+          ? `${activeVehicle.make} ${activeVehicle.model}`
+          : "Generic",
+        symptoms: symptoms,
+        createdAt: new Date(),
+      };
+
+      const blob = await pdf(
+        <DiagnosisDocument diagnosis={diagnosisData} user={user} />
+      ).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `AI_Diagnosis_${new Date().getTime()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error generating report:", error);
+      toast.error("Failed to generate PDF report");
     }
   };
 
@@ -353,18 +385,25 @@ export default function PredictiveMaintenancePage() {
 
                 <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-white/10">
                   <button
-                    onClick={() => setSymptoms("")}
-                    className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-medium transition-colors"
+                    onClick={downloadReport}
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 shadow-lg"
                   >
-                    New Diagnosis
+                    <Download className="w-5 h-5" />
+                    Download Report
                   </button>
                   <button
                     onClick={handleBookNow}
                     className="flex-1 px-8 py-3 bg-white text-black hover:bg-gray-200 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-lg"
                   >
                     <Clock className="w-5 h-5" />
-                    Book Appointment for this Issue
+                    Book Appointment
                     <ArrowRight className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setSymptoms("")}
+                    className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-medium transition-colors"
+                  >
+                    New Diagnosis
                   </button>
                 </div>
               </div>

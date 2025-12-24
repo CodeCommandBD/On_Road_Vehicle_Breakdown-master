@@ -119,9 +119,15 @@ export default function GarageAnalytics() {
           onChange={(e) => setTimeFilter(parseInt(e.target.value))}
           className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white"
         >
-          <option value={7}>Last 7 Days</option>
-          <option value={30}>Last 30 Days</option>
-          <option value={90}>Last 90 Days</option>
+          <option value={7} className="bg-[#1A1A1A] text-white">
+            Last 7 Days
+          </option>
+          <option value={30} className="bg-[#1A1A1A] text-white">
+            Last 30 Days
+          </option>
+          <option value={90} className="bg-[#1A1A1A] text-white">
+            Last 90 Days
+          </option>
         </select>
       </div>
 
