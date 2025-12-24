@@ -10,7 +10,7 @@ export default function NotificationListener() {
   const user = useSelector(selectUser);
 
   useEffect(() => {
-    if (!user?._id) return;
+    if (!user?._id || !pusherClient) return;
 
     // Subscribe to user-specific channel
     const channel = pusherClient.subscribe(`user-${user._id}`);

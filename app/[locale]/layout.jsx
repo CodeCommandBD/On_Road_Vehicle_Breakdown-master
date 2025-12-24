@@ -3,6 +3,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "../globals.css";
 import StoreProvider from "@/store/provider";
 import NotificationListener from "@/components/providers/NotificationListener";
+import PWAInstallPrompt from "@/components/common/PWAInstallPrompt";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { routing } from "@/i18n/routing";
@@ -20,6 +21,15 @@ export const metadata = {
     type: "website",
   },
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "On Road Help",
+  },
+};
+
+export const viewport = {
+  themeColor: "#e85d04",
 };
 
 export default async function RootLayout({ children, params }) {
@@ -41,6 +51,7 @@ export default async function RootLayout({ children, params }) {
           <StoreProvider>
             {children}
             <NotificationListener />
+            <PWAInstallPrompt />
             <ToastContainer position="bottom-right" theme="colored" />
           </StoreProvider>
         </NextIntlClientProvider>
