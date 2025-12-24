@@ -4,7 +4,11 @@ import EnhancedStatsCards from "@/components/dashboard/EnhancedStatsCards";
 import BookingTable from "@/components/dashboard/BookingTable";
 import QuickActions from "@/components/dashboard/QuickActions";
 import BookingTimeline from "@/components/dashboard/BookingTimeline";
-import LiveGarageTracker from "@/components/dashboard/LiveGarageTracker";
+import dynamic from "next/dynamic";
+const LiveGarageTracker = dynamic(
+  () => import("@/components/dashboard/LiveGarageTracker"),
+  { ssr: false }
+);
 import UserRewardsCard from "@/components/dashboard/UserRewardsCard";
 import LeaderboardWidget from "@/components/dashboard/LeaderboardWidget";
 import SubscriptionCard from "@/components/dashboard/SubscriptionCard";

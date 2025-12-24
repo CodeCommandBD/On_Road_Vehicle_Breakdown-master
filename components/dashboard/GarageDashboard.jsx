@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import StatsCards from "@/components/dashboard/StatsCards";
 import BookingTable from "@/components/dashboard/BookingTable";
 import RevenueChart from "@/components/dashboard/RevenueChart";
-import GarageMapDashboard from "@/components/dashboard/GarageMapDashboard";
+
 import {
   Plus,
   Loader2,

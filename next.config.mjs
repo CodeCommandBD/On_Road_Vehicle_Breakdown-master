@@ -18,13 +18,14 @@ const nextConfig = {
       bodySizeLimit: "2mb",
     },
   },
+  outputFileTracingRoot: process.cwd(),
 };
 
 import withPWAInit from "next-pwa";
 
 const withPWA = withPWAInit({
   dest: "public",
-  disable: process.env.NODE_ENV === "development",
+  disable: false,
   register: true,
   skipWaiting: true,
 });
