@@ -257,8 +257,12 @@ export default function TeamManagement() {
                   }
                   className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white"
                 >
-                  <option value="mechanic">Mechanic</option>
-                  <option value="manager">Manager</option>
+                  <option value="mechanic" className="bg-[#1A1A1A] text-white">
+                    Mechanic
+                  </option>
+                  <option value="manager" className="bg-[#1A1A1A] text-white">
+                    Manager
+                  </option>
                 </select>
               </div>
               <div className="flex gap-3">

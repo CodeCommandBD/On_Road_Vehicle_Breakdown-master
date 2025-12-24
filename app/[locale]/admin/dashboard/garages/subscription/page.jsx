@@ -168,12 +168,24 @@ export default function GaragesSubscriptionPage() {
               onChange={(e) => setFilters({ ...filters, tier: e.target.value })}
               className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white"
             >
-              <option value="all">All Tiers</option>
-              <option value="free">Free</option>
-              <option value="trial">Trial</option>
-              <option value="standard">Standard</option>
-              <option value="premium">Premium</option>
-              <option value="enterprise">Enterprise</option>
+              <option value="all" className="bg-[#1A1A1A] text-white">
+                All Tiers
+              </option>
+              <option value="free" className="bg-[#1A1A1A] text-white">
+                Free
+              </option>
+              <option value="trial" className="bg-[#1A1A1A] text-white">
+                Trial
+              </option>
+              <option value="standard" className="bg-[#1A1A1A] text-white">
+                Standard
+              </option>
+              <option value="premium" className="bg-[#1A1A1A] text-white">
+                Premium
+              </option>
+              <option value="enterprise" className="bg-[#1A1A1A] text-white">
+                Enterprise
+              </option>
             </select>
           </div>
           <div>
@@ -185,10 +197,18 @@ export default function GaragesSubscriptionPage() {
               }
               className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white"
             >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="expiring">Expiring Soon</option>
-              <option value="expired">Expired</option>
+              <option value="all" className="bg-[#1A1A1A] text-white">
+                All Status
+              </option>
+              <option value="active" className="bg-[#1A1A1A] text-white">
+                Active
+              </option>
+              <option value="expiring" className="bg-[#1A1A1A] text-white">
+                Expiring Soon
+              </option>
+              <option value="expired" className="bg-[#1A1A1A] text-white">
+                Expired
+              </option>
             </select>
           </div>
           <div className="flex items-end">
@@ -351,11 +371,27 @@ export default function GaragesSubscriptionPage() {
                     }
                     className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white"
                   >
-                    <option value="free">Free</option>
-                    <option value="trial">Trial</option>
-                    <option value="standard">Standard</option>
-                    <option value="premium">Premium</option>
-                    <option value="enterprise">Enterprise</option>
+                    <option value="free" className="bg-[#1A1A1A] text-white">
+                      Free
+                    </option>
+                    <option value="trial" className="bg-[#1A1A1A] text-white">
+                      Trial
+                    </option>
+                    <option
+                      value="standard"
+                      className="bg-[#1A1A1A] text-white"
+                    >
+                      Standard
+                    </option>
+                    <option value="premium" className="bg-[#1A1A1A] text-white">
+                      Premium
+                    </option>
+                    <option
+                      value="enterprise"
+                      className="bg-[#1A1A1A] text-white"
+                    >
+                      Enterprise
+                    </option>
                   </select>
                 </div>
                 <div>

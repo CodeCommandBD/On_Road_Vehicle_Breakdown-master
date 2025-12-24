@@ -17,6 +17,7 @@ import {
   X,
   Check,
   CheckCheck,
+  Download,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { formatDateTime } from "@/lib/utils/helpers";
@@ -320,6 +321,33 @@ export default function ChatInterface({ userId }) {
     }
   };
 
+  const handleExportChat = () => {
+    if (!messages.length) return toast.error("No messages to export");
+
+    const recipient = activeConversation.participants.find(
+      (p) => p._id !== userId
+    );
+    const content = messages
+      .map((m) => {
+        const sender = m.sender === userId ? "Me" : recipient?.name || "User";
+        const time = new Date(m.createdAt).toLocaleString();
+        return `[${time}] ${sender}: ${m.text}`;
+      })
+      .join("\n");
+
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute(
+      "download",
+      `chat_history_${recipient?.name || "user"}.txt`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading && conversations.length === 0) {
     return (
       <div className="flex justify-center items-center h-96">
@@ -467,9 +495,19 @@ export default function ChatInterface({ userId }) {
                   <p className="text-[10px] text-green-500 font-bold">ONLINE</p>
                 </div>
               </div>
-              <button className="p-2 text-white/40 hover:text-white transition-colors">
-                <MoreVertical className="w-5 h-5" />
-              </button>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={handleExportChat}
+                  className="p-2 text-white/40 hover:text-white transition-colors hover:bg-white/10 rounded-lg"
+                  title="Export Chat"
+                >
+                  <Download className="w-5 h-5" />
+                </button>
+                <button className="p-2 text-white/40 hover:text-white transition-colors hover:bg-white/10 rounded-lg">
+                  <MoreVertical className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Messages List */}

@@ -16,6 +16,7 @@ import {
   Calendar,
   Loader2,
   MoreVertical,
+  Download,
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -35,6 +36,7 @@ export default function SubscriptionsPage() {
     tier: "all",
     status: "all",
   });
+  const [search, setSearch] = useState(""); // Search state
   const [showModal, setShowModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [modalAction, setModalAction] = useState(null);
@@ -46,17 +48,21 @@ export default function SubscriptionsPage() {
   const [openDropdown, setOpenDropdown] = useState(null); // Track which dropdown is open
 
   useEffect(() => {
-    fetchData();
-  }, [pagination.page, filters, activeTab]);
+    // Debounce search
+    const timer = setTimeout(() => {
+      fetchData();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [pagination.page, filters, activeTab, search]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
-        page: pagination.page,
         limit: pagination.limit,
         ...(filters.tier !== "all" && { tier: filters.tier }),
         ...(filters.status !== "all" && { status: filters.status }),
+        ...(search && { search }),
       });
 
       const endpoint =
@@ -126,6 +132,55 @@ export default function SubscriptionsPage() {
     } finally {
       setProcessing(false);
     }
+  };
+
+  const handleExport = () => {
+    if (!data.length) return toast.error("No data to export");
+
+    const headers = [
+      "Name",
+      "Email",
+      "Tier",
+      "Status",
+      "Expiry Date",
+      "Joined Date",
+    ];
+
+    const csvContent = [
+      headers.join(","),
+      ...data.map((item) => {
+        const status =
+          item.membershipTier === "free"
+            ? "Free"
+            : item.membershipExpiry &&
+              new Date(item.membershipExpiry) < new Date()
+            ? "Expired"
+            : "Active";
+
+        return [
+          `"${item.name || "N/A"}"`,
+          `"${item.email || "N/A"}"`,
+          item.membershipTier || "Free",
+          status,
+          item.membershipExpiry
+            ? new Date(item.membershipExpiry).toLocaleDateString()
+            : "N/A",
+          new Date(item.createdAt).toLocaleDateString(),
+        ].join(",");
+      }),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute(
+      "download",
+      `${activeTab}_subscriptions_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const getStatusBadge = (item) => {
@@ -238,12 +293,24 @@ export default function SubscriptionsPage() {
               onChange={(e) => setFilters({ ...filters, tier: e.target.value })}
               className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white"
             >
-              <option value="all">All Tiers</option>
-              <option value="free">Free</option>
-              <option value="trial">Trial</option>
-              <option value="standard">Standard</option>
-              <option value="premium">Premium</option>
-              <option value="enterprise">Enterprise</option>
+              <option value="all" className="bg-[#1A1A1A] text-white">
+                All Tiers
+              </option>
+              <option value="free" className="bg-[#1A1A1A] text-white">
+                Free
+              </option>
+              <option value="trial" className="bg-[#1A1A1A] text-white">
+                Trial
+              </option>
+              <option value="standard" className="bg-[#1A1A1A] text-white">
+                Standard
+              </option>
+              <option value="premium" className="bg-[#1A1A1A] text-white">
+                Premium
+              </option>
+              <option value="enterprise" className="bg-[#1A1A1A] text-white">
+                Enterprise
+              </option>
             </select>
           </div>
           <div>
@@ -255,10 +322,18 @@ export default function SubscriptionsPage() {
               }
               className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white"
             >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="expiring">Expiring Soon</option>
-              <option value="expired">Expired</option>
+              <option value="all" className="bg-[#1A1A1A] text-white">
+                All Status
+              </option>
+              <option value="active" className="bg-[#1A1A1A] text-white">
+                Active
+              </option>
+              <option value="expiring" className="bg-[#1A1A1A] text-white">
+                Expiring Soon
+              </option>
+              <option value="expired" className="bg-[#1A1A1A] text-white">
+                Expired
+              </option>
             </select>
           </div>
           <div className="flex items-end">
@@ -270,6 +345,33 @@ export default function SubscriptionsPage() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Actions Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* Search */}
+        <div className="relative flex-1 max-w-md">
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40"
+            size={20}
+          />
+          <input
+            type="text"
+            placeholder={`Search ${activeTab}...`}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-white/20 transition-all"
+          />
+        </div>
+
+        {/* Export */}
+        <button
+          onClick={handleExport}
+          className="flex items-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white transition-colors"
+        >
+          <Download size={20} />
+          <span className="font-medium">Export CSV</span>
+        </button>
       </div>
 
       {/* Table */}
@@ -474,11 +576,27 @@ export default function SubscriptionsPage() {
                     }
                     className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white"
                   >
-                    <option value="free">Free</option>
-                    <option value="trial">Trial</option>
-                    <option value="standard">Standard</option>
-                    <option value="premium">Premium</option>
-                    <option value="enterprise">Enterprise</option>
+                    <option value="free" className="bg-[#1A1A1A] text-white">
+                      Free
+                    </option>
+                    <option value="trial" className="bg-[#1A1A1A] text-white">
+                      Trial
+                    </option>
+                    <option
+                      value="standard"
+                      className="bg-[#1A1A1A] text-white"
+                    >
+                      Standard
+                    </option>
+                    <option value="premium" className="bg-[#1A1A1A] text-white">
+                      Premium
+                    </option>
+                    <option
+                      value="enterprise"
+                      className="bg-[#1A1A1A] text-white"
+                    >
+                      Enterprise
+                    </option>
                   </select>
                 </div>
                 <div>

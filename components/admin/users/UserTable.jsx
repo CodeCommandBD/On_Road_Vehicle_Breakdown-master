@@ -192,10 +192,18 @@ export default function UserTable() {
             onChange={(e) => setRoleFilter(e.target.value)}
             className="bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#FF532D] min-w-[140px]"
           >
-            <option value="all">All Roles</option>
-            <option value="user">User</option>
-            <option value="garage">Garage</option>
-            <option value="admin">Admin</option>
+            <option value="all" className="bg-[#1A1A1A] text-white">
+              All Roles
+            </option>
+            <option value="user" className="bg-[#1A1A1A] text-white">
+              User
+            </option>
+            <option value="garage" className="bg-[#1A1A1A] text-white">
+              Garage
+            </option>
+            <option value="admin" className="bg-[#1A1A1A] text-white">
+              Admin
+            </option>
           </select>
 
           {/* Status Filter */}
@@ -204,9 +212,15 @@ export default function UserTable() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#FF532D] min-w-[140px]"
           >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="banned">Banned</option>
+            <option value="all" className="bg-[#1A1A1A] text-white">
+              All Status
+            </option>
+            <option value="active" className="bg-[#1A1A1A] text-white">
+              Active
+            </option>
+            <option value="banned" className="bg-[#1A1A1A] text-white">
+              Banned
+            </option>
           </select>
         </div>
       </div>
@@ -467,9 +481,15 @@ export default function UserTable() {
                   }
                   className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
                 >
-                  <option value="pending">Pending</option>
-                  <option value="active">Active</option>
-                  <option value="expired">Expired</option>
+                  <option value="pending" className="bg-[#1A1A1A] text-white">
+                    Pending
+                  </option>
+                  <option value="active" className="bg-[#1A1A1A] text-white">
+                    Active
+                  </option>
+                  <option value="expired" className="bg-[#1A1A1A] text-white">
+                    Expired
+                  </option>
                 </select>
               </div>
 

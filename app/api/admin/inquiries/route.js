@@ -25,7 +25,25 @@ export async function GET(request) {
     }
 
     await connectDB();
-    const inquiries = await ContactInquiry.find().sort({ createdAt: -1 });
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get("search");
+    const status = searchParams.get("status");
+
+    let query = {};
+
+    if (status && status !== "all") {
+      query.status = status;
+    }
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { company: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const inquiries = await ContactInquiry.find(query).sort({ createdAt: -1 });
 
     return NextResponse.json({
       success: true,

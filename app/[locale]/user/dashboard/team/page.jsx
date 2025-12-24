@@ -432,7 +432,11 @@ export default function TeamManagementPage() {
               className="w-full appearance-none px-4 py-3 bg-gray-800 border border-gray-700/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 pr-10"
             >
               {organizations.map((org) => (
-                <option key={org.id} value={org.id}>
+                <option
+                  key={org.id}
+                  value={org.id}
+                  className="bg-[#1A1A1A] text-white"
+                >
                   {org.name} ({org.role})
                 </option>
               ))}
@@ -574,12 +578,24 @@ export default function TeamManagementPage() {
                   onChange={(e) => setRoleFilter(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 bg-gray-800/40 border border-gray-700/50 rounded-xl text-sm text-white focus:outline-none appearance-none"
                 >
-                  <option value="all">All Roles</option>
-                  <option value="owner">Owners</option>
-                  <option value="admin">Admins</option>
-                  <option value="manager">Managers</option>
-                  <option value="member">Members</option>
-                  <option value="viewer">Viewers</option>
+                  <option value="all" className="bg-[#1A1A1A] text-white">
+                    All Roles
+                  </option>
+                  <option value="owner" className="bg-[#1A1A1A] text-white">
+                    Owners
+                  </option>
+                  <option value="admin" className="bg-[#1A1A1A] text-white">
+                    Admins
+                  </option>
+                  <option value="manager" className="bg-[#1A1A1A] text-white">
+                    Managers
+                  </option>
+                  <option value="member" className="bg-[#1A1A1A] text-white">
+                    Members
+                  </option>
+                  <option value="viewer" className="bg-[#1A1A1A] text-white">
+                    Viewers
+                  </option>
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-600 pointer-events-none" />
               </div>
@@ -661,10 +677,30 @@ export default function TeamManagementPage() {
                                 }
                                 className="appearance-none bg-gray-800/80 text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-700 pr-8 focus:outline-none focus:border-blue-500 transition-all uppercase tracking-wide cursor-pointer"
                               >
-                                <option value="admin">Admin</option>
-                                <option value="manager">Manager</option>
-                                <option value="member">Member</option>
-                                <option value="viewer">Viewer</option>
+                                <option
+                                  value="admin"
+                                  className="bg-[#1A1A1A] text-white"
+                                >
+                                  Admin
+                                </option>
+                                <option
+                                  value="manager"
+                                  className="bg-[#1A1A1A] text-white"
+                                >
+                                  Manager
+                                </option>
+                                <option
+                                  value="member"
+                                  className="bg-[#1A1A1A] text-white"
+                                >
+                                  Member
+                                </option>
+                                <option
+                                  value="viewer"
+                                  className="bg-[#1A1A1A] text-white"
+                                >
+                                  Viewer
+                                </option>
                               </select>
                               <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
                               {updatingRole === member.userId && (

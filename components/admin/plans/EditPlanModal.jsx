@@ -151,8 +151,12 @@ export default function EditPlanModal({ isOpen, onClose, plan, onSave }) {
                   }
                   className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:border-orange-500 outline-none transition-colors"
                 >
-                  <option value="user">User Plan</option>
-                  <option value="garage">Garage Plan</option>
+                  <option value="user" className="bg-[#1A1A1A] text-white">
+                    User Plan
+                  </option>
+                  <option value="garage" className="bg-[#1A1A1A] text-white">
+                    Garage Plan
+                  </option>
                 </select>
               </div>
             </div>
@@ -243,8 +247,12 @@ export default function EditPlanModal({ isOpen, onClose, plan, onSave }) {
                   }
                   className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:border-orange-500 outline-none transition-colors"
                 >
-                  <option value="BDT">BDT (৳)</option>
-                  <option value="USD">USD ($)</option>
+                  <option value="BDT" className="bg-[#1A1A1A] text-white">
+                    BDT (৳)
+                  </option>
+                  <option value="USD" className="bg-[#1A1A1A] text-white">
+                    USD ($)
+                  </option>
                 </select>
               </div>
               <div>

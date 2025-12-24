@@ -9,6 +9,7 @@ import {
   CheckCircle,
   BarChart3,
   Loader2,
+  Download,
 } from "lucide-react";
 import {
   BarChart,
@@ -47,6 +48,42 @@ export default function ServiceAnalytics() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleExport = () => {
+    if (!analytics?.servicesDetailed) return;
+
+    const headers = [
+      "Service Name",
+      "Category",
+      "Total Requests",
+      "Total Revenue",
+      "Completed",
+      "Completion Rate",
+      "Avg Value",
+    ];
+
+    const rows = analytics.servicesDetailed.map((service) => [
+      service.name,
+      service.category,
+      service.requests,
+      service.revenue,
+      service.completed,
+      `${Math.round((service.completed / service.requests) * 100)}%`,
+      Math.round(service.revenue / (service.requests || 1)),
+    ]);
+
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "service_analytics.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const COLORS = [
@@ -96,10 +133,24 @@ export default function ServiceAnalytics() {
           onChange={(e) => setTimeFilter(parseInt(e.target.value))}
           className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white"
         >
-          <option value={7}>Last 7 Days</option>
-          <option value={30}>Last 30 Days</option>
-          <option value={90}>Last 90 Days</option>
+          <option value={7} className="bg-[#1A1A1A] text-white">
+            Last 7 Days
+          </option>
+          <option value={30} className="bg-[#1A1A1A] text-white">
+            Last 30 Days
+          </option>
+          <option value={90} className="bg-[#1A1A1A] text-white">
+            Last 90 Days
+          </option>
         </select>
+
+        <button
+          onClick={handleExport}
+          className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-xl transition-colors ml-4"
+        >
+          <Download size={18} />
+          Export CSV
+        </button>
       </div>
 
       {/* Overview Cards */}
@@ -160,7 +211,7 @@ export default function ServiceAnalytics() {
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Top Requested Services */}
         <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6">
           <h3 className="text-lg font-bold text-white mb-4">
@@ -180,13 +231,52 @@ export default function ServiceAnalytics() {
               <YAxis stroke="#888" tick={{ fill: "#888" }} />
               <Tooltip
                 contentStyle={{
-                  background: "#1a1a1a",
-                  border: "1px solid #333",
-                  borderRadius: "8px",
+                  backgroundColor: "rgba(26, 26, 26, 0.95)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  borderRadius: "12px",
+                  padding: "12px",
+                  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
                   color: "#fff",
                 }}
+                itemStyle={{ color: "#fff" }}
+                cursor={{ fill: "rgba(255, 255, 255, 0.05)" }}
               />
               <Bar dataKey="requests" fill="#FF6B6B" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Top Revenue Generating Services */}
+        <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6">
+          <h3 className="text-lg font-bold text-white mb-4">
+            Top Revenue Services
+          </h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={analytics.topRevenueServices}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+              <XAxis
+                dataKey="name"
+                stroke="#888"
+                tick={{ fill: "#888", fontSize: 12 }}
+                angle={-45}
+                textAnchor="end"
+                height={80}
+              />
+              <YAxis stroke="#888" tick={{ fill: "#888" }} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "rgba(26, 26, 26, 0.95)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  borderRadius: "12px",
+                  padding: "12px",
+                  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
+                  color: "#fff",
+                }}
+                itemStyle={{ color: "#fff" }}
+                cursor={{ fill: "rgba(255, 255, 255, 0.05)" }}
+                formatter={(value) => `৳${value.toLocaleString()}`}
+              />
+              <Bar dataKey="revenue" fill="#4ECDC4" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -220,11 +310,14 @@ export default function ServiceAnalytics() {
               </Pie>
               <Tooltip
                 contentStyle={{
-                  background: "#1a1a1a",
-                  border: "1px solid #333",
-                  borderRadius: "8px",
+                  backgroundColor: "rgba(26, 26, 26, 0.95)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  borderRadius: "12px",
+                  padding: "12px",
+                  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
                   color: "#fff",
                 }}
+                itemStyle={{ color: "#fff" }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -244,6 +337,7 @@ export default function ServiceAnalytics() {
                 <th className="pb-4 font-medium">Category</th>
                 <th className="pb-4 font-medium text-right">Requests</th>
                 <th className="pb-4 font-medium text-right">Revenue</th>
+                <th className="pb-4 font-medium text-right">Avg Value</th>
                 <th className="pb-4 font-medium text-right">Completed</th>
                 <th className="pb-4 font-medium text-right">Rate</th>
               </tr>
@@ -263,6 +357,12 @@ export default function ServiceAnalytics() {
                   <td className="py-4 text-right">{service.requests}</td>
                   <td className="py-4 text-right text-orange-500 font-bold">
                     ৳{service.revenue.toLocaleString()}
+                  </td>
+                  <td className="py-4 text-right text-white/60">
+                    ৳
+                    {Math.round(
+                      service.revenue / (service.requests || 1)
+                    ).toLocaleString()}
                   </td>
                   <td className="py-4 text-right text-green-500">
                     {service.completed}

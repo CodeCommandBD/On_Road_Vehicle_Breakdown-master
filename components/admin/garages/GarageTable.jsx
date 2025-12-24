@@ -154,10 +154,18 @@ export default function GarageTable() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="bg-black/20 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-orange-500/50"
           >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="pending">Pending</option>
-            <option value="inactive">Inactive</option>
+            <option value="all" className="bg-[#1A1A1A] text-white">
+              All Status
+            </option>
+            <option value="active" className="bg-[#1A1A1A] text-white">
+              Active
+            </option>
+            <option value="pending" className="bg-[#1A1A1A] text-white">
+              Pending
+            </option>
+            <option value="inactive" className="bg-[#1A1A1A] text-white">
+              Inactive
+            </option>
           </select>
 
           <select
@@ -165,12 +173,24 @@ export default function GarageTable() {
             onChange={(e) => setTierFilter(e.target.value)}
             className="bg-black/20 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-orange-500/50"
           >
-            <option value="all">All Tiers</option>
-            <option value="free">Free</option>
-            <option value="trial">Trial</option>
-            <option value="standard">Standard</option>
-            <option value="premium">Premium</option>
-            <option value="enterprise">Enterprise</option>
+            <option value="all" className="bg-[#1A1A1A] text-white">
+              All Tiers
+            </option>
+            <option value="free" className="bg-[#1A1A1A] text-white">
+              Free
+            </option>
+            <option value="trial" className="bg-[#1A1A1A] text-white">
+              Trial
+            </option>
+            <option value="standard" className="bg-[#1A1A1A] text-white">
+              Standard
+            </option>
+            <option value="premium" className="bg-[#1A1A1A] text-white">
+              Premium
+            </option>
+            <option value="enterprise" className="bg-[#1A1A1A] text-white">
+              Enterprise
+            </option>
           </select>
 
           <select
@@ -178,9 +198,15 @@ export default function GarageTable() {
             onChange={(e) => setFeaturedFilter(e.target.value)}
             className="bg-black/20 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-orange-500/50"
           >
-            <option value="all">Featured: Any</option>
-            <option value="featured">Featured Only</option>
-            <option value="non-featured">Non-Featured</option>
+            <option value="all" className="bg-[#1A1A1A] text-white">
+              Featured: Any
+            </option>
+            <option value="featured" className="bg-[#1A1A1A] text-white">
+              Featured Only
+            </option>
+            <option value="non-featured" className="bg-[#1A1A1A] text-white">
+              Non-Featured
+            </option>
           </select>
         </div>
 

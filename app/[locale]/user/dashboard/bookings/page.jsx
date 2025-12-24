@@ -101,12 +101,24 @@ export default function MyBookingsPage() {
             onChange={(e) => setFilterStatus(e.target.value)}
             className="bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white focus:outline-none focus:border-orange-500 transition-colors appearance-none min-w-[140px]"
           >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="in-progress">In Progress</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
+            <option value="all" className="bg-[#1A1A1A] text-white">
+              All Status
+            </option>
+            <option value="pending" className="bg-[#1A1A1A] text-white">
+              Pending
+            </option>
+            <option value="confirmed" className="bg-[#1A1A1A] text-white">
+              Confirmed
+            </option>
+            <option value="in-progress" className="bg-[#1A1A1A] text-white">
+              In Progress
+            </option>
+            <option value="completed" className="bg-[#1A1A1A] text-white">
+              Completed
+            </option>
+            <option value="cancelled" className="bg-[#1A1A1A] text-white">
+              Cancelled
+            </option>
           </select>
         </div>
 

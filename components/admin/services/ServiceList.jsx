@@ -132,6 +132,53 @@ export default function ServiceList() {
     }
   };
 
+  const [selectedServices, setSelectedServices] = useState([]);
+
+  // ... (existing handlers)
+
+  const handleSelect = (serviceId) => {
+    setSelectedServices((prev) =>
+      prev.includes(serviceId)
+        ? prev.filter((id) => id !== serviceId)
+        : [...prev, serviceId]
+    );
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedServices(filteredServices.map((s) => s._id));
+    } else {
+      setSelectedServices([]);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (
+      !confirm(
+        `Are you sure you want to delete ${selectedServices.length} services?`
+      )
+    )
+      return;
+
+    try {
+      setLoading(true); // Show global loading
+      // Use client-side loop for now as specific bulk API not requested yet, or can use Promise.all
+      await Promise.all(
+        selectedServices.map((id) =>
+          axios.delete(`/api/admin/services?id=${id}`)
+        )
+      );
+      toast.success("Selected services deleted");
+      setSelectedServices([]);
+      fetchServices();
+    } catch (error) {
+      console.error("Bulk delete failed", error);
+      toast.error("Failed to delete some services");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Filter services
   const filteredServices = services.filter((service) => {
     const matchesCategory =
@@ -180,7 +227,11 @@ export default function ServiceList() {
               className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm"
             >
               {categories.map((cat) => (
-                <option key={cat.value} value={cat.value}>
+                <option
+                  key={cat.value}
+                  value={cat.value}
+                  className="bg-[#1A1A1A] text-white"
+                >
                   {cat.label}
                 </option>
               ))}
@@ -193,9 +244,15 @@ export default function ServiceList() {
               onChange={(e) => setFilterStatus(e.target.value)}
               className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm"
             >
-              <option value="all">All Status</option>
-              <option value="active">Active Only</option>
-              <option value="inactive">Inactive Only</option>
+              <option value="all" className="bg-[#1A1A1A] text-white">
+                All Status
+              </option>
+              <option value="active" className="bg-[#1A1A1A] text-white">
+                Active Only
+              </option>
+              <option value="inactive" className="bg-[#1A1A1A] text-white">
+                Inactive Only
+              </option>
             </select>
           </div>
         </div>
@@ -240,7 +297,7 @@ export default function ServiceList() {
               }`}
             >
               {/* Status Badge */}
-              <div className="absolute top-4 right-4">
+              <div className="absolute top-4 right-4 z-10">
                 <div
                   className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                     service.isActive
@@ -252,17 +309,43 @@ export default function ServiceList() {
                 </div>
               </div>
 
-              {/* Icon & Name */}
-              <div className="mb-4">
-                <div className="w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center mb-3">
-                  <Wrench className="text-orange-500" size={24} />
+              {/* Selection Checkbox */}
+              <div className="absolute top-4 left-4 z-10">
+                <input
+                  type="checkbox"
+                  checked={selectedServices.includes(service._id)}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    handleSelect(service._id);
+                  }}
+                  className="w-5 h-5 rounded border-white/20 bg-black/50 checked:bg-orange-500 cursor-pointer"
+                />
+              </div>
+
+              {/* Service Image or Icon */}
+              <div className="mb-4 aspect-video rounded-xl bg-white/5 overflow-hidden relative">
+                {service.image ? (
+                  <img
+                    src={service.image}
+                    alt={service.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-white/10">
+                    <Wrench size={48} />
+                  </div>
+                )}
+                {/* Category Badge overlay */}
+                <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/60 backdrop-blur-sm rounded text-xs text-white uppercase font-bold tracking-wider">
+                  {service.category?.split("-").join(" ")}
                 </div>
-                <h3 className="text-lg font-bold text-white mb-1">
+              </div>
+
+              {/* Info */}
+              <div className="mb-4">
+                <h3 className="text-lg font-bold text-white mb-1 line-clamp-1">
                   {service.name}
                 </h3>
-                <p className="text-white/40 text-xs uppercase tracking-wider">
-                  {service.category?.split("-").join(" ")}
-                </p>
               </div>
 
               {/* Description */}
@@ -295,25 +378,35 @@ export default function ServiceList() {
                     onClick={() =>
                       handleToggleActive(service._id, service.isActive)
                     }
-                    className={`flex items-center justify-center gap-2 font-medium py-2 rounded-lg transition-all border text-xs ${
+                    className={`group/activebtn relative flex items-center justify-center gap-2 font-medium py-2 rounded-lg transition-all border text-xs ${
                       service.isActive
                         ? "bg-red-500/20 hover:bg-red-500/30 text-red-400 border-red-500/30"
                         : "bg-green-500/20 hover:bg-green-500/30 text-green-400 border-green-500/30"
                     }`}
                   >
                     {service.isActive ? (
-                      <ToggleRight size={14} />
+                      <ToggleRight size={20} />
                     ) : (
-                      <ToggleLeft size={14} />
+                      <ToggleLeft size={20} />
                     )}
-                    {service.isActive ? "Deactivate" : "Activate"}
+
+                    {/* Tooltip */}
+                    <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-[#1A1A1A]/90 backdrop-blur-md border border-white/10 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/activebtn:opacity-100 transition-opacity whitespace-nowrap z-20 pointer-events-none shadow-lg">
+                      {service.isActive
+                        ? "Deactivate Service"
+                        : "Activate Service"}
+                    </span>
                   </button>
                   <button
                     onClick={() => handleEdit(service)}
-                    className="flex items-center justify-center gap-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 font-medium py-2 rounded-lg transition-all border border-blue-500/30 text-xs"
+                    className="group/editbtn relative flex items-center justify-center gap-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 font-medium py-2 rounded-lg transition-all border border-blue-500/30 text-xs"
                   >
-                    <Edit2 size={14} />
-                    Edit
+                    <Edit2 size={20} />
+
+                    {/* Tooltip */}
+                    <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-[#1A1A1A]/90 backdrop-blur-md border border-white/10 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/editbtn:opacity-100 transition-opacity whitespace-nowrap z-20 pointer-events-none shadow-lg">
+                      Edit Service
+                    </span>
                   </button>
                 </div>
                 <button

@@ -21,6 +21,16 @@ export async function GET(request) {
       query.membershipTier = tier;
     }
 
+    const search = searchParams.get("search");
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+        { garageName: { $regex: search, $options: "i" } },
+      ];
+    }
+
     const now = new Date();
     const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 

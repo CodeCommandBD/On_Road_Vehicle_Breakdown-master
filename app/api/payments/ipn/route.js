@@ -24,8 +24,19 @@ export async function POST(request) {
 
     console.log("IPN received:", { tran_id, status, val_id });
 
-    // Validate hash (if SSLCommerz sends it)
-    // TODO: Add hash validation for production
+    // Validate IPN data
+    if (!status || !tran_id) {
+      console.error("IPN: Invalid data received");
+      return NextResponse.json(
+        { success: false, message: "Invalid data" },
+        { status: 400 }
+      );
+    }
+
+    // TODO: For production, you must implement the hash validation using the store password
+    // const crypto = require('crypto');
+    // const store_passwd = process.env.STORE_PASSWD;
+    // ... calculate hash ...
 
     // Find payment
     const payment = await Payment.findById(value_a);

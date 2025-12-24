@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FileText, Plus, Download, Eye } from "lucide-react";
+import { FileText, Plus, Download, Eye, Search } from "lucide-react";
 import axios from "axios";
 import CreateContractModal from "@/components/admin/contracts/CreateContractModal";
 
@@ -9,14 +9,21 @@ export default function AdminContractsPage() {
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetchContracts();
-  }, []);
+    const timer = setTimeout(() => {
+      fetchContracts();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const fetchContracts = async () => {
     try {
-      const response = await axios.get("/api/contracts");
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+
+      const response = await axios.get(`/api/contracts?${params.toString()}`);
       if (response.data.success) {
         setContracts(response.data.data.contracts);
       }
@@ -44,6 +51,49 @@ export default function AdminContractsPage() {
       console.error("Failed to download PDF:", error);
       alert("Failed to download PDF");
     }
+  };
+
+  const handleExport = () => {
+    if (!contracts.length) return alert("No contracts to export");
+
+    const headers = [
+      "Contract #",
+      "Client Name",
+      "Client Email",
+      "Plan",
+      "Amount",
+      "Start Date",
+      "End Date",
+      "Status",
+    ];
+
+    const csvContent = [
+      headers.join(","),
+      ...contracts.map((c) =>
+        [
+          c.contractNumber,
+          `"${c.userId?.name || ""}"`,
+          `"${c.userId?.email || ""}"`,
+          `"${c.planId?.name || ""}"`,
+          `${c.pricing?.currency} ${c.pricing?.amount}`,
+          new Date(c.startDate).toLocaleDateString(),
+          new Date(c.endDate).toLocaleDateString(),
+          c.status,
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute(
+      "download",
+      `contracts_export_${new Date().toISOString().split("T")[0]}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const getStatusBadge = (status) => {
@@ -108,6 +158,30 @@ export default function AdminContractsPage() {
         >
           <Plus size={20} />
           Create Contract
+        </button>
+      </div>
+
+      {/* Actions */}
+      <div className="flex flex-col md:flex-row gap-4 justify-between">
+        <div className="relative flex-1 max-w-md">
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40"
+            size={20}
+          />
+          <input
+            type="text"
+            placeholder="Search by contract #, client name or email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-white/20 transition-all"
+          />
+        </div>
+        <button
+          onClick={handleExport}
+          className="flex items-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white transition-colors"
+        >
+          <Download size={20} />
+          Export CSV
         </button>
       </div>
 

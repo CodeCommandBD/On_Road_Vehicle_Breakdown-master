@@ -760,10 +760,21 @@ export default function ProfilePage() {
                   }
                   className="px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-white focus:border-orange-500 outline-none"
                 >
-                  <option value="Car">Car</option>
-                  <option value="Motorcycle">Motorcycle</option>
-                  <option value="Truck">Truck</option>
-                  <option value="Van">Van</option>
+                  <option value="Car" className="bg-[#1A1A1A] text-white">
+                    Car
+                  </option>
+                  <option
+                    value="Motorcycle"
+                    className="bg-[#1A1A1A] text-white"
+                  >
+                    Motorcycle
+                  </option>
+                  <option value="Truck" className="bg-[#1A1A1A] text-white">
+                    Truck
+                  </option>
+                  <option value="Van" className="bg-[#1A1A1A] text-white">
+                    Van
+                  </option>
                 </select>
               </div>
               <button
