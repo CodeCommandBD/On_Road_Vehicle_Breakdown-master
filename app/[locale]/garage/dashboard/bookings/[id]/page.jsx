@@ -50,6 +50,11 @@ export default function GarageBookingDetailsPage() {
   const [declining, setDeclining] = useState(false);
   const [verifyingPayment, setVerifyingPayment] = useState(false);
 
+  // Mechanic Assignment State
+  const [mechanics, setMechanics] = useState([]);
+  const [assignedMechanicId, setAssignedMechanicId] = useState("");
+  const [assigning, setAssigning] = useState(false);
+
   // Complete Service State
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [completing, setCompleting] = useState(false);
@@ -59,8 +64,39 @@ export default function GarageBookingDetailsPage() {
     if (id) {
       fetchBookingDetails();
       fetchCurrentUser();
+      fetchMechanics(); // Fetch team list
     }
   }, [id]);
+
+  const fetchMechanics = async () => {
+    try {
+      const res = await axios.get("/api/garage/team");
+      if (res.data.success) {
+        setMechanics(res.data.teamMembers?.filter((m) => m.isActive) || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch mechanics");
+    }
+  };
+
+  const handleAssignMechanic = async () => {
+    if (!assignedMechanicId) return;
+    setAssigning(true);
+    try {
+      const res = await axios.patch(`/api/bookings/${id}`, {
+        assignedMechanic: assignedMechanicId,
+      });
+      if (res.data.success) {
+        toast.success("Mechanic assigned successfully");
+        fetchBookingDetails();
+        setAssignedMechanicId("");
+      }
+    } catch (error) {
+      toast.error("Failed to assign mechanic");
+    } finally {
+      setAssigning(false);
+    }
+  };
 
   const fetchCurrentUser = async () => {
     try {
@@ -431,6 +467,106 @@ export default function GarageBookingDetailsPage() {
                   : "Request Towing"}
               </span>
             </button>
+          </div>
+
+          {/* Mechanic Assignment Section */}
+          <div className="bg-[#1E1E1E] border border-white/10 rounded-3xl p-8 text-white">
+            <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+              <User className="w-5 h-5 text-orange-500" /> Mechanic Assignment
+            </h3>
+
+            {booking.assignedMechanic ? (
+              <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center text-green-500 font-bold text-lg">
+                    {booking.assignedMechanic.name.charAt(0)}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-green-400">Assigned To</h4>
+                    <p className="font-bold text-xl">
+                      {booking.assignedMechanic.name}
+                    </p>
+                    <p className="text-white/60 text-sm">
+                      {booking.assignedMechanic.phone}
+                    </p>
+                  </div>
+                </div>
+                {booking.status !== "completed" &&
+                  booking.status !== "cancelled" && (
+                    <button
+                      onClick={() => setAssignedMechanicId("CHANGE")} // Trigger mode to change
+                      className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-sm font-bold border border-white/10"
+                    >
+                      Change
+                    </button>
+                  )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-white/60">
+                  No mechanic assigned yet. Select one to start the job.
+                </p>
+                <div className="flex gap-3">
+                  <select
+                    value={assignedMechanicId}
+                    onChange={(e) => setAssignedMechanicId(e.target.value)}
+                    className="flex-1 bg-black/30 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-orange-500"
+                  >
+                    <option value="">Select Mechanic...</option>
+                    {mechanics.map((m) => (
+                      <option key={m.user._id} value={m.user._id}>
+                        {m.name} ({m.role}){" "}
+                        {m.user.availability?.status === "busy"
+                          ? "🔴 Busy"
+                          : "🟢 Free"}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={handleAssignMechanic}
+                    disabled={!assignedMechanicId || assigning}
+                    className="px-6 py-3 bg-orange-500 text-white rounded-xl font-bold disabled:opacity-50"
+                  >
+                    {assigning ? (
+                      <Loader2 className="animate-spin" />
+                    ) : (
+                      "Assign"
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Show dropdown if changing */}
+            {booking.assignedMechanic && assignedMechanicId === "CHANGE" && (
+              <div className="mt-4 pt-4 border-t border-white/10 animate-in fade-in slide-in-from-top-2">
+                <p className="text-sm text-yellow-500 mb-2">
+                  ⚠ Changing mechanic will notify the new mechanic.
+                </p>
+                <div className="flex gap-3">
+                  <select
+                    onChange={(e) => {
+                      setAssignedMechanicId(e.target.value);
+                      if (e.target.value !== "CHANGE") handleAssignMechanic();
+                    }}
+                    className="flex-1 bg-black/30 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-orange-500"
+                  >
+                    <option value="CHANGE">Select New Mechanic...</option>
+                    {mechanics.map((m) => (
+                      <option key={m.user._id} value={m.user._id}>
+                        {m.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => setAssignedMechanicId("")}
+                    className="px-4 py-2 bg-white/5 rounded-xl"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {booking.status === "cancelled" && (

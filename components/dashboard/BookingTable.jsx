@@ -29,6 +29,7 @@ export default function BookingTable({
   type = "user",
   bookings = [],
   onStatusUpdate,
+  team = [],
 }) {
   const t = useTranslations("Bookings");
   const commonT = useTranslations("Common");
@@ -192,6 +193,7 @@ export default function BookingTable({
                     <GarageBookingActions
                       booking={booking}
                       onStatusUpdate={onStatusUpdate}
+                      team={team}
                       t={t}
                     />
                   )}
@@ -314,8 +316,9 @@ function UserBookingActions({ booking, t }) {
 }
 
 // Garage Booking Actions Dropdown Component
-function GarageBookingActions({ booking, onStatusUpdate, t }) {
+function GarageBookingActions({ booking, onStatusUpdate, team, t }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
   const [position, setPosition] = useState({ top: 0, right: 0 });
 
   const handleToggle = (e) => {
@@ -327,6 +330,26 @@ function GarageBookingActions({ booking, onStatusUpdate, t }) {
       });
     }
     setIsOpen(!isOpen);
+  };
+
+  const handleAssign = async (mechanicId) => {
+    try {
+      const response = await fetch(`/api/bookings/${booking._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assignedMechanic: mechanicId }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success("Mechanic assigned successfully");
+        setShowAssignModal(false);
+        if (onStatusUpdate) onStatusUpdate(booking._id, "confirmed");
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error("Failed to assign mechanic");
+    }
   };
 
   return (
@@ -361,6 +384,19 @@ function GarageBookingActions({ booking, onStatusUpdate, t }) {
                 <Eye className="w-4 h-4 text-blue-400" />
                 <span className="text-sm font-medium">{t("viewDetails")}</span>
               </Link>
+
+              {booking.status === "pending" && (
+                <button
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-all text-white/80 hover:text-white"
+                  onClick={() => {
+                    setShowAssignModal(true);
+                    setIsOpen(false);
+                  }}
+                >
+                  <Package className="w-4 h-4 text-orange-400" />
+                  <span className="text-sm font-medium">Assign Mechanic</span>
+                </button>
+              )}
 
               {booking.status === "pending" && onStatusUpdate && (
                 <button
@@ -406,6 +442,77 @@ function GarageBookingActions({ booking, onStatusUpdate, t }) {
                 )}
             </div>
           </>,
+          document.body
+        )}
+
+      {/* Mechanic Assignment Modal */}
+      {showAssignModal &&
+        createPortal(
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+            <div className="bg-[#1A1A1A] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
+              <div className="p-6 border-b border-white/10 flex items-center justify-between">
+                <h3 className="text-xl font-bold text-white leading-tight">
+                  Assign Mechanic
+                </h3>
+                <button
+                  onClick={() => setShowAssignModal(false)}
+                  className="p-2 hover:bg-white/5 rounded-full text-white/40 hover:text-white transition-colors"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="p-6 max-h-[400px] overflow-y-auto">
+                <div className="space-y-3">
+                  {team.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-white/40 italic">No mechanics found</p>
+                      <Link
+                        href="/garage/dashboard/team"
+                        className="text-primary text-sm hover:underline mt-2 inline-block"
+                      >
+                        Add your team first
+                      </Link>
+                    </div>
+                  ) : (
+                    team.map((member) => (
+                      <button
+                        key={member._id}
+                        onClick={() => handleAssign(member.user._id)}
+                        className="w-full flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 hover:border-orange-500/50 transition-all text-left group"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center text-primary font-bold text-lg">
+                            {member.name.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="font-bold text-white group-hover:text-primary transition-colors">
+                              {member.name}
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span
+                                className={`w-2 h-2 rounded-full ${
+                                  member.user?.availability?.status === "online"
+                                    ? "bg-green-500"
+                                    : "bg-gray-500"
+                                }`}
+                              />
+                              <span className="text-xs text-white/40 uppercase tracking-wider font-semibold">
+                                {member.user?.availability?.status || "offline"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-orange-500 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                          <Check className="w-5 h-5" />
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>,
           document.body
         )}
     </div>
