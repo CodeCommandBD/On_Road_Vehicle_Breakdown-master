@@ -108,6 +108,8 @@ export async function POST(request) {
           dashboardLink = "/admin/messages";
         } else if (recipientUser.role === "garage") {
           dashboardLink = "/garage/dashboard/messages";
+        } else if (recipientUser.role === "mechanic") {
+          dashboardLink = "/mechanic/dashboard/messages";
         }
 
         await Notification.create({

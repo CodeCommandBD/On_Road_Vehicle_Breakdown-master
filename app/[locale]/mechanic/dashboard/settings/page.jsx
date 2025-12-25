@@ -45,7 +45,7 @@ export default function MechanicSettingsPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await axios.put("/api/mechanic/profile", profileData);
+      const res = await axios.put("/api/profile", profileData);
       if (res.data.success) {
         dispatch(updateUser(res.data.user));
         toast.success("Profile updated successfully");
@@ -95,7 +95,6 @@ export default function MechanicSettingsPage() {
   const tabs = [
     { id: "profile", label: "Profile Info", icon: User },
     { id: "security", label: "Access & Security", icon: Lock },
-    { id: "notifications", label: "Alert Config", icon: Bell },
   ];
 
   return (
@@ -305,20 +304,6 @@ export default function MechanicSettingsPage() {
                   )}
                 </button>
               </form>
-            </div>
-          )}
-
-          {activeTab === "notifications" && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div className="text-center py-20">
-                <Bell className="w-16 h-16 text-indigo-500 mx-auto mb-4 opacity-20" />
-                <h3 className="text-xl font-black text-white mb-2">
-                  Operational Alerts
-                </h3>
-                <p className="text-slate-500 text-sm font-medium">
-                  Alert configurations are managed by the command center.
-                </p>
-              </div>
             </div>
           )}
         </div>

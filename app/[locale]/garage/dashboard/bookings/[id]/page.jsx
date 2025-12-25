@@ -100,9 +100,9 @@ export default function GarageBookingDetailsPage() {
 
   const fetchCurrentUser = async () => {
     try {
-      const res = await axios.get("/api/user/profile");
+      const res = await axios.get("/api/profile");
       if (res.data.success) {
-        setCurrentUser(res.data.data);
+        setCurrentUser(res.data.user);
       }
     } catch (error) {
       console.error("Failed to fetch current user:", error);

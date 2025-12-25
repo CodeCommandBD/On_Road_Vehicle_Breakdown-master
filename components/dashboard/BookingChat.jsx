@@ -176,42 +176,47 @@ export default function BookingChat({
   }
 
   return (
-    <div className="fixed bottom-8 right-8 w-96 h-[500px] bg-[#1E1E1E] border border-white/10 rounded-3xl shadow-2xl flex flex-col z-50 overflow-hidden animate-in slide-in-from-bottom-5">
+    <div className="fixed bottom-8 right-8 w-96 h-[550px] bg-[#020617] border border-white/10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col z-50 overflow-hidden animate-in slide-in-from-bottom-5 backdrop-blur-xl">
       {/* Header */}
-      <div className="p-4 bg-orange-500 text-white flex justify-between items-center">
+      <div className="p-6 bg-indigo-600 text-white flex justify-between items-center shadow-lg">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center font-black border border-white/20">
             {recipientName?.charAt(0) || "G"}
           </div>
           <div>
-            <p className="font-bold text-sm">
+            <p className="font-black text-sm uppercase tracking-tight">
               {recipientName || "Service Provider"}
             </p>
-            <p className="text-[10px] opacity-80 uppercase tracking-widest font-bold">
-              Direct Support
-            </p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+              <p className="text-[10px] opacity-80 uppercase tracking-widest font-black">
+                Tactical Comms
+              </p>
+            </div>
           </div>
         </div>
         <button
           onClick={() => setIsOpen(false)}
-          className="hover:bg-white/20 p-1 rounded-lg transition-colors"
+          className="hover:bg-white/20 p-2 rounded-full transition-all"
         >
-          <X className="w-5 h-5" />
+          <X className="w-6 h-6" />
         </button>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#161616]">
+      <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-black/20 custom-scrollbar">
         {loading ? (
-          <div className="flex flex-col items-center justify-center h-full gap-3 opacity-40">
-            <Loader2 className="w-6 h-6 animate-spin" />
-            <p className="text-xs">Connecting to secure chat...</p>
+          <div className="flex flex-col items-center justify-center h-full gap-4 opacity-40">
+            <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+            <p className="text-[10px] font-black uppercase tracking-[0.2em]">
+              Synchronizing...
+            </p>
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center p-8 opacity-20">
-            <MessageSquare className="w-12 h-12 mb-2" />
-            <p className="text-sm">
-              Start a conversation about your breakdown service.
+            <MessageSquare className="w-12 h-12 mb-4" />
+            <p className="text-xs font-bold uppercase tracking-widest">
+              Establish connection link
             </p>
           </div>
         ) : (
@@ -223,15 +228,15 @@ export default function BookingChat({
                 className={`flex ${isMine ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[80%] p-3 rounded-2xl text-xs ${
+                  className={`max-w-[85%] p-4 rounded-2xl text-[13px] font-medium leading-relaxed shadow-lg ${
                     isMine
-                      ? "bg-orange-500 text-white rounded-tr-none"
-                      : "bg-white/5 text-white/80 border border-white/5 rounded-tl-none"
+                      ? "bg-indigo-600 text-white rounded-tr-none"
+                      : "bg-slate-900/80 text-white/90 border border-white/5 rounded-tl-none"
                   }`}
                 >
                   <p>{msg.text}</p>
-                  <div className="flex items-center justify-end gap-1 mt-1 opacity-40">
-                    <span className="text-[8px]">
+                  <div className="flex items-center justify-end gap-1.5 mt-2 opacity-40">
+                    <span className="text-[8px] font-black uppercase">
                       {new Date(msg.createdAt).toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
@@ -239,7 +244,7 @@ export default function BookingChat({
                     </span>
                     {isMine &&
                       (msg.isRead ? (
-                        <CheckCheck className="w-3 h-3 text-blue-400" />
+                        <CheckCheck className="w-3 h-3 text-indigo-300" />
                       ) : (
                         <Check className="w-3 h-3" />
                       ))}
@@ -255,20 +260,20 @@ export default function BookingChat({
       {/* Input */}
       <form
         onSubmit={handleSendMessage}
-        className="p-4 bg-[#1E1E1E] border-t border-white/10"
+        className="p-6 bg-[#020617] border-t border-white/5"
       >
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <input
             type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Describe your issue..."
-            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-orange-500/50"
+            placeholder="Input data..."
+            className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-indigo-500/50 transition-all placeholder:text-slate-600"
           />
           <button
             type="submit"
             disabled={sending || !newMessage.trim()}
-            className="p-2 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-colors disabled:opacity-50"
+            className="p-3 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-500 transition-all disabled:opacity-50 shadow-glow-indigo active:scale-95"
           >
             {sending ? (
               <Loader2 className="w-5 h-5 animate-spin" />
