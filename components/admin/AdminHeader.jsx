@@ -21,10 +21,10 @@ export default function AdminHeader({ onMenuClick }) {
   const user = useSelector(selectUser);
   const unreadCount = useSelector(selectUnreadNotificationsCount);
   const searchTerm = useSelector(selectSearchTerm);
+  const [notifications, setNotifications] = useState([]);
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotifyOpen, setIsNotifyOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
 
   const profileRef = useRef(null);
   const notifyRef = useRef(null);
@@ -43,7 +43,7 @@ export default function AdminHeader({ onMenuClick }) {
     };
 
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000); // Polling every 30s
+    const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
   }, [dispatch]);
 
@@ -79,7 +79,7 @@ export default function AdminHeader({ onMenuClick }) {
   };
 
   return (
-    <header className="h-20 bg-[#0a0a0a]/80 backdrop-blur-md border-b border-[#222] px-6 lg:px-10 flex items-center justify-between sticky top-0 z-30 transition-all duration-300">
+    <header className="h-20 bg-[#020617]/80 backdrop-blur-md border-b border-[#222] px-6 lg:px-10 flex items-center justify-between sticky top-0 z-30 transition-all duration-300">
       <div className="flex items-center gap-4">
         <button
           onClick={onMenuClick}

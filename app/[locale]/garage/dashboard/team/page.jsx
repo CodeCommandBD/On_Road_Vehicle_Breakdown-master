@@ -14,7 +14,6 @@ import {
   XCircle,
   Key,
   Edit2,
-  Wrench,
   Star,
   Award,
 } from "lucide-react";

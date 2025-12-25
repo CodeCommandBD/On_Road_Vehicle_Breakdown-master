@@ -221,7 +221,7 @@ export default function Sidebar() {
       {/* Sidebar Container */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-50 h-screen w-64 bg-[#1E1E1E] border-r border-white/10 transition-transform duration-300 lg:static lg:translate-x-0 lg:z-0",
+          "fixed top-0 left-0 z-50 h-screen w-64 bg-[#020617] border-r border-white/10 transition-transform duration-300 lg:static lg:translate-x-0 lg:z-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >

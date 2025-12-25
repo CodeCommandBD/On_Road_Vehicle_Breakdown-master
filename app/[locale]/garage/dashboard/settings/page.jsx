@@ -153,224 +153,234 @@ export default function GarageSettingsPage() {
   }
 
   return (
-    <div className="space-y-8 pb-12">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2">
-            {t("accountSettings")}
-          </h1>
-          <p className="text-white/60">{t("manageBusiness")}</p>
+    <div className="min-h-screen bg-[#020617] p-4 sm:p-8">
+      <div className="max-w-7xl mx-auto space-y-8 pb-12">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">
+              {t("accountSettings")}
+            </h1>
+            <p className="text-white/60">{t("manageBusiness")}</p>
+          </div>
+          <button
+            onClick={saveSettings}
+            disabled={isSaving}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:shadow-lg hover:shadow-orange-500/30 transition-all font-medium disabled:opacity-50"
+          >
+            {isSaving ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Save className="w-5 h-5" />
+            )}
+            {t("saveChanges")}
+          </button>
         </div>
-        <button
-          onClick={saveSettings}
-          disabled={isSaving}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:shadow-lg hover:shadow-orange-500/30 transition-all font-medium disabled:opacity-50"
-        >
-          {isSaving ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <Save className="w-5 h-5" />
-          )}
-          {t("saveChanges")}
-        </button>
-      </div>
 
-      <div className="grid lg:grid-cols-2 gap-8">
-        {/* Visibility & Status */}
-        <div className="space-y-6">
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-orange-500" />
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* Visibility & Status */}
+          <div className="space-y-6">
+            <div className="bg-slate-900/40 backdrop-blur-xl border border-white/5 rounded-2xl p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-orange-500" />
+                </div>
+                <h2 className="text-xl font-bold text-white">
+                  {t("businessVisibility")}
+                </h2>
               </div>
-              <h2 className="text-xl font-bold text-white">
-                {t("businessVisibility")}
-              </h2>
+
+              <div className="space-y-6">
+                <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
+                  <div>
+                    <p className="text-white font-medium">
+                      {t("garageActive")}
+                    </p>
+                    <p className="text-xs text-white/50">
+                      {t("garageActiveDesc")}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleToggle("garage", "isActive")}
+                    className="text-orange-500"
+                  >
+                    {settings.garage.isActive ? (
+                      <ToggleRight className="w-10 h-10" />
+                    ) : (
+                      <ToggleLeft className="w-10 h-10 text-white/20" />
+                    )}
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
+                  <div>
+                    <p className="text-white font-medium">
+                      {t("accountActive")}
+                    </p>
+                    <p className="text-xs text-white/50">
+                      {t("accountActiveDesc")}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleToggle("account", "isActive")}
+                    className="text-orange-500"
+                  >
+                    {settings.account.isActive ? (
+                      <ToggleRight className="w-10 h-10" />
+                    ) : (
+                      <ToggleLeft className="w-10 h-10 text-white/20" />
+                    )}
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                  <AlertCircle className="w-5 h-5 text-blue-400 shrink-0" />
+                  <p className="text-xs text-blue-400">
+                    {settings.garage.isVerified
+                      ? t("verified")
+                      : t("pendingVerification")}
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-6">
-              <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
-                <div>
-                  <p className="text-white font-medium">{t("garageActive")}</p>
-                  <p className="text-xs text-white/50">
-                    {t("garageActiveDesc")}
-                  </p>
+            {/* Notifications */}
+            <div className="bg-slate-900/40 backdrop-blur-xl border border-white/5 rounded-2xl p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                  <Bell className="w-5 h-5 text-blue-500" />
                 </div>
-                <button
-                  onClick={() => handleToggle("garage", "isActive")}
-                  className="text-orange-500"
-                >
-                  {settings.garage.isActive ? (
-                    <ToggleRight className="w-10 h-10" />
-                  ) : (
-                    <ToggleLeft className="w-10 h-10 text-white/20" />
-                  )}
-                </button>
+                <h2 className="text-xl font-bold text-white">
+                  {t("notifications")}
+                </h2>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
-                <div>
-                  <p className="text-white font-medium">{t("accountActive")}</p>
-                  <p className="text-xs text-white/50">
-                    {t("accountActiveDesc")}
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleToggle("account", "isActive")}
-                  className="text-orange-500"
-                >
-                  {settings.account.isActive ? (
-                    <ToggleRight className="w-10 h-10" />
-                  ) : (
-                    <ToggleLeft className="w-10 h-10 text-white/20" />
-                  )}
-                </button>
-              </div>
-
-              <div className="flex items-center gap-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-                <AlertCircle className="w-5 h-5 text-blue-400 shrink-0" />
-                <p className="text-xs text-blue-400">
-                  {settings.garage.isVerified
-                    ? t("verified")
-                    : t("pendingVerification")}
-                </p>
+              <div className="space-y-4">
+                {Object.entries(settings.account.notificationPreferences).map(
+                  ([key, val]) => (
+                    <label
+                      key={key}
+                      className="flex items-center justify-between p-4 bg-white/5 rounded-xl cursor-pointer group hover:bg-white/10 transition-colors"
+                    >
+                      <span className="text-white capitalize">
+                        {t(
+                          key.replace(/([A-Z])/g, " $1") === "email"
+                            ? "emailNotif"
+                            : key === "push"
+                            ? "pushNotif"
+                            : "serviceReminders"
+                        )}
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={val}
+                        onChange={() => handleNotificationChange(key)}
+                        className="w-5 h-5 rounded border-white/10 accent-orange-500"
+                      />
+                    </label>
+                  )
+                )}
               </div>
             </div>
           </div>
 
-          {/* Notifications */}
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                <Bell className="w-5 h-5 text-blue-500" />
+          {/* Security / Password */}
+          <div className="space-y-6">
+            <div className="bg-slate-900/40 backdrop-blur-xl border border-white/5 rounded-2xl p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                  <Lock className="w-5 h-5 text-purple-500" />
+                </div>
+                <h2 className="text-xl font-bold text-white">
+                  {t("security")}
+                </h2>
               </div>
-              <h2 className="text-xl font-bold text-white">
-                {t("notifications")}
-              </h2>
-            </div>
 
-            <div className="space-y-4">
-              {Object.entries(settings.account.notificationPreferences).map(
-                ([key, val]) => (
-                  <label
-                    key={key}
-                    className="flex items-center justify-between p-4 bg-white/5 rounded-xl cursor-pointer group hover:bg-white/10 transition-colors"
-                  >
-                    <span className="text-white capitalize">
-                      {t(
-                        key.replace(/([A-Z])/g, " $1") === "email"
-                          ? "emailNotif"
-                          : key === "push"
-                          ? "pushNotif"
-                          : "serviceReminders"
-                      )}
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={val}
-                      onChange={() => handleNotificationChange(key)}
-                      className="w-5 h-5 rounded border-white/10 accent-orange-500"
-                    />
+              <div className="space-y-4">
+                <div className="relative">
+                  <label className="text-xs text-white/50 mb-1 block">
+                    {t("currentPassword")}
                   </label>
-                )
-              )}
-            </div>
-          </div>
-        </div>
+                  <div className="relative">
+                    <input
+                      type={showCurrentPassword ? "text" : "password"}
+                      name="currentPassword"
+                      value={passwordForm.currentPassword}
+                      onChange={handlePasswordChange}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50"
+                    />
+                    <button
+                      onClick={() =>
+                        setShowCurrentPassword(!showCurrentPassword)
+                      }
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40"
+                    >
+                      {showCurrentPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
 
-        {/* Security / Password */}
-        <div className="space-y-6">
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                <Lock className="w-5 h-5 text-purple-500" />
-              </div>
-              <h2 className="text-xl font-bold text-white">{t("security")}</h2>
-            </div>
-
-            <div className="space-y-4">
-              <div className="relative">
-                <label className="text-xs text-white/50 mb-1 block">
-                  {t("currentPassword")}
-                </label>
                 <div className="relative">
+                  <label className="text-xs text-white/50 mb-1 block">
+                    {t("newPassword")}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? "text" : "password"}
+                      name="newPassword"
+                      value={passwordForm.newPassword}
+                      onChange={handlePasswordChange}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50"
+                    />
+                    <button
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40"
+                    >
+                      {showNewPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <label className="text-xs text-white/50 mb-1 block">
+                    {t("confirmNewPassword")}
+                  </label>
                   <input
-                    type={showCurrentPassword ? "text" : "password"}
-                    name="currentPassword"
-                    value={passwordForm.currentPassword}
+                    type="password"
+                    name="confirmPassword"
+                    value={passwordForm.confirmPassword}
                     onChange={handlePasswordChange}
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50"
                   />
-                  <button
-                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40"
-                  >
-                    {showCurrentPassword ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
-                  </button>
                 </div>
               </div>
+            </div>
 
-              <div className="relative">
-                <label className="text-xs text-white/50 mb-1 block">
-                  {t("newPassword")}
-                </label>
-                <div className="relative">
-                  <input
-                    type={showNewPassword ? "text" : "password"}
-                    name="newPassword"
-                    value={passwordForm.newPassword}
-                    onChange={handlePasswordChange}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50"
-                  />
-                  <button
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40"
-                  >
-                    {showNewPassword ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
-                  </button>
+            {/* Danger Zone */}
+            <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
+                  <Trash2 className="w-5 h-5 text-red-500" />
                 </div>
+                <h2 className="text-xl font-bold text-red-500">
+                  {t("dangerZone")}
+                </h2>
               </div>
 
-              <div className="relative">
-                <label className="text-xs text-white/50 mb-1 block">
-                  {t("confirmNewPassword")}
-                </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={passwordForm.confirmPassword}
-                  onChange={handlePasswordChange}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50"
-                />
-              </div>
+              <p className="text-white/60 text-sm mb-6">{t("deleteWarning")}</p>
+
+              <button className="w-full py-3 border border-red-500/50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all font-medium">
+                {t("deleteAccount")}
+              </button>
             </div>
-          </div>
-
-          {/* Danger Zone */}
-          <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
-                <Trash2 className="w-5 h-5 text-red-500" />
-              </div>
-              <h2 className="text-xl font-bold text-red-500">
-                {t("dangerZone")}
-              </h2>
-            </div>
-
-            <p className="text-white/60 text-sm mb-6">{t("deleteWarning")}</p>
-
-            <button className="w-full py-3 border border-red-500/50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all font-medium">
-              {t("deleteAccount")}
-            </button>
           </div>
         </div>
       </div>

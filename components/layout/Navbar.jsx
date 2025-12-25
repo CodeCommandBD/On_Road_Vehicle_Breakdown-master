@@ -11,6 +11,12 @@ import {
   selectUser,
   selectUserRole,
 } from "@/store/slices/authSlice";
+import {
+  selectUnreadNotificationsCount,
+  setUnreadNotificationsCount,
+} from "@/store/slices/uiSlice";
+import { Bell } from "lucide-react";
+import axios from "axios";
 
 const WaveText = ({ text }) => {
   return (
@@ -31,7 +37,10 @@ const WaveText = ({ text }) => {
 export default function Navbar() {
   const [isServicesOpen, setIsServicesOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isNotifyOpen, setIsNotifyOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
   const dropdownRef = useRef(null);
+  const notifyRef = useRef(null);
 
   // Dynamic Services State
   const [services, setServices] = useState([]);
@@ -43,6 +52,7 @@ export default function Navbar() {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const user = useSelector(selectUser);
   const userRole = useSelector(selectUserRole);
+  const unreadCount = useSelector(selectUnreadNotificationsCount);
 
   // Fetch Services on Mount
   useEffect(() => {
@@ -62,11 +72,33 @@ export default function Navbar() {
     fetchServices();
   }, []);
 
+  // Fetch Notifications
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const fetchNotifications = async () => {
+      try {
+        const res = await axios.get("/api/notifications");
+        if (res.data.success) {
+          setNotifications(res.data.notifications);
+          dispatch(setUnreadNotificationsCount(res.data.unreadCount));
+        }
+      } catch (err) {
+        console.error("Failed to fetch notifications in navbar:", err);
+      }
+    };
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, dispatch]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsProfileOpen(false);
+      }
+      if (notifyRef.current && !notifyRef.current.contains(event.target)) {
+        setIsNotifyOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -83,9 +115,18 @@ export default function Navbar() {
     }
   };
 
+  const markNotifyRead = async () => {
+    try {
+      await axios.patch("/api/notifications", { markAllAsRead: true });
+      dispatch(setUnreadNotificationsCount(0));
+    } catch (err) {
+      console.error("Failed to mark notifications read:", err);
+    }
+  };
+
   return (
     <>
-      <nav className="px-5 lg:px-20 h-[70px] sticky top-0 w-full z-[999] bg-[#111] transition-all duration-400 flex items-center justify-between">
+      <nav className="px-5 lg:px-20 h-[70px] sticky top-0 w-full z-[999] bg-[#020617] transition-all duration-400 flex items-center justify-between">
         <Link
           href="/"
           className="group flex items-center gap-3 transition-transform duration-300 hover:scale-105"
@@ -188,6 +229,65 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-[15px] md:gap-[28px]">
+          {/* Notifications */}
+          {isAuthenticated && (
+            <div className="relative" ref={notifyRef}>
+              <button
+                onClick={() => {
+                  setIsNotifyOpen(!isNotifyOpen);
+                  if (!isNotifyOpen && unreadCount > 0) markNotifyRead();
+                }}
+                className="relative p-2 text-white/70 hover:text-white transition-colors"
+              >
+                <Bell className="w-6 h-6" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-[#ff4800] rounded-full border-2 border-[#020617]"></span>
+                )}
+              </button>
+
+              {isNotifyOpen && (
+                <div className="absolute top-[60px] right-0 bg-[#141414fa] backdrop-blur-[20px] border border-[#ff48004d] rounded-[16px] min-w-[300px] shadow-2xl z-[1000] overflow-hidden transition-all duration-300">
+                  <div className="p-4 border-b border-[#ff480033] flex justify-between items-center bg-[#ff48001a]">
+                    <h4 className="text-white text-sm font-bold">
+                      Notifications
+                    </h4>
+                    <span className="text-[10px] text-[#ff4800] uppercase font-bold tracking-wider">
+                      {unreadCount} NEW
+                    </span>
+                  </div>
+                  <div className="max-h-96 overflow-y-auto custom-scrollbar">
+                    {notifications.length > 0 ? (
+                      notifications.map((n) => (
+                        <div
+                          key={n._id}
+                          onClick={() => {
+                            if (n.link) router.push(n.link);
+                            setIsNotifyOpen(false);
+                          }}
+                          className="p-4 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer group"
+                        >
+                          <p className="text-xs font-bold text-white mb-1 group-hover:text-[#ff4800]">
+                            {n.title}
+                          </p>
+                          <p className="text-[11px] text-white/50 line-clamp-2">
+                            {n.message}
+                          </p>
+                          <p className="text-[9px] text-white/30 mt-2">
+                            {new Date(n.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-8 text-center text-white/40 italic text-sm">
+                        No new notifications
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* User Profile / Login */}
           {isAuthenticated && user ? (
             <div className="relative" ref={dropdownRef}>

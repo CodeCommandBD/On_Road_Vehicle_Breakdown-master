@@ -125,7 +125,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
       )}
 
       <aside
-        className={`fixed top-0 left-0 h-full w-72 bg-[#0a0a0a] border-r border-[#333] z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static ${
+        className={`fixed top-0 left-0 h-full w-72 bg-[#020617] border-r border-[#333] z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >

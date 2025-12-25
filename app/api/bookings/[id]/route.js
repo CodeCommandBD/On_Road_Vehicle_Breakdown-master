@@ -166,6 +166,10 @@ export async function PATCH(request, { params }) {
       }
 
       booking.status = status;
+      if (status === "in_progress") {
+        booking.startedAt = new Date();
+      }
+
       if (status === "completed") {
         booking.completedAt = new Date();
 

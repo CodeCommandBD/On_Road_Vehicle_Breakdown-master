@@ -13,7 +13,8 @@
     "notifications": "Notifications",
     "noNotifications": "No notifications yet",
     "adjustSearch": "Try adjusting your search or filter",
-    "showing": "Showing {count} of {total} services"
+    "showing": "Showing {count} of {total} services",
+    "phone": "Phone Number"
   },
   "Navigation": {
     "dashboard": "Dashboard",

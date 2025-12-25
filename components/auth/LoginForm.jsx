@@ -18,6 +18,7 @@ import {
   Check,
   Eye,
   EyeOff,
+  Shield,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import * as Tabs from "@radix-ui/react-tabs";
@@ -30,7 +31,7 @@ import {
 } from "@/store/slices/authSlice";
 
 const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: z.string().min(1, "Email or Phone number is required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   remember: z.boolean().optional(),
 });
@@ -94,6 +95,8 @@ export default function LoginForm() {
         router.push("/admin/dashboard");
       } else if (result.user.role === "garage") {
         router.push("/garage/dashboard");
+      } else if (result.user.role === "mechanic") {
+        router.push("/mechanic/dashboard");
       } else {
         router.push("/"); // Redirect to home page for users
       }
@@ -114,72 +117,101 @@ export default function LoginForm() {
 
   return (
     <div className="w-full max-w-lg bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl p-8! sm:p-12! relative z-10 overflow-hidden">
-      {/* Decorative Glow */}
-      <div className="absolute -top-20 -right-20 p-4! opacity-20 pointer-events-none">
-        <div className="w-64 h-64 bg-[#ff4800] rounded-full blur-[100px]"></div>
-      </div>
-      <div className="absolute -bottom-20 -left-20 p-4! opacity-10! pointer-events-none">
-        <div className="w-64 h-64 bg-blue-600 rounded-full blur-[100px]"></div>
-      </div>
+      {/* Decorative Glows */}
+      <div className="absolute -top-32 -right-32 w-80 h-80 bg-[#ff4800]/20 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>
+      <div
+        className="absolute -bottom-32 -left-32 w-80 h-80 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none animate-pulse"
+        style={{ animationDelay: "2s" }}
+      ></div>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-white/[0.02] pointer-events-none rounded-3xl"></div>
 
       <div className="text-center mb-10 relative z-10">
-        <h1 className="text-4xl font-extrabold text-white mb-3 tracking-tight drop-shadow-lg">
+        <div className="inline-block p-1 px-3 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-orange-500 uppercase tracking-[0.2em] mb-4 animate-pulse">
+          Secure Authentication
+        </div>
+        <h1 className="text-4xl sm:text-5xl font-black text-white mb-2 tracking-tight drop-shadow-2xl">
           WELCOME <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ff4800] to-[#ff8800]">
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ff4800] via-[#ff6a3d] to-[#ff8800]">
             QUICK SERVICE
           </span>
         </h1>
-        <p className="text-gray-400 text-base font-medium my-4!">
+        <p className="text-gray-500 text-sm font-medium">
           {t("authenticating")}
         </p>
       </div>
 
       <Tabs.Root value={activeTab} onValueChange={handleTabChange}>
-        <Tabs.List className="flex gap-4! mb-10! bg-black/30! p-1.5! rounded-2xl!  border border-white/5! shadow-inner">
+        <Tabs.List className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-10 bg-black/40 p-2 rounded-[24px] border border-white/10 shadow-2xl backdrop-blur-md">
           <Tabs.Trigger
             value="user"
-            className={`flex-1 flex items-center justify-center gap-2! py-3.5! px-4! rounded-xl! transition-all duration-300 ${
+            className={`flex flex-col sm:flex-row items-center justify-center gap-2 py-3 px-2 rounded-2xl transition-all duration-500 ${
               activeTab === "user"
-                ? "bg-gradient-to-r from-[#ff4800] to-[#ff6a3d] text-white shadow-lg shadow-orange-900/40 transform scale-[1.02]"
-                : "text-gray-400 hover:text-white hover:bg-white/5"
+                ? "bg-gradient-to-br from-[#ff4800] to-[#ff6a3d] text-white shadow-[0_8px_20px_rgba(255,72,0,0.4)] transform scale-[1.05] z-10"
+                : "text-gray-500 hover:text-white hover:bg-white/5"
             }`}
           >
             <User
-              className={`w-5 h-5 ${
-                activeTab === "user" ? "fill-white" : "fill-current"
+              className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                activeTab === "user" ? "fill-white/20" : ""
               }`}
             />
-            <span className="font-bold text-sm tracking-wide">USER</span>
+            <span className="font-black text-[10px] sm:text-xs tracking-widest">
+              USER
+            </span>
           </Tabs.Trigger>
+
           <Tabs.Trigger
             value="garage"
-            className={`flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl transition-all duration-300 ${
+            className={`flex flex-col sm:flex-row items-center justify-center gap-2 py-3 px-2 rounded-2xl transition-all duration-500 ${
               activeTab === "garage"
-                ? "bg-gradient-to-r from-[#ff4800] to-[#ff6a3d] text-white shadow-lg shadow-orange-900/40 transform scale-[1.02]"
-                : "text-gray-400 hover:text-white hover:bg-white/5"
+                ? "bg-gradient-to-br from-[#ff4800] to-[#ff6a3d] text-white shadow-[0_8px_20px_rgba(255,72,0,0.4)] transform scale-[1.05] z-10"
+                : "text-gray-500 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <Shield
+              className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                activeTab === "garage" ? "fill-white/20" : ""
+              }`}
+            />
+            <span className="font-black text-[10px] sm:text-xs tracking-widest">
+              GARAGE
+            </span>
+          </Tabs.Trigger>
+
+          <Tabs.Trigger
+            value="mechanic"
+            className={`flex flex-col sm:flex-row items-center justify-center gap-2 py-3 px-2 rounded-2xl transition-all duration-500 ${
+              activeTab === "mechanic"
+                ? "bg-gradient-to-br from-[#ff4800] to-[#ff6a3d] text-white shadow-[0_8px_20px_rgba(255,72,0,0.4)] transform scale-[1.05] z-10"
+                : "text-gray-500 hover:text-white hover:bg-white/5"
             }`}
           >
             <Wrench
-              className={`w-5 h-5 ${
-                activeTab === "garage" ? "fill-white" : "fill-current"
+              className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                activeTab === "mechanic" ? "fill-white/20" : ""
               }`}
             />
-            <span className="font-bold text-sm tracking-wide">GARAGE</span>
+            <span className="font-black text-[10px] sm:text-xs tracking-widest">
+              MECHANIC
+            </span>
           </Tabs.Trigger>
+
           <Tabs.Trigger
             value="admin"
-            className={`flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl transition-all duration-300 ${
+            className={`flex flex-col sm:flex-row items-center justify-center gap-2 py-3 px-2 rounded-2xl transition-all duration-500 ${
               activeTab === "admin"
-                ? "bg-gradient-to-r from-[#ff4800] to-[#ff6a3d] text-white shadow-lg shadow-orange-900/40 transform scale-[1.02]"
-                : "text-gray-400 hover:text-white hover:bg-white/5"
+                ? "bg-gradient-to-br from-[#ff4800] to-[#ff6a3d] text-white shadow-[0_8px_20px_rgba(255,72,0,0.4)] transform scale-[1.05] z-10"
+                : "text-gray-500 hover:text-white hover:bg-white/5"
             }`}
           >
             <Lock
-              className={`w-5 h-5 ${
-                activeTab === "admin" ? "fill-white" : "fill-current"
+              className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                activeTab === "admin" ? "fill-white/20" : ""
               }`}
             />
-            <span className="font-bold text-sm tracking-wide">ADMIN</span>
+            <span className="font-black text-[10px] sm:text-xs tracking-widest">
+              ADMIN
+            </span>
           </Tabs.Trigger>
         </Tabs.List>
 
@@ -190,22 +222,24 @@ export default function LoginForm() {
           {/* Email Field */}
           <div className="space-y-3">
             <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">
-              {t("email")}
+              {t("email")} / {commonT("phone")}
             </label>
             <div
-              className={`group flex items-center gap-4 bg-black/30 border border-white/5 rounded-2xl p-4!  my-2! transition-all duration-300 hover:bg-black/40 focus-within:bg-black/50 focus-within:border-[#ff4800] focus-within:ring-1 focus-within:ring-[#ff4800]/50 focus-within:shadow-[0_0_20px_rgba(255,72,0,0.1)] ${
-                errors.email ? "!border-red-500 bg-red-500/5" : ""
+              className={`group flex items-center gap-4 bg-white/[0.03] border border-white/10 rounded-2xl p-4 my-2 transition-all duration-500 hover:bg-white/[0.05] focus-within:bg-white/[0.08] focus-within:border-[#ff4800] focus-within:ring-4 focus-within:ring-[#ff4800]/10 focus-within:shadow-[0_0_30px_rgba(255,72,0,0.15)] ${
+                errors.email ? "!border-red-500/50 bg-red-500/5" : ""
               }`}
             >
-              <div className="p-2 bg-white/5 rounded-lg group-focus-within:bg-[#ff4800]/20 transition-colors">
+              <div className="p-2.5 bg-white/5 rounded-xl group-focus-within:bg-[#ff4800]/20 group-focus-within:rotate-12 transition-all duration-500">
                 <Mail className="w-5 h-5 text-gray-400 group-focus-within:text-[#ff4800] transition-colors" />
               </div>
               <input
-                type="email"
+                type="text"
                 placeholder={
                   activeTab === "user"
-                    ? "user@example.com"
-                    : "garage@business.com"
+                    ? "Email or Phone (e.g. 017...)"
+                    : activeTab === "mechanic"
+                    ? "Mechanic Phone/Email"
+                    : "Email or Phone number"
                 }
                 className="bg-transparent text-white w-full outline-none placeholder-gray-600 font-medium text-lg"
                 {...register("email")}
@@ -225,11 +259,11 @@ export default function LoginForm() {
               {t("password")}
             </label>
             <div
-              className={`group flex items-center gap-4 bg-black/30 border border-white/5 rounded-2xl p-4! my-2! transition-all duration-300 hover:bg-black/40 focus-within:bg-black/50 focus-within:border-[#ff4800] focus-within:ring-1 focus-within:ring-[#ff4800]/50 focus-within:shadow-[0_0_20px_rgba(255,72,0,0.1)] ${
-                errors.password ? "!border-red-500 bg-red-500/5" : ""
+              className={`group flex items-center gap-4 bg-white/[0.03] border border-white/10 rounded-2xl p-4 my-2 transition-all duration-500 hover:bg-white/[0.05] focus-within:bg-white/[0.08] focus-within:border-[#ff4800] focus-within:ring-4 focus-within:ring-[#ff4800]/10 focus-within:shadow-[0_0_30px_rgba(255,72,0,0.15)] ${
+                errors.password ? "!border-red-500/50 bg-red-500/5" : ""
               }`}
             >
-              <div className="p-2 bg-white/5 rounded-lg group-focus-within:bg-[#ff4800]/20 transition-colors">
+              <div className="p-2.5 bg-white/5 rounded-xl group-focus-within:bg-[#ff4800]/20 group-focus-within:-rotate-12 transition-all duration-500">
                 <Lock className="w-5 h-5 text-gray-400 group-focus-within:text-[#ff4800] transition-colors" />
               </div>
               <input
