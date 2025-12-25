@@ -29,7 +29,12 @@ export async function GET(request, { params }) {
 
     const booking = await Booking.findById(id)
       .populate("garage", "name rating address images logo owner")
-      .populate("user", "name email phone avatar");
+      .populate("user", "name email phone avatar")
+      .populate({
+        path: "assignedMechanic",
+        select: "name phone avatar",
+        strictPopulate: false,
+      }); // Populate Mechanic safely
 
     // Fetch review separately if exists
     const review = await Review.findOne({ booking: id });
@@ -228,6 +233,17 @@ export async function PATCH(request, { params }) {
             garagePointsErr
           );
         }
+
+        // Increment Mechanic's completedJobs
+        if (booking.assignedMechanic) {
+          try {
+            await User.findByIdAndUpdate(booking.assignedMechanic, {
+              $inc: { "mechanicProfile.completedJobs": 1 },
+            });
+          } catch (mechErr) {
+            console.error("Failed to update mechanic job count:", mechErr);
+          }
+        }
       } else if (status === "cancelled") {
         booking.cancelledAt = new Date();
         // CANCELLATION POLICY: If cancelled after start, charge fee
@@ -250,6 +266,28 @@ export async function PATCH(request, { params }) {
       booking.towingRequested = towingRequested;
     if (towingCost !== undefined) booking.towingCost = towingCost;
     if (notes) booking.notes = notes;
+
+    // Handle Manual Assignment
+    if (assignedMechanic) {
+      // Validate that the mechanic belongs to this garage (security check)
+      const mechanicUser = await User.findById(assignedMechanic);
+      if (
+        mechanicUser &&
+        mechanicUser.garageId.toString() === booking.garage._id.toString()
+      ) {
+        booking.assignedMechanic = assignedMechanic;
+        booking.status = "confirmed"; // Auto-confirm if assigned
+
+        // Notify Mechanic
+        await Notification.create({
+          recipient: assignedMechanic,
+          type: "system_alert",
+          title: "New Job Assigned 🛠️",
+          message: `You have been assigned to Booking #${booking.bookingNumber}`,
+          link: `/mechanic/dashboard/bookings/${booking._id}`,
+        });
+      }
+    }
 
     await booking.save();
 

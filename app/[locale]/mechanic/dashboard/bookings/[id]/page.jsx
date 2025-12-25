@@ -14,6 +14,7 @@ import {
   CreditCard,
   Loader2,
   ArrowLeft,
+  ClipboardList,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import Link from "next/link";
@@ -27,6 +28,19 @@ export default function MechanicJobDetails() {
   const [updating, setUpdating] = useState(false);
   const [showBillModal, setShowBillModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showJobCardModal, setShowJobCardModal] = useState(false);
+
+  // Job Card State
+  const [jobCardData, setJobCardData] = useState({
+    vehicleDetails: { odometer: "", fuelLevel: "" },
+    checklist: [
+      { category: "Engine", item: "Engine Oil Level", status: "ok" },
+      { category: "Engine", item: "Coolant Level", status: "ok" },
+      { category: "Brakes", item: "Brake Fluid", status: "ok" },
+      { category: "Tires", item: "Tire Pressure", status: "ok" },
+    ],
+    notes: "",
+  });
 
   // States for Bill Addition
   const [newItem, setNewItem] = useState({
@@ -140,6 +154,37 @@ export default function MechanicJobDetails() {
     }
   };
 
+  const handleSaveJobCard = async () => {
+    setUpdating(true);
+    try {
+      const res = await fetch("/api/mechanic/job-card", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingId: id,
+          ...jobCardData,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Diagnosis Report Saved 📋");
+        setShowJobCardModal(false);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (err) {
+      toast.error("Failed to save report");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const updateChecklist = (index, status) => {
+    const newChecklist = [...jobCardData.checklist];
+    newChecklist[index].status = status;
+    setJobCardData({ ...jobCardData, checklist: newChecklist });
+  };
+
   if (loading)
     return (
       <div className="flex justify-center py-20">
@@ -251,6 +296,16 @@ export default function MechanicJobDetails() {
                 <Play className="w-5 h-5" />
               )}
               Start Service
+            </button>
+          )}
+
+          {/* Job Card Button */}
+          {booking.status === "in_progress" && (
+            <button
+              onClick={() => setShowJobCardModal(true)}
+              className="col-span-2 py-3 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-100"
+            >
+              <ClipboardList className="w-5 h-5" /> Digital Diagnosis Report
             </button>
           )}
 
@@ -425,6 +480,142 @@ export default function MechanicJobDetails() {
             >
               Cancel
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Job Card Modal */}
+      {showJobCardModal && (
+        <div className="fixed inset-0 z-50 flex items-start overflow-y-auto sm:items-center justify-center bg-black/50 p-4 pt-10 pb-10">
+          <div className="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl relative">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold flex items-center gap-2">
+                <ClipboardList className="w-6 h-6 text-indigo-600" /> Diagnosis
+                Report
+              </h3>
+              <button
+                onClick={() => setShowJobCardModal(false)}
+                className="text-gray-400 font-bold p-2"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Vehicle Stats */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase">
+                    Odometer (km)
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full p-3 bg-gray-50 rounded-xl border mt-1"
+                    placeholder="e.g. 54000"
+                    value={jobCardData.vehicleDetails.odometer}
+                    onChange={(e) =>
+                      setJobCardData({
+                        ...jobCardData,
+                        vehicleDetails: {
+                          ...jobCardData.vehicleDetails,
+                          odometer: e.target.value,
+                        },
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase">
+                    Fuel Level
+                  </label>
+                  <select
+                    className="w-full p-3 bg-gray-50 rounded-xl border mt-1"
+                    value={jobCardData.vehicleDetails.fuelLevel}
+                    onChange={(e) =>
+                      setJobCardData({
+                        ...jobCardData,
+                        vehicleDetails: {
+                          ...jobCardData.vehicleDetails,
+                          fuelLevel: e.target.value,
+                        },
+                      })
+                    }
+                  >
+                    <option value="">Select...</option>
+                    <option value="25%">Low (25%)</option>
+                    <option value="50%">Half (50%)</option>
+                    <option value="75%">High (75%)</option>
+                    <option value="100%">Full</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Checklist */}
+              <div>
+                <h4 className="font-bold mb-3 border-b pb-2">
+                  Inspection Checklist
+                </h4>
+                <div className="space-y-3">
+                  {jobCardData.checklist.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between bg-gray-50 p-3 rounded-xl"
+                    >
+                      <span className="font-medium text-sm">{item.item}</span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => updateChecklist(idx, "ok")}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${
+                            item.status === "ok"
+                              ? "bg-green-500 text-white border-green-500"
+                              : "bg-white text-gray-400"
+                          }`}
+                        >
+                          OK
+                        </button>
+                        <button
+                          onClick={() => updateChecklist(idx, "issue")}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${
+                            item.status === "issue"
+                              ? "bg-red-500 text-white border-red-500"
+                              : "bg-white text-gray-400"
+                          }`}
+                        >
+                          ISSUE
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase">
+                  Mechanic Notes
+                </label>
+                <textarea
+                  className="w-full p-3 bg-gray-50 rounded-xl border mt-1 h-24"
+                  placeholder="Detailed observations..."
+                  value={jobCardData.notes}
+                  onChange={(e) =>
+                    setJobCardData({ ...jobCardData, notes: e.target.value })
+                  }
+                ></textarea>
+              </div>
+
+              <button
+                onClick={handleSaveJobCard}
+                disabled={updating}
+                className="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-indigo-200"
+              >
+                {updating ? (
+                  <Loader2 className="animate-spin mx-auto" />
+                ) : (
+                  "Save Report"
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

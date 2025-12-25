@@ -14,48 +14,161 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 
+import { toast } from "react-toastify";
+import { Loader2 } from "lucide-react";
+
 export default function MechanicDashboard() {
-  const [isOnline, setIsOnline] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [attendance, setAttendance] = useState(null); // { status: "clocked_in" | "clocked_out" | "not_started" }
+  const [processingAttendance, setProcessingAttendance] = useState(false);
+  const [sosLoading, setSosLoading] = useState(false);
+
   const [activeJob, setActiveJob] = useState(null);
-  const [openJobs, setOpenJobs] = useState([]);
   const [stats, setStats] = useState({
     points: 0,
     completedToday: 0,
     rating: 0,
   });
 
-  // Toggle Online Status
-  const toggleStatus = async () => {
-    // API Call placeholder
-    const newStatus = !isOnline;
-    setIsOnline(newStatus);
-    toast.info(newStatus ? "You are now ONLINE 🟢" : "You are now OFFLINE 🔴");
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      // Parallel fetch: Attendance, User Stats, Jobs (Active)
+      const [attRes] = await Promise.all([
+        fetch("/api/mechanic/attendance").then((r) => r.json()),
+        // Add other fetches here later
+      ]);
+
+      if (attRes.success) {
+        setAttendance(attRes.data);
+      }
+    } catch (error) {
+      console.error("Dashboard fetch error", error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleAttendance = async (action) => {
+    setProcessingAttendance(true);
+    try {
+      const res = await fetch("/api/mechanic/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAttendance(data.data);
+        toast.success(data.message);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (err) {
+      toast.error("Failed to update attendance");
+    } finally {
+      setProcessingAttendance(false);
+    }
+  };
+
+  const handleSOS = async () => {
+    if (
+      !confirm("🚨 ARE YOU SURE? This will alert the garage owner immediately!")
+    )
+      return;
+
+    setSosLoading(true);
+    try {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch("/api/mechanic/sos", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              location: { lat: latitude, lng: longitude },
+            }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            toast.error("SOS ALERT SENT! HELP IS ON THE WAY!", {
+              autoClose: false,
+            });
+          }
+          setSosLoading(false);
+        },
+        (err) => {
+          toast.error("Could not get location. Sending generic alert.");
+          // Fallback SOS without coords
+          setSosLoading(false);
+        }
+      );
+    } catch (err) {
+      toast.error("Failed to send SOS");
+      setSosLoading(false);
+    }
+  };
+
+  if (loading)
+    return (
+      <div className="p-10 flex justify-center">
+        <Loader2 className="animate-spin" />
+      </div>
+    );
 
   return (
     <div className="space-y-6">
-      {/* 1. Status Header Card */}
+      {/* 1. Attendance / Status Card */}
       <div
-        className={`rounded-3xl p-6 text-white shadow-lg transition-colors ${
-          isOnline ? "bg-green-600" : "bg-gray-800"
+        className={`rounded-3xl p-6 text-white shadow-lg transition-colors relative overflow-hidden ${
+          attendance?.clockOut
+            ? "bg-gray-800"
+            : attendance?.clockIn
+            ? "bg-green-600"
+            : "bg-gray-800"
         }`}
       >
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-4 relative z-10">
           <div>
             <h2 className="text-2xl font-bold">
-              {isOnline ? "You're Online" : "You're Offline"}
+              {attendance?.clockIn && !attendance?.clockOut
+                ? "You're On Duty"
+                : "Off Duty"}
             </h2>
             <p className="opacity-80 text-sm">
-              {isOnline
-                ? "Ready to receive new jobs"
-                : "Go online to start working"}
+              {attendance?.clockIn && !attendance?.clockOut
+                ? `Started at ${new Date(attendance.clockIn).toLocaleTimeString(
+                    [],
+                    { hour: "2-digit", minute: "2-digit" }
+                  )}`
+                : "Clock in to start your shift"}
             </p>
           </div>
+
           <button
-            onClick={toggleStatus}
-            className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all border-2 border-white/30"
+            onClick={() =>
+              handleAttendance(
+                attendance?.clockIn && !attendance?.clockOut ? "out" : "in"
+              )
+            }
+            disabled={processingAttendance}
+            className={`px-6 py-3 rounded-xl font-bold border-2 transition-all flex items-center gap-2 ${
+              attendance?.clockIn && !attendance?.clockOut
+                ? "bg-white/10 border-white/30 hover:bg-white/20"
+                : "bg-green-500 border-green-400 hover:bg-green-400 text-white shadow-lg shado-green-900"
+            }`}
           >
-            <Power className="w-6 h-6" />
+            {processingAttendance ? (
+              <Loader2 className="animate-spin w-5 h-5" />
+            ) : (
+              <Power className="w-5 h-5" />
+            )}
+            {attendance?.clockIn && !attendance?.clockOut
+              ? "Clock Out"
+              : "Clock In"}
           </button>
         </div>
 
@@ -167,6 +280,19 @@ export default function MechanicDashboard() {
           ))}
         </div>
       </div>
+
+      {/* SOS Floating Button */}
+      <button
+        onClick={handleSOS}
+        disabled={sosLoading}
+        className="fixed bottom-24 right-4 z-50 w-16 h-16 rounded-full bg-red-600 text-white shadow-2xl flex items-center justify-center animate-pulse hover:bg-red-700 active:scale-95 transition-all border-4 border-white/20"
+      >
+        {sosLoading ? (
+          <Loader2 className="animate-spin w-8 h-8" />
+        ) : (
+          <AlertTriangle className="w-8 h-8" />
+        )}
+      </button>
     </div>
   );
 }

@@ -19,11 +19,13 @@ export async function POST(request) {
     }
 
     // Find user with password
-    const user = await User.findOne({ email }).select("+password");
+    const user = await User.findOne({
+      $or: [{ email: email }, { phone: email }],
+    }).select("+password");
 
     if (!user) {
       return NextResponse.json(
-        { success: false, message: "Invalid email or password" },
+        { success: false, message: "Invalid email/phone or password" },
         { status: 401 }
       );
     }

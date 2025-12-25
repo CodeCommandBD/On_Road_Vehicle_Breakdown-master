@@ -16,6 +16,8 @@ export default function BookingsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
+  const [team, setTeam] = useState([]);
+
   // Fetch bookings from API
   const fetchBookings = async () => {
     if (!user) return;
@@ -38,8 +40,21 @@ export default function BookingsPage() {
     }
   };
 
+  const fetchTeam = async () => {
+    try {
+      const res = await fetch("/api/garage/team");
+      const data = await res.json();
+      if (data.success) {
+        setTeam(data.teamMembers);
+      }
+    } catch (error) {
+      console.error("Error fetching team:", error);
+    }
+  };
+
   useEffect(() => {
     fetchBookings();
+    fetchTeam();
   }, [user]);
 
   // Filter bookings by status and search query
@@ -183,6 +198,7 @@ export default function BookingsPage() {
           type="garage"
           bookings={filteredBookings}
           onStatusUpdate={handleStatusUpdate}
+          team={team}
         />
       </div>
 

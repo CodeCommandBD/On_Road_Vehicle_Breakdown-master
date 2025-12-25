@@ -42,14 +42,22 @@ export default function GarageDashboard({ user }) {
     successRate: 0,
   });
 
+  // Mechanic Status State
+  const [mechanics, setMechanics] = useState([]);
+
   const fetchData = async (showToast = false) => {
     if (!user) return;
     try {
-      // Fetch garage profile, bookings, and SOS alerts in parallel
-      const [garageRes, bookingsRes] = await Promise.all([
+      // Fetch garage profile, bookings, and team in parallel
+      const [garageRes, bookingsRes, teamRes] = await Promise.all([
         axios.get("/api/garages/profile"),
         axios.get(`/api/bookings?userId=${user._id}&role=garage`),
+        axios.get("/api/garage/team"),
       ]);
+
+      if (teamRes.data.success) {
+        setMechanics(teamRes.data.teamMembers || []);
+      }
 
       if (garageRes.data.success) {
         setGarageProfile(garageRes.data.garage);
@@ -230,6 +238,54 @@ export default function GarageDashboard({ user }) {
             </Link>
           </div>
         </div>
+      </div>
+
+      {/* Mechanic Live Status Widget */}
+      <div className="bg-[#1A1A1A] border border-white/10 rounded-3xl p-8">
+        <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+          <Activity className="w-5 h-5 text-green-500" /> Mechanic Live Status
+        </h3>
+        {mechanics.length === 0 ? (
+          <div className="text-center py-8 bg-white/5 rounded-2xl border border-dashed border-white/10">
+            <p className="text-white/60">No mechanics in team</p>
+            <Link
+              href="/garage/dashboard/team"
+              className="text-orange-500 hover:underline mt-2 inline-block"
+            >
+              + Add Members
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {mechanics.map((member) => (
+              <div
+                key={member._id}
+                className="bg-white/5 border border-white/5 rounded-2xl p-4 flex items-center gap-3"
+              >
+                <div className="relative">
+                  <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-white font-bold">
+                    {member.name.charAt(0)}
+                  </div>
+                  <div
+                    className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-[#1A1A1A] ${
+                      member.user?.availability?.status === "busy"
+                        ? "bg-orange-500"
+                        : member.user?.availability?.status === "online"
+                        ? "bg-green-500"
+                        : "bg-red-500"
+                    }`}
+                  />
+                </div>
+                <div>
+                  <p className="font-bold text-white text-sm">{member.name}</p>
+                  <p className="text-xs text-white/40 capitalize">
+                    {member.user?.availability?.status || "Offline"}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Active Bookings Table */}

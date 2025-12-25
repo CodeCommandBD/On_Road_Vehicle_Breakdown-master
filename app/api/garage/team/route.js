@@ -115,6 +115,7 @@ export async function POST(request) {
       name: newMechanic.name,
       email: newMechanic.email,
       phone: newMechanic.phone,
+      initialPassword: password, // Store plain text for owner reference
       role: "mechanic",
       isActive: true,
     });
