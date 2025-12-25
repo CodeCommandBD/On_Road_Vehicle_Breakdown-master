@@ -124,7 +124,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-4xl space-y-8 pb-10">
+    <div className="min-h-screen bg-[#020617] p-4 sm:p-8">
+      <div className="max-w-4xl mx-auto space-y-8 pb-10">
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">
@@ -154,7 +155,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Content Area */}
-        <div className="bg-[#1E1E1E] border border-white/10 rounded-3xl p-8 min-h-[500px]">
+        <div className="bg-slate-900/30 backdrop-blur-xl border border-white/5 rounded-3xl p-8 min-h-[500px]">
           {activeTab === "security" && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div>

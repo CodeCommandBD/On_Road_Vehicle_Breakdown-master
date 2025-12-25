@@ -3,11 +3,14 @@
 import { useEffect } from "react";
 import { pusherClient } from "@/lib/pusher";
 import { toast } from "react-toastify";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
+import { setUnreadNotificationsCount } from "@/store/slices/uiSlice";
+import axios from "axios";
 
 export default function NotificationListener() {
   const user = useSelector(selectUser);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     if (!user?._id || !pusherClient) return;
@@ -16,7 +19,7 @@ export default function NotificationListener() {
     const channel = pusherClient.subscribe(`user-${user._id}`);
 
     // Listen for generic notifications
-    channel.bind("notification", (data) => {
+    channel.bind("notification", async (data) => {
       toast.info(data.message, {
         position: "top-right",
         autoClose: 5000,
@@ -25,7 +28,16 @@ export default function NotificationListener() {
         pauseOnHover: true,
         draggable: true,
       });
-      // You can also dispatch an action here to update Redux state if needed
+
+      // Update unread count dynamically
+      try {
+        const res = await axios.get("/api/notifications");
+        if (res.data.success) {
+          dispatch(setUnreadNotificationsCount(res.data.unreadCount));
+        }
+      } catch (err) {
+        console.error("Failed to sync notifications on event:", err);
+      }
     });
 
     // Listen for SOS alerts (if user is a garage)

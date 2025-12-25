@@ -1,0 +1,92 @@
+import { NextResponse } from "next/server";
+import connectDB from "@/lib/db/connect";
+import User from "@/lib/db/models/User";
+import Booking from "@/lib/db/models/Booking";
+import Attendance from "@/lib/db/models/Attendance";
+import { verifyToken } from "@/lib/utils/auth";
+
+export async function GET(request) {
+  try {
+    await connectDB();
+    const token = request.cookies.get("token")?.value;
+    const decoded = await verifyToken(token);
+
+    if (!decoded || decoded.role !== "mechanic") {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const mechanic = await User.findById(decoded.userId).populate("garageId");
+    if (!mechanic) {
+      return NextResponse.json(
+        { success: false, message: "Mechanic not found" },
+        { status: 404 }
+      );
+    }
+
+    // 1. Fetch Attendance
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const attendance = await Attendance.findOne({
+      user: decoded.userId,
+      date: today,
+    });
+
+    // 2. Fetch Active Job (assigned to this mechanic and in_progress/confirmed)
+    const activeJob = await Booking.findOne({
+      assignedMechanic: decoded.userId,
+      status: { $in: ["confirmed", "in_progress"] },
+    }).populate("user", "name phone location");
+
+    // 3. Fetch Open Jobs (for the same garage, not assigned)
+    let openJobs = [];
+    if (mechanic.garageId) {
+      openJobs = await Booking.find({
+        garage: mechanic.garageId._id,
+        status: { $in: ["pending", "confirmed"] },
+        assignedMechanic: null,
+      })
+        .populate("user", "name phone location")
+        .sort({ createdAt: -1 });
+    }
+
+    // 4. Calculate Stats
+    // For "Today", let's count completed jobs where completedAt is today
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    const completedToday = await Booking.countDocuments({
+      assignedMechanic: decoded.userId,
+      status: "completed",
+      completedAt: { $gte: today, $lt: tomorrow },
+    });
+
+    const stats = {
+      points: mechanic.rewardPoints || 0,
+      completedToday: completedToday,
+      rating: mechanic.mechanicProfile?.rating?.average || 0,
+    };
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        mechanic: {
+          name: mechanic.name,
+          availability: mechanic.availability,
+        },
+        attendance,
+        activeJob,
+        openJobs,
+        stats,
+      },
+    });
+  } catch (error) {
+    console.error("Mechanic Dashboard API Error:", error);
+    return NextResponse.json(
+      { success: false, message: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}

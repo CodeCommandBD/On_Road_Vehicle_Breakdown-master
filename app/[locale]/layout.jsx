@@ -46,7 +46,7 @@ export default async function RootLayout({ children, params }) {
 
   return (
     <html lang={locale} className="scroll-smooth">
-      <body className={`font-sans antialiased bg-[#111]`}>
+      <body className={`font-sans antialiased bg-[#020617]`}>
         <NextIntlClientProvider messages={messages}>
           <StoreProvider>
             {children}

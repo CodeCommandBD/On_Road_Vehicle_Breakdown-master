@@ -11,24 +11,26 @@ import {
   Power,
   ChevronRight,
   Phone,
+  Loader2,
+  Trophy,
+  Star,
+  Settings,
+  Bell,
+  Search,
 } from "lucide-react";
 import { toast } from "react-toastify";
-
-import { toast } from "react-toastify";
-import { Loader2 } from "lucide-react";
+import ConfirmationModal from "@/components/common/ConfirmationModal";
 
 export default function MechanicDashboard() {
   const [loading, setLoading] = useState(true);
-  const [attendance, setAttendance] = useState(null); // { status: "clocked_in" | "clocked_out" | "not_started" }
+  const [data, setData] = useState(null);
   const [processingAttendance, setProcessingAttendance] = useState(false);
   const [sosLoading, setSosLoading] = useState(false);
+  const [acceptingJob, setAcceptingJob] = useState(null);
 
-  const [activeJob, setActiveJob] = useState(null);
-  const [stats, setStats] = useState({
-    points: 0,
-    completedToday: 0,
-    rating: 0,
-  });
+  // Modal States
+  const [modalType, setModalType] = useState(null); // 'attendance_in', 'attendance_out', 'sos'
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -36,23 +38,24 @@ export default function MechanicDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      // Parallel fetch: Attendance, User Stats, Jobs (Active)
-      const [attRes] = await Promise.all([
-        fetch("/api/mechanic/attendance").then((r) => r.json()),
-        // Add other fetches here later
-      ]);
-
-      if (attRes.success) {
-        setAttendance(attRes.data);
+      const res = await fetch("/api/mechanic/dashboard");
+      const json = await res.json();
+      if (json.success) {
+        setData(json.data);
+      } else {
+        toast.error(json.message);
       }
     } catch (error) {
       console.error("Dashboard fetch error", error);
+      toast.error("Failed to load dashboard data");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAttendance = async (action) => {
+  const handleAttendance = async () => {
+    const action =
+      data?.attendance?.clockIn && !data?.attendance?.clockOut ? "out" : "in";
     setProcessingAttendance(true);
     try {
       const res = await fetch("/api/mechanic/attendance", {
@@ -60,26 +63,22 @@ export default function MechanicDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
       });
-      const data = await res.json();
-      if (data.success) {
-        setAttendance(data.data);
-        toast.success(data.message);
+      const result = await res.json();
+      if (result.success) {
+        toast.success(result.message);
+        fetchDashboardData();
       } else {
-        toast.error(data.message);
+        toast.error(result.message);
       }
     } catch (err) {
       toast.error("Failed to update attendance");
     } finally {
       setProcessingAttendance(false);
+      setIsModalOpen(false);
     }
   };
 
   const handleSOS = async () => {
-    if (
-      !confirm("🚨 ARE YOU SURE? This will alert the garage owner immediately!")
-    )
-      return;
-
     setSosLoading(true);
     try {
       navigator.geolocation.getCurrentPosition(
@@ -92,207 +91,375 @@ export default function MechanicDashboard() {
               location: { lat: latitude, lng: longitude },
             }),
           });
-          const data = await res.json();
-          if (data.success) {
+          const result = await res.json();
+          if (result.success) {
             toast.error("SOS ALERT SENT! HELP IS ON THE WAY!", {
               autoClose: false,
+              theme: "dark",
             });
           }
           setSosLoading(false);
+          setIsModalOpen(false);
         },
         (err) => {
-          toast.error("Could not get location. Sending generic alert.");
-          // Fallback SOS without coords
+          toast.error("Could not get location. SOS alert failed.");
           setSosLoading(false);
+          setIsModalOpen(false);
         }
       );
     } catch (err) {
       toast.error("Failed to send SOS");
       setSosLoading(false);
+      setIsModalOpen(false);
     }
   };
 
-  if (loading)
+  const handleAcceptJob = async (bookingId) => {
+    setAcceptingJob(bookingId);
+    try {
+      const res = await fetch("/api/mechanic/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        toast.success("Job accepted! Head to the location.");
+        fetchDashboardData();
+      } else {
+        toast.error(result.message);
+      }
+    } catch (err) {
+      toast.error("Failed to accept job");
+    } finally {
+      setAcceptingJob(null);
+    }
+  };
+
+  const triggerModal = (type) => {
+    setModalType(type);
+    setIsModalOpen(true);
+  };
+
+  if (loading) {
     return (
-      <div className="p-10 flex justify-center">
-        <Loader2 className="animate-spin" />
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-white">
+        <Loader2 className="w-12 h-12 animate-spin text-indigo-500 mb-4" />
+        <p className="text-slate-400 font-medium">Synchronizing Dashboard...</p>
       </div>
     );
+  }
+
+  const { stats, attendance, activeJob, openJobs, mechanic } = data || {};
+  const isOnDuty = attendance?.clockIn && !attendance?.clockOut;
 
   return (
-    <div className="space-y-6">
-      {/* 1. Attendance / Status Card */}
-      <div
-        className={`rounded-3xl p-6 text-white shadow-lg transition-colors relative overflow-hidden ${
-          attendance?.clockOut
-            ? "bg-gray-800"
-            : attendance?.clockIn
-            ? "bg-green-600"
-            : "bg-gray-800"
-        }`}
-      >
-        <div className="flex justify-between items-center mb-4 relative z-10">
-          <div>
-            <h2 className="text-2xl font-bold">
-              {attendance?.clockIn && !attendance?.clockOut
-                ? "You're On Duty"
-                : "Off Duty"}
-            </h2>
-            <p className="opacity-80 text-sm">
-              {attendance?.clockIn && !attendance?.clockOut
-                ? `Started at ${new Date(attendance.clockIn).toLocaleTimeString(
-                    [],
-                    { hour: "2-digit", minute: "2-digit" }
-                  )}`
-                : "Clock in to start your shift"}
-            </p>
-          </div>
-
-          <button
-            onClick={() =>
-              handleAttendance(
-                attendance?.clockIn && !attendance?.clockOut ? "out" : "in"
-              )
-            }
-            disabled={processingAttendance}
-            className={`px-6 py-3 rounded-xl font-bold border-2 transition-all flex items-center gap-2 ${
-              attendance?.clockIn && !attendance?.clockOut
-                ? "bg-white/10 border-white/30 hover:bg-white/20"
-                : "bg-green-500 border-green-400 hover:bg-green-400 text-white shadow-lg shado-green-900"
-            }`}
-          >
-            {processingAttendance ? (
-              <Loader2 className="animate-spin w-5 h-5" />
-            ) : (
-              <Power className="w-5 h-5" />
-            )}
-            {attendance?.clockIn && !attendance?.clockOut
-              ? "Clock Out"
-              : "Clock In"}
-          </button>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-white/10">
-          <div className="text-center">
-            <span className="block text-xl font-bold">{stats.points}</span>
-            <span className="text-xs opacity-70">Points</span>
-          </div>
-          <div className="text-center border-l border-white/10">
-            <span className="block text-xl font-bold">
-              {stats.completedToday}
-            </span>
-            <span className="text-xs opacity-70">Jobs Today</span>
-          </div>
-          <div className="text-center border-l border-white/10">
-            <span className="block text-xl font-bold">{stats.rating}⭐</span>
-            <span className="text-xs opacity-70">Rating</span>
-          </div>
-        </div>
+    <div className="min-h-screen bg-[#020617] text-slate-200 pb-24">
+      {/* Page Title Section */}
+      <div className="px-6 pt-8 max-w-4xl mx-auto">
+        <h1 className="text-3xl font-black text-white bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-500">
+          Workforce Portal
+        </h1>
+        <p className="text-xs text-indigo-400 font-bold uppercase tracking-widest mt-1">
+          Mechanic Operations Command
+        </p>
       </div>
 
-      {/* 2. Active Job (Priority View) */}
-      {activeJob ? (
-        <div className="bg-white rounded-3xl p-1 border border-orange-100 shadow-md overflow-hidden">
-          <div className="bg-orange-50 p-4 border-b border-orange-100 flex justify-between items-center">
-            <span className="text-sm font-bold text-orange-700 flex items-center gap-2">
-              <Clock className="w-4 h-4" /> In Progress
-            </span>
-            <span className="text-xs text-orange-600 font-mono">#JOB-1234</span>
+      <div className="p-6 space-y-8 max-w-4xl mx-auto">
+        {/* Status Card */}
+        <div
+          className={`relative overflow-hidden rounded-[2.5rem] border p-8 shadow-2xl transition-all duration-500 ${
+            isOnDuty
+              ? "bg-indigo-500/10 border-indigo-500/20 ring-1 ring-indigo-500/10"
+              : "bg-slate-900/30 border-white/5 shadow-black/40"
+          }`}
+        >
+          <div className="absolute top-0 right-0 p-8 opacity-10">
+            <Power
+              className={`w-32 h-32 ${
+                isOnDuty ? "text-indigo-400" : "text-slate-400"
+              }`}
+            />
           </div>
 
-          <div className="p-5">
-            <h3 className="text-xl font-bold text-gray-900 mb-1">
-              Honda CBR 150R
-            </h3>
-            <p className="text-gray-500 text-sm mb-4">
-              Engine overheating issue
-            </p>
-
-            <div className="flex items-start gap-3 mb-6 bg-gray-50 p-3 rounded-xl">
-              <MapPin className="w-5 h-5 text-gray-400 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">
-                  Banani Road 11, Dhaka
-                </p>
-                <p className="text-xs text-gray-500">2.5 km away</p>
+          <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span
+                  className={`w-3 h-3 rounded-full animate-pulse ${
+                    isOnDuty ? "bg-indigo-400" : "bg-slate-500"
+                  }`}
+                ></span>
+                <h2 className="text-3xl font-bold text-white">
+                  {isOnDuty ? "System Active" : "Standby Mode"}
+                </h2>
               </div>
+              <p className="text-slate-400 font-medium">
+                {isOnDuty
+                  ? `Shift duration: ${new Date(
+                      attendance.clockIn
+                    ).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })} → Current`
+                  : "Clock in to initialize availability"}
+              </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <button className="flex items-center justify-center gap-2 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700">
-                <Navigation className="w-4 h-4" /> Navigate
-              </button>
-              <Link
-                href={`/mechanic/dashboard/bookings/${activeJob}`}
-                className="flex items-center justify-center gap-2 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200"
-              >
-                Details <ChevronRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="text-center py-8 bg-white/50 rounded-3xl border border-dashed border-gray-300">
-          <p className="text-gray-400">No active jobs right now.</p>
-        </div>
-      )}
-
-      {/* 3. Open Jobs Pool */}
-      <div>
-        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-          New Requests{" "}
-          <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-            3
-          </span>
-        </h3>
-
-        <div className="space-y-4">
-          {/* Mock Open Job Item */}
-          {[1, 2].map((job) => (
-            <div
-              key={job}
-              className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm hover:border-orange-200 transition-all"
+            <button
+              onClick={() =>
+                triggerModal(isOnDuty ? "attendance_out" : "attendance_in")
+              }
+              disabled={processingAttendance}
+              className={`group flex items-center gap-3 px-8 py-5 rounded-[2rem] font-bold text-lg transition-all transform active:scale-95 shadow-2xl ${
+                isOnDuty
+                  ? "bg-white text-slate-950 hover:bg-slate-200"
+                  : "bg-indigo-500 text-white hover:bg-indigo-400 shadow-indigo-900/40"
+              }`}
             >
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <h4 className="font-bold text-gray-900">Toyota Corolla</h4>
-                  <p className="text-xs text-gray-500">Flat Tire • Sedan</p>
-                </div>
-                <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-lg font-bold">
-                  Cash
-                </span>
-              </div>
+              {processingAttendance ? (
+                <Loader2 className="w-6 h-6 animate-spin" />
+              ) : (
+                <Power className="w-6 h-6" />
+              )}
+              {isOnDuty ? "End Shift" : "Begin Shift"}
+            </button>
+          </div>
 
-              <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-                <MapPin className="w-4 h-4" /> Gulshan 1 Circle (1.2 km)
+          {/* Micro Stats */}
+          <div className="relative z-10 grid grid-cols-3 gap-4 mt-12 p-6 rounded-3xl bg-black/40 backdrop-blur-md border border-white/5">
+            <div className="text-center group cursor-pointer">
+              <div className="flex justify-center mb-1">
+                <Trophy className="w-4 h-4 text-orange-400 group-hover:scale-110 transition-transform" />
               </div>
-
-              <div className="flex gap-3">
-                <button className="flex-1 py-2.5 bg-gray-900 text-white rounded-xl font-bold text-sm shadow-lg shadow-gray-200 active:scale-95 transition-transform">
-                  Accept Job
-                </button>
-                <button className="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl font-bold text-sm">
-                  View
-                </button>
-              </div>
+              <span className="block text-2xl font-black text-white">
+                {stats.points}
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-tighter text-slate-500">
+                Merit Points
+              </span>
             </div>
-          ))}
+            <div className="text-center group cursor-pointer border-x border-white/5">
+              <div className="flex justify-center mb-1">
+                <CheckCircle className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+              </div>
+              <span className="block text-2xl font-black text-white">
+                {stats.completedToday}
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-tighter text-slate-500">
+                Today's Duty
+              </span>
+            </div>
+            <div className="text-center group cursor-pointer">
+              <div className="flex justify-center mb-1">
+                <Star className="w-4 h-4 text-yellow-400 group-hover:scale-110 transition-transform" />
+              </div>
+              <span className="block text-2xl font-black text-white">
+                {stats.rating}
+                <span className="text-sm font-normal text-slate-500">/5</span>
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-tighter text-slate-500">
+                Performance
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Dynamic Sections */}
+        <div className="grid grid-cols-1 gap-8">
+          {/* Active Job Section */}
+          <section>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-1 h-8 bg-indigo-500 rounded-full"></div>
+              <h3 className="text-xl font-black text-white tracking-tight">
+                Priority Mission
+              </h3>
+            </div>
+            {activeJob ? (
+              <div className="group relative overflow-hidden bg-slate-900/20 border border-white/5 rounded-[2.5rem] p-8 hover:border-indigo-500/30 transition-all duration-300">
+                <div className="absolute top-0 right-0 p-6">
+                  <span className="px-4 py-1.5 rounded-full bg-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-widest border border-indigo-500/30">
+                    Live Operation
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-6">
+                  <div>
+                    <h4 className="text-2xl font-bold text-white mb-2">
+                      {activeJob.user?.name || "Client"}
+                    </h4>
+                    <p className="text-slate-400 flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-indigo-400" />
+                      {activeJob.location?.address}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <button className="flex-[1.5] flex items-center justify-center gap-3 py-4 bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-wider hover:bg-indigo-400 transition-all shadow-lg shadow-indigo-500/20 active:scale-95">
+                      <Navigation className="w-5 h-5" />
+                      <span className="text-sm">Launch Navigation</span>
+                    </button>
+                    <Link
+                      href={`/mechanic/dashboard/bookings/${activeJob._id}`}
+                      className="flex-1 flex items-center justify-center gap-3 py-4 bg-slate-800 text-white rounded-2xl font-black uppercase tracking-wider hover:bg-slate-700 border border-white/10 transition-all text-center"
+                    >
+                      <span className="text-sm">Matrix</span>
+                      <ChevronRight className="w-5 h-5" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-[#020617]/40 border-2 border-dashed border-white/5 rounded-[2.5rem] p-12 text-center">
+                <p className="text-slate-500 font-medium">
+                  No live priority missions assigned.
+                </p>
+              </div>
+            )}
+          </section>
+
+          {/* Open Jobs pool */}
+          <section>
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-1 h-8 bg-slate-500 rounded-full"></div>
+                <h3 className="text-xl font-black text-white tracking-tight text-glow">
+                  Available Requests
+                </h3>
+              </div>
+              <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-xs font-bold text-slate-400">
+                {openJobs?.length || 0} Total
+              </span>
+            </div>
+
+            <div className="space-y-4">
+              {openJobs && openJobs.length > 0 ? (
+                openJobs.map((job) => (
+                  <div
+                    key={job._id}
+                    className="bg-slate-900/20 border border-white/5 p-6 rounded-[2rem] hover:bg-slate-800/40 hover:border-white/10 transition-all group"
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h4 className="font-bold text-white group-hover:text-indigo-400 transition-colors uppercase tracking-tight">
+                          {job.user?.name || "Unknown Client"}
+                        </h4>
+                        <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />{" "}
+                          {new Date(job.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className="block font-black text-white">
+                          ৳ {job.estimatedCost || "TBD"}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-500 tracking-widest uppercase">
+                          {job.paymentMethod}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-4 items-center">
+                      <p className="flex-1 text-sm text-slate-400 line-clamp-1 italic">
+                        "
+                        {job.description ||
+                          "General emergency assistance required"}
+                        "
+                      </p>
+                      <button
+                        onClick={() => handleAcceptJob(job._id)}
+                        disabled={acceptingJob === job._id || !!activeJob}
+                        className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${
+                          acceptingJob === job._id
+                            ? "bg-slate-700 text-slate-400"
+                            : !!activeJob
+                            ? "bg-slate-800/50 text-slate-600 cursor-not-allowed border border-white/5"
+                            : "bg-indigo-500 text-white hover:bg-indigo-400 shadow-lg shadow-indigo-900/20"
+                        }`}
+                      >
+                        {acceptingJob === job._id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          "Deploy Now"
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="py-12 text-center opacity-50 italic">
+                  No external requests in the immediate sector.
+                </div>
+              )}
+            </div>
+          </section>
         </div>
       </div>
 
-      {/* SOS Floating Button */}
+      {/* Floating SOS */}
       <button
-        onClick={handleSOS}
+        onClick={() => triggerModal("sos")}
         disabled={sosLoading}
-        className="fixed bottom-24 right-4 z-50 w-16 h-16 rounded-full bg-red-600 text-white shadow-2xl flex items-center justify-center animate-pulse hover:bg-red-700 active:scale-95 transition-all border-4 border-white/20"
+        className="fixed bottom-8 right-8 z-[60] w-20 h-20 rounded-[2rem] bg-red-600 text-white shadow-[0_0_50px_-12px_rgba(220,38,38,0.5)] flex items-center justify-center animate-pulse hover:bg-red-500 active:scale-95 transition-all border-4 border-white/10 group overflow-hidden"
       >
+        <div className="absolute inset-0 bg-gradient-to-tr from-black/40 to-transparent"></div>
         {sosLoading ? (
-          <Loader2 className="animate-spin w-8 h-8" />
+          <Loader2 className="w-10 h-10 animate-spin relative z-10" />
         ) : (
-          <AlertTriangle className="w-8 h-8" />
+          <AlertTriangle className="w-10 h-10 relative z-10" />
         )}
       </button>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={isModalOpen}
+        isLoading={processingAttendance || sosLoading}
+        title={
+          modalType === "sos"
+            ? "CRITICAL SOS ALERT"
+            : modalType === "attendance_in"
+            ? "Initialize Duty"
+            : "Terminate Shift"
+        }
+        message={
+          modalType === "sos"
+            ? "This will transmit your live coordinates to HQ and the local response team. Use only in extreme emergency."
+            : modalType === "attendance_in"
+            ? "You are about to go online. New missions will be visible in your local sector."
+            : "Confirm shift termination. You will no longer be visible for priority mission deployments."
+        }
+        confirmText={
+          modalType === "sos"
+            ? "TRANSMIT SOS"
+            : modalType === "attendance_in"
+            ? "Go Online"
+            : "Go Offline"
+        }
+        type={modalType === "sos" ? "warning" : "info"}
+        onConfirm={modalType === "sos" ? handleSOS : handleAttendance}
+        onCancel={() =>
+          !processingAttendance && !sosLoading && setIsModalOpen(false)
+        }
+      />
+
+      <style jsx global>{`
+        .text-glow {
+          text-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+        }
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 }
