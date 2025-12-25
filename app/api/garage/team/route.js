@@ -1,25 +1,28 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db/connect";
+import User from "@/lib/db/models/User";
 import Garage from "@/lib/db/models/Garage";
+import { verifyToken } from "@/lib/utils/auth";
+import bcrypt from "bcrypt";
 
-// GET - List team members
+// GET: List all team members
 export async function GET(request) {
   try {
     await connectDB();
+    const token = request.cookies.get("token")?.value;
+    const decoded = await verifyToken(token);
 
-    const { searchParams } = new URL(request.url);
-    const garageId = searchParams.get("garageId");
-
-    if (!garageId) {
+    if (!decoded || decoded.role !== "garage") {
       return NextResponse.json(
-        { success: false, message: "Garage ID is required" },
-        { status: 400 }
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
       );
     }
 
-    const garage = await Garage.findById(garageId)
-      .populate("teamMembers.user", "name email")
-      .lean();
+    const garage = await Garage.findOne({ owner: decoded.userId }).populate({
+      path: "teamMembers.user",
+      select: "name email phone avatar mechanicProfile availability",
+    });
 
     if (!garage) {
       return NextResponse.json(
@@ -30,41 +33,43 @@ export async function GET(request) {
 
     return NextResponse.json({
       success: true,
-      data: {
-        teamMembers: garage.teamMembers || [],
-        membershipTier: garage.membershipTier,
-      },
+      teamMembers: garage.teamMembers,
     });
   } catch (error) {
-    console.error("Error fetching team members:", error);
+    console.error("Team GET error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to fetch team members",
-        error: error.message,
-      },
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }
 }
 
-// POST - Add team member
+// POST: Add new mechanic
 export async function POST(request) {
   try {
     await connectDB();
+    const token = request.cookies.get("token")?.value;
+    const decoded = await verifyToken(token);
+
+    if (!decoded || decoded.role !== "garage") {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
     const body = await request.json();
-    const { garageId, name, email, phone, role } = body;
+    const { name, phone, password, skills, email } = body;
 
-    if (!garageId || !name || !email) {
+    // Validation
+    if (!name || !phone || !password) {
       return NextResponse.json(
-        { success: false, message: "Garage ID, name, and email are required" },
+        { success: false, message: "Name, Phone and Password are required" },
         { status: 400 }
       );
     }
 
-    const garage = await Garage.findById(garageId);
-
+    const garage = await Garage.findOne({ owner: decoded.userId });
     if (!garage) {
       return NextResponse.json(
         { success: false, message: "Garage not found" },
@@ -72,165 +77,63 @@ export async function POST(request) {
       );
     }
 
-    // Check team member limits based on tier
-    const limits = {
-      free: 1, // Only owner
-      trial: 1,
-      basic: 3,
-      standard: 5,
-      premium: 10,
-      enterprise: -1, // Unlimited
-    };
+    // Check if user already exists
+    const existingUser = await User.findOne({
+      $or: [{ phone }, { email: email || "placeholder" }],
+    });
 
-    const currentLimit = limits[garage.membershipTier] || 1;
-    const currentCount = garage.teamMembers?.length || 0;
-
-    if (currentLimit !== -1 && currentCount >= currentLimit) {
+    if (existingUser) {
       return NextResponse.json(
         {
           success: false,
-          message: `Team member limit reached for ${garage.membershipTier} plan. Upgrade to add more members.`,
-          limit: currentLimit,
+          message: "User with this phone/email already exists",
         },
-        { status: 403 }
+        { status: 400 }
       );
     }
 
-    // Add new member
-    const newMember = {
+    // Create Mechanic User
+    // If email is not provided, generate a fake one for uniqueness constraint
+    const finalEmail = email || `${phone}@${garage._id}.local`;
+
+    const newMechanic = await User.create({
       name,
-      email,
+      email: finalEmail,
       phone,
-      role: role || "mechanic",
-      addedAt: new Date(),
+      password, // Password will be hashed by pre-save hook
+      role: "mechanic",
+      garageId: garage._id,
+      membershipTier: "free", // Mechanics don't need paid tiers
+      mechanicProfile: {
+        skills: skills || [],
+      },
+    });
+
+    // Add to Garage Team
+    garage.teamMembers.push({
+      user: newMechanic._id,
+      name: newMechanic.name,
+      email: newMechanic.email,
+      phone: newMechanic.phone,
+      role: "mechanic",
       isActive: true,
-    };
-
-    if (!garage.teamMembers) {
-      garage.teamMembers = [];
-    }
-
-    garage.teamMembers.push(newMember);
-    await garage.save();
-
-    return NextResponse.json({
-      success: true,
-      data: { member: newMember },
-      message: "Team member added successfully",
     });
-  } catch (error) {
-    console.error("Error adding team member:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to add team member",
-        error: error.message,
-      },
-      { status: 500 }
-    );
-  }
-}
-
-// PUT - Update team member
-export async function PUT(request) {
-  try {
-    await connectDB();
-
-    const body = await request.json();
-    const { garageId, memberId, name, email, phone, role, isActive } = body;
-
-    if (!garageId || !memberId) {
-      return NextResponse.json(
-        { success: false, message: "Garage ID and Member ID are required" },
-        { status: 400 }
-      );
-    }
-
-    const garage = await Garage.findById(garageId);
-
-    if (!garage) {
-      return NextResponse.json(
-        { success: false, message: "Garage not found" },
-        { status: 404 }
-      );
-    }
-
-    const member = garage.teamMembers.id(memberId);
-
-    if (!member) {
-      return NextResponse.json(
-        { success: false, message: "Team member not found" },
-        { status: 404 }
-      );
-    }
-
-    // Update fields
-    if (name) member.name = name;
-    if (email) member.email = email;
-    if (phone) member.phone = phone;
-    if (role) member.role = role;
-    if (typeof isActive !== "undefined") member.isActive = isActive;
 
     await garage.save();
 
     return NextResponse.json({
       success: true,
-      data: { member },
-      message: "Team member updated successfully",
+      message: "Mechanic added successfully",
+      mechanic: {
+        _id: newMechanic._id,
+        name: newMechanic.name,
+        phone: newMechanic.phone,
+      },
     });
   } catch (error) {
-    console.error("Error updating team member:", error);
+    console.error("Team POST error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to update team member",
-        error: error.message,
-      },
-      { status: 500 }
-    );
-  }
-}
-
-// DELETE - Remove team member
-export async function DELETE(request) {
-  try {
-    await connectDB();
-
-    const { searchParams } = new URL(request.url);
-    const garageId = searchParams.get("garageId");
-    const memberId = searchParams.get("memberId");
-
-    if (!garageId || !memberId) {
-      return NextResponse.json(
-        { success: false, message: "Garage ID and Member ID are required" },
-        { status: 400 }
-      );
-    }
-
-    const garage = await Garage.findById(garageId);
-
-    if (!garage) {
-      return NextResponse.json(
-        { success: false, message: "Garage not found" },
-        { status: 404 }
-      );
-    }
-
-    garage.teamMembers.pull(memberId);
-    await garage.save();
-
-    return NextResponse.json({
-      success: true,
-      message: "Team member removed successfully",
-    });
-  } catch (error) {
-    console.error("Error removing team member:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to remove team member",
-        error: error.message,
-      },
+      { success: false, message: error.message || "Internal server error" },
       { status: 500 }
     );
   }

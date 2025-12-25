@@ -58,6 +58,11 @@ export async function GET(request, { params }) {
       booking.garage.owner.toString() === decoded.userId
     ) {
       isAuthorized = true;
+    } else if (
+      decoded.role === "mechanic" &&
+      booking.assignedMechanic?.toString() === decoded.userId
+    ) {
+      isAuthorized = true;
     }
 
     if (!isAuthorized) {
@@ -91,7 +96,12 @@ export async function PATCH(request, { params }) {
     const token = request.cookies.get("token")?.value;
     const decoded = await verifyToken(token);
 
-    if (!decoded || (decoded.role !== "admin" && decoded.role !== "garage")) {
+    if (
+      !decoded ||
+      (decoded.role !== "admin" &&
+        decoded.role !== "garage" &&
+        decoded.role !== "mechanic")
+    ) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
         { status: 401 }
@@ -107,6 +117,7 @@ export async function PATCH(request, { params }) {
       billItems,
       towingRequested,
       towingCost,
+      assignedMechanic, // Allow updating assigned mechanic
     } = body;
 
     const booking = await Booking.findById(id).populate("garage", "owner");
@@ -117,13 +128,23 @@ export async function PATCH(request, { params }) {
       );
     }
 
-    // Authorization check for garage
+    // Authorization check for garage & mechanic
     if (
       decoded.role === "garage" &&
       booking.garage?.owner?.toString() !== decoded.userId
     ) {
       return NextResponse.json(
         { success: false, message: "Forbidden: Not your booking" },
+        { status: 403 }
+      );
+    }
+
+    if (
+      decoded.role === "mechanic" &&
+      booking.assignedMechanic?.toString() !== decoded.userId
+    ) {
+      return NextResponse.json(
+        { success: false, message: "Forbidden: Not assigned to this job" },
         { status: 403 }
       );
     }
