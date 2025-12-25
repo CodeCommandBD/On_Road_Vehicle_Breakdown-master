@@ -145,6 +145,16 @@ const services = [
     icon: "Droplets",
     order: 12,
   },
+  {
+    name: "General Diagnosis & Inspection",
+    basePrice: 1000,
+    category: "general",
+    description:
+      "Not sure what's wrong? Our experts will perform a full vehicle health check.",
+    image: "/images/nav/nav-twelve.png",
+    icon: "Search",
+    order: 0,
+  },
 ];
 
 async function seedServices() {

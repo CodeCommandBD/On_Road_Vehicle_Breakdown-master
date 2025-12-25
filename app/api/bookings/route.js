@@ -17,6 +17,19 @@ export async function POST(req) {
 
     // Basic validation could happen here, but Mongoose will also validate.
 
+    // AUTOMATED DISPATCH: If no garage selected, find the nearest one
+    if (!body.garage && body.location?.coordinates) {
+      const [lng, lat] = body.location.coordinates;
+      const nearbyGarages = await Garage.findNearby(lng, lat, 20000); // 20km radius
+
+      if (nearbyGarages && nearbyGarages.length > 0) {
+        body.garage = nearbyGarages[0]._id; // Assign the closest one
+      } else {
+        // Optional: Fail if no garage found, or allow pending without garage (admin assigns later)
+        // For now, we will allow it to be created without a garage (pending admin assignment)
+      }
+    }
+
     // Create the booking
     const booking = await Booking.create(body);
 

@@ -43,6 +43,24 @@ const authSlice = createSlice({
     updateUser: (state, action) => {
       state.user = { ...state.user, ...action.payload };
     },
+    toggleFavoriteSuccess: (state, action) => {
+      const garage = action.payload; // Can be ID string or full object
+      const garageId = garage._id || garage;
+
+      if (!state.user.favoriteGarages) {
+        state.user.favoriteGarages = [];
+      }
+
+      const index = state.user.favoriteGarages.findIndex(
+        (f) => (f._id || f) === garageId
+      );
+
+      if (index === -1) {
+        state.user.favoriteGarages.push(garage);
+      } else {
+        state.user.favoriteGarages.splice(index, 1);
+      }
+    },
     clearError: (state) => {
       state.error = null;
     },
@@ -55,6 +73,7 @@ export const {
   loginFailure,
   logout,
   updateUser,
+  toggleFavoriteSuccess,
   clearError,
 } = authSlice.actions;
 
@@ -62,6 +81,8 @@ export default authSlice.reducer;
 
 // Selectors
 export const selectUser = (state) => state.auth.user;
+export const selectFavorites = (state) =>
+  state.auth.user?.favoriteGarages || [];
 export const selectToken = (state) => state.auth.token;
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;
 export const selectAuthLoading = (state) => state.auth.isLoading;

@@ -2,9 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { ArrowLeft, MapPin, Truck, RefreshCw, ShieldAlert } from "lucide-react";
+import {
+  ArrowLeft,
+  MapPin,
+  Truck,
+  RefreshCw,
+  ShieldAlert,
+  Car,
+} from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import L from "leaflet";
 
 // Dynamically import MapComponent with no SSR
 const MapComponent = dynamic(() => import("@/components/maps/MapComponent"), {
@@ -52,20 +60,48 @@ export default function AdminTrackPage() {
     const markers = [];
 
     // User Location
-    if (booking.location?.coordinates) {
-      markers.push({
-        lat: booking.location.coordinates[1],
-        lng: booking.location.coordinates[0],
-        content: `User: ${booking.user?.name || "Customer"}`,
-      });
-    }
+    const userIcon = L.divIcon({
+      className: "custom-div-icon",
+      html: `<div style="background-color: #3b82f6; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+          <div style="background-color: white; width: 8px; height: 8px; border-radius: 50%;"></div>
+        </div>`,
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
+      popupAnchor: [0, -12],
+    });
+
+    markers.push({
+      lat: booking.location.coordinates[1],
+      lng: booking.location.coordinates[0],
+      content: `User: ${booking.user?.name || "Customer"}`,
+      icon: userIcon,
+    });
 
     // Driver Location
     if (booking.driverLocation?.lat) {
+      // Determine Vehicle Type
+      const isTowing =
+        booking.service?.category === "towing" || booking.towingRequested;
+
+      const vehicleIcon = L.divIcon({
+        className: "custom-div-icon",
+        html: `<div style="background-color: ${
+          isTowing ? "#ef4444" : "#3b82f6"
+        }; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+          <span style="font-size: 20px;">${isTowing ? "🚚" : "🚗"}</span>
+        </div>`,
+        iconSize: [40, 40],
+        iconAnchor: [20, 40],
+        popupAnchor: [0, -40],
+      });
+
       markers.push({
         lat: booking.driverLocation.lat,
         lng: booking.driverLocation.lng,
-        content: `Driver: ${booking.garage?.name || "Garage"}`,
+        content: `Driver: ${booking.garage?.name || "Garage"} (${
+          isTowing ? "Tow Truck" : "Service Car"
+        })`,
+        icon: vehicleIcon,
       });
     }
 
@@ -73,6 +109,19 @@ export default function AdminTrackPage() {
   };
 
   const markers = getMarkers();
+  const polylines = [];
+
+  if (booking?.driverLocation?.lat && booking?.location?.coordinates) {
+    polylines.push({
+      positions: [
+        [booking.driverLocation.lat, booking.driverLocation.lng],
+        [booking.location.coordinates[1], booking.location.coordinates[0]],
+      ],
+      color: "#ef4444", // Red for admin
+      dashArray: "10, 10",
+    });
+  }
+
   const center =
     markers.length > 0
       ? [
@@ -121,6 +170,7 @@ export default function AdminTrackPage() {
           center={center}
           zoom={13}
           markers={markers}
+          polylines={polylines}
           className="h-[600px] w-full rounded-xl"
         />
 

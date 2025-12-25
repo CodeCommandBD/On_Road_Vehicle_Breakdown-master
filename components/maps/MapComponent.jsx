@@ -8,6 +8,7 @@ import {
   Popup,
   useMap,
   useMapEvents,
+  Polyline,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -50,6 +51,7 @@ export default function MapComponent({
   center = [23.8103, 90.4125], // Dhaka
   zoom = 13,
   markers = [],
+  polylines = [],
   onLocationSelect,
   className = "h-[400px] w-full rounded-xl overflow-hidden shadow-lg border border-white/10",
 }) {
@@ -97,6 +99,15 @@ export default function MapComponent({
             </Popup>
           )}
         </Marker>
+      ))}
+
+      {polylines.map((polyline, idx) => (
+        <Polyline
+          key={idx}
+          positions={polyline.positions}
+          color={polyline.color || "blue"}
+          dashArray={polyline.dashArray || null}
+        />
       ))}
     </MapContainer>
   );

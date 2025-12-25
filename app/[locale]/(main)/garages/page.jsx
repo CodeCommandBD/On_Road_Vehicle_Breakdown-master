@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   Star,
   MapPin,
@@ -13,9 +14,16 @@ import {
   Loader2,
   ShieldCheck,
   Navigation,
+  Heart,
 } from "lucide-react";
 import axios from "axios";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { toast } from "react-toastify";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  selectUser,
+  selectFavorites,
+  toggleFavoriteSuccess,
+} from "@/store/slices/authSlice";
 
 // Haversine formula to calculate distance
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -58,8 +66,11 @@ export default function GaragesPage() {
     searchParams.get("service") || null
   );
 
-  const [userLocation, setUserLocation] = useState(null);
-  const [locationError, setLocationError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true); // Added
+  const [coordinates, setCoordinates] = useState(null); // Replaces userLocation
+  const dispatch = useDispatch();
+  const user = useSelector(selectUser);
+  const favorites = useSelector(selectFavorites);
 
   // Debounce search
   useEffect(() => {
@@ -68,7 +79,7 @@ export default function GaragesPage() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, filter24h, filterService, userLocation]);
+  }, [searchQuery, filter24h, filterService, coordinates]); // Changed userLocation to coordinates
 
   const fetchGarages = async () => {
     setLoading(true);
@@ -79,9 +90,10 @@ export default function GaragesPage() {
       if (filterService) params.append("service", filterService);
       params.append("isActive", "true"); // Always show active only
 
-      if (userLocation) {
-        params.append("lat", userLocation.lat);
-        params.append("lng", userLocation.lng);
+      if (coordinates) {
+        // Changed userLocation to coordinates
+        params.append("lat", coordinates.lat); // Changed userLocation to coordinates
+        params.append("lng", coordinates.lng); // Changed userLocation to coordinates
         params.append("distance", "10000"); // 10km radius default
       }
 
@@ -107,25 +119,56 @@ export default function GaragesPage() {
 
   const handleNearMe = () => {
     if (!navigator.geolocation) {
-      setLocationError("Geolocation is not supported by your browser");
+      // setLocationError("Geolocation is not supported by your browser"); // Removed setLocationError
+      toast.error("Geolocation is not supported by your browser"); // Added toast
       return;
     }
 
     setLoading(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setUserLocation({
+        setCoordinates({
+          // Changed setUserLocation to setCoordinates
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         });
-        setLocationError(null);
+        // setLocationError(null); // Removed setLocationError
       },
       (error) => {
         console.error("Error getting location:", error);
-        setLocationError("Unable to retrieve your location");
+        // setLocationError("Unable to retrieve your location"); // Removed setLocationError
+        toast.error("Unable to retrieve your location"); // Added toast
         setLoading(false);
       }
     );
+  };
+
+  useEffect(() => {
+    fetchGarages();
+  }, [coordinates, filter24h, searchQuery, filterService]); // Added this useEffect, adjusted dependencies based on context
+
+  const toggleFavorite = async (garageId) => {
+    if (!user) {
+      toast.error("Please login to favorite garages"); // Changed toast.info to toast.error
+      router.push("/login?callbackUrl=" + window.location.pathname); // Added redirect
+      return;
+    }
+
+    try {
+      const response = await axios.post("/api/user/favorites", { garageId });
+      if (response.data.success) {
+        const garageObj = garages.find((g) => g._id === garageId);
+        dispatch(toggleFavoriteSuccess(garageObj || garageId));
+        toast.success(
+          favorites.some((f) => (f._id || f) === garageId)
+            ? "Removed from favorites"
+            : "Added to favorites"
+        );
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error); // Added console.error
+      toast.error("Failed to update favorites");
+    }
   };
 
   return (
@@ -173,13 +216,13 @@ export default function GaragesPage() {
             <button
               onClick={handleNearMe}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
-                userLocation
+                coordinates
                   ? "bg-blue-50/50 border-blue-500 text-blue-600 shadow-md"
                   : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
               }`}
             >
               <Navigation className="w-4 h-4" />
-              {userLocation ? "Near Me (Active)" : "Near Me"}
+              {coordinates ? "Near Me (Active)" : "Near Me"}
             </button>
             <button
               onClick={toggleFilter24h}
@@ -259,7 +302,26 @@ export default function GaragesPage() {
                       <Wrench className="w-12 h-12" />
                     </div>
                   )}
-
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleFavorite(garage._id);
+                    }}
+                    className={`absolute top-2 right-2 p-2 rounded-full backdrop-blur-md transition-all ${
+                      favorites.some((f) => (f._id || f) === garage._id)
+                        ? "bg-red-500 text-white shadow-lg shadow-red-500/20"
+                        : "bg-black/20 text-white hover:bg-white/20"
+                    }`}
+                  >
+                    <Heart
+                      className={`w-4 h-4 ${
+                        favorites.some((f) => (f._id || f) === garage._id)
+                          ? "fill-current"
+                          : ""
+                      }`}
+                    />
+                  </button>
                   {garage.is24Hours && (
                     <div className="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm">
                       OPEN 24/7
@@ -287,12 +349,12 @@ export default function GaragesPage() {
                         {garage.address?.street}, {garage.address?.city}
                       </div>
 
-                      {userLocation && garage.location?.coordinates && (
+                      {coordinates && garage.location?.coordinates && (
                         <div className="flex items-center gap-1 text-blue-600 text-sm font-medium bg-blue-50 w-fit px-2 py-0.5 rounded border border-blue-100">
                           <Navigation className="w-3 h-3 fill-blue-600" />
                           {calculateDistance(
-                            userLocation.lat,
-                            userLocation.lng,
+                            coordinates.lat,
+                            coordinates.lng,
                             garage.location.coordinates[1], // Latitude
                             garage.location.coordinates[0] // Longitude
                           )}{" "}
@@ -333,23 +395,23 @@ export default function GaragesPage() {
                   <div className="flex items-center gap-3 mt-auto">
                     <Link
                       href={`/book?garage=${garage._id}`}
-                      className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium text-sm"
+                      className="flex-1 text-center px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium text-sm"
                     >
                       Book Now
                     </Link>
-                    <a
-                      href={`tel:${garage.phone}`}
-                      className="p-2 border border-gray-200 rounded-lg hover:border-orange-500 hover:text-orange-500 transition-colors"
-                      title="Call Garage"
-                    >
-                      <Phone className="w-4 h-4" />
-                    </a>
                     <Link
                       href={`/garages/${garage._id}`}
-                      className="px-6 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-700 text-sm font-medium ml-auto"
+                      className="flex-1 text-center px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm"
                     >
                       View Profile
                     </Link>
+                    <a
+                      href={`tel:${garage.phone}`}
+                      className="p-2.5 bg-green-50 text-green-600 rounded-lg border border-green-200 hover:bg-green-100 hover:border-green-300 transition-colors"
+                      title="Call Garage"
+                    >
+                      <Phone className="w-5 h-5" />
+                    </a>
                   </div>
                 </div>
               </div>
