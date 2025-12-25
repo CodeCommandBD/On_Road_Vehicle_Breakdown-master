@@ -62,7 +62,7 @@ export default function ProfileForm() {
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch("/api/user/profile");
+      const res = await fetch("/api/profile");
       const data = await res.json();
       if (data.success) {
         setFormData({
@@ -171,7 +171,7 @@ export default function ProfileForm() {
     e.preventDefault();
     setSaving(true);
     try {
-      const res = await fetch("/api/user/profile", {
+      const res = await fetch("/api/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

@@ -25,9 +25,9 @@ export default function UserDashboardLayout({ children }) {
   useEffect(() => {
     const syncProfile = async () => {
       try {
-        const res = await axios.get("/api/user/profile");
+        const res = await axios.get("/api/profile");
         if (res.data.success) {
-          dispatch(updateUser(res.data.data));
+          dispatch(updateUser(res.data.user));
         }
       } catch (error) {
         console.error("Dashboard layout - Profile sync failed:", error);

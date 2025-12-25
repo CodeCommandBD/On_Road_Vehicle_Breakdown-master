@@ -99,11 +99,12 @@ export default function GarageProfilePage() {
 
       setIsLoading(true);
       try {
-        const response = await axios.get("/api/garages/profile");
+        const response = await axios.get("/api/profile");
 
         if (response.data.success) {
-          const garage = response.data.garage;
-          setMembership(garage.membership);
+          const userProfile = response.data.user;
+          const garage = userProfile.garage;
+          setMembership(garage?.membership);
 
           // Initialize operating hours if not exists
           const hours = {};
@@ -252,7 +253,7 @@ export default function GarageProfilePage() {
     setIsSaving(true);
 
     try {
-      const response = await axios.put("/api/garages/profile", formData);
+      const response = await axios.put("/api/profile", formData);
 
       if (response.data.success) {
         toast.success(t("updateSuccess"));

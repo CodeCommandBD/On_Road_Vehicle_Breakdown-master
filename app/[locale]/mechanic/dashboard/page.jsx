@@ -403,7 +403,7 @@ export default function MechanicDashboard() {
       <button
         onClick={() => triggerModal("sos")}
         disabled={sosLoading}
-        className="fixed bottom-8 right-8 z-[60] w-20 h-20 rounded-[2rem] bg-red-600 text-white shadow-[0_0_50px_-12px_rgba(220,38,38,0.5)] flex items-center justify-center animate-pulse hover:bg-red-500 active:scale-95 transition-all border-4 border-white/10 group overflow-hidden"
+        className="fixed bottom-28 sm:bottom-8 right-8 z-[60] w-20 h-20 rounded-[2rem] bg-red-600 text-white shadow-[0_0_50px_-12px_rgba(220,38,38,0.5)] flex items-center justify-center animate-pulse hover:bg-red-500 active:scale-95 transition-all border-4 border-white/10 group overflow-hidden"
       >
         <div className="absolute inset-0 bg-gradient-to-tr from-black/40 to-transparent"></div>
         {sosLoading ? (

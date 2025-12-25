@@ -174,7 +174,7 @@ export default function ProfilePage() {
     console.log("FINAL SUBMISSION PAYLOAD:", JSON.stringify(payload));
 
     try {
-      const response = await axios.put("/api/user/profile", payload);
+      const response = await axios.put("/api/profile", payload);
 
       if (response.data.success) {
         console.log(

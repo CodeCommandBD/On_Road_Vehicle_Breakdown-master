@@ -19,7 +19,7 @@ export async function GET(request) {
       );
     }
 
-    const currentUserId = decoded.id;
+    const currentUserId = decoded.userId; // Fixed: using decoded.userId for consistency
     const currentUserRole = decoded.role;
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search")?.toLowerCase();
@@ -57,8 +57,17 @@ export async function GET(request) {
       // Show customers (Users who booked this garage)
       const garageProfile = await Garage.findOne({ owner: currentUserId });
       if (garageProfile) {
+        // Show Mechanics in the same garage
+        const mechanics = await User.find({
+          garageId: garageProfile._id,
+          role: "mechanic",
+        })
+          .select("name avatar role")
+          .lean();
+        recipients.garages = mechanics; // Reusing garages array for "Team" in this context
+
         const bookings = await Booking.find({ garage: garageProfile._id })
-          .populate("user", "name avatar role")
+          .populate("user", "name avatar role email")
           .select("user")
           .limit(50)
           .lean();
@@ -74,6 +83,57 @@ export async function GET(request) {
 
         recipients.customers = uniqueUsers;
       }
+    } else if (currentUserRole === "mechanic") {
+      // Mechanic can see their Garage Owner and Assigned Customers
+      const mechanicUser = await User.findById(currentUserId).populate(
+        "garageId"
+      );
+      if (mechanicUser && mechanicUser.garageId) {
+        const garageOwner = await User.findById(mechanicUser.garageId.owner)
+          .select("name avatar role")
+          .lean();
+        if (garageOwner) recipients.garages = [garageOwner];
+
+        // Find customers from bookings assigned to this mechanic
+        const assignedBookings = await Booking.find({
+          assignedMechanic: currentUserId,
+        })
+          .populate("user", "name avatar role")
+          .select("user")
+          .lean();
+
+        const uniqueCustomers = Array.from(
+          new Set(assignedBookings.map((b) => b.user?._id?.toString()))
+        )
+          .map(
+            (id) =>
+              assignedBookings.find((b) => b.user?._id?.toString() === id)?.user
+          )
+          .filter(Boolean);
+
+        recipients.customers = uniqueCustomers;
+      }
+    }
+
+    // 2b. Add mechanics to User's list if they have an active booking
+    if (currentUserRole === "user") {
+      const userBookings = await Booking.find({
+        user: currentUserId,
+        status: { $in: ["confirmed", "in_progress"] },
+      })
+        .populate("assignedMechanic", "name avatar role")
+        .select("assignedMechanic")
+        .lean();
+
+      const activeMechanics = userBookings
+        .map((b) => b.assignedMechanic)
+        .filter(Boolean);
+
+      // Add to searchResult or a new category
+      recipients.searchResult = [
+        ...recipients.searchResult,
+        ...activeMechanics,
+      ];
     }
 
     // 3. Search Logic (Global for Admin, Limited for others)

@@ -55,10 +55,10 @@ export default function BookingDetailsPage() {
 
   const fetchCurrentUser = async () => {
     try {
-      const res = await fetch("/api/user/profile");
+      const res = await fetch("/api/profile");
       const data = await res.json();
       if (data.success) {
-        setCurrentUser(data.data);
+        setCurrentUser(data.user);
       }
     } catch (error) {
       console.error("Failed to fetch current user:", error);

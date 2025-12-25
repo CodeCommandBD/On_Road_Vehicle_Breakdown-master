@@ -73,9 +73,13 @@ export default function MechanicLayout({ children }) {
 
   const navItems = [
     { icon: Home, label: "Home", href: "/mechanic/dashboard" },
-    { icon: MapPin, label: "Jobs", href: "/mechanic/dashboard/jobs" }, // Dedicated jobs list
-    { icon: MessageSquare, label: "Chat", href: "/mechanic/dashboard/chat" },
-    { icon: User, label: "Profile", href: "/mechanic/dashboard/profile" },
+    { icon: MapPin, label: "Jobs", href: "/mechanic/dashboard/jobs" },
+    {
+      icon: MessageSquare,
+      label: "Messages",
+      href: "/mechanic/dashboard/messages",
+    },
+    { icon: Settings, label: "Settings", href: "/mechanic/dashboard/settings" },
   ];
 
   return (
@@ -90,7 +94,6 @@ export default function MechanicLayout({ children }) {
             className="h-8 w-auto object-contain"
             onError={(e) => (e.target.style.display = "none")}
           />
-          <span className="font-bold text-lg text-primary">Mechanic</span>
         </div>
 
         <div className="flex items-center gap-3">
@@ -155,13 +158,6 @@ export default function MechanicLayout({ children }) {
               </div>
             )}
           </div>
-
-          <Link
-            href="/mechanic/dashboard/settings"
-            className="p-2 hover:bg-white/5 rounded-full transition-colors text-slate-300 hover:text-white"
-          >
-            <Settings className="w-6 h-6" />
-          </Link>
         </div>
       </header>
 

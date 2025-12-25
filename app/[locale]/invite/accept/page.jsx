@@ -42,9 +42,9 @@ function InviteAcceptContent() {
 
       // Fetch the latest user profile to update Redux (isTeamMember etc.)
       try {
-        const profileRes = await axios.get("/api/user/profile");
+        const profileRes = await axios.get("/api/profile");
         if (profileRes.data.success) {
-          dispatch(updateUser(profileRes.data.data));
+          dispatch(updateUser(profileRes.data.user));
         }
       } catch (profileError) {
         console.error("Failed to refresh profile:", profileError);

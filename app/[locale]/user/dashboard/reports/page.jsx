@@ -93,7 +93,7 @@ export default function ReportsPage() {
     if (!isEnterprise) return;
     setIsLoading(true);
     try {
-      const response = await axios.put("/api/user/profile", {
+      const response = await axios.put("/api/profile", {
         branding: brandingForm,
       }); // Re-using profile update endpoint or creating specific one?
       // Assuming profile endpoint accepts partial updates

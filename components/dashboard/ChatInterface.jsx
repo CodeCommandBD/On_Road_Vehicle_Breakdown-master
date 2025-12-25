@@ -18,6 +18,7 @@ import {
   Check,
   CheckCheck,
   Download,
+  ChevronLeft,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { formatDateTime } from "@/lib/utils/helpers";
@@ -44,6 +45,7 @@ export default function ChatInterface({ userId }) {
   const messagesEndRef = useRef(null);
   const messagesRef = useRef(messages);
   const lastPollTimeRef = useRef(null);
+  const [mobileView, setMobileView] = useState("list"); // 'list' or 'chat'
   const searchParams = useSearchParams();
 
   // Keep messagesRef in sync with messages state
@@ -79,6 +81,7 @@ export default function ChatInterface({ userId }) {
         const targetConv = conversations.find((c) => c._id === chatId);
         if (targetConv) {
           setActiveConversation(targetConv);
+          setMobileView("chat");
         }
       } else if (chatType === "support") {
         const supportConv = conversations.find((c) =>
@@ -167,6 +170,7 @@ export default function ChatInterface({ userId }) {
     setActiveConversation(virtualConv);
     setMessages([]);
     setShowNewChatModal(false);
+    setMobileView("chat");
   };
 
   const fetchMessages = async (id) => {
@@ -357,16 +361,20 @@ export default function ChatInterface({ userId }) {
   }
 
   return (
-    <div className="bg-[#1E1E1E] border border-white/10 rounded-3xl overflow-hidden h-[calc(100vh-200px)] flex">
+    <div className="bg-[#020617] border border-white/5 rounded-[2.5rem] overflow-hidden h-[calc(100vh-220px)] sm:h-[calc(100vh-280px)] flex shadow-2xl backdrop-blur-xl relative">
       {/* Sidebar: Conversations List */}
-      <div className="w-1/3 border-r border-white/10 flex flex-col">
-        <div className="p-6 border-b border-white/10 flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+      <div
+        className={`${
+          mobileView === "chat" ? "hidden" : "flex"
+        } lg:flex w-full lg:w-1/3 border-r border-white/5 flex-col bg-[#020617]/50 backdrop-blur-md h-full`}
+      >
+        <div className="p-6 border-b border-white/5 flex items-center gap-3">
+          <div className="relative flex-1 group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-indigo-500 transition-colors" />
             <input
               type="text"
-              placeholder="Search chats..."
-              className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-orange-500"
+              placeholder="Scan frequencies..."
+              className="w-full bg-black/40 border border-white/5 rounded-2xl py-3 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-indigo-500/50 transition-all placeholder:text-slate-600"
             />
           </div>
           <button
@@ -374,17 +382,19 @@ export default function ChatInterface({ userId }) {
               setShowNewChatModal(true);
               fetchRecipients();
             }}
-            className="p-2.5 bg-orange-500/10 text-orange-500 hover:bg-orange-500 hover:text-white rounded-xl transition-all"
-            title="Start New Chat"
+            className="p-3 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white rounded-2xl transition-all border border-indigo-500/20"
+            title="Secure Link"
           >
             <PlusCircle className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
           {conversations.length > 0 ? (
             conversations.map((conv) => {
-              const recipient = conv.participants.find((p) => p._id !== userId);
+              const recipient = conv.participants.find(
+                (p) => p._id === (userId?._id || userId)
+              );
               const isActive = activeConversation?._id === conv._id;
               const unreadCount = conv.unreadCount?.[userId] || 0;
 
@@ -393,6 +403,7 @@ export default function ChatInterface({ userId }) {
                   key={conv._id}
                   onClick={() => {
                     setActiveConversation(conv);
+                    setMobileView("chat");
                     // Clear unread locally
                     setConversations((prev) =>
                       prev.map((c) =>
@@ -405,35 +416,37 @@ export default function ChatInterface({ userId }) {
                       )
                     );
                   }}
-                  className={`w-full p-4 flex items-center gap-4 transition-colors hover:bg-white/5 relative ${
-                    isActive ? "bg-white/10" : ""
+                  className={`w-full p-5 flex items-center gap-4 transition-all hover:bg-white/10 relative group ${
+                    isActive
+                      ? "bg-indigo-500/10 border-r-2 border-indigo-500/50"
+                      : ""
                   }`}
                 >
-                  <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-500 font-bold shrink-0 relative">
+                  <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 font-black shrink-0 relative border border-white/5 group-hover:scale-105 transition-transform">
                     {recipient?.avatar ? (
                       <img
                         src={recipient.avatar}
                         alt=""
-                        className="w-full h-full rounded-full object-cover"
+                        className="w-full h-full rounded-2xl object-cover"
                       />
                     ) : (
                       recipient?.name?.charAt(0) || <User />
                     )}
 
-                    {/* Online Status Dot - Placeholder */}
-                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#1E1E1E] rounded-full"></span>
+                    {/* Online Status Dot */}
+                    <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-4 border-[#020617] rounded-full shadow-lg shadow-green-500/20"></span>
                   </div>
                   <div className="flex-1 text-left min-w-0">
                     <div className="flex justify-between items-center mb-1">
                       <p
-                        className={`font-bold transition-colors ${
-                          isActive ? "text-orange-500" : "text-white"
+                        className={`font-black tracking-tight text-sm uppercase transition-colors ${
+                          isActive ? "text-indigo-400" : "text-slate-200"
                         } truncate`}
                       >
-                        {recipient?.name || "Unknown"}
+                        {recipient?.name || "Target Identified"}
                       </p>
                       {conv.lastMessage && (
-                        <span className="text-[10px] text-white/40">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                           {new Date(
                             conv.lastMessage.createdAt
                           ).toLocaleTimeString([], {
@@ -445,16 +458,16 @@ export default function ChatInterface({ userId }) {
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <p
-                        className={`text-sm truncate italic flex-1 ${
+                        className={`text-xs truncate flex-1 font-medium ${
                           unreadCount > 0
-                            ? "text-white font-medium"
-                            : "text-white/40"
+                            ? "text-white font-bold"
+                            : "text-slate-500"
                         }`}
                       >
-                        {conv.lastMessage?.text || "Started a conversation"}
+                        {conv.lastMessage?.text || "Synchronizing channel..."}
                       </p>
                       {unreadCount > 0 && (
-                        <span className="bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-5 text-center shadow-lg shadow-orange-500/20">
+                        <span className="bg-indigo-600 text-white text-[10px] font-black px-2 py-1 rounded-full min-w-5 text-center shadow-lg shadow-indigo-600/30 animate-pulse">
                           {unreadCount}
                         </span>
                       )}
@@ -464,56 +477,77 @@ export default function ChatInterface({ userId }) {
               );
             })
           ) : (
-            <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-              <Inbox className="w-12 h-12 text-white/20 mb-4" />
-              <p className="text-white/40 text-sm">No messages yet.</p>
+            <div className="flex flex-col items-center justify-center h-full p-8 text-center space-y-4 opacity-40">
+              <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center">
+                <Inbox className="w-8 h-8 text-slate-600" />
+              </div>
+              <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.2em]">
+                Silence on the wire
+              </p>
             </div>
           )}
         </div>
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col bg-[#161616]">
+      <div
+        className={`${
+          mobileView === "list" ? "hidden" : "flex"
+        } lg:flex flex-1 flex flex-col bg-black/20 h-full`}
+      >
         {activeConversation ? (
           <>
             {/* Chat Header */}
-            <div className="p-4 border-b border-white/10 flex justify-between items-center bg-[#1E1E1E]">
+            <div className="p-6 border-b border-white/5 flex justify-between items-center bg-[#020617]/50 backdrop-blur-md">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-500 font-bold">
-                  {activeConversation.participants
-                    .find((p) => p._id !== userId)
-                    ?.name?.charAt(0)}
+                {/* Mobile Back Button */}
+                <button
+                  onClick={() => setMobileView("list")}
+                  className="lg:hidden p-2 -ml-2 text-slate-400 hover:text-white transition-colors"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 font-black border border-indigo-500/20 shadow-lg shadow-indigo-500/5 transition-transform">
+                  {(
+                    activeConversation.participants.find(
+                      (p) => p._id !== (userId?._id || userId)
+                    )?.name || "T"
+                  ).charAt(0)}
                 </div>
                 <div>
-                  <p className="font-bold text-white">
-                    {
-                      activeConversation.participants.find(
-                        (p) => p._id !== userId
-                      )?.name
-                    }
+                  <p className="font-black text-white uppercase tracking-tight text-sm sm:text-base">
+                    {activeConversation.participants.find(
+                      (p) => p._id !== (userId?._id || userId)
+                    )?.name || "Classified Intel"}
                   </p>
-                  <p className="text-[10px] text-green-500 font-bold">ONLINE</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-glow-green"></span>
+                    <p className="text-[10px] text-green-500/70 font-black uppercase tracking-[0.2em]">
+                      Live Channel
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button
                   onClick={handleExportChat}
-                  className="p-2 text-white/40 hover:text-white transition-colors hover:bg-white/10 rounded-lg"
-                  title="Export Chat"
+                  className="p-3 text-slate-500 hover:text-white transition-all bg-white/5 hover:bg-white/10 rounded-xl border border-white/5"
+                  title="Archive Comms"
                 >
                   <Download className="w-5 h-5" />
                 </button>
-                <button className="p-2 text-white/40 hover:text-white transition-colors hover:bg-white/10 rounded-lg">
+                <button className="p-3 text-slate-500 hover:text-white transition-all bg-white/5 hover:bg-white/10 rounded-xl border border-white/5">
                   <MoreVertical className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
             {/* Messages List */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
               {messages.map((msg, i) => {
-                const isMine = msg.sender === userId;
+                const isMine = msg.sender === (userId?._id || userId);
                 return (
                   <div
                     key={msg._id}
@@ -522,17 +556,19 @@ export default function ChatInterface({ userId }) {
                     }`}
                   >
                     <div
-                      className={`max-w-[70%] p-4 rounded-2xl text-sm ${
+                      className={`max-w-[75%] p-5 rounded-[1.5rem] shadow-xl ${
                         isMine
-                          ? "bg-orange-500 text-white rounded-tr-none"
-                          : "bg-[#1E1E1E] text-white/80 border border-white/10 rounded-tl-none"
+                          ? "bg-indigo-600 text-white rounded-tr-none shadow-indigo-600/10"
+                          : "bg-slate-800/60 text-slate-200 border border-white/5 rounded-tl-none shadow-white/5"
                       }`}
                     >
-                      <p>{msg.text}</p>
-                      <div className="flex items-center justify-between gap-2 mt-1">
+                      <p className="text-xs sm:text-sm leading-relaxed font-medium">
+                        {msg.text}
+                      </p>
+                      <div className="flex items-center justify-between gap-3 mt-3">
                         <p
-                          className={`text-[10px] ${
-                            isMine ? "text-white/60" : "text-white/40"
+                          className={`text-[10px] font-black uppercase tracking-widest ${
+                            isMine ? "text-white/60" : "text-slate-500"
                           }`}
                         >
                           {new Date(msg.createdAt).toLocaleTimeString([], {
@@ -543,13 +579,16 @@ export default function ChatInterface({ userId }) {
                         {isMine && !msg.isOptimistic && (
                           <div
                             className={
-                              msg.isRead ? "text-blue-400" : "text-white/40"
+                              msg.isRead ? "text-white" : "text-white/40"
                             }
                           >
                             {msg.isRead ? (
-                              <CheckCheck size={12} />
+                              <CheckCheck
+                                size={14}
+                                className="text-indigo-300"
+                              />
                             ) : (
-                              <Check size={12} />
+                              <Check size={14} />
                             )}
                           </div>
                         )}
@@ -564,69 +603,73 @@ export default function ChatInterface({ userId }) {
             {/* Chat Input */}
             <form
               onSubmit={handleSendMessage}
-              className="p-6 bg-[#1E1E1E] border-t border-white/10"
+              className="p-8 bg-[#020617]/50 border-t border-white/5 backdrop-blur-md"
             >
-              <div className="flex items-center gap-4">
+              <div className="max-w-4xl mx-auto flex items-center gap-4">
                 <button
                   type="button"
-                  className="p-2 text-white/40 hover:text-white transition-colors"
+                  className="p-4 text-slate-500 hover:text-white transition-all bg-white/5 rounded-2xl border border-white/5"
                 >
-                  <Paperclip className="w-5 h-5" />
+                  <Paperclip className="w-6 h-6" />
                 </button>
                 <div className="flex-1 relative">
                   <input
                     type="text"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Type a message..."
-                    className="w-full bg-[#161616] border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-orange-500"
+                    placeholder="Input combat log..."
+                    className="w-full bg-black/40 border border-white/5 rounded-2xl py-3 sm:py-4 px-4 sm:px-6 text-sm sm:text-base text-white focus:outline-none focus:border-indigo-500/50 placeholder:text-slate-600 transition-all shadow-inner"
                   />
                   <button
                     type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-white/40 hover:text-white"
+                    className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 p-1 sm:p-2 text-slate-500 hover:text-white"
                   >
-                    <Smile className="w-5 h-5" />
+                    <Smile className="w-5 h-5 sm:w-6 sm:h-6" />
                   </button>
                 </div>
                 <button
                   type="submit"
                   disabled={sending || !newMessage.trim()}
-                  className="p-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-colors disabled:opacity-50 shadow-glow-orange"
+                  className="p-4 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-500 transition-all disabled:opacity-50 shadow-glow-indigo active:scale-95 border border-indigo-400/20"
                 >
                   {sending ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <Loader2 className="w-6 h-6 animate-spin" />
                   ) : (
-                    <Send className="w-5 h-5" />
+                    <Send className="w-6 h-6" />
                   )}
                 </button>
               </div>
             </form>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-center p-12">
-            <div className="w-20 h-20 bg-orange-500/10 rounded-full flex items-center justify-center mb-6">
-              <MessageSquare className="w-10 h-10 text-orange-500" />
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-12 space-y-8">
+            <div className="w-32 h-32 bg-indigo-500/5 rounded-full flex items-center justify-center border border-indigo-500/10 shadow-inner group">
+              <MessageSquare className="w-16 h-16 text-indigo-500 group-hover:scale-110 transition-transform duration-500" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">
-              Select a Conversation
-            </h2>
-            <p className="text-white/40 max-w-sm">
-              Click on a chat to start messaging or view your conversation
-              history.
-            </p>
+            <div>
+              <h2 className="text-3xl font-black text-white mb-3 uppercase tracking-tight">
+                Channel Standby
+              </h2>
+              <p className="text-slate-500 max-w-xs font-medium leading-relaxed">
+                Awaiting mission signal. Select a verified contact to initialize
+                secure communications.
+              </p>
+            </div>
           </div>
         )}
       </div>
 
-      {/* New Chat Modal */}
+      {/* New Chat Modal (Updated Layout) */}
       {showNewChatModal && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="bg-[#1A1A1A] border border-white/10 rounded-3xl w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh]">
-            <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#1A1A1A]">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl">
+          <div className="bg-[#020617] border border-white/10 rounded-[2.5rem] w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh] shadow-[0_0_100px_rgba(79,70,229,0.1)]">
+            <div className="p-8 border-b border-white/5 flex justify-between items-center bg-slate-900/40">
               <div>
-                <h3 className="text-xl font-bold text-white">Start New Chat</h3>
-                <p className="text-xs text-white/40">
-                  Select someone to message
+                <h3 className="text-2xl font-black text-white uppercase tracking-tight">
+                  Initialize Link
+                </h3>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">
+                  Searching User Directory
                 </p>
               </div>
               <button
@@ -634,60 +677,60 @@ export default function ChatInterface({ userId }) {
                   setShowNewChatModal(false);
                   setRecipientSearch("");
                 }}
-                className="text-white/40 hover:text-white"
+                className="text-slate-500 hover:text-white transition-colors p-2 bg-white/5 rounded-full"
               >
-                <X />
+                <X className="w-6 h-6" />
               </button>
             </div>
 
-            <div className="p-4 bg-[#1E1E1E] border-b border-white/10">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+            <div className="p-6 bg-[#020617] border-b border-white/5">
+              <div className="relative group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-indigo-500 transition-colors" />
                 <input
                   type="text"
                   value={recipientSearch}
                   onChange={(e) => setRecipientSearch(e.target.value)}
-                  placeholder="Search by name or email..."
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-orange-500"
+                  placeholder="Target by name or encrypted email..."
+                  className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-white focus:outline-none focus:border-indigo-500/50 transition-all"
                 />
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+            <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
               {/* Search Results */}
               {recipientSearch.length > 2 && (
-                <div>
-                  <h4 className="text-xs font-bold text-white/40 uppercase tracking-widest px-2 mb-3">
-                    Search Results
+                <div className="animate-in fade-in slide-in-from-top-4 duration-300">
+                  <h4 className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] px-2 mb-4">
+                    Target Matches
                   </h4>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {fetchingRecipients ? (
-                      <div className="p-4 text-center">
-                        <Loader2 className="animate-spin mx-auto w-5 h-5 text-orange-500" />
+                      <div className="p-8 text-center">
+                        <Loader2 className="animate-spin mx-auto w-8 h-8 text-indigo-500" />
                       </div>
                     ) : recipients.searchResult?.length > 0 ? (
                       recipients.searchResult.map((u) => (
                         <button
                           key={u._id}
                           onClick={() => startNewChat(u)}
-                          className="w-full p-3 flex items-center gap-4 rounded-xl hover:bg-white/5 transition-colors border border-white/5"
+                          className="w-full p-4 flex items-center gap-4 rounded-2xl bg-white/5 hover:bg-indigo-500/10 border border-white/5 hover:border-indigo-500/30 transition-all group"
                         >
-                          <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40">
-                            <User size={18} />
+                          <div className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center text-slate-500 group-hover:bg-indigo-500/20 group-hover:text-indigo-400 transition-colors">
+                            <User size={24} />
                           </div>
                           <div className="text-left">
-                            <p className="font-bold text-white text-sm">
+                            <p className="font-black text-white text-sm uppercase tracking-tight">
                               {u.name}
                             </p>
-                            <p className="text-[10px] text-white/40 uppercase tracking-wider">
-                              {u.role}
+                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">
+                              {u.role} • {u.email?.substring(0, 10)}...
                             </p>
                           </div>
                         </button>
                       ))
                     ) : (
-                      <p className="text-white/40 text-xs px-2 italic">
-                        No users found for "{recipientSearch}"
+                      <p className="text-slate-600 text-xs px-2 font-bold uppercase tracking-widest py-8 text-center italic">
+                        No targets found in current sector.
                       </p>
                     )}
                   </div>
@@ -697,102 +740,77 @@ export default function ChatInterface({ userId }) {
               {/* Support Section */}
               {!recipientSearch && (
                 <div>
-                  <h4 className="text-xs font-bold text-orange-500 uppercase tracking-widest px-2 mb-3">
-                    Support Team
+                  <h4 className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] px-2 mb-4">
+                    High Command
                   </h4>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {fetchingRecipients && !recipientSearch ? (
-                      <div className="p-4 text-center">
-                        <Loader2 className="animate-spin mx-auto w-5 h-5 text-orange-500" />
+                      <div className="p-8 text-center">
+                        <Loader2 className="animate-spin mx-auto w-8 h-8 text-indigo-500" />
                       </div>
                     ) : recipients.support?.length > 0 ? (
                       recipients.support.map((admin) => (
                         <button
                           key={admin._id}
                           onClick={() => startNewChat(admin)}
-                          className="w-full p-3 flex items-center gap-4 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/5"
+                          className="w-full p-4 flex items-center gap-4 rounded-2xl bg-white/5 hover:bg-indigo-500/10 border border-white/5 hover:border-indigo-500/30 transition-all group"
                         >
-                          <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-500">
-                            <User />
+                          <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+                            <ShieldAlert size={24} />
                           </div>
                           <div className="text-left">
-                            <p className="font-bold text-white text-sm">
+                            <p className="font-black text-white text-sm uppercase tracking-tight">
                               {admin.name}
                             </p>
-                            <p className="text-[10px] text-orange-500 font-bold uppercase">
-                              Official Support
+                            <p className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.2em] mt-0.5">
+                              Verified Official
                             </p>
                           </div>
                         </button>
                       ))
                     ) : (
-                      <p className="text-white/40 text-xs px-2 italic">
-                        Support offline
+                      <p className="text-slate-600 text-xs px-2 font-black uppercase tracking-widest italic py-4">
+                        Support channels secured.
                       </p>
                     )}
                   </div>
                 </div>
               )}
 
-              {/* Customers Section (For Garages) */}
-              {!recipientSearch && recipients.customers?.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-bold text-green-500 uppercase tracking-widest px-2 mb-3">
-                    My Customers
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {recipients.customers.map((user) => (
-                      <button
-                        key={user._id}
-                        onClick={() => startNewChat(user)}
-                        className="p-3 flex items-center gap-3 rounded-xl hover:bg-white/5 transition-colors border border-white/5"
-                      >
-                        <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-500 font-bold text-xs">
-                          {user.name?.charAt(0)}
-                        </div>
-                        <div className="text-left min-w-0">
-                          <p className="font-bold text-white text-xs truncate">
-                            {user.name}
-                          </p>
-                          <p className="text-[10px] text-white/40 truncate">
-                            {user.email}
-                          </p>
-                        </div>
-                      </button>
-                    ))}
+              {/* Customers/Garages Section (Universal Grid) */}
+              {!recipientSearch &&
+                (recipients.customers?.length > 0 ||
+                  recipients.garages?.length > 0) && (
+                  <div>
+                    <h4 className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] px-2 mb-4">
+                      Linked Assets
+                    </h4>
+                    <div className="grid grid-cols-1 gap-3">
+                      {[
+                        ...(recipients.customers || []),
+                        ...(recipients.garages || []),
+                      ].map((user) => (
+                        <button
+                          key={user._id}
+                          onClick={() => startNewChat(user)}
+                          className="p-4 flex items-center gap-4 rounded-2xl bg-white/5 hover:bg-indigo-500/10 border border-white/5 hover:border-indigo-500/30 transition-all group"
+                        >
+                          <div className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center text-slate-500 font-black text-lg group-hover:bg-indigo-500 group-hover:text-white transition-all">
+                            {user.name?.charAt(0)}
+                          </div>
+                          <div className="text-left min-w-0">
+                            <p className="font-black text-white text-sm uppercase tracking-tight truncate">
+                              {user.name}
+                            </p>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5 truncate">
+                              {user.role} • Secure Channel
+                            </p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-
-              {/* Garages Section (For Users) */}
-              {!recipientSearch && recipients.garages?.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-bold text-blue-500 uppercase tracking-widest px-2 mb-3">
-                    Verified Garages
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {recipients.garages.map((garage) => (
-                      <button
-                        key={garage._id}
-                        onClick={() => startNewChat(garage)}
-                        className="p-3 flex items-center gap-3 rounded-xl hover:bg-white/5 transition-colors border border-white/5"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-500 font-bold text-xs">
-                          {garage.name?.charAt(0)}
-                        </div>
-                        <div className="text-left min-w-0">
-                          <p className="font-bold text-white text-xs truncate">
-                            {garage.name}
-                          </p>
-                          <p className="text-[10px] text-white/40 truncate">
-                            Verified Mechanical Support
-                          </p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+                )}
             </div>
           </div>
         </div>
