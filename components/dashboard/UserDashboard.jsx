@@ -353,23 +353,23 @@ export default function UserDashboard({ user }) {
       <EnhancedStatsCards stats={stats} />
 
       {/* Main Grid Layout - Booking Timeline Spans Full Width */}
-      <div className="mb-6 sm:mb-8">
+      <div className="mb-8 sm:mb-10">
         <BookingTimeline bookings={bookings} />
       </div>
 
       {/* Favorite Garages Section */}
       {(favorites.length > 0 || isLoadingFavorites) && (
-        <div className="mb-8 overflow-hidden">
-          <div className="flex items-center justify-between mb-4 px-2">
-            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+        <div className="mb-10 overflow-hidden">
+          <div className="flex items-center justify-between mb-5 px-1">
+            <h3 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
               <Heart className="w-5 h-5 text-red-500 fill-red-500" />
               Favorite Garages
             </h3>
             <Link
               href="/garages"
-              className="text-sm text-orange-500 hover:text-orange-400 font-bold flex items-center gap-1 transition-colors"
+              className="text-xs sm:text-sm text-orange-500 hover:text-orange-400 font-bold flex items-center gap-1 transition-colors bg-orange-500/5 px-3 py-1.5 rounded-full border border-orange-500/10"
             >
-              Explore More <ArrowRight className="w-4 h-4" />
+              Explore More <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
@@ -383,11 +383,11 @@ export default function UserDashboard({ user }) {
               ))}
             </div>
           ) : (
-            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x">
+            <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-hide snap-x -mx-4 px-4 sm:mx-0 sm:px-0">
               {favorites.map((garage) => (
                 <div
                   key={garage._id || garage}
-                  className="min-w-[300px] bg-[#1E1E1E] border border-white/10 rounded-2xl p-4 peer hover:border-orange-500/50 transition-all group snap-start"
+                  className="min-w-[280px] sm:min-w-[300px] bg-[#1E1E1E] border border-white/10 rounded-2xl p-4 peer hover:border-orange-500/50 transition-all group snap-start shadow-lg"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
@@ -404,11 +404,11 @@ export default function UserDashboard({ user }) {
                           </span>
                         )}
                       </div>
-                      <div>
-                        <h4 className="font-bold text-white line-clamp-1">
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-white text-sm sm:text-base truncate">
                           {garage.name}
                         </h4>
-                        <div className="flex items-center gap-1 text-xs text-yellow-500">
+                        <div className="flex items-center gap-1 text-[10px] sm:text-xs text-yellow-500">
                           <Star className="w-3 h-3 fill-yellow-500" />
                           <span>{garage.rating?.average || "5.0"}</span>
                         </div>
@@ -416,23 +416,23 @@ export default function UserDashboard({ user }) {
                     </div>
                     <button
                       onClick={() => removeFavorite(garage._id)}
-                      className="p-1.5 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"
+                      className="p-1.5 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all shrink-0"
                       title="Remove from favorites"
                     >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-2 text-xs text-white/40 mb-4">
-                    <MapPin className="w-3 h-3" />
-                    <span className="line-clamp-1">
+                  <div className="flex items-center gap-2 text-[10px] sm:text-xs text-white/40 mb-4">
+                    <MapPin className="w-3 h-3 shrink-0" />
+                    <span className="truncate">
                       {garage.address?.street}, {garage.address?.city}
                     </span>
                   </div>
 
                   <Link
                     href={`/book?garage=${garage._id}`}
-                    className="w-full flex items-center justify-center gap-2 py-2 bg-white/5 hover:bg-orange-500 text-white rounded-xl text-xs font-bold transition-all border border-white/5 group-hover:border-orange-500"
+                    className="w-full flex items-center justify-center gap-2 py-2 bg-white/5 hover:bg-orange-500 text-white rounded-xl text-[11px] sm:text-xs font-bold transition-all border border-white/5 group-hover:border-orange-500"
                   >
                     Quick Book
                   </Link>

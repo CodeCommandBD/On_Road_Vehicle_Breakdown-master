@@ -43,7 +43,9 @@ export default function AutomationPage() {
   const [payloadFormat, setPayloadFormat] = useState("slack");
   const [testing, setTesting] = useState(false);
 
-  const hasAccess = ["premium", "enterprise"].includes(user?.membershipTier);
+  const hasAccess =
+    ["premium", "enterprise"].includes(user?.membershipTier) ||
+    ["premium", "enterprise"].includes(user?.planTier);
   const availableEvents = [
     { id: "sos.created", label: "New SOS Alert" },
     { id: "sos.updated", label: "SOS Status Updated" },

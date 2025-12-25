@@ -54,6 +54,7 @@ export async function GET(request) {
       if (tier === "premium" || tier === "enterprise") {
         if (garage.hasUsedAnalytics) featureUsage.analytics[tier]++;
         if (garage.hasUsedCRM) featureUsage.crm[tier]++;
+        if (garage.hasUsedAIMechanic) featureUsage.aiMechanic[tier]++;
         if (garage.teamMembers?.length > 0) featureUsage.teamManagement[tier]++;
       }
     });

@@ -42,7 +42,9 @@ export async function GET(request) {
       );
 
     await connectDB();
-    const users = await User.find().sort({ createdAt: -1 });
+    const users = await User.find()
+      .populate("garageId", "name")
+      .sort({ createdAt: -1 });
 
     return NextResponse.json({
       success: true,

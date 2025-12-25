@@ -13,6 +13,18 @@ export default function PWAInstallPrompt() {
     const handleBeforeInstallPrompt = (e) => {
       // Prevent the default browser prompt
       e.preventDefault();
+
+      // Check if user dismissed it recently (4 days)
+      const lastDismissed = localStorage.getItem("pwa_prompt_dismissed_at");
+      if (lastDismissed) {
+        const timeSinceDismissal = Date.now() - parseInt(lastDismissed);
+        const fourDaysInMs = 4 * 24 * 60 * 60 * 1000;
+        if (timeSinceDismissal < fourDaysInMs) {
+          console.log("PWA prompt suppressed - dismissed recently");
+          return;
+        }
+      }
+
       // Stash the event so it can be triggered later
       setDeferredPrompt(e);
       setIsVisible(true);
@@ -39,8 +51,12 @@ export default function PWAInstallPrompt() {
 
     if (outcome === "accepted") {
       console.log("User accepted the PWA install");
+      // Clear dismissal if accepted
+      localStorage.removeItem("pwa_prompt_dismissed_at");
     } else {
       console.log("User dismissed the PWA install");
+      // Save dismissal time
+      localStorage.setItem("pwa_prompt_dismissed_at", Date.now().toString());
     }
 
     // Clear the deferred prompt
@@ -49,6 +65,8 @@ export default function PWAInstallPrompt() {
   };
 
   const handleDismiss = () => {
+    // Save dismissal time
+    localStorage.setItem("pwa_prompt_dismissed_at", Date.now().toString());
     setIsVisible(false);
   };
 

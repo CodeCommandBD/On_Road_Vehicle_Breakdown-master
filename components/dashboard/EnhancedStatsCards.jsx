@@ -50,22 +50,22 @@ export default function EnhancedStatsCards({ stats }) {
   ];
 
   return (
-    <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6 sm:mb-8">
+    <div className="grid gap-3 sm:gap-6 grid-cols-2 lg:grid-cols-4 mb-8 sm:mb-10">
       {statItems.map((stat, index) => (
         <div
           key={index}
-          className={`bg-[#1E1E1E] border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 scale-hover fade-in ${
+          className={`bg-[#1E1E1E] border border-white/10 rounded-xl sm:rounded-2xl p-3 sm:p-6 scale-hover fade-in ${
             stat.pulse ? "pulse-dot" : ""
           }`}
           style={{ animationDelay: `${index * 0.1}s` }}
         >
           {/* Icon with gradient background */}
-          <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <div className="flex items-center justify-between mb-2 sm:mb-4">
             <div
-              className={`p-2 sm:p-3 rounded-lg sm:rounded-xl ${stat.bgGradient}`}
+              className={`p-1.5 sm:p-3 rounded-lg sm:rounded-xl ${stat.bgGradient}`}
             >
               <stat.icon
-                className={`w-6 h-6 bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`}
+                className={`w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`}
                 style={{
                   WebkitTextStroke: "1px transparent",
                   WebkitBackgroundClip: "text",
@@ -113,22 +113,24 @@ export default function EnhancedStatsCards({ stats }) {
           </div>
 
           {/* Stats Content */}
-          <div>
-            <p className="text-xs sm:text-sm text-white/60 mb-1">
+          <div className="min-w-0">
+            <p className="text-[10px] sm:text-sm text-white/60 mb-0.5 sm:mb-1 truncate">
               {stat.title}
             </p>
-            <h3 className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">
+            <h3 className="text-lg sm:text-3xl font-bold text-white mb-0.5 sm:mb-2 truncate">
               {stat.value}
             </h3>
-            <p className="text-xs text-white/50">{stat.description}</p>
+            <p className="text-[9px] sm:text-xs text-white/50 truncate">
+              {stat.description}
+            </p>
           </div>
 
           {/* Progress indicator for active bookings */}
           {stat.pulse && data.activeRequests > 0 && (
-            <div className="mt-4 pt-4 border-t border-white/10">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
-                <span className="text-xs text-white/60">
+            <div className="mt-2 sm:mt-4 pt-2 sm:pt-4 border-t border-white/10">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                <span className="text-[9px] sm:text-xs text-white/60 font-medium">
                   {t("liveUpdates")}
                 </span>
               </div>

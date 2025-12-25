@@ -21,6 +21,7 @@ import {
   Webhook,
   FileText,
   Heart,
+  Zap,
 } from "lucide-react";
 import {
   selectSidebarOpen,
@@ -62,7 +63,9 @@ export default function Sidebar() {
         icon: TrendingUp,
         locked:
           user?.membershipTier !== "premium" &&
-          user?.membershipTier !== "enterprise",
+          user?.membershipTier !== "enterprise" &&
+          user?.planTier !== "premium" &&
+          user?.planTier !== "enterprise",
       },
       {
         href: "/user/dashboard/integrations",
@@ -70,7 +73,9 @@ export default function Sidebar() {
         icon: Webhook,
         locked:
           user?.membershipTier !== "premium" &&
-          user?.membershipTier !== "enterprise",
+          user?.membershipTier !== "enterprise" &&
+          user?.planTier !== "premium" &&
+          user?.planTier !== "enterprise",
       },
       {
         href: "/user/dashboard/team",
@@ -79,6 +84,8 @@ export default function Sidebar() {
         locked:
           user?.membershipTier !== "premium" &&
           user?.membershipTier !== "enterprise" &&
+          user?.planTier !== "premium" &&
+          user?.planTier !== "enterprise" &&
           !user?.isTeamMember,
       },
       {
@@ -101,7 +108,9 @@ export default function Sidebar() {
         label: "Automation",
         icon: Activity,
         locked:
-          user?.membershipTier === "free" || user?.membershipTier === "trial",
+          (user?.membershipTier === "free" ||
+            user?.membershipTier === "trial") &&
+          (user?.planTier === "free" || !user?.planTier),
       },
       { href: "/user/dashboard/profile", label: t("profile"), icon: User },
       {
@@ -115,7 +124,9 @@ export default function Sidebar() {
         icon: FileText,
         locked:
           user?.membershipTier !== "premium" &&
-          user?.membershipTier !== "enterprise",
+          user?.membershipTier !== "enterprise" &&
+          user?.planTier !== "premium" &&
+          user?.planTier !== "enterprise",
       },
       {
         href: "/user/dashboard/support",
@@ -191,6 +202,7 @@ export default function Sidebar() {
       { href: "/admin/users", label: "Users", icon: User },
       { href: "/admin/garages", label: "Garages", icon: Wrench },
       { href: "/admin/bookings", label: t("bookings"), icon: Calendar },
+      { href: "/admin/features/usage", label: t("featureMonitor"), icon: Zap },
       { href: "/admin/settings", label: t("settings"), icon: Settings },
     ],
   };

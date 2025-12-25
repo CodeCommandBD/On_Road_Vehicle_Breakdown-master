@@ -56,7 +56,8 @@ export default function ReportsPage() {
   const [filterDays, setFilterDays] = useState(30);
   const [fetchingReports, setFetchingReports] = useState(true);
 
-  const isEnterprise = user?.membershipTier === "enterprise";
+  const isEnterprise =
+    user?.membershipTier === "enterprise" || user?.planTier === "enterprise";
 
   useEffect(() => {
     if (user?.branding) {

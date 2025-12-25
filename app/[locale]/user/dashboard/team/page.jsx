@@ -63,11 +63,11 @@ export default function TeamManagementPage() {
     try {
       console.log("Fetching user data and organizations...");
       const [profileRes, orgsRes] = await Promise.all([
-        axios.get("/api/user/profile"),
+        axios.get("/api/profile"),
         axios.get("/api/organizations"),
       ]);
 
-      const userData = profileRes.data.data;
+      const userData = profileRes.data.user;
       const orgs = orgsRes.data.data || [];
 
       console.log("Access check:", {
@@ -81,6 +81,8 @@ export default function TeamManagementPage() {
       if (
         userData.membershipTier !== "enterprise" &&
         userData.membershipTier !== "premium" &&
+        userData.planTier !== "enterprise" &&
+        userData.planTier !== "premium" &&
         orgs.length === 0
       ) {
         console.log("Access denied - Not premium/enterprise and no orgs");

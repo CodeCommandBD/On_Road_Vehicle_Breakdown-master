@@ -14,9 +14,9 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
 
   // Determine access
-  const planTier = user?.membershipTier || "free";
-  // Allow simple check: must be premium or enterprise
-  const hasAccess = ["premium", "enterprise"].includes(planTier);
+  const hasAccess =
+    ["premium", "enterprise"].includes(user?.membershipTier) ||
+    ["premium", "enterprise"].includes(user?.planTier);
 
   useEffect(() => {
     if (hasAccess) {
