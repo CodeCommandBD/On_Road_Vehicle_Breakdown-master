@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db/connect";
 import Review from "@/lib/db/models/Review";
 import Booking from "@/lib/db/models/Booking";
+import Garage from "@/lib/db/models/Garage"; // Ensure Garage model is registered for the post-save hook
 import { verifyToken } from "@/lib/utils/auth";
 
 export async function POST(request) {
@@ -50,6 +51,7 @@ export async function POST(request) {
     // Check if already reviewed
     const existingReview = await Review.findOne({ booking: bookingId });
     if (existingReview) {
+      console.log("Review already exists for booking:", bookingId);
       return NextResponse.json(
         {
           success: false,
@@ -59,6 +61,7 @@ export async function POST(request) {
       );
     }
 
+    console.log("Creating review for user:", decoded.userId);
     const review = await Review.create({
       user: decoded.userId,
       garage: booking.garage,
@@ -67,6 +70,7 @@ export async function POST(request) {
       comment,
       images,
     });
+    console.log("Review created:", review._id);
 
     return NextResponse.json({
       success: true,

@@ -14,10 +14,16 @@ import {
   Check,
   Clock,
   Search,
+  RotateCcw,
+  MoreVertical,
+  MapPin,
+  Star,
 } from "lucide-react";
+import { useState } from "react";
 import { useSelector } from "react-redux";
 import { selectSearchTerm } from "@/store/slices/uiSlice";
 import { useTranslations } from "next-intl";
+import { createPortal } from "react-dom";
 
 export default function BookingTable({
   type = "user",
@@ -79,7 +85,7 @@ export default function BookingTable({
   };
 
   return (
-    <div className="overflow-hidden">
+    <div className="overflow-visible">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="border-b border-white/10">
@@ -180,84 +186,228 @@ export default function BookingTable({
                   {formatPrice(booking.estimatedCost)}
                 </td>
                 <td className="px-4 py-4">
-                  <div className="flex items-center justify-end gap-2">
-                    {/* View Details Button */}
-                    <Link
-                      href={
-                        type === "user"
-                          ? `/user/dashboard/bookings/${booking._id}`
-                          : `/garage/dashboard/bookings/${booking._id}`
-                      }
-                      className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-white transition-all"
-                      title={t("viewDetails")}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Link>
-
-                    {/* Garage-specific action buttons */}
-                    {type === "garage" &&
-                      booking.status === "pending" &&
-                      onStatusUpdate && (
-                        <button
-                          onClick={() =>
-                            onStatusUpdate(booking._id, "accepted")
-                          }
-                          className="p-2 hover:bg-green-500/20 rounded-lg text-white/60 hover:text-green-400 transition-all"
-                          title={t("accept")}
-                        >
-                          <Check className="w-4 h-4" />
-                        </button>
-                      )}
-
-                    {type === "garage" &&
-                      booking.status === "accepted" &&
-                      onStatusUpdate && (
-                        <button
-                          onClick={() =>
-                            onStatusUpdate(booking._id, "completed")
-                          }
-                          className="p-2 hover:bg-blue-500/20 rounded-lg text-white/60 hover:text-blue-400 transition-all"
-                          title={t("markCompleted")}
-                        >
-                          <Clock className="w-4 h-4" />
-                        </button>
-                      )}
-
-                    {type === "garage" &&
-                      booking.status !== "completed" &&
-                      booking.status !== "canceled" &&
-                      onStatusUpdate && (
-                        <button
-                          onClick={() =>
-                            onStatusUpdate(booking._id, "canceled")
-                          }
-                          className="p-2 hover:bg-red-500/20 rounded-lg text-white/60 hover:text-red-400 transition-all"
-                          title={t("cancel")}
-                        >
-                          <XCircle className="w-4 h-4" />
-                        </button>
-                      )}
-
-                    {/* User-specific action buttons */}
-                    {type === "user" &&
-                      booking.status !== "cancelled" &&
-                      booking.status !== "completed" && (
-                        <button className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-orange-400 transition-all">
-                          <Phone className="w-4 h-4" />
-                        </button>
-                      )}
-                    {type === "user" && booking.status === "pending" && (
-                      <button className="p-2 hover:bg-red-500/20 rounded-lg text-white/60 hover:text-red-400 transition-all">
-                        <XCircle className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
+                  {type === "user" ? (
+                    <UserBookingActions booking={booking} t={t} />
+                  ) : (
+                    <GarageBookingActions
+                      booking={booking}
+                      onStatusUpdate={onStatusUpdate}
+                      t={t}
+                    />
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+// User Booking Actions Dropdown Component
+function UserBookingActions({ booking, t }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [position, setPosition] = useState({ top: 0, right: 0 });
+  const buttonRef = useState(null);
+
+  const handleToggle = (e) => {
+    if (!isOpen) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      setPosition({
+        top: rect.bottom + 5,
+        right: window.innerWidth - rect.right,
+      });
+    }
+    setIsOpen(!isOpen);
+  };
+
+  return (
+    <div className="flex items-center justify-end">
+      <button
+        onClick={handleToggle}
+        className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-white transition-all"
+        title="More actions"
+      >
+        <MoreVertical className="w-4 h-4" />
+      </button>
+      {isOpen &&
+        createPortal(
+          <>
+            <div
+              className="fixed inset-0 z-[100]"
+              onClick={() => setIsOpen(false)}
+            />
+            <div
+              className="fixed z-[200] bg-[#1E1E1E] border border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[180px]"
+              style={{
+                top: `${position.top}px`,
+                right: `${position.right}px`,
+              }}
+            >
+              <Link
+                href={`/user/dashboard/bookings/${booking._id}`}
+                className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-all text-white/80 hover:text-white"
+                onClick={() => setIsOpen(false)}
+              >
+                <Eye className="w-4 h-4 text-blue-400" />
+                <span className="text-sm font-medium">View Details</span>
+              </Link>
+
+              {booking.status !== "cancelled" &&
+                booking.status !== "completed" && (
+                  <>
+                    <Link
+                      href={`/user/dashboard/bookings/${booking._id}/track`}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-all text-white/80 hover:text-white"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <MapPin className="w-4 h-4 text-green-400" />
+                      <span className="text-sm font-medium">Track Service</span>
+                    </Link>
+                    <button
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-all text-white/80 hover:text-white"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <Phone className="w-4 h-4 text-orange-400" />
+                      <span className="text-sm font-medium">Call Garage</span>
+                    </button>
+                  </>
+                )}
+
+              {booking.status === "pending" && (
+                <button
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 transition-all text-red-400 hover:text-red-300"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <XCircle className="w-4 h-4" />
+                  <span className="text-sm font-medium">Cancel Booking</span>
+                </button>
+              )}
+
+              {booking.status === "completed" && (
+                <>
+                  <Link
+                    href={`/book?rebook=${booking._id}`}
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-all text-white/80 hover:text-white"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <RotateCcw className="w-4 h-4 text-purple-400" />
+                    <span className="text-sm font-medium">Re-book Service</span>
+                  </Link>
+                  <Link
+                    href={`/user/dashboard/bookings/${booking._id}?review=true`}
+                    className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-all text-white/80 hover:text-white"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <Star className="w-4 h-4 text-yellow-400" />
+                    <span className="text-sm font-medium">Write Review</span>
+                  </Link>
+                </>
+              )}
+            </div>
+          </>,
+          document.body
+        )}
+    </div>
+  );
+}
+
+// Garage Booking Actions Dropdown Component
+function GarageBookingActions({ booking, onStatusUpdate, t }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [position, setPosition] = useState({ top: 0, right: 0 });
+
+  const handleToggle = (e) => {
+    if (!isOpen) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      setPosition({
+        top: rect.bottom + 5,
+        right: window.innerWidth - rect.right,
+      });
+    }
+    setIsOpen(!isOpen);
+  };
+
+  return (
+    <div className="flex items-center justify-end">
+      <button
+        onClick={handleToggle}
+        className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-white transition-all"
+        title="More actions"
+      >
+        <MoreVertical className="w-4 h-4" />
+      </button>
+
+      {isOpen &&
+        createPortal(
+          <>
+            <div
+              className="fixed inset-0 z-[100]"
+              onClick={() => setIsOpen(false)}
+            />
+            <div
+              className="fixed z-[200] bg-[#1E1E1E] border border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[180px]"
+              style={{
+                top: `${position.top}px`,
+                right: `${position.right}px`,
+              }}
+            >
+              <Link
+                href={`/garage/dashboard/bookings/${booking._id}`}
+                className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-all text-white/80 hover:text-white"
+                onClick={() => setIsOpen(false)}
+              >
+                <Eye className="w-4 h-4 text-blue-400" />
+                <span className="text-sm font-medium">{t("viewDetails")}</span>
+              </Link>
+
+              {booking.status === "pending" && onStatusUpdate && (
+                <button
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-all text-white/80 hover:text-white"
+                  onClick={() => {
+                    onStatusUpdate(booking._id, "accepted");
+                    setIsOpen(false);
+                  }}
+                >
+                  <Check className="w-4 h-4 text-green-400" />
+                  <span className="text-sm font-medium">{t("accept")}</span>
+                </button>
+              )}
+
+              {booking.status === "accepted" && onStatusUpdate && (
+                <button
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-all text-white/80 hover:text-white"
+                  onClick={() => {
+                    onStatusUpdate(booking._id, "completed");
+                    setIsOpen(false);
+                  }}
+                >
+                  <Clock className="w-4 h-4 text-blue-400" />
+                  <span className="text-sm font-medium">
+                    {t("markCompleted")}
+                  </span>
+                </button>
+              )}
+
+              {booking.status !== "completed" &&
+                booking.status !== "canceled" &&
+                onStatusUpdate && (
+                  <button
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 transition-all text-red-400 hover:text-red-300"
+                    onClick={() => {
+                      onStatusUpdate(booking._id, "canceled");
+                      setIsOpen(false);
+                    }}
+                  >
+                    <XCircle className="w-4 h-4" />
+                    <span className="text-sm font-medium">{t("cancel")}</span>
+                  </button>
+                )}
+            </div>
+          </>,
+          document.body
+        )}
     </div>
   );
 }

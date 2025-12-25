@@ -15,21 +15,55 @@ import {
   Star,
   ArrowLeft,
   Loader2,
+  XCircle,
+  AlertCircle,
+  Download,
+  Printer,
+  FileText,
+  Car,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import ReviewForm from "@/components/dashboard/ReviewForm";
+import BookingChat from "@/components/dashboard/BookingChat";
+import { downloadReceiptPDF } from "@/lib/utils/clientReceipt";
 
 export default function BookingDetailsPage() {
   const { id } = useParams();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
+  const [disputing, setDisputing] = useState(false);
+
+  // Payment States
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("bkash");
+  const [transactionId, setTransactionId] = useState("");
+  const [paying, setPaying] = useState(false);
 
   useEffect(() => {
-    if (id) fetchBookingDetails();
+    if (id) {
+      fetchBookingDetails();
+      fetchCurrentUser();
+    }
   }, [id]);
+
+  const fetchCurrentUser = async () => {
+    try {
+      const res = await fetch("/api/user/profile");
+      const data = await res.json();
+      if (data.success) {
+        setCurrentUser(data.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch current user:", error);
+    }
+  };
 
   const fetchBookingDetails = async () => {
     try {
@@ -48,6 +82,114 @@ export default function BookingDetailsPage() {
     }
   };
 
+  const handleDownloadReceipt = () => {
+    downloadReceiptPDF(booking);
+  };
+
+  const handleConfirmReject = async () => {
+    setRejecting(true);
+    try {
+      const res = await fetch(`/api/bookings/${booking._id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: "cancelled",
+          towingRequested: false,
+          actualCost: 100, // Policy fee for rejection
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.info("Towing rejected. Service cancelled.");
+        setShowRejectModal(false);
+        fetchBookingDetails();
+      }
+    } catch (err) {
+      toast.error("Failed to reject towing");
+    } finally {
+      setRejecting(false);
+    }
+  };
+
+  const handlePaymentSubmit = async () => {
+    if (paymentMethod === "sslcommerz") {
+      setPaying(true);
+      try {
+        const res = await fetch("/api/bookings/payment/init", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bookingId: id }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          window.location.href = data.data.paymentUrl;
+        } else {
+          toast.error(data.message || "Failed to initialize payment");
+          setPaying(false);
+        }
+      } catch (error) {
+        toast.error("Network error");
+        setPaying(false);
+      }
+      return;
+    }
+
+    if (!transactionId && paymentMethod !== "cash") {
+      toast.error("Please enter Transaction ID");
+      return;
+    }
+    setPaying(true);
+    try {
+      const res = await fetch(`/api/bookings/${id}/pay`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paymentMethod,
+          transactionId:
+            paymentMethod === "cash" ? `CASH-${Date.now()}` : transactionId,
+          amount: booking.actualCost || booking.estimatedCost,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Payment submitted for verification");
+        setShowPaymentModal(false);
+        fetchBookingDetails();
+      } else {
+        toast.error(data.message || "Payment submission failed");
+      }
+    } catch (error) {
+      toast.error("Network error submitting payment");
+    } finally {
+      if (paymentMethod !== "sslcommerz") {
+        setPaying(false);
+      }
+    }
+  };
+
+  const handleConfirmDispute = async () => {
+    setDisputing(true);
+    try {
+      const res = await fetch(`/api/bookings/${booking._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "disputed" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Booking marked as disputed");
+        setShowDisputeModal(false);
+        fetchBookingDetails();
+      }
+    } catch (err) {
+      toast.error("Failed to mark as disputed");
+    } finally {
+      setDisputing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-96">
@@ -58,25 +200,65 @@ export default function BookingDetailsPage() {
 
   if (!booking) return null;
 
+  // Helper to determine step status
+  const getStepStatus = (stepId) => {
+    const statusOrder = ["pending", "confirmed", "in_progress", "completed"];
+    const currentStatusIndex = statusOrder.indexOf(booking.status);
+    // If status is not in the main flow (e.g. cancelled/disputed), handle separately or default to pending
+    const stepIndex = statusOrder.indexOf(stepId);
+
+    if (currentStatusIndex === -1) {
+      // Handle cancelled/disputed:
+      if (booking.status === "cancelled")
+        return stepId === "pending" ? "completed" : "pending";
+      if (booking.status === "disputed") return "completed"; // Show all as done or special state?
+      // For simplicity, if cancelled/disputed, just show based on existence?
+      // Actually, let's stick to the happy path for the visual stepper, and showing a banner for Cancelled/Disputed.
+      return "pending";
+    }
+
+    if (currentStatusIndex > stepIndex) return "completed";
+    if (currentStatusIndex === stepIndex) return "active";
+    return "pending";
+  };
+
   const steps = [
-    { label: "Booked", status: "completed", date: booking.createdAt },
     {
+      id: "pending",
+      label: "Booked",
+      date: booking.createdAt,
+      isCompleted: true, // Booked is always done if it exists
+      isActive: booking.status === "pending",
+    },
+    {
+      id: "confirmed",
       label: "Confirmed",
-      status:
-        booking.status === "confirmed" || booking.status === "completed"
-          ? "completed"
-          : "pending",
+      // Date is tricky if strict not tracking specific timestamps for each, but we can fallback
+      date:
+        booking.confirmedAt ||
+        (booking.status !== "pending" ? booking.updatedAt : null),
+      isCompleted: ["confirmed", "in_progress", "completed"].includes(
+        booking.status
+      ),
+      isActive: booking.status === "confirmed",
     },
     {
+      id: "in_progress",
       label: "In Progress",
-      status:
-        booking.status === "in-progress" || booking.status === "completed"
-          ? "completed"
-          : "pending",
+      date:
+        booking.startedAt ||
+        (["in_progress", "completed"].includes(booking.status)
+          ? booking.updatedAt
+          : null),
+      isCompleted: ["in_progress", "completed"].includes(booking.status),
+      isActive: booking.status === "in_progress",
     },
     {
+      id: "completed",
       label: "Completed",
-      status: booking.status === "completed" ? "completed" : "pending",
+      date: booking.completedAt,
+      isCompleted: booking.status === "completed",
+      isActive: booking.status === "completed",
     },
   ];
 
@@ -110,7 +292,9 @@ export default function BookingDetailsPage() {
                 <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full">
                   <Clock className="w-4 h-4 text-orange-400" />
                   <span>
-                    {new Date(booking.bookingDate).toLocaleDateString()}
+                    {new Date(
+                      booking.scheduledAt || booking.createdAt
+                    ).toLocaleDateString()}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full">
@@ -123,7 +307,9 @@ export default function BookingDetailsPage() {
                         : "bg-orange-500"
                     }`}
                   />
-                  <span className="capitalize">{booking.status}</span>
+                  <span className="capitalize">
+                    {booking.status.replace("_", " ")}
+                  </span>
                 </div>
               </div>
             </div>
@@ -138,50 +324,66 @@ export default function BookingDetailsPage() {
           <div className="bg-white rounded-3xl p-8 border shadow-sm">
             <h3 className="text-lg font-bold mb-6">Service Timeline</h3>
             <div className="relative">
-              {steps.map((step, idx) => (
-                <div key={idx} className="flex gap-4 mb-8 last:mb-0">
-                  <div className="flex flex-col items-center">
+              {/* Vertical connecting line */}
+              <div className="absolute left-[27px] top-4 bottom-10 w-0.5 bg-gray-100" />
+
+              <div className="space-y-8 relative">
+                {steps.map((step, idx) => (
+                  <div key={idx} className="flex items-start gap-4">
+                    {/* Icon Circle */}
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
-                        step.status === "completed"
-                          ? "bg-orange-500 border-orange-500 text-white"
-                          : "border-gray-200 text-gray-400"
+                      className={`relative z-10 w-14 h-14 rounded-full flex items-center justify-center border-4 transition-all duration-300 ${
+                        step.isCompleted
+                          ? "bg-green-500 border-green-100 text-white shadow-lg shadow-green-500/20"
+                          : step.isActive
+                          ? "bg-white border-orange-500 text-orange-500 shadow-xl shadow-orange-500/20 scale-110"
+                          : "bg-white border-gray-100 text-gray-300"
                       }`}
                     >
-                      {step.status === "completed" ? (
-                        <CheckCircle className="w-5 h-5" />
+                      {step.isCompleted ? (
+                        <CheckCircle className="w-6 h-6" />
+                      ) : step.isActive ? (
+                        <Loader2 className="w-6 h-6 animate-spin" />
                       ) : (
-                        idx + 1
+                        <span className="font-bold text-lg">{idx + 1}</span>
                       )}
                     </div>
-                    {idx < steps.length - 1 && (
-                      <div
-                        className={`w-0.5 h-full ${
-                          steps[idx + 1].status === "completed"
-                            ? "bg-orange-500"
-                            : "bg-gray-100"
-                        }`}
-                      />
-                    )}
-                  </div>
-                  <div className="pb-4">
-                    <p
-                      className={`font-bold ${
-                        step.status === "completed"
-                          ? "text-gray-900"
-                          : "text-gray-400"
+
+                    {/* Text Content */}
+                    <div
+                      className={`pt-2 transition-all duration-300 ${
+                        step.isActive ? "translate-x-2" : ""
                       }`}
                     >
-                      {step.label}
-                    </p>
-                    {step.date && (
-                      <p className="text-xs text-gray-500">
-                        {new Date(step.date).toLocaleString()}
-                      </p>
-                    )}
+                      <h4
+                        className={`font-bold text-lg leading-none mb-1 ${
+                          step.isCompleted
+                            ? "text-green-600"
+                            : step.isActive
+                            ? "text-orange-600"
+                            : "text-gray-400"
+                        }`}
+                      >
+                        {step.label}
+                      </h4>
+                      {step.date && (
+                        <div className="flex items-center gap-2 text-xs font-medium text-gray-400 bg-gray-50 px-3 py-1 rounded-full w-fit mt-2">
+                          <Clock className="w-3 h-3" />
+                          {new Date(step.date).toLocaleString([], {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
+                        </div>
+                      )}
+                      {step.isActive && (
+                        <p className="text-sm text-gray-500 mt-1 animate-pulse font-medium">
+                          Currently active...
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
 
@@ -261,10 +463,42 @@ export default function BookingDetailsPage() {
               )}
               <div className="pt-4 border-t flex justify-between items-center">
                 <span className="font-bold text-lg">Total</span>
-                <span className="text-2xl font-bold text-primary">
+                <span className="text-2xl font-bold text-orange-600">
                   ৳{booking.actualCost || booking.estimatedCost}
                 </span>
               </div>
+
+              {booking.billItems && booking.billItems.length > 0 && (
+                <div className="pt-4 space-y-3">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                    Work Breakdown
+                  </p>
+                  {booking.billItems.map((item, idx) => (
+                    <div key={idx} className="flex justify-between text-sm">
+                      <span className="text-gray-600">{item.description}</span>
+                      <span className="font-medium text-gray-900">
+                        ৳{item.amount}
+                      </span>
+                    </div>
+                  ))}
+                  {booking.towingRequested && (
+                    <div className="flex justify-between text-sm text-blue-600">
+                      <span>Towing Service</span>
+                      <span className="font-medium">৳{booking.towingCost}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {booking.status === "completed" && (
+                <button
+                  onClick={handleDownloadReceipt}
+                  className="w-full mt-6 py-3 bg-orange-50 text-orange-600 hover:bg-orange-100 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all"
+                >
+                  <Download className="w-5 h-5" />
+                  Download Receipt
+                </button>
+              )}
 
               <div
                 className={`mt-4 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-bold ${
@@ -274,11 +508,58 @@ export default function BookingDetailsPage() {
                 }`}
               >
                 <CreditCard className="w-4 h-4" />
-                {booking.isPaid ? "Payment Completed" : "Payment Pending"}
+                {booking.isPaid
+                  ? "Payment Completed"
+                  : booking.paymentInfo?.status === "pending"
+                  ? "Verification Pending"
+                  : "Payment Pending"}
               </div>
 
-              {!booking.isPaid && (
-                <button className="w-full btn btn-primary mt-4">Pay Now</button>
+              {!booking.isPaid &&
+                booking.status !== "disputed" &&
+                booking.status !== "cancelled" &&
+                booking.paymentInfo?.status !== "pending" && (
+                  <div className="space-y-3 mt-4">
+                    {booking.towingRequested && (
+                      <button
+                        onClick={() => setShowRejectModal(true)}
+                        className="w-full py-2.5 rounded-xl text-sm font-bold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all flex items-center justify-center gap-2"
+                      >
+                        <XCircle className="w-4 h-4" />
+                        Reject Towing & Cancel
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setShowPaymentModal(true)}
+                      className="w-full btn btn-primary"
+                    >
+                      Pay Now
+                    </button>
+                    <button
+                      onClick={() => setShowDisputeModal(true)}
+                      className="w-full py-2.5 rounded-xl text-sm font-bold border border-red-500/30 text-red-500 hover:bg-red-500/5 transition-all"
+                    >
+                      Report Issue
+                    </button>
+                  </div>
+                )}
+
+              {booking.paymentInfo?.status === "pending" && (
+                <div className="mt-4 p-4 bg-blue-50 text-blue-700 rounded-xl text-sm border border-blue-100 text-center">
+                  <p className="font-bold">Payment Verification Pending</p>
+                  <p>TrxID: {booking.paymentInfo.transactionId}</p>
+                  <p className="text-xs mt-1">
+                    Please wait for garage approval.
+                  </p>
+                </div>
+              )}
+
+              {booking.status === "disputed" && (
+                <div className="mt-4 p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm">
+                  <p className="font-bold mb-1">Under Investigation</p>
+                  This booking is currently in dispute. Our support team will
+                  contact you shortly.
+                </div>
               )}
             </div>
           </div>
@@ -312,6 +593,187 @@ export default function BookingDetailsPage() {
           </div>
         </div>
       </div>
+      {booking && currentUser && booking.garage?.owner && (
+        <BookingChat
+          bookingId={booking._id}
+          recipientId={booking.garage.owner}
+          currentUserId={currentUser._id}
+          recipientName={booking.garage.name}
+        />
+      )}
+      {/* Rejection Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-[#1E1E1E] w-full max-w-md rounded-3xl p-6 text-white border border-white/10 shadow-2xl relative">
+            <button
+              onClick={() => setShowRejectModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white"
+            >
+              <XCircle className="w-6 h-6" />
+            </button>
+
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-4">
+                <AlertCircle className="w-8 h-8 text-red-500" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Reject Service?</h3>
+              <p className="text-gray-400 mb-6">
+                Rejecting towing will cancel the entire service. <br />A minimal
+                visiting fee of{" "}
+                <span className="text-orange-500 font-bold">৳100</span> will be
+                charged for the mechanic's time.
+              </p>
+
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setShowRejectModal(false)}
+                  className="flex-1 py-3 rounded-xl font-bold bg-white/10 hover:bg-white/20 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmReject}
+                  disabled={rejecting}
+                  className="flex-1 py-3 rounded-xl font-bold bg-red-600 hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  {rejecting ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    "Confirm Reject"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Dispute Modal */}
+      {showDisputeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-[#1E1E1E] w-full max-w-md rounded-3xl p-6 text-white border border-white/10 shadow-2xl relative">
+            <button
+              onClick={() => setShowDisputeModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white"
+            >
+              <XCircle className="w-6 h-6" />
+            </button>
+
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center mb-4">
+                <AlertCircle className="w-8 h-8 text-orange-500" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Report an Issue?</h3>
+              <p className="text-gray-400 mb-6">
+                Are you facing any problem with this service? <br />
+                Our support team will investigate and help you.
+              </p>
+
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setShowDisputeModal(false)}
+                  className="flex-1 py-3 rounded-xl font-bold bg-white/10 hover:bg-white/20 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmDispute}
+                  disabled={disputing}
+                  className="flex-1 py-3 rounded-xl font-bold bg-orange-500 hover:bg-orange-600 transition-colors flex items-center justify-center gap-2"
+                >
+                  {disputing ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    "Confirm Report"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Payment Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl relative">
+            <button
+              onClick={() => setShowPaymentModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            >
+              <XCircle className="w-6 h-6" />
+            </button>
+            <h3 className="text-xl font-bold mb-4 text-gray-900">
+              Make Payment
+            </h3>
+
+            <div className="mb-4">
+              <label className="text-sm font-medium text-gray-700 block mb-2">
+                Select Method
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {["bkash", "nagad", "cash", "sslcommerz"].map((method) => (
+                  <button
+                    key={method}
+                    onClick={() => setPaymentMethod(method)}
+                    className={`py-2 rounded-lg text-sm font-bold border capitalize ${
+                      paymentMethod === method
+                        ? "bg-orange-500 text-white border-orange-500"
+                        : "bg-gray-50 text-gray-600 border-gray-200"
+                    }`}
+                  >
+                    {method === "sslcommerz" ? "Online Payment" : method}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {["bkash", "nagad"].includes(paymentMethod) && (
+              <div className="mb-6">
+                <label className="text-sm font-medium text-gray-700 block mb-2">
+                  Transaction ID (TrxID)
+                </label>
+                <input
+                  type="text"
+                  value={transactionId}
+                  onChange={(e) => setTransactionId(e.target.value)}
+                  placeholder="e.g. 9H7D6S5A"
+                  className="w-full p-3 border border-gray-200 rounded-xl outline-none focus:border-orange-500"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  * Please send ৳{booking.actualCost || booking.estimatedCost}{" "}
+                  to the mechanics personal number and enter the TrxID here.
+                </p>
+              </div>
+            )}
+
+            {paymentMethod === "cash" && (
+              <div className="mb-6 p-4 bg-gray-50 rounded-xl text-sm text-gray-600">
+                Please hand over{" "}
+                <b>৳{booking.actualCost || booking.estimatedCost}</b> to the
+                mechanic directly.
+              </div>
+            )}
+
+            {paymentMethod === "sslcommerz" && (
+              <div className="mb-6 p-4 bg-gray-50 rounded-xl text-sm text-gray-600">
+                You will be redirected to SSLCommerz gateway to pay via Card or
+                Mobile Banking securely.
+              </div>
+            )}
+
+            <button
+              onClick={handlePaymentSubmit}
+              disabled={paying}
+              className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold disabled:opacity-50 flex justify-center items-center gap-2"
+            >
+              {paying ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                "Submit Payment"
+              )}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, Suspense, useEffect } from "react";
+import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,6 +21,7 @@ import {
   CheckCircle2,
   Star,
   BadgeCheck,
+  BrainCircuit,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
@@ -53,45 +55,9 @@ function BookingForm() {
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [estimatedCost, setEstimatedCost] = useState(null);
-  const [isEstimating, setIsEstimating] = useState(false);
-  const [coordinates, setCoordinates] = useState(null); // [long, lat]
-
-  // Data Fetching State
-  const [services, setServices] = useState([]);
-  const [isLoadingServices, setIsLoadingServices] = useState(false);
-  const [nearbyGarages, setNearbyGarages] = useState([]);
-  const [isLoadingGarages, setIsLoadingGarages] = useState(false);
-  const [selectedGarage, setSelectedGarage] = useState(null);
-
   // Get query params if pre-selecting
   const serviceIdFromUrl = searchParams.get("service");
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      toast.info("Please login to book a service");
-      router.push("/login?callbackUrl=/book");
-      return;
-    }
-
-    const fetchInitialData = async () => {
-      setIsLoadingServices(true);
-      try {
-        const res = await axios.get("/api/services?isActive=true");
-        if (res.data.success) {
-          setServices(res.data.data.services);
-        }
-      } catch (error) {
-        console.error("Error fetching services:", error);
-        toast.error("Failed to load services");
-      } finally {
-        setIsLoadingServices(false);
-      }
-    };
-
-    fetchInitialData();
-  }, [isAuthenticated, router]);
+  const rebookId = searchParams.get("rebook");
 
   const {
     register,
@@ -113,9 +79,80 @@ function BookingForm() {
     },
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [estimatedCost, setEstimatedCost] = useState(null);
+  const [isEstimating, setIsEstimating] = useState(false);
+  const [coordinates, setCoordinates] = useState(null); // [long, lat]
+
+  // Data Fetching State
+  const [services, setServices] = useState([]);
+  const [isLoadingServices, setIsLoadingServices] = useState(false);
+  const [nearbyGarages, setNearbyGarages] = useState([]);
+  const [isLoadingGarages, setIsLoadingGarages] = useState(false);
+  const [selectedGarage, setSelectedGarage] = useState(null);
+
   const description = watch("description");
   const vehicleId = watch("vehicleId");
   const selectedServiceId = watch("serviceId");
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      toast.info("Please login to book a service");
+      router.push("/login?callbackUrl=/book");
+      return;
+    }
+
+    const fetchInitialData = async () => {
+      setIsLoadingServices(true);
+      try {
+        const res = await axios.get("/api/services?isActive=true");
+        if (res.data.success) {
+          setServices(res.data.data.services);
+        }
+
+        // If re-booking, fetch past booking details
+        if (rebookId) {
+          const bookingRes = await axios.get(`/api/bookings/${rebookId}`);
+          if (bookingRes.data.success) {
+            const pastBooking = bookingRes.data.booking;
+            // Pre-fill form
+            setValue("vehicleType", pastBooking.vehicleType);
+            setValue(
+              "serviceId",
+              pastBooking.service?._id || pastBooking.service
+            );
+            setValue("brand", pastBooking.vehicleInfo?.brand);
+            setValue("model", pastBooking.vehicleInfo?.model);
+            setValue("plateNumber", pastBooking.vehicleInfo?.plateNumber);
+            setValue("address", pastBooking.location?.address);
+            setValue(
+              "description",
+              `Re-booking for: ${pastBooking.description}`
+            );
+
+            if (pastBooking.location?.coordinates) {
+              setCoordinates(pastBooking.location.coordinates);
+              fetchNearbyGarages(
+                pastBooking.location.coordinates[0],
+                pastBooking.location.coordinates[1]
+              );
+            }
+
+            if (pastBooking.garage) {
+              setSelectedGarage(pastBooking.garage);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching initial data:", error);
+        toast.error("Failed to load initial data");
+      } finally {
+        setIsLoadingServices(false);
+      }
+    };
+
+    fetchInitialData();
+  }, [isAuthenticated, router, rebookId, setValue]);
 
   // Auto-fill vehicle details when a saved vehicle is selected
   useEffect(() => {
@@ -138,10 +175,23 @@ function BookingForm() {
     if (selectedServiceId && services.length > 0) {
       const service = services.find((s) => s._id === selectedServiceId);
       if (service) {
-        setBasePrice(service.basePrice);
+        let finalBasePrice = service.basePrice;
+
+        // Dynamic Towing Pricing Logic
+        if (service.name.toLowerCase().includes("towing")) {
+          const hasSubscription =
+            user?.membershipTier && user.membershipTier !== "free";
+          if (hasSubscription) {
+            finalBasePrice = 0; // Free for any subscription tier
+          } else {
+            finalBasePrice = 500; // 500 base for normal (free) users
+          }
+        }
+
+        setBasePrice(finalBasePrice);
       }
     }
-  }, [selectedServiceId, services]);
+  }, [selectedServiceId, services, user]);
 
   const fetchNearbyGarages = async (lng, lat) => {
     setIsLoadingGarages(true);
@@ -310,14 +360,61 @@ function BookingForm() {
           <div className="lg:col-span-2">
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl">
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+                {/* AI Mechanic Prompt */}
+                <div className="relative group overflow-hidden bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/20 rounded-2xl p-6 mb-8">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <BrainCircuit className="w-16 h-16 text-blue-400" />
+                  </div>
+                  <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div>
+                      <h4 className="text-xl font-bold text-white flex items-center gap-2 mb-2">
+                        <Sparkles className="w-5 h-5 text-blue-400" />
+                        Confused about the problem?
+                      </h4>
+                      <p className="text-gray-400 text-sm max-w-md">
+                        Our Gemini-powered AI Mechanic can diagnose your
+                        vehicle's symptoms and estimate repair costs in seconds.
+                      </p>
+                    </div>
+                    <Link
+                      href="/user/dashboard/predictive-maintenance"
+                      className="whitespace-nowrap px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg hover:shadow-blue-500/20"
+                    >
+                      <BrainCircuit className="w-4 h-4" />
+                      Try AI Mechanic
+                    </Link>
+                  </div>
+                </div>
+
                 {/* Service Selection */}
                 <div>
-                  <h3 className="text-xl font-semibold mb-6 flex items-center gap-3 text-white/90">
-                    <div className="p-2 bg-[#ff4800]/10 rounded-lg">
-                      <Wrench className="w-5 h-5 text-[#ff4800]" />
-                    </div>
-                    Select Service
-                  </h3>
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-semibold flex items-center gap-3 text-white/90">
+                      <div className="p-2 bg-[#ff4800]/10 rounded-lg">
+                        <Wrench className="w-5 h-5 text-[#ff4800]" />
+                      </div>
+                      Select Service
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const diagnosisService = services.find((s) =>
+                          s.name.toLowerCase().includes("diagnosis")
+                        );
+                        if (diagnosisService) {
+                          setValue("serviceId", diagnosisService._id);
+                          toast.info("Selected General Diagnosis & Inspection");
+                          // Smooth scroll to description
+                          document
+                            .getElementById("description-area")
+                            ?.scrollIntoView({ behavior: "smooth" });
+                        }
+                      }}
+                      className="text-sm font-bold text-[#ff4800] hover:text-[#ff6a3d] transition-colors flex items-center gap-2 px-4 py-2 bg-[#ff4800]/5 rounded-xl border border-[#ff4800]/20"
+                    >
+                      <AlertCircle className="w-4 h-4" />I don't know the issue
+                    </button>
+                  </div>
                   <div className="space-y-4">
                     <select
                       {...register("serviceId")}
@@ -326,15 +423,26 @@ function BookingForm() {
                       <option value="" className="bg-gray-900">
                         Choose a service...
                       </option>
-                      {services.map((s) => (
-                        <option
-                          key={s._id}
-                          value={s._id}
-                          className="bg-gray-900"
-                        >
-                          {s.name} - ৳{s.basePrice} (Base)
-                        </option>
-                      ))}
+                      {services.map((s) => {
+                        let displayPrice = s.basePrice;
+                        if (s.name.toLowerCase().includes("towing")) {
+                          const hasSub =
+                            user?.membershipTier &&
+                            user.membershipTier !== "free";
+                          displayPrice = hasSub ? 0 : 500;
+                        }
+
+                        return (
+                          <option
+                            key={s._id}
+                            value={s._id}
+                            className="bg-gray-900"
+                          >
+                            {s.name} - ৳{displayPrice}{" "}
+                            {displayPrice === 0 ? "(Free Perk)" : "(Base)"}
+                          </option>
+                        );
+                      })}
                     </select>
                     {errors.serviceId && (
                       <p className="text-red-500 text-sm">
@@ -605,6 +713,7 @@ function BookingForm() {
                   <div className="space-y-3">
                     <textarea
                       {...register("description")}
+                      id="description-area"
                       rows={4}
                       placeholder="Please describe what's wrong with your vehicle..."
                       className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white placeholder-gray-600 outline-none focus:border-[#ff4800] focus:ring-1 focus:ring-[#ff4800] transition-all resize-none"

@@ -7,7 +7,9 @@ import Review from "@/lib/db/models/Review";
 import Notification from "@/lib/db/models/Notification";
 import PointsRecord from "@/lib/db/models/PointsRecord";
 import User from "@/lib/db/models/User";
+import Payment from "@/lib/db/models/Payment";
 import { verifyToken } from "@/lib/utils/auth";
+import { validateStatusTransition } from "@/lib/utils/bookingHelpers";
 
 export async function GET(request, { params }) {
   try {
@@ -26,11 +28,15 @@ export async function GET(request, { params }) {
     const { id } = await params;
 
     const booking = await Booking.findById(id)
-      .populate("garage", "name rating address images logo")
+      .populate("garage", "name rating address images logo owner")
       .populate("user", "name email phone avatar");
 
     // Fetch review separately if exists
     const review = await Review.findOne({ booking: id });
+    // Fetch latest payment info
+    const payment = await Payment.findOne({ bookingId: id }).sort({
+      createdAt: -1,
+    });
 
     if (!booking) {
       return NextResponse.json(
@@ -40,11 +46,21 @@ export async function GET(request, { params }) {
     }
 
     // Authorization check
-    if (
-      decoded.role !== "admin" &&
-      booking.user._id.toString() !== decoded.userId &&
-      booking.garage?._id.toString() !== decoded.garageId
+    let isAuthorized = false;
+
+    if (decoded.role === "admin") {
+      isAuthorized = true;
+    } else if (booking.user._id.toString() === decoded.userId) {
+      isAuthorized = true;
+    } else if (
+      booking.garage &&
+      booking.garage.owner &&
+      booking.garage.owner.toString() === decoded.userId
     ) {
+      isAuthorized = true;
+    }
+
+    if (!isAuthorized) {
       return NextResponse.json(
         { success: false, message: "Forbidden" },
         { status: 403 }
@@ -56,6 +72,7 @@ export async function GET(request, { params }) {
       booking: {
         ...booking.toObject(),
         review: review,
+        paymentInfo: payment,
       },
     });
   } catch (error) {
@@ -83,9 +100,16 @@ export async function PATCH(request, { params }) {
 
     const { id } = await params;
     const body = await request.json();
-    const { status, actualCost, notes } = body;
+    const {
+      status,
+      actualCost,
+      notes,
+      billItems,
+      towingRequested,
+      towingCost,
+    } = body;
 
-    const booking = await Booking.findById(id);
+    const booking = await Booking.findById(id).populate("garage", "owner");
     if (!booking) {
       return NextResponse.json(
         { success: false, message: "Booking not found" },
@@ -96,7 +120,7 @@ export async function PATCH(request, { params }) {
     // Authorization check for garage
     if (
       decoded.role === "garage" &&
-      booking.garage.toString() !== decoded.garageId
+      booking.garage?.owner?.toString() !== decoded.userId
     ) {
       return NextResponse.json(
         { success: false, message: "Forbidden: Not your booking" },
@@ -106,6 +130,15 @@ export async function PATCH(request, { params }) {
 
     // Update fields
     if (status) {
+      // STRICT STATE MACHINE: Validate transition
+      const validation = validateStatusTransition(booking.status, status);
+      if (validation !== true) {
+        return NextResponse.json(
+          { success: false, message: validation },
+          { status: 400 }
+        );
+      }
+
       booking.status = status;
       if (status === "completed") {
         booking.completedAt = new Date();
@@ -137,13 +170,64 @@ export async function PATCH(request, { params }) {
           });
         } catch (pointsErr) {
           console.error(
-            "Failed to award points on booking completion:",
+            "Failed to award points to user on booking completion:",
             pointsErr
           );
+        }
+
+        // Award points to Garage Owner
+        try {
+          const garagePointsAwarded = 100; // Check business logic for exact amount
+          const garageOwner = await User.findById(booking.garage.owner);
+
+          if (garageOwner) {
+            garageOwner.rewardPoints =
+              (garageOwner.rewardPoints || 0) + garagePointsAwarded;
+            await garageOwner.save();
+
+            await PointsRecord.create({
+              user: booking.garage.owner,
+              points: garagePointsAwarded,
+              type: "earn",
+              reason: "Completed a service booking",
+              metadata: { bookingId: booking._id, role: "garage" },
+            });
+
+            await Notification.create({
+              recipient: booking.garage.owner,
+              type: "system_alert",
+              title: "🏆 Points Earned!",
+              message: `Great job! You earned ${garagePointsAwarded} points for completing a service.`,
+              link: `/garage/dashboard/bookings/${booking._id}`,
+            });
+          }
+        } catch (garagePointsErr) {
+          console.error(
+            "Failed to award points to garage on booking completion:",
+            garagePointsErr
+          );
+        }
+      } else if (status === "cancelled") {
+        booking.cancelledAt = new Date();
+        // CANCELLATION POLICY: If cancelled after start, charge fee
+        if (booking.status === "in_progress" || booking.startedAt) {
+          const cancellationFee = 100;
+          booking.billItems.push({
+            description: "Late Cancellation Fee",
+            amount: cancellationFee,
+            category: "other",
+          });
+          booking.actualCost = (booking.actualCost || 0) + cancellationFee;
+          booking.cancellationReason =
+            booking.cancellationReason || "Cancelled after service started";
         }
       }
     }
     if (actualCost !== undefined) booking.actualCost = actualCost;
+    if (billItems !== undefined) booking.billItems = billItems;
+    if (towingRequested !== undefined)
+      booking.towingRequested = towingRequested;
+    if (towingCost !== undefined) booking.towingCost = towingCost;
     if (notes) booking.notes = notes;
 
     await booking.save();

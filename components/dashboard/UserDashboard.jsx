@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import EnhancedStatsCards from "@/components/dashboard/EnhancedStatsCards";
 import BookingTable from "@/components/dashboard/BookingTable";
 import QuickActions from "@/components/dashboard/QuickActions";
@@ -12,10 +12,25 @@ const LiveGarageTracker = dynamic(
 import UserRewardsCard from "@/components/dashboard/UserRewardsCard";
 import LeaderboardWidget from "@/components/dashboard/LeaderboardWidget";
 import SubscriptionCard from "@/components/dashboard/SubscriptionCard";
-import { Loader2, Siren, Phone, AlertCircle, X } from "lucide-react";
+import Link from "next/link";
+import {
+  Loader2,
+  Siren,
+  Phone,
+  AlertCircle,
+  X,
+  Heart,
+  MapPin,
+  Star,
+  ArrowRight,
+} from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { updateUser } from "@/store/slices/authSlice";
+import {
+  updateUser,
+  selectFavorites,
+  toggleFavoriteSuccess,
+} from "@/store/slices/authSlice";
 import { useTranslations } from "next-intl";
 
 // Internal Countdown Component for SLA
@@ -59,6 +74,8 @@ export default function UserDashboard({ user }) {
     points: 0,
     activeRequests: 0,
   });
+  const favorites = useSelector(selectFavorites);
+  const [isLoadingFavorites, setIsLoadingFavorites] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -115,6 +132,43 @@ export default function UserDashboard({ user }) {
     fetchData();
     fetchSOS();
   }, [user?._id]);
+
+  useEffect(() => {
+    // Hydrate favorites if they are only IDs
+    const hasOnlyIds = favorites.some((fav) => typeof fav === "string");
+    if (hasOnlyIds && !isLoadingFavorites) {
+      fetchFullFavorites();
+    }
+  }, [favorites]);
+
+  const fetchFullFavorites = async () => {
+    setIsLoadingFavorites(true);
+    try {
+      const res = await axios.get("/api/user/favorites");
+      if (res.data.success) {
+        dispatch({
+          type: "auth/updateUser",
+          payload: { favoriteGarages: res.data.favorites },
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch favorites:", error);
+    } finally {
+      setIsLoadingFavorites(false);
+    }
+  };
+
+  const removeFavorite = async (garageId) => {
+    try {
+      const res = await axios.post("/api/user/favorites", { garageId });
+      if (res.data.success) {
+        dispatch(toggleFavoriteSuccess(garageId));
+        toast.success("Removed from favorites");
+      }
+    } catch (error) {
+      toast.error("Failed to remove favorite");
+    }
+  };
 
   const fetchSOS = async () => {
     try {
@@ -302,6 +356,92 @@ export default function UserDashboard({ user }) {
       <div className="mb-6 sm:mb-8">
         <BookingTimeline bookings={bookings} />
       </div>
+
+      {/* Favorite Garages Section */}
+      {(favorites.length > 0 || isLoadingFavorites) && (
+        <div className="mb-8 overflow-hidden">
+          <div className="flex items-center justify-between mb-4 px-2">
+            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+              <Heart className="w-5 h-5 text-red-500 fill-red-500" />
+              Favorite Garages
+            </h3>
+            <Link
+              href="/garages"
+              className="text-sm text-orange-500 hover:text-orange-400 font-bold flex items-center gap-1 transition-colors"
+            >
+              Explore More <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          {isLoadingFavorites ? (
+            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="min-w-[280px] h-32 bg-[#1E1E1E] border border-white/5 rounded-2xl animate-pulse"
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x">
+              {favorites.map((garage) => (
+                <div
+                  key={garage._id || garage}
+                  className="min-w-[300px] bg-[#1E1E1E] border border-white/10 rounded-2xl p-4 peer hover:border-orange-500/50 transition-all group snap-start"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center overflow-hidden border border-white/5">
+                        {garage.logo ? (
+                          <img
+                            src={garage.logo}
+                            alt={garage.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-lg font-bold text-orange-500">
+                            {garage.name?.charAt(0)}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-white line-clamp-1">
+                          {garage.name}
+                        </h4>
+                        <div className="flex items-center gap-1 text-xs text-yellow-500">
+                          <Star className="w-3 h-3 fill-yellow-500" />
+                          <span>{garage.rating?.average || "5.0"}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => removeFavorite(garage._id)}
+                      className="p-1.5 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"
+                      title="Remove from favorites"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-xs text-white/40 mb-4">
+                    <MapPin className="w-3 h-3" />
+                    <span className="line-clamp-1">
+                      {garage.address?.street}, {garage.address?.city}
+                    </span>
+                  </div>
+
+                  <Link
+                    href={`/book?garage=${garage._id}`}
+                    className="w-full flex items-center justify-center gap-2 py-2 bg-white/5 hover:bg-orange-500 text-white rounded-xl text-xs font-bold transition-all border border-white/5 group-hover:border-orange-500"
+                  >
+                    Quick Book
+                  </Link>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Secondary Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">

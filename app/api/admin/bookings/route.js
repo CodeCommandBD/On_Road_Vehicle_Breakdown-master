@@ -22,7 +22,29 @@ export async function GET(request) {
         { status: 403 }
       );
 
-    await connectDB();
+    const { searchParams } = new URL(request.url);
+    const bookingId = searchParams.get("bookingId");
+
+    if (bookingId) {
+      const booking = await Booking.findById(bookingId)
+        .populate("user", "name email phone")
+        .populate("garage", "name address phone")
+        .populate("service", "name")
+        .populate("notes.createdBy", "name role");
+
+      if (!booking) {
+        return NextResponse.json(
+          { success: false, message: "Booking not found" },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        booking,
+      });
+    }
+
     const bookings = await Booking.find()
       .populate("user", "name email phone")
       .populate("garage", "name address phone")
@@ -52,7 +74,8 @@ export async function PUT(request) {
       );
 
     await connectDB();
-    const { bookingId, status, notes } = await request.json();
+    const { bookingId, status, notes, dispute, actualCost } =
+      await request.json();
 
     if (!bookingId) {
       return NextResponse.json(
@@ -75,6 +98,18 @@ export async function PUT(request) {
       if (status === "in_progress") booking.startedAt = new Date();
       if (status === "completed") booking.completedAt = new Date();
       if (status === "cancelled") booking.cancelledAt = new Date();
+    }
+
+    if (actualCost !== undefined) {
+      booking.actualCost = actualCost;
+    }
+
+    if (dispute) {
+      booking.dispute = {
+        ...booking.dispute,
+        ...dispute,
+      };
+      // If resolution changes status or cost, it happens here or in frontend payload
     }
 
     if (notes) {

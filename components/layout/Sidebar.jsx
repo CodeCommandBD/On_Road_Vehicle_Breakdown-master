@@ -20,13 +20,19 @@ import {
   TrendingUp,
   Webhook,
   FileText,
+  Heart,
 } from "lucide-react";
 import {
   selectSidebarOpen,
   setSidebarOpen,
   toggleSidebar,
 } from "@/store/slices/uiSlice";
-import { selectUserRole, selectUser, logout } from "@/store/slices/authSlice";
+import {
+  selectUserRole,
+  selectUser,
+  logout,
+  selectFavorites,
+} from "@/store/slices/authSlice";
 import { cn } from "@/lib/utils/helpers";
 
 export default function Sidebar() {
@@ -37,6 +43,7 @@ export default function Sidebar() {
   const sidebarOpen = useSelector(selectSidebarOpen);
   const role = useSelector(selectUserRole) || "user";
   const user = useSelector(selectUser);
+  const favorites = useSelector(selectFavorites);
 
   // Debug: Log user membership tier
   console.log("Sidebar - User data:", {
@@ -78,6 +85,11 @@ export default function Sidebar() {
         href: "/user/dashboard/bookings",
         label: t("bookings"),
         icon: Calendar,
+      },
+      {
+        href: "/user/dashboard/favorites",
+        label: "Favorite Garages",
+        icon: Heart,
       },
       {
         href: "/user/dashboard/predictive-maintenance",
@@ -273,6 +285,12 @@ export default function Sidebar() {
                           )}
                         />
                         {link.label}
+                        {link.href === "/user/dashboard/favorites" &&
+                          favorites.length > 0 && (
+                            <span className="ml-auto bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-lg animate-in zoom-in-50">
+                              {favorites.length}
+                            </span>
+                          )}
                       </Link>
                     )}
                   </li>

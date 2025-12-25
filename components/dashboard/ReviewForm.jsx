@@ -29,9 +29,11 @@ export default function ReviewForm({ bookingId, onReviewSubmitted }) {
         toast.success("Thank you for your review!");
         if (onReviewSubmitted) onReviewSubmitted();
       } else {
+        console.error("Review submission failed:", data.message);
         toast.error(data.message);
       }
     } catch (error) {
+      console.error("Review fetch error:", error);
       toast.error("Failed to submit review");
     } finally {
       setSubmitting(false);
@@ -76,7 +78,7 @@ export default function ReviewForm({ bookingId, onReviewSubmitted }) {
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             placeholder="Tell us what you liked or what can be improved..."
-            className="w-full p-4 bg-white border border-orange-200 rounded-2xl h-32 outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none shadow-sm"
+            className="w-full p-4 bg-white text-gray-900 placeholder-gray-400 border border-orange-200 rounded-2xl h-32 outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none shadow-sm"
           />
 
           <button

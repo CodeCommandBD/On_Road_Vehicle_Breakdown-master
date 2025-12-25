@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import L from "leaflet";
 
 // Dynamically import MapComponent with no SSR
 const MapComponent = dynamic(() => import("@/components/maps/MapComponent"), {
@@ -31,6 +32,22 @@ export default function GarageTrackPage() {
   const [error, setError] = useState(null);
   const watchIdRef = useRef(null);
   const lastUpdateRef = useRef(0);
+  const [booking, setBooking] = useState(null);
+
+  useEffect(() => {
+    const fetchBooking = async () => {
+      try {
+        const res = await fetch(`/api/bookings/${id}`);
+        const data = await res.json();
+        if (data.success) {
+          setBooking(data.booking);
+        }
+      } catch (error) {
+        console.error("Error fetching booking:", error);
+      }
+    };
+    fetchBooking();
+  }, [id]);
 
   // Function to send location to server
   const sendLocationUpdate = async (lat, lng) => {
@@ -167,12 +184,73 @@ export default function GarageTrackPage() {
             center={[location.lat, location.lng]}
             zoom={15}
             markers={[
+              // Driver (Self) Marker
               {
                 lat: location.lat,
                 lng: location.lng,
-                content: "You (Tow Truck)",
+                content: `You (${
+                  booking?.service?.category === "towing" ||
+                  booking?.towingRequested
+                    ? "Tow Truck"
+                    : "Service Car"
+                })`,
+                icon: L.divIcon({
+                  className: "custom-div-icon",
+                  html: `<div style="background-color: ${
+                    booking?.service?.category === "towing" ||
+                    booking?.towingRequested
+                      ? "#ef4444"
+                      : "#3b82f6"
+                  }; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+                    <span style="font-size: 20px;">${
+                      booking?.service?.category === "towing" ||
+                      booking?.towingRequested
+                        ? "🚚"
+                        : "🚗"
+                    }</span>
+                  </div>`,
+                  iconSize: [40, 40],
+                  iconAnchor: [20, 40],
+                  popupAnchor: [0, -40],
+                }),
               },
+              // Customer (User) Marker
+              ...(booking?.location?.coordinates
+                ? [
+                    {
+                      lat: booking.location.coordinates[1],
+                      lng: booking.location.coordinates[0],
+                      content: `Customer: ${booking.user?.name || "User"}`,
+                      icon: L.divIcon({
+                        className: "custom-div-icon",
+                        html: `<div style="background-color: #10b981; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                          <div style="background-color: white; width: 8px; height: 8px; border-radius: 50%;"></div>
+                        </div>`,
+                        iconSize: [24, 24],
+                        iconAnchor: [12, 12],
+                        popupAnchor: [0, -12],
+                      }),
+                    },
+                  ]
+                : []),
             ]}
+            polylines={
+              location && booking?.location?.coordinates
+                ? [
+                    {
+                      positions: [
+                        [location.lat, location.lng],
+                        [
+                          booking.location.coordinates[1],
+                          booking.location.coordinates[0],
+                        ],
+                      ],
+                      color: "#10b981", // Green for garage
+                      dashArray: "10, 10",
+                    },
+                  ]
+                : []
+            }
             className="h-[500px] w-full rounded-xl"
           />
         ) : (
