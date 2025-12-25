@@ -64,13 +64,13 @@ export default function BookingTimeline({ bookings = [] }) {
   }
 
   return (
-    <div className="bg-[#1E1E1E] border border-white/10 rounded-2xl p-6 fade-in">
-      <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-        <Calendar className="w-5 h-5" />
+    <div className="bg-[#1E1E1E] border border-white/10 rounded-2xl p-4 sm:p-6 fade-in shadow-xl">
+      <h3 className="text-lg font-semibold text-white mb-4 sm:mb-6 flex items-center gap-2">
+        <Calendar className="w-5 h-5 text-orange-500" />
         Booking Timeline
       </h3>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {bookings.slice(0, 5).map((booking, index) => {
           const statusConfig = getStatusConfig(booking.status);
           const StatusIcon = statusConfig.icon;
@@ -78,37 +78,39 @@ export default function BookingTimeline({ bookings = [] }) {
           return (
             <div
               key={booking._id}
-              className="flex items-start gap-4 p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-all cursor-pointer scale-hover"
+              className="flex items-start gap-3 p-3 sm:p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-all cursor-pointer scale-hover"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               {/* Status Icon */}
               <div
-                className={`${statusConfig.bgColor} ${statusConfig.borderColor} border-2 rounded-xl p-3`}
+                className={`${statusConfig.bgColor} ${statusConfig.borderColor} border-2 rounded-xl p-2 sm:p-3 shrink-0`}
               >
-                <StatusIcon className={`w-5 h-5 ${statusConfig.color}`} />
+                <StatusIcon
+                  className={`w-4 h-4 sm:w-5 sm:h-5 ${statusConfig.color}`}
+                />
               </div>
 
               {/* Booking Info */}
-              <div className="flex-1">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div>
-                    <h4 className="text-white font-semibold">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2 mb-1.5">
+                  <div className="min-w-0">
+                    <h4 className="text-white font-semibold text-sm sm:text-base truncate">
                       {booking.service?.name || "Service Request"}
                     </h4>
-                    <p className="text-white/60 text-sm">
+                    <p className="text-white/60 text-xs sm:text-sm truncate">
                       {booking.garage?.name || "Garage"}
                     </p>
                   </div>
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${statusConfig.bgColor} ${statusConfig.color} border ${statusConfig.borderColor}`}
+                    className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold shrink-0 ${statusConfig.bgColor} ${statusConfig.color} border ${statusConfig.borderColor}`}
                   >
                     {statusConfig.label}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-4 text-xs text-white/50">
-                  <span>#{booking.bookingNumber}</span>
-                  <span>•</span>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] sm:text-xs text-white/50">
+                  <span className="font-mono">#{booking.bookingNumber}</span>
+                  <span className="hidden xs:inline text-white/20">•</span>
                   <span>
                     {booking.createdAt
                       ? formatDistanceToNow(new Date(booking.createdAt), {
@@ -118,8 +120,8 @@ export default function BookingTimeline({ bookings = [] }) {
                   </span>
                   {booking.estimatedCost && (
                     <>
-                      <span>•</span>
-                      <span className="text-green-400 font-semibold">
+                      <span className="hidden xs:inline text-white/20">•</span>
+                      <span className="text-green-400 font-bold">
                         ৳{booking.estimatedCost}
                       </span>
                     </>

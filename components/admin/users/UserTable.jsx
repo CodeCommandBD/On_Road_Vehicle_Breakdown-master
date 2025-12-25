@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import ImageUpload from "@/components/common/ImageUpload";
+import UserDetailsModal from "./UserDetailsModal";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -27,6 +28,7 @@ export default function UserTable() {
   // Contract Modal State
   const [showContractModal, setShowContractModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [contractForm, setContractForm] = useState({
     documentUrl: "",
@@ -165,6 +167,42 @@ export default function UserTable() {
     }
   };
 
+  const getUserActions = (user) => {
+    const actions = [
+      {
+        label: "View Details",
+        icon: Eye,
+        color: "text-white/80",
+        onClick: () => {
+          setSelectedUser(user);
+          setShowDetailsModal(true);
+        },
+      },
+      {
+        label: "Adjust Points",
+        icon: Award,
+        color: "text-orange-400",
+        onClick: () => handleAdjustPoints(user._id, user.rewardPoints),
+        separator: true,
+      },
+      {
+        label: "Manage Contract",
+        icon: FileText,
+        color: "text-blue-400",
+        onClick: () => openContractModal(user),
+        separator: true,
+      },
+      {
+        label: "Delete User",
+        icon: Trash2,
+        color: "text-red-400",
+        onClick: () => handleDelete(user._id),
+        separator: true,
+      },
+    ];
+    return actions;
+  };
+
   return (
     <div className="bg-[#1E1E1E] rounded-xl border border-white/5 overflow-hidden">
       {/* Table Header / Toolbar */}
@@ -201,6 +239,9 @@ export default function UserTable() {
             <option value="garage" className="bg-[#1A1A1A] text-white">
               Garage
             </option>
+            <option value="mechanic" className="bg-[#1A1A1A] text-white">
+              Mechanic
+            </option>
             <option value="admin" className="bg-[#1A1A1A] text-white">
               Admin
             </option>
@@ -234,6 +275,12 @@ export default function UserTable() {
               <th className="px-6 py-4">Role</th>
               <th className="px-6 py-4">Points</th>
               <th className="px-6 py-4">Status</th>
+              {roleFilter === "mechanic" && (
+                <>
+                  <th className="px-6 py-4">Garage</th>
+                  <th className="px-6 py-4">Performance</th>
+                </>
+              )}
               <th className="px-6 py-4">Joined</th>
               <th className="px-6 py-4 text-right">Actions</th>
             </tr>
@@ -264,6 +311,8 @@ export default function UserTable() {
                         ? "bg-purple-500/10 text-purple-400 border-purple-500/20"
                         : user.role === "garage"
                         ? "bg-orange-500/10 text-orange-400 border-orange-500/20"
+                        : user.role === "mechanic"
+                        ? "bg-green-500/10 text-green-400 border-green-500/20"
                         : "bg-blue-500/10 text-blue-400 border-blue-500/20"
                     }`}
                   >
@@ -276,6 +325,29 @@ export default function UserTable() {
                     {user.rewardPoints || 0}
                   </div>
                 </td>
+                {roleFilter === "mechanic" && (
+                  <>
+                    <td className="px-6 py-4">
+                      <div className="text-white/80 text-sm font-medium">
+                        {user.garageId?.name || "N/A"}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm">
+                        <div className="text-yellow-400 flex items-center gap-1">
+                          <span className="font-bold">
+                            {user.mechanicProfile?.rating?.average?.toFixed(
+                              1
+                            ) || "0.0"}
+                          </span>
+                          <span className="text-white/40 text-xs">
+                            ({user.mechanicProfile?.completedJobs || 0} Jobs)
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                  </>
+                )}
                 <td className="px-6 py-4">
                   <span
                     className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
@@ -312,7 +384,7 @@ export default function UserTable() {
                       }}
                       className="p-2 hover:bg-white/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                     >
-                      <MoreVertical size={18} className="text-white/60" />
+                      <MoreVertical size={18} className="text-white" />
                     </button>
 
                     {/* Dropdown Menu */}
@@ -332,46 +404,25 @@ export default function UserTable() {
                             top: `${openDropdown.y}px`,
                           }}
                         >
-                          <button
-                            onClick={() => {
-                              setOpenDropdown(null);
-                              // View details action
-                            }}
-                            className="w-full px-4 py-3 text-left text-white/80 hover:bg-white/10 transition-colors flex items-center gap-2 text-sm"
-                          >
-                            <Eye size={16} />
-                            View Details
-                          </button>
-                          <button
-                            onClick={() => {
-                              handleAdjustPoints(user._id, user.rewardPoints);
-                              setOpenDropdown(null);
-                            }}
-                            className="w-full px-4 py-3 text-left text-orange-400 hover:bg-orange-500/10 transition-colors flex items-center gap-2 text-sm border-t border-white/10"
-                          >
-                            <Award size={16} />
-                            Adjust Points
-                          </button>
-                          <button
-                            onClick={() => {
-                              openContractModal(user);
-                              setOpenDropdown(null);
-                            }}
-                            className="w-full px-4 py-3 text-left text-blue-400 hover:bg-blue-500/10 transition-colors flex items-center gap-2 text-sm border-t border-white/10"
-                          >
-                            <FileText size={16} />
-                            Manage Contract
-                          </button>
-                          <button
-                            onClick={() => {
-                              handleDelete(user._id);
-                              setOpenDropdown(null);
-                            }}
-                            className="w-full px-4 py-3 text-left text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2 text-sm border-t border-white/10"
-                          >
-                            <Trash2 size={16} />
-                            Delete User
-                          </button>
+                          {getUserActions(user).map((action, index) => (
+                            <button
+                              key={index}
+                              onClick={() => {
+                                action.onClick();
+                                setOpenDropdown(null);
+                              }}
+                              className={`w-full px-4 py-3 text-left ${
+                                action.color
+                              } hover:bg-white/10 transition-colors flex items-center gap-2 text-sm ${
+                                action.separator
+                                  ? "border-t border-white/10"
+                                  : ""
+                              }`}
+                            >
+                              <action.icon size={16} />
+                              {action.label}
+                            </button>
+                          ))}
                         </div>
                       </>
                     )}
@@ -534,6 +585,14 @@ export default function UserTable() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* User Details Modal */}
+      {showDetailsModal && selectedUser && (
+        <UserDetailsModal
+          user={selectedUser}
+          onClose={() => setShowDetailsModal(false)}
+        />
       )}
     </div>
   );

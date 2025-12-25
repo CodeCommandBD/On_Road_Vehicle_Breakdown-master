@@ -25,8 +25,11 @@ export default function IntegrationsPage() {
   const [generating, setGenerating] = useState(false);
 
   // Access Control: Premium/Enterprise only
-  const hasAccess = ["premium", "enterprise"].includes(user?.membershipTier);
-  const isEnterprise = user?.membershipTier === "enterprise";
+  const hasAccess =
+    ["premium", "enterprise"].includes(user?.membershipTier) ||
+    ["premium", "enterprise"].includes(user?.planTier);
+  const isEnterprise =
+    user?.membershipTier === "enterprise" || user?.planTier === "enterprise";
 
   useEffect(() => {
     if (hasAccess) {
