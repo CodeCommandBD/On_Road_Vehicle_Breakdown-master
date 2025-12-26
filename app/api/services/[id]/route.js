@@ -20,7 +20,7 @@ const verifyAdmin = async (request) => {
 export async function PUT(request, { params }) {
   try {
     await dbConnect();
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     // Optional: Add Admin Check here if strict security is needed.
@@ -64,7 +64,7 @@ export async function PATCH(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     await dbConnect();
-    const { id } = params;
+    const { id } = await params;
 
     const deletedService = await Service.findByIdAndDelete(id);
 

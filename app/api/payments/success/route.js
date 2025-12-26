@@ -3,7 +3,7 @@ import connectDB from "@/lib/db/connect";
 import Payment from "@/lib/db/models/Payment";
 import Subscription from "@/lib/db/models/Subscription";
 import User from "@/lib/db/models/User";
-import Plan from "@/lib/db/models/Plan";
+// Plan model replaced by Package, accessed via populate
 import Garage from "@/lib/db/models/Garage";
 
 export async function POST(request) {
@@ -148,10 +148,12 @@ export async function POST(request) {
       }
       // ----------------------------
 
-      // Upgrade Garage Membership (Top Listing Benefit)
+      // Upgrade Garage Membership
       if (
+        subscription.planId.type === "garage" ||
         subscription.planId.tier === "premium" ||
         subscription.planId.tier === "standard" ||
+        subscription.planId.tier === "garage_pro" ||
         subscription.planId.isFeatured
       ) {
         await Garage.updateMany(
@@ -160,6 +162,7 @@ export async function POST(request) {
             $set: {
               isFeatured: true, // Auto-Feature for Top Listing
               membershipTier: subscription.planId.tier,
+              membershipExpiry: subscription.endDate,
             },
           }
         );

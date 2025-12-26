@@ -131,14 +131,6 @@ export async function PATCH(request, { params }) {
     // Authorization check
     let isAuthorized = false;
 
-    console.log(
-      "PATCH DEBUG: User Role:",
-      decoded.role,
-      "User ID:",
-      decoded.userId
-    );
-    console.log("PATCH DEBUG: Booking User:", booking.user?.toString());
-
     if (decoded.role === "admin") {
       isAuthorized = true;
     } else if (
@@ -156,12 +148,10 @@ export async function PATCH(request, { params }) {
       decoded.role === "user" &&
       booking.user?.toString() === decoded.userId
     ) {
-      console.log("PATCH DEBUG: User authorized to update own booking");
       isAuthorized = true;
     }
 
     if (!isAuthorized) {
-      console.log("PATCH DEBUG: Access Denied");
       return NextResponse.json(
         { success: false, message: "Forbidden: You do not have permission" },
         { status: 403 }
@@ -170,11 +160,9 @@ export async function PATCH(request, { params }) {
 
     // Update fields
     if (status) {
-      console.log("PATCH DEBUG: Attempting status update to:", status);
       // STRICT STATE MACHINE: Validate transition
       const validation = validateStatusTransition(booking.status, status);
       if (validation !== true) {
-        console.log("PATCH DEBUG: Validation failed:", validation);
         return NextResponse.json(
           { success: false, message: validation },
           { status: 400 }
@@ -191,7 +179,6 @@ export async function PATCH(request, { params }) {
         // ... (points logic)
       } else if (status === "cancelled") {
         booking.cancelledAt = new Date();
-        console.log("PATCH DEBUG: Setting cancelledAt");
         // CANCELLATION POLICY: If cancelled after start, charge fee
         if (booking.status === "in_progress" || booking.startedAt) {
           const cancellationFee = 100;

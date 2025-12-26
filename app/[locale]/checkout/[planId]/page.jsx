@@ -57,7 +57,7 @@ export default function CheckoutPage() {
 
   const fetchPlan = async () => {
     try {
-      const response = await fetch(`/api/plans/${planId}`);
+      const response = await fetch(`/api/packages/${planId}`);
       const data = await response.json();
       if (data.success) {
         setPlan(data.data.plan);

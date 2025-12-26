@@ -18,6 +18,9 @@ import {
   Award,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { useSelector } from "react-redux";
+import { selectUser } from "@/store/slices/authSlice";
+import LockedFeature from "@/components/common/LockedFeature";
 
 export default function TeamManagementPage() {
   const [loading, setLoading] = useState(true);
@@ -27,6 +30,14 @@ export default function TeamManagementPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
   const [memberToDelete, setMemberToDelete] = useState(null);
+  const user = useSelector(selectUser);
+
+  const isPremium =
+    (user?.garage?.membershipTier === "premium" ||
+      user?.garage?.membershipTier === "enterprise" ||
+      user?.garage?.membershipTier === "garage_pro") &&
+    (!user?.garage?.membershipExpiry ||
+      new Date(user.garage.membershipExpiry) > new Date());
 
   // Form State
   const [newUser, setNewUser] = useState({
@@ -39,8 +50,28 @@ export default function TeamManagementPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchTeam();
-  }, []);
+    if (isPremium) {
+      fetchTeam();
+    } else {
+      setLoading(false);
+    }
+  }, [isPremium]);
+
+  if (!isPremium && !loading) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">
+          Team Management
+        </h1>
+        <div className="bg-white rounded-3xl overflow-hidden shadow-2xl">
+          <LockedFeature
+            title="Team Management"
+            description="Add mechanics, assign roles, and track performance. Upgrade to Garage Pro to unlock professional team management tools."
+          />
+        </div>
+      </div>
+    );
+  }
 
   const fetchTeam = async () => {
     try {

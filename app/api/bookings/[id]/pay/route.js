@@ -40,12 +40,20 @@ export async function POST(request, { params }) {
     const payerId = isGarageOrAdmin ? booking.user : decoded.userId;
     const initialStatus = isGarageOrAdmin ? "success" : "pending";
 
+    // Calculate Commission (Standard 15%, Premium/Enterprise 5% -> "10% Reduced")
+    const garageTier = booking.garage?.membershipTier || "free";
+    const commissionRate =
+      garageTier === "premium" || garageTier === "enterprise" ? 0.05 : 0.15;
+    const paymentAmount = amount || booking.actualCost || booking.estimatedCost;
+    const platformFee = Math.round(paymentAmount * commissionRate);
+    const netEarnings = paymentAmount - platformFee;
+
     // Create Manual Payment Record
     const payment = await Payment.create({
       userId: payerId,
       bookingId: id,
       type: "service_fee",
-      amount: amount || booking.actualCost || booking.estimatedCost,
+      amount: paymentAmount,
       paymentMethod: paymentMethod || "manual",
       transactionId: transactionId,
       status: initialStatus,
@@ -53,7 +61,11 @@ export async function POST(request, { params }) {
       metadata: {
         description: `Payment for Booking #${booking.bookingNumber}`,
         initiatedBy: decoded.role,
+        commissionRate,
+        platformFee,
+        netGarageEarnings: netEarnings,
       },
+      errorMessage: null, // Clear any previous error
     });
 
     // Handle Auto-Verification (For Garage/Admin)

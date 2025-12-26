@@ -6,7 +6,7 @@ import Service from "@/lib/db/models/Service"; // Ensure Service model is regist
 export async function GET(request, { params }) {
   try {
     await connectDB();
-    const { id } = params;
+    const { id } = await params;
 
     const garage = await Garage.findById(id)
       .populate("services")

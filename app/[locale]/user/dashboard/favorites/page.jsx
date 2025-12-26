@@ -18,7 +18,7 @@ import {
   Wrench,
   Navigation,
 } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/routing";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -28,6 +28,17 @@ export default function FavoritesPage() {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+
+  const dashboardLink =
+    user?.role === "admin"
+      ? "/admin/dashboard"
+      : user?.role === "garage" ||
+        user?.membershipTier === "garage_pro" ||
+        user?.membershipTier === "garage_basic"
+      ? "/garage/dashboard"
+      : user?.role === "mechanic"
+      ? "/mechanic/dashboard"
+      : "/user/dashboard";
 
   useEffect(() => {
     const hasOnlyIds = favorites.some((fav) => typeof fav === "string");
@@ -83,7 +94,7 @@ export default function FavoritesPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <Link
-            href="/user/dashboard"
+            href={dashboardLink}
             className="text-xs text-white/40 hover:text-orange-400 transition-colors flex items-center gap-1 mb-2 group"
           >
             <ChevronLeft

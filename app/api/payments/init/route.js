@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/connect";
 import { getCurrentUser } from "@/lib/utils/auth";
-import Plan from "@/lib/db/models/Plan";
+import Package from "@/lib/db/models/Package";
 import User from "@/lib/db/models/User";
 import Payment from "@/lib/db/models/Payment";
 import Subscription from "@/lib/db/models/Subscription";
@@ -65,26 +65,35 @@ export async function POST(request) {
       );
     }
 
-    // Get plan details
-    const plan = await Plan.findById(planId);
-    if (!plan) {
+    // Get package details (Frontend calls it planId, but it refers to Package model)
+    console.log(`Payment Init: Searching for Package with ID: ${planId}`);
+    const pkg = await Package.findById(planId);
+
+    if (!pkg) {
+      console.error(`Payment Init: Package not found for ID: ${planId}`);
+      // Log all available packages to help debug
+      const allPackages = await Package.find({}, "_id name tier");
+      console.log("Available Packages:", JSON.stringify(allPackages, null, 2));
+
       return NextResponse.json(
-        { success: false, message: "Plan not found" },
+        { success: false, message: `Plan not found (ID: ${planId})` },
         { status: 404 }
       );
     }
+    console.log(`Payment Init: Found Package: ${pkg.name} (${pkg.tier})`);
 
     // Calculate amount
     const amount =
-      billingCycle === "monthly" ? plan.price.monthly : plan.price.yearly;
+      billingCycle === "monthly" ? pkg.price.monthly : pkg.price.yearly;
 
     // Generate unique transaction ID
     const transactionId = `TXN-${Date.now()}-${user._id.toString().slice(-6)}`;
 
     // Create pending subscription
+    // Note: We are storing pkg._id as planId in Subscription for consistency
     const subscription = await Subscription.create({
       userId: user._id,
-      planId: plan._id,
+      planId: pkg._id,
       status: "pending",
       billingCycle,
       startDate: new Date(),
@@ -114,7 +123,7 @@ export async function POST(request) {
         billingAddress: billingInfo.address || "",
       },
       metadata: {
-        description: `${plan.name} - ${billingCycle} subscription`,
+        description: `${pkg.name} - ${billingCycle} subscription`,
       },
     });
 
@@ -147,7 +156,7 @@ export async function POST(request) {
       fail_url: `${baseUrl}/api/payments/fail`,
       cancel_url: `${baseUrl}/api/payments/cancel`,
       ipn_url: `${baseUrl}/api/payments/ipn`,
-      product_name: plan.name,
+      product_name: pkg.name,
       product_category: "Subscription",
       product_profile: "general",
       cus_name: billingInfo.name,

@@ -12,7 +12,8 @@ import fs from "fs";
 export async function GET(request, { params }) {
   try {
     await connectDB();
-    console.log("Generating receipt for:", params.id);
+    const { id } = await params;
+    console.log("Generating receipt for:", id);
     const token = request.cookies.get("token")?.value;
     const decoded = await verifyToken(token);
 
@@ -23,7 +24,7 @@ export async function GET(request, { params }) {
       );
     }
 
-    const { id } = params;
+    // const { id } = await params; (already awaited above)
     const booking = await Booking.findById(id)
       .populate("user", "name email phone")
       .populate("garage", "name address phone email")

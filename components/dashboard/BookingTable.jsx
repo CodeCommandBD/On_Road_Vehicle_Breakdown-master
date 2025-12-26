@@ -189,7 +189,11 @@ export default function BookingTable({
                 </td>
                 <td className="px-4 py-4">
                   {type === "user" ? (
-                    <UserBookingActions booking={booking} t={t} />
+                    <UserBookingActions
+                      booking={booking}
+                      t={t}
+                      onStatusUpdate={onStatusUpdate}
+                    />
                   ) : (
                     <GarageBookingActions
                       booking={booking}
@@ -641,7 +645,7 @@ function GarageBookingActions({ booking, onStatusUpdate, team, t }) {
                 <button
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-all text-white/80 hover:text-white"
                   onClick={() => {
-                    onStatusUpdate(booking._id, "accepted");
+                    onStatusUpdate(booking._id, "confirmed");
                     setIsOpen(false);
                   }}
                 >
@@ -650,7 +654,7 @@ function GarageBookingActions({ booking, onStatusUpdate, team, t }) {
                 </button>
               )}
 
-              {booking.status === "accepted" && onStatusUpdate && (
+              {booking.status === "confirmed" && onStatusUpdate && (
                 <button
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-all text-white/80 hover:text-white"
                   onClick={() => {

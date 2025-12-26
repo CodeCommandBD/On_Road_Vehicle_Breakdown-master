@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, Link } from "@/i18n/routing";
 import { useSelector } from "react-redux";
 import { selectUser, selectIsAuthenticated } from "@/store/slices/authSlice";
 import {
@@ -17,7 +17,6 @@ import {
   Clock,
   ArrowLeft,
 } from "lucide-react";
-import Link from "next/link";
 import axios from "axios";
 import InvoiceDocument from "@/components/pdf/InvoiceDocument";
 
@@ -140,13 +139,24 @@ export default function BillingPage() {
   const currentPlan = subscription?.subscription?.planId;
   const isSubscribed = subscription?.membershipTier !== "free";
 
+  const dashboardLink =
+    user?.role === "admin"
+      ? "/admin/dashboard"
+      : user?.role === "garage" ||
+        user?.membershipTier === "garage_pro" ||
+        user?.membershipTier === "garage_basic"
+      ? "/garage/dashboard"
+      : user?.role === "mechanic"
+      ? "/mechanic/dashboard"
+      : "/user/dashboard";
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-black py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <Link
-            href="/dashboard"
+            href={dashboardLink}
             className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors mb-4"
           >
             <ArrowLeft className="w-4 h-4" />

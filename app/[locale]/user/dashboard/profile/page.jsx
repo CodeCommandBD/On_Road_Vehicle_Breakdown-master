@@ -376,12 +376,44 @@ export default function ProfilePage() {
             </div>
             <div className="flex items-center gap-3">
               <div
-                className={`px-4 py-2 rounded-xl bg-gradient-to-r ${getMembershipColor(
-                  user.membershipTier
-                )} text-white font-semibold flex items-center gap-2`}
+                className={`px-4 py-2 rounded-xl bg-gradient-to-r ${
+                  user.membershipExpiry &&
+                  new Date(user.membershipExpiry) < new Date()
+                    ? "from-red-500 to-red-600"
+                    : getMembershipColor(user.membershipTier)
+                } text-white font-semibold flex flex-col items-center gap-0.5`}
               >
-                <Award className="w-4 h-4" />
-                {user.membershipTier?.toUpperCase() || "FREE"} {t("member")}
+                <div className="flex items-center gap-2">
+                  <Award className="w-4 h-4" />
+                  {user.membershipExpiry &&
+                  new Date(user.membershipExpiry) < new Date()
+                    ? "EXPIRED"
+                    : `${user.membershipTier?.toUpperCase() || "FREE"} ${t(
+                        "member"
+                      )}`}
+                </div>
+                {user.membershipExpiry && (
+                  <span className="text-[10px] opacity-80">
+                    {new Date(user.membershipExpiry) < new Date() ? (
+                      `Expired on: ${new Date(
+                        user.membershipExpiry
+                      ).toLocaleDateString()}`
+                    ) : (
+                      <>
+                        Renews on:{" "}
+                        {new Date(user.membershipExpiry).toLocaleDateString()}
+                        <span className="ml-1 font-extrabold text-orange-300">
+                          (
+                          {Math.ceil(
+                            (new Date(user.membershipExpiry) - new Date()) /
+                              (1000 * 60 * 60 * 24)
+                          )}{" "}
+                          days left)
+                        </span>
+                      </>
+                    )}
+                  </span>
+                )}
               </div>
               {!isEditing && (
                 <button

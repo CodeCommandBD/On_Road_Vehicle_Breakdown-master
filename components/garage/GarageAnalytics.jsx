@@ -36,8 +36,11 @@ export default function GarageAnalytics() {
   const [timeFilter, setTimeFilter] = useState(30);
 
   const isPremium =
-    user?.garage?.membershipTier === "premium" ||
-    user?.garage?.membershipTier === "enterprise";
+    (user?.garage?.membershipTier === "premium" ||
+      user?.garage?.membershipTier === "enterprise" ||
+      user?.garage?.membershipTier === "garage_pro") &&
+    (!user?.garage?.membershipExpiry ||
+      new Date(user.garage.membershipExpiry) > new Date());
 
   useEffect(() => {
     if (isPremium && user?.garage?._id) {

@@ -20,7 +20,7 @@ export async function GET(request, { params }) {
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     const contract = await Contract.findById(id)
       .populate("userId", "name email phone")

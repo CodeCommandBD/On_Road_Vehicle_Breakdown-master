@@ -134,6 +134,8 @@ export async function GET(req) {
       .populate("service", "name")
       .sort({ createdAt: -1 });
 
+    console.log(`[API] Bookings fetched: ${bookings.length}`);
+
     return NextResponse.json(
       { success: true, count: bookings.length, bookings },
       { status: 200 }
@@ -141,7 +143,7 @@ export async function GET(req) {
   } catch (error) {
     console.error("Error fetching bookings:", error);
     return NextResponse.json(
-      { success: false, message: "Failed to fetch bookings" },
+      { success: false, message: "Failed to fetch bookings: " + error.message },
       { status: 500 }
     );
   }
