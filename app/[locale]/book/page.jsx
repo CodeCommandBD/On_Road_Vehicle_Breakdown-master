@@ -91,6 +91,10 @@ function BookingForm() {
   const [isLoadingGarages, setIsLoadingGarages] = useState(false);
   const [selectedGarage, setSelectedGarage] = useState(null);
 
+  // New state for user vehicles (including fleet)
+  const [userVehicles, setUserVehicles] = useState([]);
+  const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
+
   const description = watch("description");
   const vehicleId = watch("vehicleId");
   const selectedServiceId = watch("serviceId");
@@ -151,13 +155,33 @@ function BookingForm() {
       }
     };
 
+    const fetchUserVehicles = async () => {
+      setIsLoadingVehicles(true);
+      try {
+        const res = await axios.get("/api/user/vehicles");
+        if (res.data.success) {
+          setUserVehicles(res.data.vehicles);
+        }
+      } catch (error) {
+        console.error("Error fetching vehicles:", error);
+        // Fallback to redux user vehicles if API fails
+        if (user && user.vehicles) {
+          setUserVehicles(user.vehicles);
+        }
+      } finally {
+        setIsLoadingVehicles(false);
+      }
+    };
+
     fetchInitialData();
+    fetchUserVehicles();
   }, [isAuthenticated, router, rebookId, setValue]);
 
   // Auto-fill vehicle details when a saved vehicle is selected
+  // Auto-fill vehicle details when a saved vehicle is selected
   useEffect(() => {
-    if (vehicleId && user?.vehicles) {
-      const vehicle = user.vehicles.find(
+    if (vehicleId && userVehicles.length > 0) {
+      const vehicle = userVehicles.find(
         (v) => v._id === vehicleId || v.id === vehicleId
       );
       if (vehicle) {
@@ -167,7 +191,7 @@ function BookingForm() {
         setValue("vehicleType", vehicle.vehicleType.toLowerCase());
       }
     }
-  }, [vehicleId, user, setValue]);
+  }, [vehicleId, userVehicles, setValue]);
 
   // Update estimated cost base price when service changes
   const [basePrice, setBasePrice] = useState(500);
@@ -464,25 +488,31 @@ function BookingForm() {
                   </h3>
 
                   {/* Saved Vehicles Dropdown */}
-                  {user?.vehicles?.length > 0 && (
+                  {(userVehicles.length > 0 || isLoadingVehicles) && (
                     <div className="mb-6 space-y-2">
                       <label className="text-sm font-medium text-gray-400">
                         Select from your Saved Vehicles
                       </label>
                       <select
                         {...register("vehicleId")}
-                        className="w-full bg-black/40 border border-[#ff4800]/30 rounded-xl p-3 text-white outline-none focus:border-[#ff4800] focus:ring-1 focus:ring-[#ff4800] transition-all"
+                        className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-[#ff4800] focus:ring-1 focus:ring-[#ff4800] transition-all"
+                        disabled={isLoadingVehicles}
                       >
                         <option value="" className="bg-gray-900">
-                          Add a new vehicle manually
+                          {isLoadingVehicles
+                            ? "Loading vehicles..."
+                            : "Add a new vehicle manually"}
                         </option>
-                        {user.vehicles.map((v) => (
+                        {userVehicles.map((v) => (
                           <option
                             key={v._id || v.id}
                             value={v._id || v.id}
                             className="bg-gray-900"
                           >
-                            {v.make} {v.model} ({v.licensePlate})
+                            {v.make} {v.model} ({v.licensePlate}){" "}
+                            {v.source && v.source !== "Personal"
+                              ? `[${v.source}]`
+                              : ""}
                           </option>
                         ))}
                       </select>
@@ -767,7 +797,7 @@ function BookingForm() {
           </div>
 
           {/* Sidebar Info */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-24 h-fit">
             {/* AI Estimate Card */}
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-[#ff4800] to-purple-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>

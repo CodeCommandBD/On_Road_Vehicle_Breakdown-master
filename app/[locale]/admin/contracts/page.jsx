@@ -34,23 +34,9 @@ export default function AdminContractsPage() {
     }
   };
 
-  const handleDownloadPDF = async (contractId, contractNumber) => {
-    try {
-      const response = await axios.get(`/api/contracts/${contractId}/pdf`, {
-        responseType: "blob",
-      });
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `contract-${contractNumber}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (error) {
-      console.error("Failed to download PDF:", error);
-      alert("Failed to download PDF");
-    }
+  const handleDownloadPDF = (contractId, contractNumber) => {
+    // Open the PDF/HTML view in a new tab for printing/saving
+    window.open(`/api/contracts/${contractId}/pdf`, "_blank");
   };
 
   const handleExport = () => {

@@ -87,7 +87,8 @@ export default function BookingTable({
 
   return (
     <div className="overflow-visible">
-      <div className="overflow-x-auto">
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="border-b border-white/10">
             <tr>
@@ -203,15 +204,131 @@ export default function BookingTable({
           </tbody>
         </table>
       </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden flex flex-col gap-4 p-4">
+        {filteredBookings.map((booking, index) => (
+          <div
+            key={booking._id}
+            className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col gap-4 relative"
+          >
+            {/* Header: ID & Status */}
+            <div className="flex justify-between items-start">
+              <div className="flex flex-col gap-1">
+                <span className="font-mono text-white/50 text-xs">
+                  {booking.bookingNumber ||
+                    `#${booking._id.substring(0, 8).toUpperCase()}`}
+                </span>
+                <h4 className="font-bold text-white">
+                  {booking.service?.name ||
+                    booking.description?.substring(0, 30) ||
+                    "General Service"}
+                </h4>
+              </div>
+              <span
+                className={cn(
+                  "px-2 py-1 rounded text-[10px] font-bold uppercase border",
+                  getStatusConfig(booking.status)
+                )}
+              >
+                {getStatusLabel(booking.status)}
+              </span>
+            </div>
+
+            {/* Garage/User Info */}
+            <div className="flex items-center gap-3 bg-white/5 p-3 rounded-lg border border-white/5">
+              <div className="w-10 h-10 rounded-full bg-gradient-orange flex items-center justify-center text-white text-sm font-bold shrink-0">
+                {type === "user"
+                  ? booking.garage?.name?.charAt(0) || "G"
+                  : booking.user?.name?.charAt(0) || "U"}
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-white/40 text-[10px] uppercase font-bold tracking-wider">
+                  {type === "user" ? t("garage") : t("user")}
+                </span>
+                <span className="text-white font-medium truncate">
+                  {type === "user"
+                    ? booking.garage?.name || "Unknown"
+                    : booking.user?.name || "Unknown"}
+                </span>
+              </div>
+            </div>
+
+            {/* Details Grid */}
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="flex flex-col gap-1">
+                <span className="text-white/40">{t("date")}</span>
+                <span className="text-white/80 font-medium">
+                  {formatDateTime(booking.createdAt)}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-white/40">{t("cost")}</span>
+                <span className="text-green-400 font-bold text-sm">
+                  {formatPrice(booking.estimatedCost)}
+                </span>
+              </div>
+            </div>
+
+            {/* Priority/Deadline Badges */}
+            <div className="flex flex-wrap gap-2">
+              {booking.priority === "critical" && (
+                <div className="flex items-center gap-1 px-2 py-1 bg-red-500/10 border border-red-500/20 rounded text-red-500 text-[10px] font-bold uppercase">
+                  <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+                  VIP CRITICAL
+                </div>
+              )}
+              {booking.priority === "high" && (
+                <span className="px-2 py-1 bg-orange-500/10 border border-orange-500/20 rounded text-orange-400 text-[10px] font-bold uppercase">
+                  HIGH PRIORITY
+                </span>
+              )}
+              {booking.slaDeadline &&
+                new Date(booking.slaDeadline) > new Date() &&
+                booking.status === "pending" && (
+                  <div className="px-2 py-1 bg-yellow-500/10 border border-yellow-500/20 rounded text-yellow-400 text-[10px] font-mono">
+                    Due:{" "}
+                    {new Date(booking.slaDeadline).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </div>
+                )}
+            </div>
+
+            {/* Actions */}
+            <div className="border-t border-white/10 pt-3 flex justify-between items-center">
+              <span className="text-white/30 text-xs italic">
+                Actions available
+              </span>
+              {type === "user" ? (
+                <UserBookingActions
+                  booking={booking}
+                  t={t}
+                  onStatusUpdate={onStatusUpdate}
+                />
+              ) : (
+                <GarageBookingActions
+                  booking={booking}
+                  onStatusUpdate={onStatusUpdate}
+                  team={team}
+                  t={t}
+                />
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
 // User Booking Actions Dropdown Component
-function UserBookingActions({ booking, t }) {
+function UserBookingActions({ booking, t, onStatusUpdate }) {
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState({ top: 0, right: 0 });
-  const buttonRef = useState(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
 
   const handleToggle = (e) => {
     if (!isOpen) {
@@ -224,6 +341,34 @@ function UserBookingActions({ booking, t }) {
     setIsOpen(!isOpen);
   };
 
+  const handleCall = () => {
+    setIsOpen(false);
+    setShowPhoneModal(true);
+  };
+
+  const handleCancelClick = () => {
+    setIsOpen(false);
+    setShowCancelModal(true);
+  };
+
+  const confirmCancel = () => {
+    if (onStatusUpdate) {
+      onStatusUpdate(booking._id, "cancelled");
+    }
+    setShowCancelModal(false);
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    // Simple toast fallback if toast is not imported in this scope, but usually it is.
+    // Assuming toast is available from parent scope imports
+    try {
+      toast.success("Copied to clipboard");
+    } catch (e) {
+      alert("Copied!");
+    }
+  };
+
   return (
     <div className="flex items-center justify-end">
       <button
@@ -233,6 +378,8 @@ function UserBookingActions({ booking, t }) {
       >
         <MoreVertical className="w-4 h-4" />
       </button>
+
+      {/* Dropdown Portal */}
       {isOpen &&
         createPortal(
           <>
@@ -269,7 +416,7 @@ function UserBookingActions({ booking, t }) {
                     </Link>
                     <button
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-all text-white/80 hover:text-white"
-                      onClick={() => setIsOpen(false)}
+                      onClick={handleCall}
                     >
                       <Phone className="w-4 h-4 text-orange-400" />
                       <span className="text-sm font-medium">Call Garage</span>
@@ -280,7 +427,7 @@ function UserBookingActions({ booking, t }) {
               {booking.status === "pending" && (
                 <button
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 transition-all text-red-400 hover:text-red-300"
-                  onClick={() => setIsOpen(false)}
+                  onClick={handleCancelClick}
                 >
                   <XCircle className="w-4 h-4" />
                   <span className="text-sm font-medium">Cancel Booking</span>
@@ -309,6 +456,98 @@ function UserBookingActions({ booking, t }) {
               )}
             </div>
           </>,
+          document.body
+        )}
+
+      {/* Cancel Confirmation Modal */}
+      {showCancelModal &&
+        createPortal(
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+            <div className="bg-[#1A1A1A] border border-white/10 rounded-2xl w-full max-w-sm p-6 shadow-2xl transform scale-100 transition-all">
+              <div className="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mb-4 mx-auto">
+                <XCircle className="w-6 h-6 text-red-500" />
+              </div>
+              <h3 className="text-xl font-bold text-white text-center mb-2">
+                Cancel Booking?
+              </h3>
+              <p className="text-white/60 text-center text-sm mb-6">
+                Are you sure you want to cancel this booking? This action cannot
+                be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowCancelModal(false)}
+                  className="flex-1 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white font-medium transition-colors"
+                >
+                  No, Keep it
+                </button>
+                <button
+                  onClick={confirmCancel}
+                  className="flex-1 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold transition-colors"
+                >
+                  Yes, Cancel
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* Phone Number Modal (For Call Garage) */}
+      {showPhoneModal &&
+        createPortal(
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+            <div className="bg-[#1A1A1A] border border-white/10 rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+              <div className="w-12 h-12 bg-orange-500/10 rounded-full flex items-center justify-center mb-4 mx-auto">
+                <Phone className="w-6 h-6 text-orange-500" />
+              </div>
+              <h3 className="text-xl font-bold text-white text-center mb-2">
+                Garage Contact
+              </h3>
+
+              {booking.garage?.phone ? (
+                <>
+                  <div className="bg-white/5 rounded-xl p-4 mb-6 flex items-center justify-between">
+                    <span className="font-mono text-lg text-white">
+                      {booking.garage.phone}
+                    </span>
+                    <button
+                      onClick={() => copyToClipboard(booking.garage.phone)}
+                      className="text-xs bg-white/10 hover:bg-white/20 px-2 py-1 rounded text-white/60 hover:text-white transition-colors"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    <a
+                      href={`tel:${booking.garage.phone}`}
+                      className="w-full flex items-center justify-center px-4 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold transition-colors"
+                    >
+                      Call Now
+                    </a>
+                    <button
+                      onClick={() => setShowPhoneModal(false)}
+                      className="text-white/40 hover:text-white text-sm"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-white/60 text-center text-sm mb-6">
+                    This garage has not provided a contact number.
+                  </p>
+                  <button
+                    onClick={() => setShowPhoneModal(false)}
+                    className="w-full px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium transition-colors"
+                  >
+                    Close
+                  </button>
+                </>
+              )}
+            </div>
+          </div>,
           document.body
         )}
     </div>
@@ -432,7 +671,7 @@ function GarageBookingActions({ booking, onStatusUpdate, team, t }) {
                   <button
                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-500/10 transition-all text-red-400 hover:text-red-300"
                     onClick={() => {
-                      onStatusUpdate(booking._id, "canceled");
+                      onStatusUpdate(booking._id, "cancelled");
                       setIsOpen(false);
                     }}
                   >

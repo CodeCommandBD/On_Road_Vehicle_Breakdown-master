@@ -6,6 +6,8 @@ import Payment from "@/lib/db/models/Payment";
 import User from "@/lib/db/models/User";
 import Subscription from "@/lib/db/models/Subscription";
 import { verifyToken } from "@/lib/utils/auth";
+import TeamMember from "@/lib/db/models/TeamMember";
+import Organization from "@/lib/db/models/Organization";
 import mongoose from "mongoose";
 
 export async function GET(req) {
@@ -25,6 +27,28 @@ export async function GET(req) {
 
     const userId = new mongoose.Types.ObjectId(user.userId);
 
+    // Check if user is an Organization Owner
+    // If so, we want to show analytics for the ENTIRE organization (all members)
+    // If not, show only personal analytics
+
+    let targetUserIds = [userId];
+    let isOrgView = false;
+
+    const ownedOrg = await Organization.findOne({ owner: userId });
+
+    if (ownedOrg) {
+      isOrgView = true;
+      // Fetch all team members
+      const teamMembers = await TeamMember.find({
+        organization: ownedOrg._id,
+      }).select("user");
+
+      const memberIds = teamMembers.map((tm) => tm.user);
+
+      // Combine Owner ID + Member IDs
+      targetUserIds = [userId, ...memberIds];
+    }
+
     // Date ranges for analytics
     const twelveMonthsAgo = new Date();
     twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
@@ -38,7 +62,12 @@ export async function GET(req) {
 
     // Bookings by month (last 12 months)
     const bookingsByMonth = await Booking.aggregate([
-      { $match: { user: userId, createdAt: { $gte: twelveMonthsAgo } } },
+      {
+        $match: {
+          user: { $in: targetUserIds },
+          createdAt: { $gte: twelveMonthsAgo },
+        },
+      },
       {
         $group: {
           _id: {
@@ -54,7 +83,7 @@ export async function GET(req) {
 
     // Bookings by status
     const bookingsByStatus = await Booking.aggregate([
-      { $match: { user: userId } },
+      { $match: { user: { $in: targetUserIds } } },
       {
         $group: {
           _id: "$status",
@@ -65,7 +94,7 @@ export async function GET(req) {
 
     // Bookings by service type (populate service name)
     const bookingsByService = await Booking.aggregate([
-      { $match: { user: userId, status: "completed" } },
+      { $match: { user: { $in: targetUserIds }, status: "completed" } },
       {
         $lookup: {
           from: "services",
@@ -89,7 +118,9 @@ export async function GET(req) {
     ]);
 
     // Total bookings count
-    const totalBookings = await Booking.countDocuments({ user: userId });
+    const totalBookings = await Booking.countDocuments({
+      user: { $in: targetUserIds },
+    });
 
     // ============================================
     // 2. COST ANALYTICS (from Bookings & Payments)
@@ -111,7 +142,7 @@ export async function GET(req) {
 
     // Total spending calculation
     const totalSpentResult = await Booking.aggregate([
-      { $match: { user: userId, status: "completed" } },
+      { $match: { user: { $in: targetUserIds }, status: "completed" } },
       {
         $group: {
           _id: null,
@@ -126,7 +157,12 @@ export async function GET(req) {
     // ============================================
 
     const sosHistory = await SOS.aggregate([
-      { $match: { user: userId, createdAt: { $gte: sixMonthsAgo } } },
+      {
+        $match: {
+          user: { $in: targetUserIds },
+          createdAt: { $gte: sixMonthsAgo },
+        },
+      },
       {
         $group: {
           _id: { $month: "$createdAt" },
@@ -136,11 +172,13 @@ export async function GET(req) {
       { $sort: { _id: 1 } },
     ]);
 
-    const sosRequestsCount = await SOS.countDocuments({ user: userId });
+    const sosRequestsCount = await SOS.countDocuments({
+      user: { $in: targetUserIds },
+    });
 
     // SOS by emergency type
     const sosByType = await SOS.aggregate([
-      { $match: { user: userId } },
+      { $match: { user: { $in: targetUserIds } } },
       {
         $group: {
           _id: "$emergencyType",
@@ -179,13 +217,13 @@ export async function GET(req) {
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
     const recentIssues = await Booking.countDocuments({
-      user: userId,
+      user: { $in: targetUserIds },
       createdAt: { $gte: threeMonthsAgo },
       status: { $in: ["completed", "in_progress"] },
     });
 
     const recentSOS = await SOS.countDocuments({
-      user: userId,
+      user: { $in: targetUserIds },
       createdAt: { $gte: threeMonthsAgo },
     });
 
@@ -286,6 +324,8 @@ export async function GET(req) {
         healthScore: Math.round(healthScore),
         lastUpdated: new Date().toISOString(),
         isMockData: hasMockData,
+        isOrganizationView: isOrgView,
+        memberCount: targetUserIds.length,
       },
     });
   } catch (error) {

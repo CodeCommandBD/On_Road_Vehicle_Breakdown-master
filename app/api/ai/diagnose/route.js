@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import connectDB from "@/lib/db/connection";
 import Diagnosis from "@/lib/db/models/Diagnosis";
-import { verifyToken } from "@/lib/utils/auth";
+import { getCurrentUser } from "@/lib/utils/auth";
 import { logActivity } from "@/lib/utils/activity";
 import TeamMember from "@/lib/db/models/TeamMember";
 import User from "@/lib/db/models/User";
@@ -13,7 +13,7 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "");
 export async function GET(req) {
   try {
     await connectDB();
-    const user = await verifyToken(req);
+    const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
@@ -41,7 +41,7 @@ export async function GET(req) {
 export async function POST(req) {
   try {
     await connectDB();
-    const verifiedUser = await verifyToken(req);
+    const verifiedUser = await getCurrentUser();
     if (!verifiedUser) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
@@ -101,15 +101,18 @@ export async function POST(req) {
     }
 
     // --- REAL AI ANALYSIS START ---
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    let analysis;
+    try {
+      // Using 'gemini-flash-latest' which usually maps to the latest stable free-tier friendly model
+      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
-    const prompt = `
+      const prompt = `
       Act as an expert automotive mechanic with 20 years of experience in the Bangladesh automotive industry.
       Analyze the following vehicle symptoms and provide a comprehensive diagnosis.
       
       Vehicle: ${vehicleContext?.model || "Generic Car"} (${
-      vehicleContext?.year || "Unknown Year"
-    })
+        vehicleContext?.year || "Unknown Year"
+      })
       Symptoms: "${symptoms}"
       
       The user may provide symptoms in English or Bengali. You must analyze correctly regardless of the language.
@@ -136,30 +139,35 @@ export async function POST(req) {
       Do not include any markdown formatting or backticks, just the raw JSON string.
     `;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
 
-    // Clean up potential markdown code blocks if AI adds them
-    const cleanJson = text
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
+      // Clean up potential markdown code blocks if AI adds them
+      const cleanJson = text
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim();
 
-    let analysis;
-    try {
-      analysis = JSON.parse(cleanJson);
-    } catch (e) {
-      console.error("AI JSON Parse Error:", e, "Raw Text:", text);
+      try {
+        analysis = JSON.parse(cleanJson);
+      } catch (e) {
+        console.error("AI JSON Parse Error:", e, "Raw Text:", text);
+        throw new Error("Failed to parse AI response");
+      }
+    } catch (aiError) {
+      console.error("Gemini API Error (Detailed):", aiError);
+      // FALLBACK SIMULATION
       analysis = {
-        possibleCause: "Complex Issue (জটিল সমস্যা)",
-        estimatedCost: "৳500 (Consultation)",
-        immediateAction: "Visit a workshop for manual inspection.",
+        possibleCause: `AI Error: ${
+          aiError.message?.substring(0, 100) || "Check Server Logs"
+        }`,
+        estimatedCost: "৳0",
+        immediateAction: "Please check your Server Terminal for more details.",
         severity: "Medium",
-        preventiveMeasures: ["Drive carefully"],
+        preventiveMeasures: ["Check engine oil", "Listen for unusual sounds"],
       };
     }
-    // --- REAL AI ANALYSIS END ---
 
     // Save to Database
     const diagnosis = await Diagnosis.create({
@@ -195,7 +203,7 @@ export async function POST(req) {
   } catch (error) {
     console.error("AI Diagnosis Error:", error);
     return NextResponse.json(
-      { success: false, message: "Internal Server Error" },
+      { success: false, message: `Internal Server Error: ${error.message}` },
       { status: 500 }
     );
   }
