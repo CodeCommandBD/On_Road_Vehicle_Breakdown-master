@@ -142,12 +142,15 @@ export default function MechanicLayout({ children }) {
       <header className="bg-[#020617] border-b border-white/5 sticky top-0 z-30 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {/* Hamburger hidden as per request */}
-          <img
-            src="/logo.png"
-            alt="Logo"
-            className="h-8 w-auto object-contain"
-            onError={(e) => (e.target.style.display = "none")}
-          />
+          {/* Hamburger hidden as per request */}
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center">
+              <Home className="w-5 h-5 text-white" />
+            </div>
+            <span className="text-lg font-black text-white tracking-tight">
+              C<span className="text-orange-500">od</span>eMand
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">

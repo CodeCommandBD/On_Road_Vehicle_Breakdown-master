@@ -65,7 +65,7 @@ export async function GET(request, { params }) {
       isAuthorized = true;
     } else if (
       decoded.role === "mechanic" &&
-      booking.assignedMechanic?.toString() === decoded.userId
+      booking.assignedMechanic?._id?.toString() === decoded.userId
     ) {
       isAuthorized = true;
     }

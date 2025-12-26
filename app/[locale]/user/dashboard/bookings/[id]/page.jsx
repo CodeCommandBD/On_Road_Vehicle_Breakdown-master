@@ -39,6 +39,9 @@ export default function BookingDetailsPage() {
   const [rejecting, setRejecting] = useState(false);
   const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [disputing, setDisputing] = useState(false);
+  // Estimate State
+  const [showEstimateModal, setShowEstimateModal] = useState(false);
+  const [respondingToEstimate, setRespondingToEstimate] = useState(false);
 
   // Payment States
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -52,6 +55,12 @@ export default function BookingDetailsPage() {
       fetchCurrentUser();
     }
   }, [id]);
+
+  useEffect(() => {
+    if (booking?.status === "estimate_sent") {
+      setShowEstimateModal(true);
+    }
+  }, [booking?.status]);
 
   const fetchCurrentUser = async () => {
     try {
@@ -110,6 +119,30 @@ export default function BookingDetailsPage() {
       toast.error("Failed to reject towing");
     } finally {
       setRejecting(false);
+    }
+  };
+
+  const handleEstimateResponse = async (action) => {
+    // 'approve' or 'reject'
+    setRespondingToEstimate(true);
+    try {
+      const res = await fetch("/api/user/estimate/respond", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId: id, action }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        toast.success(result.message);
+        setShowEstimateModal(false);
+        fetchBookingDetails();
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      toast.error("Failed to respond to estimate");
+    } finally {
+      setRespondingToEstimate(false);
     }
   };
 
@@ -227,30 +260,62 @@ export default function BookingDetailsPage() {
       id: "pending",
       label: "Booked",
       date: booking.createdAt,
-      isCompleted: true, // Booked is always done if it exists
+      isCompleted: [
+        "confirmed",
+        "on_the_way",
+        "diagnosing",
+        "estimate_sent",
+        "in_progress",
+        "payment_pending",
+        "completed",
+      ].includes(booking.status),
       isActive: booking.status === "pending",
     },
     {
       id: "confirmed",
       label: "Confirmed",
-      // Date is tricky if strict not tracking specific timestamps for each, but we can fallback
-      date:
-        booking.confirmedAt ||
-        (booking.status !== "pending" ? booking.updatedAt : null),
-      isCompleted: ["confirmed", "in_progress", "completed"].includes(
-        booking.status
-      ),
+      date: booking.confirmedAt,
+      isCompleted: [
+        "on_the_way",
+        "diagnosing",
+        "estimate_sent",
+        "in_progress",
+        "payment_pending",
+        "completed",
+      ].includes(booking.status),
       isActive: booking.status === "confirmed",
+    },
+    {
+      id: "on_the_way",
+      label: "On The Way",
+      // Use updatedAt if confirmedAt is past, effectively showing progress
+      date: booking.updatedAt,
+      isCompleted: [
+        "diagnosing",
+        "estimate_sent",
+        "in_progress",
+        "payment_pending",
+        "completed",
+      ].includes(booking.status),
+      isActive: booking.status === "on_the_way",
+    },
+    {
+      id: "diagnosing",
+      label: "Diagnosis",
+      date: booking.updatedAt,
+      isCompleted: [
+        "estimate_sent",
+        "in_progress",
+        "payment_pending",
+        "completed",
+      ].includes(booking.status),
+      isActive: ["diagnosing", "estimate_sent"].includes(booking.status),
     },
     {
       id: "in_progress",
       label: "In Progress",
-      date:
-        booking.startedAt ||
-        (["in_progress", "completed"].includes(booking.status)
-          ? booking.updatedAt
-          : null),
-      isCompleted: ["in_progress", "completed"].includes(booking.status),
+      date: booking.startedAt,
+      isCompleted: ["payment_pending", "completed"].includes(booking.status),
       isActive: booking.status === "in_progress",
     },
     {
@@ -258,7 +323,8 @@ export default function BookingDetailsPage() {
       label: "Completed",
       date: booking.completedAt,
       isCompleted: booking.status === "completed",
-      isActive: booking.status === "completed",
+      isActive:
+        booking.status === "completed" || booking.status === "payment_pending",
     },
   ];
 
@@ -529,12 +595,18 @@ export default function BookingDetailsPage() {
                         Reject Towing & Cancel
                       </button>
                     )}
-                    <button
-                      onClick={() => setShowPaymentModal(true)}
-                      className="w-full btn btn-primary"
-                    >
-                      Pay Now
-                    </button>
+
+                    {/* Only show Pay Now if status is payment_pending or completed (but unpaid) */}
+                    {(booking.status === "payment_pending" ||
+                      booking.status === "completed") && (
+                      <button
+                        onClick={() => setShowPaymentModal(true)}
+                        className="w-full py-3 bg-orange-600 text-white rounded-xl font-bold hover:bg-orange-700 transition-all shadow-lg shadow-orange-900/20"
+                      >
+                        Pay Now
+                      </button>
+                    )}
+
                     <button
                       onClick={() => setShowDisputeModal(true)}
                       className="w-full py-2.5 rounded-xl text-sm font-bold border border-red-500/30 text-red-500 hover:bg-red-500/5 transition-all"
@@ -691,6 +763,67 @@ export default function BookingDetailsPage() {
           </div>
         </div>
       )}
+      {/* Estimate Modal */}
+      {showEstimateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl relative">
+            <h3 className="text-xl font-bold mb-4 text-gray-900 flex items-center gap-2">
+              <FileText className="w-6 h-6 text-orange-500" />
+              Service Estimate
+            </h3>
+            <div className="space-y-4 mb-6 max-h-[60vh] overflow-y-auto">
+              {booking.billItems &&
+                booking.billItems.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex justify-between items-center bg-gray-50 p-3 rounded-xl"
+                  >
+                    <div>
+                      <p className="font-bold text-gray-800">
+                        {item.description}
+                      </p>
+                      <span className="text-xs uppercase font-bold text-gray-400">
+                        {item.category}
+                      </span>
+                    </div>
+                    <span className="font-bold text-lg">৳{item.amount}</span>
+                  </div>
+                ))}
+              <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+                <span className="font-bold text-xl">Total Estimate</span>
+                <span className="font-black text-2xl text-orange-600">
+                  ৳{booking.estimatedCost}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-4 bg-blue-50 text-blue-800 rounded-xl text-sm mb-6">
+              <p className="font-bold mb-1">Important:</p>
+              <p>
+                Approval starts the job immediately. <br /> Rejection incurs a{" "}
+                <b>৳150</b> visit fee for the mechanic's time.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => handleEstimateResponse("reject")}
+                disabled={respondingToEstimate}
+                className="flex-1 py-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl font-bold"
+              >
+                Reject (Pay ৳150)
+              </button>
+              <button
+                onClick={() => handleEstimateResponse("approve")}
+                disabled={respondingToEstimate}
+                className="flex-[2] py-3 bg-orange-500 text-white hover:bg-orange-600 rounded-xl font-bold shadow-lg shadow-orange-500/20"
+              >
+                Approve & Start
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Payment Modal */}
       {showPaymentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -710,11 +843,11 @@ export default function BookingDetailsPage() {
                 Select Method
               </label>
               <div className="grid grid-cols-2 gap-2">
-                {["bkash", "nagad", "cash", "sslcommerz"].map((method) => (
+                {["cash", "sslcommerz"].map((method) => (
                   <button
                     key={method}
                     onClick={() => setPaymentMethod(method)}
-                    className={`py-2 rounded-lg text-sm font-bold border capitalize ${
+                    className={`py-3 rounded-lg text-sm font-bold border capitalize ${
                       paymentMethod === method
                         ? "bg-orange-500 text-white border-orange-500"
                         : "bg-gray-50 text-gray-600 border-gray-200"
@@ -726,25 +859,6 @@ export default function BookingDetailsPage() {
               </div>
             </div>
 
-            {["bkash", "nagad"].includes(paymentMethod) && (
-              <div className="mb-6">
-                <label className="text-sm font-medium text-gray-700 block mb-2">
-                  Transaction ID (TrxID)
-                </label>
-                <input
-                  type="text"
-                  value={transactionId}
-                  onChange={(e) => setTransactionId(e.target.value)}
-                  placeholder="e.g. 9H7D6S5A"
-                  className="w-full p-3 border border-gray-200 rounded-xl outline-none focus:border-orange-500"
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  * Please send ৳{booking.actualCost || booking.estimatedCost}{" "}
-                  to the mechanics personal number and enter the TrxID here.
-                </p>
-              </div>
-            )}
-
             {paymentMethod === "cash" && (
               <div className="mb-6 p-4 bg-gray-50 rounded-xl text-sm text-gray-600">
                 Please hand over{" "}
@@ -754,9 +868,14 @@ export default function BookingDetailsPage() {
             )}
 
             {paymentMethod === "sslcommerz" && (
-              <div className="mb-6 p-4 bg-gray-50 rounded-xl text-sm text-gray-600">
-                You will be redirected to SSLCommerz gateway to pay via Card or
-                Mobile Banking securely.
+              <div className="mb-6 p-4 bg-blue-50 rounded-xl text-sm text-gray-700">
+                <p className="font-semibold mb-2">Secure Online Payment</p>
+                You will be redirected to SSLCommerz gateway to pay via:
+                <ul className="list-disc list-inside mt-2 text-xs">
+                  <li>bKash, Nagad, Rocket</li>
+                  <li>Credit/Debit Card</li>
+                  <li>Mobile/Internet Banking</li>
+                </ul>
               </div>
             )}
 
