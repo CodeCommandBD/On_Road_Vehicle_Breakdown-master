@@ -34,8 +34,8 @@ export async function GET(request) {
       date: today,
     });
 
-    // 2. Fetch Active Job (assigned to this mechanic and in_progress/confirmed)
-    const activeJob = await Booking.findOne({
+    // 2. Fetch Active Jobs (assigned to this mechanic and in_progress/confirmed)
+    const activeJobs = await Booking.find({
       assignedMechanic: decoded.userId,
       status: { $in: ["confirmed", "in_progress"] },
     }).populate("user", "name phone location");
@@ -77,7 +77,7 @@ export async function GET(request) {
           availability: mechanic.availability,
         },
         attendance,
-        activeJob,
+        activeJobs,
         openJobs,
         stats,
       },

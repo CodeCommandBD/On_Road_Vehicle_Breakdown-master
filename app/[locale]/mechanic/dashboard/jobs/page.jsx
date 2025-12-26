@@ -20,6 +20,8 @@ export default function OpenJobsPage() {
 
   useEffect(() => {
     fetchJobs();
+    const interval = setInterval(fetchJobs, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchJobs = async () => {

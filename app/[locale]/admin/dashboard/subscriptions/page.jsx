@@ -308,6 +308,22 @@ export default function SubscriptionsPage() {
               <option value="premium" className="bg-[#1A1A1A] text-white">
                 Premium
               </option>
+              {activeTab === "garages" && (
+                <>
+                  <option
+                    value="garage_basic"
+                    className="bg-[#1A1A1A] text-white"
+                  >
+                    Garage Basic
+                  </option>
+                  <option
+                    value="garage_pro"
+                    className="bg-[#1A1A1A] text-white"
+                  >
+                    Garage Pro
+                  </option>
+                </>
+              )}
               <option value="enterprise" className="bg-[#1A1A1A] text-white">
                 Enterprise
               </option>
@@ -591,6 +607,22 @@ export default function SubscriptionsPage() {
                     <option value="premium" className="bg-[#1A1A1A] text-white">
                       Premium
                     </option>
+                    {activeTab === "garages" && (
+                      <>
+                        <option
+                          value="garage_basic"
+                          className="bg-[#1A1A1A] text-white"
+                        >
+                          Garage Basic
+                        </option>
+                        <option
+                          value="garage_pro"
+                          className="bg-[#1A1A1A] text-white"
+                        >
+                          Garage Pro
+                        </option>
+                      </>
+                    )}
                     <option
                       value="enterprise"
                       className="bg-[#1A1A1A] text-white"

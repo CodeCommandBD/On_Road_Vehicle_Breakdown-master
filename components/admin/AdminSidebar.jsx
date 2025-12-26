@@ -1,7 +1,9 @@
 "use client";
 
-import { Link, usePathname } from "@/i18n/routing";
+import { Link, usePathname, useRouter } from "@/i18n/routing";
 import { useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { logout } from "@/store/slices/authSlice";
 import axios from "axios";
 import {
   LayoutDashboard,
@@ -66,6 +68,8 @@ const menuItems = [
 
 export default function AdminSidebar({ isOpen, onClose }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const dispatch = useDispatch();
   const [counts, setCounts] = useState({
     inquiries: 0,
     support: 0,
@@ -113,6 +117,16 @@ export default function AdminSidebar({ isOpen, onClose }) {
       return newCounts;
     });
   }, [pathname]);
+
+  const handleLogout = async () => {
+    try {
+      await axios.post("/api/auth/logout");
+      dispatch(logout());
+      router.push("/");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   return (
     <>
@@ -218,7 +232,10 @@ export default function AdminSidebar({ isOpen, onClose }) {
             <div className="text-xs font-semibold text-white/30 uppercase tracking-wider mb-4 px-3">
               Settings
             </div>
-            <button className="flex items-center gap-3 px-4 py-3.5 text-white/60 hover:bg-red-500/10 hover:text-red-500 w-full rounded-xl transition-all duration-200 text-left group">
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-3 px-4 py-3.5 text-white/60 hover:bg-red-500/10 hover:text-red-500 w-full rounded-xl transition-all duration-200 text-left group"
+            >
               <LogOut size={20} />
               <span className="font-medium">Logout</span>
             </button>

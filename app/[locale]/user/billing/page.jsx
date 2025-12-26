@@ -2,8 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, Link } from "@/i18n/routing";
-import { useSelector } from "react-redux";
-import { selectUser, selectIsAuthenticated } from "@/store/slices/authSlice";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  selectUser,
+  selectIsAuthenticated,
+  updateUser,
+} from "@/store/slices/authSlice";
 import {
   CreditCard,
   Download,
@@ -22,8 +26,27 @@ import InvoiceDocument from "@/components/pdf/InvoiceDocument";
 
 export default function BillingPage() {
   const router = useRouter();
+  const dispatch = useDispatch();
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
+
+  // Sync profile data on mount to ensure subscription tier is fresh
+  useEffect(() => {
+    const syncProfile = async () => {
+      try {
+        const res = await axios.get("/api/profile");
+        if (res.data.success) {
+          dispatch(updateUser(res.data.user));
+        }
+      } catch (error) {
+        console.error("Billing page - Profile sync failed:", error);
+      }
+    };
+
+    if (isAuthenticated) {
+      syncProfile();
+    }
+  }, [isAuthenticated, dispatch]);
 
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState(null);

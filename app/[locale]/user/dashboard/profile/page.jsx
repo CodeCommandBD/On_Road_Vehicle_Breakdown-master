@@ -264,6 +264,8 @@ export default function ProfilePage() {
       basic: "from-blue-500 to-blue-600",
       standard: "from-purple-500 to-purple-600",
       premium: "from-yellow-400 to-orange-500",
+      garage_basic: "from-cyan-500 to-blue-600",
+      garage_pro: "from-indigo-600 to-purple-700 shadow-glow-indigo",
     };
     return colors[tier] || colors.free;
   };

@@ -24,6 +24,7 @@ import { useSelector } from "react-redux";
 import { selectSearchTerm } from "@/store/slices/uiSlice";
 import { useTranslations } from "next-intl";
 import { createPortal } from "react-dom";
+import { toast } from "react-toastify";
 
 export default function BookingTable({
   type = "user",
@@ -80,7 +81,8 @@ export default function BookingTable({
       accepted: "bg-blue-500/20 text-blue-400 border-blue-500/50",
       "in-progress": "bg-purple-500/20 text-purple-400 border-purple-500/50",
       completed: "bg-green-500/20 text-green-400 border-green-500/50",
-      canceled: "bg-gray-500/20 text-gray-400 border-gray-500/50",
+      canceled: "bg-red-500/20 text-red-400 border-red-500/50",
+      cancelled: "bg-red-500/20 text-red-400 border-red-500/50",
     };
     return configs[status] || configs.pending;
   };
