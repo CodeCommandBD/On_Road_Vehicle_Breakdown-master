@@ -3,6 +3,7 @@
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
 import ChatInterface from "@/components/dashboard/ChatInterface";
+import LockedFeature from "@/components/common/LockedFeature";
 import { MessageSquare, ShieldCheck } from "lucide-react";
 
 export default function GarageMessagesPage() {
@@ -31,7 +32,18 @@ export default function GarageMessagesPage() {
       </div>
 
       <div className="bg-[#1A1A1A] border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
-        <ChatInterface userId={user._id} />
+        {(user?.garage?.membershipTier === "premium" ||
+          user?.garage?.membershipTier === "enterprise" ||
+          user?.garage?.membershipTier === "garage_pro") &&
+        (!user?.garage?.membershipExpiry ||
+          new Date(user.garage.membershipExpiry) > new Date()) ? (
+          <ChatInterface userId={user._id} />
+        ) : (
+          <LockedFeature
+            title="Direct Customer Chat"
+            description="Engage with your customers in real-time to build trust and close more bookings. Upgrade to Garage Pro to unlock this feature."
+          />
+        )}
       </div>
     </div>
   );

@@ -16,7 +16,7 @@ import {
   ChevronLeft,
   Activity,
 } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/routing";
 import axios from "axios";
 import { toast } from "react-toastify";
 

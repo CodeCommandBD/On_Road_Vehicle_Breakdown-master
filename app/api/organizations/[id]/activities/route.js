@@ -18,7 +18,7 @@ export async function GET(req, { params }) {
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     const { searchParams } = new URL(req.url);
     const limit = parseInt(searchParams.get("limit")) || 50;
 

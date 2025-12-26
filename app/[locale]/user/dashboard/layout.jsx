@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
 import { useSelector, useDispatch } from "react-redux";
 import {
   selectIsAuthenticated,
@@ -42,12 +42,18 @@ export default function UserDashboardLayout({ children }) {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push("/login");
-    } else if (!isLoading && user && user.role !== "user") {
-      // Redirect non-user roles to appropriate dashboards
+    } else if (!isLoading && user) {
+      // Redirect based on role and membership
       if (user.role === "admin") {
         router.push("/admin/dashboard");
-      } else if (user.role === "garage") {
-        router.push("/garage/dashboard"); // Garage uses the new garage dashboard
+      } else if (
+        user.role === "garage" ||
+        user.membershipTier === "garage_pro" ||
+        user.membershipTier === "garage_basic"
+      ) {
+        router.push("/garage/dashboard");
+      } else if (user.role === "mechanic") {
+        router.push("/mechanic/dashboard");
       }
     }
   }, [isLoading, isAuthenticated, user, router]);

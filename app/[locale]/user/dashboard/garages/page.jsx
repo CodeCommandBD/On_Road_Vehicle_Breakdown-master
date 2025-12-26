@@ -4,10 +4,21 @@ import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
 import LiveGarageTracker from "@/components/dashboard/LiveGarageTracker";
 import { MapPin, ChevronLeft } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/routing";
 
 export default function NearbyGaragesPage() {
   const user = useSelector(selectUser);
+
+  const dashboardLink =
+    user?.role === "admin"
+      ? "/admin/dashboard"
+      : user?.role === "garage" ||
+        user?.membershipTier === "garage_pro" ||
+        user?.membershipTier === "garage_basic"
+      ? "/garage/dashboard"
+      : user?.role === "mechanic"
+      ? "/mechanic/dashboard"
+      : "/user/dashboard";
 
   return (
     <div className="space-y-6">
@@ -15,7 +26,7 @@ export default function NearbyGaragesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <Link
-            href="/user/dashboard"
+            href={dashboardLink}
             className="text-xs text-white/40 hover:text-orange-400 transition-colors flex items-center gap-1 mb-2 group"
           >
             <ChevronLeft

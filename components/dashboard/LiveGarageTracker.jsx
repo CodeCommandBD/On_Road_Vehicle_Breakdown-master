@@ -7,6 +7,8 @@ import {
   Navigation,
   Phone,
   LocateFixed,
+  ShieldCheck,
+  Crown,
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
@@ -249,6 +251,19 @@ export default function LiveGarageTracker({ user }) {
                         <h4 className="text-white font-semibold group-hover:text-orange-400 transition-colors">
                           {garage.name}
                         </h4>
+                        {garage.isVerified && (
+                          <ShieldCheck
+                            className="w-4 h-4 text-blue-500 fill-blue-500/10"
+                            title="Verified Garage"
+                          />
+                        )}
+                        {(garage.membershipTier === "premium" ||
+                          garage.membershipTier === "enterprise") && (
+                          <Crown
+                            className="w-4 h-4 text-orange-500 fill-orange-500/10"
+                            title="Top Rated Pro"
+                          />
+                        )}
                         <div
                           className={`w-2 h-2 ${statusConfig.dotColor} rounded-full pulse-dot`}
                         ></div>

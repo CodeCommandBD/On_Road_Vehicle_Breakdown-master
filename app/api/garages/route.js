@@ -78,12 +78,42 @@ export async function GET(request) {
       sortObj = { isFeatured: -1, createdAt: -1 };
     }
 
-    // Fetch garages
-    const garages = await Garage.find(query)
+    // Fetch garages (fetch more to allow for re-ranking)
+    const fetchLimit = limit * 3;
+    let garages = await Garage.find(query)
       .populate("services", "name category")
       .sort(sortObj)
-      .limit(limit)
+      .limit(fetchLimit)
       .lean();
+
+    // Custom Ranking Logic: Boost Premium & Verified
+    if (!isNaN(lat) && !isNaN(lng)) {
+      garages.sort((a, b) => {
+        // Scoring system: Higher score = better rank
+        const getScore = (g) => {
+          let score = 0;
+          const isPremium =
+            (g.membershipTier === "premium" ||
+              g.membershipTier === "enterprise" ||
+              g.membershipTier === "garage_pro") &&
+            (!g.membershipExpiry || new Date(g.membershipExpiry) > new Date());
+          if (isPremium) score += 20; // Premium boost
+          if (g.isVerified) score += 10; // Verified boost
+          return score;
+        };
+
+        const scoreA = getScore(a);
+        const scoreB = getScore(b);
+
+        if (scoreA !== scoreB) {
+          return scoreB - scoreA; // Higher score first
+        }
+        return 0; // Maintain distance order if scores match
+      });
+
+      // Slice to original limit
+      garages = garages.slice(0, limit);
+    }
 
     const total =
       isNaN(lat) || isNaN(lng)

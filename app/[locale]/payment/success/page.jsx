@@ -5,8 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle, ArrowRight, Download } from "lucide-react";
 import Link from "next/link";
 import confetti from "canvas-confetti";
-import { useSelector } from "react-redux";
-import { selectUserRole } from "@/store/slices/authSlice";
+import { useSelector, useDispatch } from "react-redux";
+import { selectUserRole, updateUser } from "@/store/slices/authSlice";
+import axios from "axios";
 
 export default function PaymentSuccessPage() {
   const router = useRouter();
@@ -17,8 +18,24 @@ export default function PaymentSuccessPage() {
   const transaction = searchParams.get("transaction");
   const planName = searchParams.get("plan");
   const cycle = searchParams.get("cycle");
+  const dispatch = useDispatch();
 
   useEffect(() => {
+    // Refresh user profile to sync with Redux
+    const refreshProfile = async () => {
+      try {
+        const response = await axios.get("/api/profile");
+        if (response.data.success) {
+          dispatch(updateUser(response.data.user));
+          console.log("Profile synced with Redux after payment!");
+        }
+      } catch (err) {
+        console.error("Failed to sync profile:", err);
+      }
+    };
+
+    refreshProfile();
+
     // Trigger confetti animation
     const duration = 3 * 1000;
     const end = Date.now() + duration;

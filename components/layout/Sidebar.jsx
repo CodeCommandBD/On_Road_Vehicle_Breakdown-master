@@ -64,30 +64,30 @@ export default function Sidebar() {
         label: "Analytics",
         icon: TrendingUp,
         locked:
-          user?.membershipTier !== "premium" &&
-          user?.membershipTier !== "enterprise" &&
-          user?.planTier !== "premium" &&
-          user?.planTier !== "enterprise",
+          (user?.membershipTier !== "premium" &&
+            user?.membershipTier !== "enterprise") ||
+          (user?.membershipExpiry &&
+            new Date(user.membershipExpiry) < new Date()),
       },
       {
         href: "/user/dashboard/integrations",
         label: "CRM / Integrations",
         icon: Webhook,
         locked:
-          user?.membershipTier !== "premium" &&
-          user?.membershipTier !== "enterprise" &&
-          user?.planTier !== "premium" &&
-          user?.planTier !== "enterprise",
+          (user?.membershipTier !== "premium" &&
+            user?.membershipTier !== "enterprise") ||
+          (user?.membershipExpiry &&
+            new Date(user.membershipExpiry) < new Date()),
       },
       {
         href: "/user/dashboard/team",
         label: "Team Management",
         icon: Users,
         locked:
-          user?.membershipTier !== "premium" &&
-          user?.membershipTier !== "enterprise" &&
-          user?.planTier !== "premium" &&
-          user?.planTier !== "enterprise" &&
+          ((user?.membershipTier !== "premium" &&
+            user?.membershipTier !== "enterprise") ||
+            (user?.membershipExpiry &&
+              new Date(user.membershipExpiry) < new Date())) &&
           !user?.isTeamMember,
       },
       {
@@ -110,9 +110,10 @@ export default function Sidebar() {
         label: "Automation",
         icon: Activity,
         locked:
-          (user?.membershipTier === "free" ||
-            user?.membershipTier === "trial") &&
-          (user?.planTier === "free" || !user?.planTier),
+          user?.membershipTier === "free" ||
+          user?.membershipTier === "trial" ||
+          (user?.membershipExpiry &&
+            new Date(user.membershipExpiry) < new Date()),
       },
       { href: "/user/dashboard/profile", label: t("profile"), icon: User },
       {
@@ -125,10 +126,10 @@ export default function Sidebar() {
         label: "Reports",
         icon: FileText,
         locked:
-          user?.membershipTier !== "premium" &&
-          user?.membershipTier !== "enterprise" &&
-          user?.planTier !== "premium" &&
-          user?.planTier !== "enterprise",
+          (user?.membershipTier !== "premium" &&
+            user?.membershipTier !== "enterprise") ||
+          (user?.membershipExpiry &&
+            new Date(user.membershipExpiry) < new Date()),
       },
       {
         href: "/user/dashboard/support",
@@ -174,16 +175,22 @@ export default function Sidebar() {
         label: "Analytics",
         icon: TrendingUp,
         locked:
-          user?.garage?.membershipTier !== "premium" &&
-          user?.garage?.membershipTier !== "enterprise",
+          (user?.garage?.membershipTier !== "premium" &&
+            user?.garage?.membershipTier !== "enterprise" &&
+            user?.garage?.membershipTier !== "garage_pro") ||
+          (user?.garage?.membershipExpiry &&
+            new Date(user.garage.membershipExpiry) < new Date()),
       },
       {
         href: "/garage/dashboard/team",
         label: "Team Management",
         icon: Users,
         locked:
-          user?.garage?.membershipTier !== "premium" &&
-          user?.garage?.membershipTier !== "enterprise",
+          (user?.garage?.membershipTier !== "premium" &&
+            user?.garage?.membershipTier !== "enterprise" &&
+            user?.garage?.membershipTier !== "garage_pro") ||
+          (user?.garage?.membershipExpiry &&
+            new Date(user.garage.membershipExpiry) < new Date()),
       },
       {
         href: "/garage/dashboard/subscription",

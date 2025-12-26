@@ -1,20 +1,41 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useSelector } from "react-redux";
+import { useRouter } from "@/i18n/routing";
+import { useSelector, useDispatch } from "react-redux";
 import {
   selectIsAuthenticated,
   selectAuthLoading,
+  updateUser,
 } from "@/store/slices/authSlice";
 import Sidebar from "@/components/layout/Sidebar";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { Loader2 } from "lucide-react";
+import axios from "axios";
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
+  const dispatch = useDispatch();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const isLoading = useSelector(selectAuthLoading);
+
+  // Sync profile data on mount
+  useEffect(() => {
+    const syncProfile = async () => {
+      try {
+        const res = await axios.get("/api/profile");
+        if (res.data.success) {
+          dispatch(updateUser(res.data.user));
+        }
+      } catch (error) {
+        console.error("Garage layout - Profile sync failed:", error);
+      }
+    };
+
+    if (isAuthenticated) {
+      syncProfile();
+    }
+  }, [isAuthenticated, dispatch]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {

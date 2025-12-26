@@ -20,16 +20,16 @@ export async function PATCH(request, { params }) {
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     const { status } = await request.json();
 
     // Validate status
     const validStatuses = [
       "pending",
-      "accepted",
-      "in-progress",
+      "confirmed",
+      "in_progress",
       "completed",
-      "canceled",
+      "cancelled",
     ];
     if (!validStatuses.includes(status)) {
       return NextResponse.json(
@@ -48,7 +48,12 @@ export async function PATCH(request, { params }) {
     }
 
     // Authorization check: Only garage owner can update booking status
-    if (booking.garage.owner.toString() !== decoded.userId) {
+    // Safe access to garage owner
+    if (
+      !booking.garage ||
+      !booking.garage.owner ||
+      booking.garage.owner.toString() !== decoded.userId
+    ) {
       return NextResponse.json(
         { success: false, message: "Unauthorized to update this booking" },
         { status: 403 }
@@ -61,49 +66,58 @@ export async function PATCH(request, { params }) {
 
     // If booking is completed, increment garage completedBookings count
     if (status === "completed") {
-      await Garage.findByIdAndUpdate(booking.garage._id, {
-        $inc: { completedBookings: 1 },
-      });
+      try {
+        await Garage.findByIdAndUpdate(booking.garage._id, {
+          $inc: { completedBookings: 1 },
+        });
+      } catch (garageUpdateErr) {
+        console.error("Failed to update garage stats:", garageUpdateErr);
+      }
     }
 
     // --- TRIGGER WEBHOOKS ---
-    const webhookPayload = {
-      bookingId: booking._id,
-      status: booking.status,
-      user: booking.user?._id || booking.user,
-      garage: booking.garage?._id || booking.garage,
-      updatedAt: new Date().toISOString(),
-    };
+    try {
+      const webhookPayload = {
+        bookingId: booking._id,
+        status: booking.status,
+        user: booking.user?._id || booking.user,
+        garage: booking.garage?._id || booking.garage,
+        updatedAt: new Date().toISOString(),
+      };
 
-    // Notify User
-    triggerWebhook(
-      booking.user?._id || booking.user,
-      "booking.updated",
-      webhookPayload
-    );
-    // Notify Garage
-    await triggerWebhook(
-      null,
-      "booking.updated",
-      webhookPayload,
-      booking.garage?._id || booking.garage
-    );
-
-    // Specifically Notify booking.completed if status is completed
-    if (status === "completed") {
-      await triggerWebhook(
+      // Notify User
+      triggerWebhook(
         booking.user?._id || booking.user,
-        "booking.completed",
+        "booking.updated",
         webhookPayload
       );
-      if (booking.garage) {
-        await triggerWebhook(
-          null,
+      // Notify Garage
+      await triggerWebhook(
+        null,
+        "booking.updated",
+        webhookPayload,
+        booking.garage?._id || booking.garage
+      );
+
+      // Specifically Notify booking.completed if status is completed
+      if (status === "completed") {
+        triggerWebhook(
+          booking.user?._id || booking.user,
           "booking.completed",
-          webhookPayload,
-          booking.garage?._id || booking.garage
+          webhookPayload
         );
+        if (booking.garage) {
+          triggerWebhook(
+            null,
+            "booking.completed",
+            webhookPayload,
+            booking.garage?._id || booking.garage
+          );
+        }
       }
+    } catch (webhookError) {
+      console.error("Webhook trigger failed:", webhookError);
+      // Proceed without failing the request
     }
     // ------------------------
 

@@ -21,6 +21,7 @@ import {
   Image as ImageIcon,
   Wrench,
 } from "lucide-react";
+import LockedFeature from "@/components/common/LockedFeature";
 import { toast } from "react-toastify";
 import { useTranslations } from "next-intl";
 import axios from "axios";
@@ -104,7 +105,10 @@ export default function GarageProfilePage() {
         if (response.data.success) {
           const userProfile = response.data.user;
           const garage = userProfile.garage;
-          setMembership(garage?.membership);
+          setMembership({
+            tier: garage?.membershipTier || "free",
+            expiry: garage?.membershipExpiry,
+          });
 
           // Initialize operating hours if not exists
           const hours = {};
@@ -282,7 +286,48 @@ export default function GarageProfilePage() {
           <h1 className="text-3xl font-bold text-white mb-2">
             {t("garageTitle")}
           </h1>
-          <p className="text-white/60">{t("garageInfo")}</p>
+          <p className="text-white/60 mb-3">{t("garageInfo")}</p>
+
+          {/* Subscription Status Display */}
+          {membership?.tier !== "free" && (
+            <div className="inline-flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 py-2 bg-white/5 border border-white/10 rounded-xl">
+              <div className="flex items-center gap-2">
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    new Date(membership.expiry) > new Date()
+                      ? "bg-green-500"
+                      : "bg-red-500"
+                  } animate-pulse`}
+                ></div>
+                <span className="text-xs font-bold text-white uppercase tracking-wider">
+                  {membership.tier} PLAN
+                </span>
+              </div>
+              <div className="h-4 w-px bg-white/10 hidden sm:block"></div>
+              <div className="text-[11px] text-white/60">
+                {new Date(membership.expiry) > new Date() ? (
+                  <>
+                    Valid until:{" "}
+                    <span className="text-white font-medium">
+                      {new Date(membership.expiry).toLocaleDateString()}
+                    </span>
+                    <span className="ml-2 px-2 py-0.5 bg-orange-500/20 text-orange-400 rounded-full font-bold">
+                      {Math.ceil(
+                        (new Date(membership.expiry) - new Date()) /
+                          (1000 * 60 * 60 * 24)
+                      )}{" "}
+                      days left
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-red-400 font-bold">
+                    EXPIRED ON{" "}
+                    {new Date(membership.expiry).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
         <button
           type="submit"
@@ -729,6 +774,79 @@ export default function GarageProfilePage() {
           ))}
         </div>
       </div>
+
+      {/* Workshop Gallery Showcase (Premium) */}
+      <section className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-pink-500/20 flex items-center justify-center text-pink-500">
+            <ImageIcon size={20} />
+          </div>
+          <h2 className="text-xl font-bold text-white">
+            Workshop Gallery Showcase
+          </h2>
+          {(membership?.tier === "premium" ||
+            membership?.tier === "enterprise") &&
+          (!membership?.expiry || new Date(membership.expiry) > new Date()) ? (
+            <span className="px-2 py-0.5 bg-orange-500 text-white text-[10px] font-bold uppercase rounded-full">
+              PRO
+            </span>
+          ) : null}
+        </div>
+
+        {(membership?.tier === "premium" ||
+          membership?.tier === "enterprise") &&
+        (!membership?.expiry || new Date(membership.expiry) > new Date()) ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {formData.garageImages.additional.map((img, idx) => (
+              <div key={idx} className="relative group aspect-square">
+                <img
+                  src={img}
+                  alt={`Gallery ${idx + 1}`}
+                  className="w-full h-full object-cover rounded-xl border border-white/10"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newImgs = [...formData.garageImages.additional];
+                    newImgs.splice(idx, 1);
+                    setFormData((p) => ({
+                      ...p,
+                      garageImages: { ...p.garageImages, additional: newImgs },
+                    }));
+                  }}
+                  className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            {formData.garageImages.additional.length < 6 && (
+              <div className="aspect-square">
+                <ImageUpload
+                  value=""
+                  onChange={(val) => {
+                    if (val) {
+                      setFormData((p) => ({
+                        ...p,
+                        garageImages: {
+                          ...p.garageImages,
+                          additional: [...p.garageImages.additional, val],
+                        },
+                      }));
+                    }
+                  }}
+                  placeholder="Add Photo"
+                />
+              </div>
+            )}
+          </div>
+        ) : (
+          <LockedFeature
+            title="Workshop Gallery Showcase"
+            description="Showcase your best work with a dedicated photo gallery. Upgrade to Garage Pro to upload unlimited workshop photos."
+          />
+        )}
+      </section>
     </form>
   );
 }

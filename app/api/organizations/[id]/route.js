@@ -20,7 +20,7 @@ export async function GET(req, { params }) {
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // Check if user is a member
     const membership = await TeamMember.findOne({
@@ -91,7 +91,7 @@ export async function PATCH(req, { params }) {
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // Check permission
     const membership = await TeamMember.findOne({
@@ -207,7 +207,7 @@ export async function DELETE(req, { params }) {
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // Only owner can delete
     const organization = await Organization.findById(id);

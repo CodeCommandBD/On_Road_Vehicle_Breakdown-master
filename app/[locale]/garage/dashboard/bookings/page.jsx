@@ -115,7 +115,7 @@ export default function BookingsPage() {
     pending: bookings.filter((b) => b.status === "pending").length,
     accepted: bookings.filter((b) => b.status === "accepted").length,
     completed: bookings.filter((b) => b.status === "completed").length,
-    canceled: bookings.filter((b) => b.status === "canceled").length,
+    canceled: bookings.filter((b) => b.status === "cancelled").length,
   };
 
   return (
@@ -153,7 +153,7 @@ export default function BookingsPage() {
           </p>
         </div>
         <div className="bg-gray-500/10 backdrop-blur-sm border border-gray-500/30 rounded-xl p-4">
-          <p className="text-gray-400/80 text-sm">Canceled</p>
+          <p className="text-gray-400/80 text-sm">Cancelled</p>
           <p className="text-2xl font-bold text-gray-400 mt-1">
             {stats.canceled}
           </p>
@@ -187,7 +187,7 @@ export default function BookingsPage() {
             <option value="accepted">Accepted</option>
             <option value="in-progress">In Progress</option>
             <option value="completed">Completed</option>
-            <option value="canceled">Canceled</option>
+            <option value="cancelled">Cancelled</option>
           </select>
         </div>
       </div>
