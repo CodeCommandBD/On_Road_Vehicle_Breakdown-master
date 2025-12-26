@@ -34,10 +34,21 @@ export async function GET(request) {
       date: today,
     });
 
-    // 2. Fetch Active Jobs (assigned to this mechanic and in_progress/confirmed)
+    // 2. Fetch Active Jobs (assigned to this mechanic)
+    // We must include all active phases defined in the new workflow:
+    // confirmed -> on_the_way -> diagnosing -> estimate_sent -> in_progress -> payment_pending
+    const activeJobStatuses = [
+      "confirmed",
+      "on_the_way",
+      "diagnosing",
+      "estimate_sent",
+      "in_progress",
+      "payment_pending",
+    ];
+
     const activeJobs = await Booking.find({
       assignedMechanic: decoded.userId,
-      status: { $in: ["confirmed", "in_progress"] },
+      status: { $in: activeJobStatuses },
     }).populate("user", "name phone location");
 
     // 3. Fetch Open Jobs (for the same garage, not assigned)

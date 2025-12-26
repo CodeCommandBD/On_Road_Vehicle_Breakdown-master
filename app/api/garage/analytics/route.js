@@ -40,7 +40,7 @@ export async function GET(request) {
     // Calculate overview metrics
     const totalBookings = bookings.length;
     const totalRevenue = bookings.reduce(
-      (sum, b) => sum + (b.totalPrice || 0),
+      (sum, b) => sum + (b.actualCost || b.estimatedCost || 0),
       0
     );
     const completedBookings = bookings.filter(
@@ -75,12 +75,12 @@ export async function GET(request) {
       const day = new Date(booking.createdAt).toLocaleDateString();
       const existing = revenueTrend.find((r) => r.date === day);
       if (existing) {
-        existing.revenue += booking.totalPrice || 0;
+        existing.revenue += booking.actualCost || booking.estimatedCost || 0;
         existing.count++;
       } else {
         revenueTrend.push({
           date: day,
-          revenue: booking.totalPrice || 0,
+          revenue: booking.actualCost || booking.estimatedCost || 0,
           count: 1,
         });
       }
@@ -93,7 +93,7 @@ export async function GET(request) {
           revenue: 0,
         };
         current.count++;
-        current.revenue += booking.totalPrice || 0;
+        current.revenue += booking.actualCost || booking.estimatedCost || 0;
         servicePopularity.set(serviceName, current);
       }
 
