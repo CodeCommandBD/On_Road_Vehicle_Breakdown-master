@@ -80,10 +80,19 @@ export async function POST(request) {
         paidAt: new Date(),
       });
 
-      // Activate subscription
+      // Calculate duration and new dates
+      const durationDays = subscription.billingCycle === "monthly" ? 30 : 365;
+      const startDate = new Date();
+      const endDate = new Date(
+        startDate.getTime() + durationDays * 24 * 60 * 60 * 1000
+      );
+
+      // Activate subscription with new dates
       await Subscription.findByIdAndUpdate(subscription._id, {
         status: "active",
         transactionId: tran_id,
+        startDate: startDate,
+        endDate: endDate,
       });
 
       // Update user membership
@@ -92,7 +101,7 @@ export async function POST(request) {
         await subscription.populate("planId");
         await User.findByIdAndUpdate(user._id, {
           membershipTier: subscription.planId.tier,
-          membershipExpiry: subscription.endDate,
+          membershipExpiry: endDate,
           currentSubscription: subscription._id,
         });
       }
@@ -162,7 +171,7 @@ export async function POST(request) {
             $set: {
               isFeatured: true, // Auto-Feature for Top Listing
               membershipTier: subscription.planId.tier,
-              membershipExpiry: subscription.endDate,
+              membershipExpiry: endDate,
             },
           }
         );

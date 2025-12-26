@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db/connect";
 import { getCurrentUser } from "@/lib/utils/auth";
+import Package from "@/lib/db/models/Package"; // Import Package before dependent models
 import Subscription from "@/lib/db/models/Subscription";
 import User from "@/lib/db/models/User";
-import Plan from "@/lib/db/models/Plan";
 
 // GET user's subscriptions
 export async function GET(request) {
   try {
     await connectDB();
+
+    // Ensure Package model is registered
+    console.log("Package model loaded:", Package.modelName);
 
     const currentUser = await getCurrentUser();
     if (!currentUser || !currentUser.userId) {

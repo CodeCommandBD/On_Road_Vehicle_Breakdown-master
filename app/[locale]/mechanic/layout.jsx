@@ -2,10 +2,15 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { useRouter } from "next/navigation";
+import { useRouter, Link } from "@/i18n/routing";
+import { usePathname } from "@/i18n/routing";
+import {
+  selectIsAuthenticated,
+  selectAuthLoading,
+  selectUser,
+  updateUser,
+} from "@/store/slices/authSlice";
 import axios from "axios";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import {
   Home,
   MessageSquare,
@@ -16,6 +21,7 @@ import {
   X,
   Bell,
   Settings,
+  Loader2,
 } from "lucide-react";
 import { selectUnreadNotificationsCount } from "@/store/slices/uiSlice";
 
@@ -24,6 +30,46 @@ export default function MechanicLayout({ children }) {
   const dispatch = useDispatch();
   const router = useRouter();
   const unreadCount = useSelector(selectUnreadNotificationsCount);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const isLoading = useSelector(selectAuthLoading);
+  const user = useSelector(selectUser);
+
+  // Sync profile data on mount
+  useEffect(() => {
+    const syncProfile = async () => {
+      try {
+        const res = await axios.get("/api/profile");
+        if (res.data.success) {
+          dispatch(updateUser(res.data.user));
+        }
+      } catch (error) {
+        console.error("Mechanic layout - Profile sync failed:", error);
+      }
+    };
+
+    if (isAuthenticated) {
+      syncProfile();
+    }
+  }, [isAuthenticated, dispatch]);
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push("/login");
+    } else if (!isLoading && user && user.role !== "mechanic") {
+      // Redirect based on role
+      if (user.role === "admin") {
+        router.push("/admin/dashboard");
+      } else if (
+        user.role === "garage" ||
+        user.membershipTier === "garage_pro" ||
+        user.membershipTier === "garage_basic"
+      ) {
+        router.push("/garage/dashboard");
+      } else {
+        router.push("/user/dashboard");
+      }
+    }
+  }, [isLoading, isAuthenticated, user, router]);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNotifyOpen, setIsNotifyOpen] = useState(false);
@@ -81,6 +127,14 @@ export default function MechanicLayout({ children }) {
     },
     { icon: Settings, label: "Settings", href: "/mechanic/dashboard/settings" },
   ];
+
+  if (isLoading || !isAuthenticated || (user && user.role !== "mechanic")) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#020617]">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 flex flex-col">

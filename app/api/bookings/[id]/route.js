@@ -237,6 +237,34 @@ export async function PATCH(request, { params }) {
           link: `/user/dashboard/bookings/${booking._id}`,
           metadata: { bookingId: booking._id, status },
         });
+
+        // Notify Assigned Mechanic if Cancelled
+        if (status === "cancelled" && booking.assignedMechanic) {
+          await Notification.create({
+            recipient: booking.assignedMechanic,
+            type: "system_alert",
+            title: "Job Cancelled ❌",
+            message: `Booking #${
+              booking.bookingNumber || booking._id
+            } has been cancelled by the user/admin.`,
+            link: `/mechanic/dashboard`,
+          });
+        } else if (
+          status &&
+          booking.assignedMechanic &&
+          decoded.userId !== booking.assignedMechanic.toString()
+        ) {
+          // General status update notification for mechanic (if not updated by themselves)
+          await Notification.create({
+            recipient: booking.assignedMechanic,
+            type: "system_alert",
+            title: "Booking Updated 🔔",
+            message: `Booking #${
+              booking.bookingNumber || booking._id
+            } status updated to: ${status}`,
+            link: `/mechanic/dashboard/bookings/${booking._id}`,
+          });
+        }
       } catch (err) {
         console.error("Failed to create status update notification:", err);
       }

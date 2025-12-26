@@ -34,6 +34,9 @@ export default function MechanicDashboard() {
 
   useEffect(() => {
     fetchDashboardData();
+    // Poll for updates every 10 seconds to handle cancellations/new jobs
+    const interval = setInterval(fetchDashboardData, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchDashboardData = async () => {
@@ -150,7 +153,7 @@ export default function MechanicDashboard() {
     );
   }
 
-  const { stats, attendance, activeJob, openJobs, mechanic } = data || {};
+  const { stats, attendance, activeJobs, openJobs, mechanic } = data || {};
   const isOnDuty = attendance?.clockIn && !attendance?.clockOut;
 
   return (
@@ -275,39 +278,46 @@ export default function MechanicDashboard() {
                 Priority Mission
               </h3>
             </div>
-            {activeJob ? (
-              <div className="group relative overflow-hidden bg-slate-900/20 border border-white/5 rounded-[2.5rem] p-8 hover:border-indigo-500/30 transition-all duration-300">
-                <div className="absolute top-0 right-0 p-6">
-                  <span className="px-4 py-1.5 rounded-full bg-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-widest border border-indigo-500/30">
-                    Live Operation
-                  </span>
-                </div>
+            {activeJobs && activeJobs.length > 0 ? (
+              <div className="space-y-4">
+                {activeJobs.map((job) => (
+                  <div
+                    key={job._id}
+                    className="group relative overflow-hidden bg-slate-900/20 border border-white/5 rounded-[2.5rem] p-8 hover:border-indigo-500/30 transition-all duration-300"
+                  >
+                    <div className="absolute top-0 right-0 p-6">
+                      <span className="px-4 py-1.5 rounded-full bg-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-widest border border-indigo-500/30">
+                        Live Operation
+                      </span>
+                    </div>
 
-                <div className="flex flex-col gap-6">
-                  <div>
-                    <h4 className="text-2xl font-bold text-white mb-2">
-                      {activeJob.user?.name || "Client"}
-                    </h4>
-                    <p className="text-slate-400 flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-indigo-400" />
-                      {activeJob.location?.address}
-                    </p>
-                  </div>
+                    <div className="flex flex-col gap-6">
+                      <div>
+                        <h4 className="text-2xl font-bold text-white mb-2">
+                          {job.user?.name || "Client"}
+                        </h4>
+                        <p className="text-slate-400 flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-indigo-400" />
+                          {job.location?.address}
+                        </p>
+                      </div>
 
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <button className="flex-[1.5] flex items-center justify-center gap-3 py-4 bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-wider hover:bg-indigo-400 transition-all shadow-lg shadow-indigo-500/20 active:scale-95">
-                      <Navigation className="w-5 h-5" />
-                      <span className="text-sm">Launch Navigation</span>
-                    </button>
-                    <Link
-                      href={`/mechanic/dashboard/bookings/${activeJob._id}`}
-                      className="flex-1 flex items-center justify-center gap-3 py-4 bg-slate-800 text-white rounded-2xl font-black uppercase tracking-wider hover:bg-slate-700 border border-white/10 transition-all text-center"
-                    >
-                      <span className="text-sm">Matrix</span>
-                      <ChevronRight className="w-5 h-5" />
-                    </Link>
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <button className="flex-[1.5] flex items-center justify-center gap-3 py-4 bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-wider hover:bg-indigo-400 transition-all shadow-lg shadow-indigo-500/20 active:scale-95">
+                          <Navigation className="w-5 h-5" />
+                          <span className="text-sm">Navigate</span>
+                        </button>
+                        <Link
+                          href={`/mechanic/dashboard/bookings/${job._id}`}
+                          className="flex-1 flex items-center justify-center gap-3 py-4 bg-slate-800 text-white rounded-2xl font-black uppercase tracking-wider hover:bg-slate-700 border border-white/10 transition-all text-center"
+                        >
+                          <span className="text-sm">View Details</span>
+                          <ChevronRight className="w-5 h-5" />
+                        </Link>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
             ) : (
               <div className="bg-[#020617]/40 border-2 border-dashed border-white/5 rounded-[2.5rem] p-12 text-center">
