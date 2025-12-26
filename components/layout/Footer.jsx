@@ -2,347 +2,194 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useScrollAnimationList } from "@/hooks/useScrollAnimation";
+import {
+  Facebook,
+  Twitter,
+  Instagram,
+  Linkedin,
+  Mail,
+  ArrowRight,
+  Send,
+  MapPin,
+  Phone,
+} from "lucide-react";
+import { useState, useEffect } from "react";
 
 export default function Footer() {
-  const socialAnimations = useScrollAnimationList(4);
-  const linkAnimations = useScrollAnimationList(4);
+  const [email, setEmail] = useState("");
+  const [footerLinks, setFooterLinks] = useState({
+    company: [],
+    services: [],
+    discover: [],
+    help: [],
+  });
+
+  useEffect(() => {
+    const fetchLinks = async () => {
+      try {
+        const res = await fetch("/api/admin/footer-links");
+        const json = await res.json();
+        if (json.success) {
+          // Group by column
+          const grouped = json.data.reduce(
+            (acc, link) => {
+              if (acc[link.column]) {
+                acc[link.column].push(link);
+              }
+              return acc;
+            },
+            { company: [], services: [], discover: [], help: [] }
+          );
+          setFooterLinks(grouped);
+        }
+      } catch (error) {
+        console.error("Failed to load footer links", error);
+        // Fallback or leave empty
+      }
+    };
+
+    fetchLinks();
+  }, []);
+
+  const handleSubscribe = (e) => {
+    e.preventDefault();
+    // Handle subscription logic here
+    setEmail("");
+    alert("Thanks for subscribing!");
+  };
 
   return (
-    <>
-      <div className="w-full min-h-[600px] md:min-h-screen flex items-end relative bg-[#F23C13]">
-        <div className="absolute inset-0 w-full h-full overflow-hidden">
-          <Image
-            src="/images/footer/Footer-bg.png"
-            alt="Footer background"
-            fill
-            style={{ objectFit: "cover", objectPosition: "top center" }}
-          />
-        </div>
+    <footer className="bg-[#020617] border-t border-white/10 pt-20 pb-10 relative overflow-hidden">
+      {/* Background Gradients */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-[128px] pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[128px] pointer-events-none" />
 
-        <div className="relative z-[2] w-full px-4 py-8 sm:px-6 sm:py-10 md:px-8 md:py-12 lg:px-10 lg:py-16 flex flex-col items-center">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-8 sm:gap-10 lg:gap-12 mb-10 md:mb-12 max-w-[1400px] w-full">
-            {/* Service Column */}
-            <div className="col-span-1 sm:col-span-2 lg:col-span-1 flex flex-col items-center sm:items-start text-center sm:text-left">
-              <div
-                className={`flex gap-[15px] items-center justify-center sm:justify-start mb-[25px] w-full opacity-0 -translate-x-[80px] transition-all duration-[1000ms] ease-out ${
-                  socialAnimations[0].isVisible
-                    ? "opacity-100 translate-x-0"
-                    : ""
-                }`}
-                ref={socialAnimations[0].ref}
-              >
-                {/* SVG Logo */}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="50"
-                  height="51"
-                  viewBox="0 0 50 51"
-                  fill="none"
-                >
-                  <rect
-                    x="1"
-                    y="1"
-                    width="48"
-                    height="48"
-                    rx="11"
-                    fill="url(#paint0_radial)"
-                    stroke="white"
-                    strokeWidth="2"
-                  />
-                  <g filter="url(#filter0_d)">
-                    <path
-                      d="M39 32.4988C38.7315 33.8811 38.5533 34.5506 37.2685 36.2526C36.2385 37.254 34.2706 38.8055 32.5642 38.9215C33.8423 39.6565 38.5031 35.0564 39 32.4988Z"
-                      fill="#F23C13"
-                    />
-                    <path
-                      d="M23.3551 29.7422C20.345 30.529 17.0118 29.7561 14.6528 27.4035C11.9974 24.7591 11.3361 20.8836 12.6663 17.623L17.1258 22.0681L21.0493 21.0275L22.1021 17.1103L17.6414 12.6639C20.9113 11.3379 24.7994 11.9984 27.4535 14.644C29.8125 16.9966 30.5878 20.3178 29.796 23.3246L39 32.4988C38.7315 33.8811 38.5533 34.5506 37.2685 36.2526C36.2385 37.254 34.2706 38.8055 32.5642 38.9215L23.3551 29.7422Z"
-                      fill="white"
-                    />
-                  </g>
-                  <defs>
-                    <filter
-                      id="filter0_d"
-                      x="4"
-                      y="8"
-                      width="43"
-                      height="43"
-                      filterUnits="userSpaceOnUse"
-                      colorInterpolationFilters="sRGB"
-                    >
-                      <feFlood floodOpacity="0" result="BackgroundImageFix" />
-                      <feColorMatrix
-                        in="SourceAlpha"
-                        type="matrix"
-                        values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
-                        result="hardAlpha"
-                      />
-                      <feOffset dy="4" />
-                      <feGaussianBlur stdDeviation="4" />
-                      <feComposite in2="hardAlpha" operator="out" />
-                      <feColorMatrix
-                        type="matrix"
-                        values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.15 0"
-                      />
-                      <feBlend
-                        mode="normal"
-                        in2="BackgroundImageFix"
-                        result="effect1_dropShadow"
-                      />
-                      <feBlend
-                        mode="normal"
-                        in="SourceGraphic"
-                        in2="effect1_dropShadow"
-                        result="shape"
-                      />
-                    </filter>
-                    <radialGradient
-                      id="paint0_radial"
-                      cx="0"
-                      cy="0"
-                      r="1"
-                      gradientUnits="userSpaceOnUse"
-                      gradientTransform="translate(25 25) rotate(90) scale(25)"
-                    >
-                      <stop stopColor="#FFA895" />
-                      <stop offset="1" stopColor="#F23C13" />
-                    </radialGradient>
-                  </defs>
-                </svg>
-                <h2 className="text-white text-[26px] font-bold leading-[34px] [font-variant:small-caps] m-0 uppercase">
-                  Service
-                </h2>
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8 mb-16">
+          {/* Brand Column */}
+          <div className="lg:col-span-4 space-y-6">
+            <Link href="/" className="flex items-center gap-2">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-white font-bold text-xl">
+                OR
               </div>
-
-              <div className="w-full max-w-[280px] mx-auto sm:mx-0">
-                <p className="text-white text-center sm:text-justify text-[14px] font-medium mb-[32px]">
-                  We provide online and integrated audio-visual solutions for
-                  schools, government, and businesses, enhancing communication
-                  and collaboration.
-                </p>
-
-                <div className="flex gap-[12px] justify-center sm:justify-start">
-                  {[0, 1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      ref={socialAnimations[i].ref}
-                      className={`opacity-0 translate-y-[20px] transition-all duration-[1000ms] ease-out cursor-pointer ${
-                        socialAnimations[i].isVisible
-                          ? "opacity-100 translate-y-0"
-                          : ""
-                      } ${
-                        i === 1
-                          ? "delay-[500ms]"
-                          : i === 2
-                          ? "delay-[1000ms]"
-                          : i === 3
-                          ? "delay-[1500ms]"
-                          : ""
-                      }`}
-                    >
-                      <Image
-                        src="/images/footer/Facebook.png"
-                        alt="Social"
-                        width={32}
-                        height={32}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Company Column */}
-            <div className="col-span-1 text-center sm:text-left">
-              <h3 className="text-white text-[16px] sm:text-[18px] font-bold leading-[172%] mb-[20px]">
-                Company
-              </h3>
-              <div
-                ref={linkAnimations[0].ref}
-                className={`flex flex-col gap-[15px] items-center sm:items-start opacity-0 translate-y-[30px] transition-all duration-[1000ms] ease-out delay-[200ms] ${
-                  linkAnimations[0].isVisible ? "opacity-100 translate-y-0" : ""
-                }`}
-              >
-                <Link
-                  href="/about"
-                  className="text-white text-[14px] font-[400] leading-[160%] no-underline transition-colors duration-300 hover:text-[#FF532D]"
-                >
-                  About
-                </Link>
-                <Link
-                  href="/pricing"
-                  className="text-white text-[14px] font-[400] leading-[160%] no-underline transition-colors duration-300 hover:text-[#FF532D]"
-                >
-                  Pricing
-                </Link>
-                <Link
-                  href="/jobs"
-                  className="text-white text-[14px] font-[400] leading-[160%] no-underline transition-colors duration-300 hover:text-[#FF532D]"
-                >
-                  Jobs
-                </Link>
-                <Link
-                  href="/blog"
-                  className="text-white text-[14px] font-[400] leading-[160%] no-underline transition-colors duration-300 hover:text-[#FF532D]"
-                >
-                  Blog
-                </Link>
-                <Link
-                  href="/career"
-                  className="text-white text-[14px] font-[400] leading-[160%] no-underline transition-colors duration-300 hover:text-[#FF532D]"
-                >
-                  Career
-                </Link>
-              </div>
-            </div>
-
-            {/* Product Column */}
-            <div className="col-span-1 text-center sm:text-left">
-              <h3 className="text-white text-[16px] sm:text-[18px] font-bold leading-[172%] mb-[20px]">
-                Product
-              </h3>
-              <div
-                ref={linkAnimations[1].ref}
-                className={`flex flex-col gap-[15px] items-center sm:items-start opacity-0 translate-y-[30px] transition-all duration-[1000ms] ease-out delay-[400ms] ${
-                  linkAnimations[1].isVisible ? "opacity-100 translate-y-0" : ""
-                }`}
-              >
-                <Link
-                  href="/details"
-                  className="text-white text-[14px] font-[400] leading-[160%] no-underline transition-colors duration-300 hover:text-[#FF532D]"
-                >
-                  Details
-                </Link>
-                <Link
-                  href="/features"
-                  className="text-white text-[14px] font-[400] leading-[160%] no-underline transition-colors duration-300 hover:text-[#FF532D]"
-                >
-                  Features
-                </Link>
-                <Link
-                  href="/privacy"
-                  className="text-white text-[14px] font-[400] leading-[160%] no-underline transition-colors duration-300 hover:text-[#FF532D]"
-                >
-                  Privacy Policy
-                </Link>
-                <Link
-                  href="/status"
-                  className="text-white text-[14px] font-[400] leading-[160%] no-underline transition-colors duration-300 hover:text-[#FF532D]"
-                >
-                  Status
-                </Link>
-                <Link
-                  href="/api"
-                  className="text-white text-[14px] font-[400] leading-[160%] no-underline transition-colors duration-300 hover:text-[#FF532D]"
-                >
-                  API
-                </Link>
-              </div>
-            </div>
-
-            {/* Discover Column */}
-            <div className="col-span-1 text-center sm:text-left">
-              <h3 className="text-white text-[16px] sm:text-[18px] font-bold leading-[172%] mb-[20px]">
-                Discover
-              </h3>
-              <div
-                ref={linkAnimations[2].ref}
-                className={`flex flex-col gap-[15px] items-center sm:items-start opacity-0 translate-y-[30px] transition-all duration-[1000ms] ease-out delay-[600ms] ${
-                  linkAnimations[2].isVisible ? "opacity-100 translate-y-0" : ""
-                }`}
-              >
-                <Link
-                  href="/partner"
-                  className="text-white text-[14px] font-[400] leading-[160%] no-underline transition-colors duration-300 hover:text-[#FF532D]"
-                >
-                  Partner Program
-                </Link>
-                <Link
-                  href="/newsletter"
-                  className="text-white text-[14px] font-[400] leading-[160%] no-underline transition-colors duration-300 hover:text-[#FF532D]"
-                >
-                  Newsletter
-                </Link>
-                <Link
-                  href="/how-it-works"
-                  className="text-white text-[14px] font-[400] leading-[160%] no-underline transition-colors duration-300 hover:text-[#FF532D]"
-                >
-                  How it works
-                </Link>
-                <Link
-                  href="/case-studies"
-                  className="text-white text-[14px] font-[400] leading-[160%] no-underline transition-colors duration-300 hover:text-[#FF532D]"
-                >
-                  Case Studies
-                </Link>
-                <Link
-                  href="/team"
-                  className="text-white text-[14px] font-[400] leading-[160%] no-underline transition-colors duration-300 hover:text-[#FF532D]"
-                >
-                  Team of Service
-                </Link>
-              </div>
-            </div>
-
-            {/* Help Center Column */}
-            <div className="col-span-1 text-center sm:text-left">
-              <h3 className="text-white text-[16px] sm:text-[18px] font-bold leading-[172%] mb-[20px]">
-                Help Center
-              </h3>
-              <div
-                ref={linkAnimations[3].ref}
-                className={`flex flex-col gap-[15px] items-center sm:items-start opacity-0 translate-y-[30px] transition-all duration-[1000ms] ease-out delay-[800ms] ${
-                  linkAnimations[3].isVisible ? "opacity-100 translate-y-0" : ""
-                }`}
-              >
-                <Link
-                  href="/community"
-                  className="text-white text-[14px] font-[400] leading-[160%] no-underline transition-colors duration-300 hover:text-[#FF532D]"
-                >
-                  Community
-                </Link>
-                <Link
-                  href="/knowledge"
-                  className="text-white text-[14px] font-[400] leading-[160%] no-underline transition-colors duration-300 hover:text-[#FF532D]"
-                >
-                  Knowledge
-                </Link>
-                <Link
-                  href="/terms"
-                  className="text-white text-[14px] font-[400] leading-[160%] no-underline transition-colors duration-300 hover:text-[#FF532D]"
-                >
-                  Terms & Condition
-                </Link>
-                <Link
-                  href="/privacy"
-                  className="text-white text-[14px] font-[400] leading-[160%] no-underline transition-colors duration-300 hover:text-[#FF532D]"
-                >
-                  Privacy
-                </Link>
-                <Link
-                  href="/support"
-                  className="text-white text-[14px] font-[400] leading-[160%] no-underline transition-colors duration-300 hover:text-[#FF532D]"
-                >
-                  Support
-                </Link>
-              </div>
+              <span className="text-2xl font-bold text-white tracking-tight">
+                OnRoad<span className="text-orange-500">Help</span>
+              </span>
+            </Link>
+            <p className="text-gray-400 leading-relaxed max-w-sm">
+              Your reliable partner for on-road vehicle assistance. fast,
+              reliable, and available 24/7 across the country.
+            </p>
+            <div className="flex items-center gap-4 pt-4">
+              <SocialLink href="#" icon={Facebook} />
+              <SocialLink href="#" icon={Twitter} />
+              <SocialLink href="#" icon={Instagram} />
+              <SocialLink href="#" icon={Linkedin} />
             </div>
           </div>
 
-          <div
-            ref={linkAnimations[0].ref}
-            className={`h-[2px] bg-white w-full max-w-[1400px] opacity-0 scale-x-0 transition-all duration-[1200ms] ease-out delay-[1000ms] ${
-              linkAnimations[0].isVisible ? "opacity-100 scale-x-100" : ""
-            }`}
-          ></div>
+          {/* Links Columns */}
+          <div className="lg:col-span-2 md:col-span-1">
+            <h3 className="text-white font-semibold text-lg mb-6">Company</h3>
+            <ul className="space-y-4">
+              {footerLinks.company.length > 0 ? (
+                footerLinks.company.map((link) => (
+                  <li key={link._id}>
+                    <Link
+                      href={link.href}
+                      className="text-gray-400 hover:text-orange-500 transition-colors flex items-center gap-2 group"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      {link.label}
+                    </Link>
+                  </li>
+                ))
+              ) : (
+                <p className="text-white/20 text-sm">No links</p>
+              )}
+            </ul>
+          </div>
 
-          <div className="text-center pt-[20px]">
-            <p className="text-[#d1cdcd] text-[14px] sm:text-[16px] font-[300] leading-[172%] m-0 px-4">
-              © 2022. All rights reserved.
+          <div className="lg:col-span-2 md:col-span-1">
+            <h3 className="text-white font-semibold text-lg mb-6">Services</h3>
+            <ul className="space-y-4">
+              {footerLinks.services.length > 0 ? (
+                footerLinks.services.map((link) => (
+                  <li key={link._id}>
+                    <Link
+                      href={link.href}
+                      className="text-gray-400 hover:text-orange-500 transition-colors flex items-center gap-2 group"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      {link.label}
+                    </Link>
+                  </li>
+                ))
+              ) : (
+                <p className="text-white/20 text-sm">No links</p>
+              )}
+            </ul>
+          </div>
+
+          <div className="lg:col-span-4 md:col-span-2 bg-white/5 rounded-3xl p-8 border border-white/10">
+            <h3 className="text-white font-semibold text-lg mb-2">
+              Subscribe to our newsletter
+            </h3>
+            <p className="text-gray-400 text-sm mb-6">
+              Get the latest updates, articles, and resources sent to your inbox
+              weekly.
             </p>
+            <form onSubmit={handleSubscribe} className="space-y-4">
+              <div className="relative">
+                <input
+                  type="email"
+                  required
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-orange-500 transition-colors pl-10"
+                />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              </div>
+              <button
+                type="submit"
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl transition-all hover:shadow-[0_0_20px_rgba(249,115,22,0.3)] flex items-center justify-center gap-2 group"
+              >
+                Subscribe
+                <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="border-t border-white/10 pt-8 mt-16 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-gray-500 text-sm text-center md:text-left">
+            © {new Date().getFullYear()} OnRoadHelp. All rights reserved.
+          </p>
+          <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-500">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-orange-500" />
+              <span>Dhaka, Bangladesh</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Phone className="w-4 h-4 text-orange-500" />
+              <span>+880 1234 567890</span>
+            </div>
           </div>
         </div>
       </div>
-    </>
+    </footer>
+  );
+}
+
+function SocialLink({ href, icon: Icon }) {
+  return (
+    <a
+      href={href}
+      className="w-10 h-10 rounded-full bg-white/5 hover:bg-orange-500 text-gray-400 hover:text-white flex items-center justify-center transition-all duration-300 hover:-translate-y-1 border border-white/10 hover:border-orange-500"
+    >
+      <Icon className="w-5 h-5" />
+    </a>
   );
 }

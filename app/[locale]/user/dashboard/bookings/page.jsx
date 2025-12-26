@@ -33,7 +33,9 @@ export default function MyBookingsPage() {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/bookings?userId=${user._id}&role=user`);
+      const res = await fetch(`/api/bookings?userId=${user._id}&role=user`, {
+        cache: "no-store",
+      });
       const data = await res.json();
       if (data.success) {
         setBookings(data.bookings);
@@ -56,6 +58,28 @@ export default function MyBookingsPage() {
       b.bookingNumber?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesStatus && matchesSearch;
   });
+
+  const handleStatusUpdate = async (bookingId, newStatus) => {
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Booking ${newStatus} successfully`);
+        fetchBookings(); // Refresh list
+      } else {
+        toast.error(data.message || "Failed to update status");
+      }
+    } catch (error) {
+      console.error("Update status error:", error);
+      toast.error("An error occurred");
+    }
+  };
 
   return (
     <div className="space-y-6 pb-20">
@@ -156,14 +180,22 @@ export default function MyBookingsPage() {
       ) : filteredBookings.length > 0 ? (
         <div className="bg-[#1E1E1E] border border-white/10 rounded-2xl overflow-hidden shadow-xl">
           {viewType === "table" ? (
-            <BookingTable type="user" bookings={filteredBookings} />
+            <BookingTable
+              type="user"
+              bookings={filteredBookings}
+              onStatusUpdate={handleStatusUpdate}
+            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
               {/* Grid View implementation if needed, but for now BookingTable is enough */}
               <p className="col-span-full text-center text-white/40 italic">
                 Grid view coming soon. Switching back to table.
               </p>
-              <BookingTable type="user" bookings={filteredBookings} />
+              <BookingTable
+                type="user"
+                bookings={filteredBookings}
+                onStatusUpdate={handleStatusUpdate}
+              />
             </div>
           )}
         </div>

@@ -259,7 +259,7 @@ export default function AutomationPage() {
                   <label className="block text-sm font-medium text-white/50 ml-1">
                     Payload Endpoint URL
                   </label>
-                  <div className="relative flex gap-2">
+                  <div className="relative flex flex-col sm:flex-row gap-3">
                     <input
                       type="url"
                       required
@@ -272,7 +272,7 @@ export default function AutomationPage() {
                       type="button"
                       onClick={handleTestWebhook}
                       disabled={testing || !webhookUrl}
-                      className="px-6 rounded-2xl border border-white/10 hover:bg-white/5 transition-colors text-sm font-bold flex items-center gap-2 disabled:opacity-30 whitespace-nowrap"
+                      className="px-6 py-4 sm:py-0 rounded-2xl border border-white/10 hover:bg-white/5 transition-colors text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-30 whitespace-nowrap w-full sm:w-auto"
                     >
                       {testing ? (
                         <RefreshCw className="w-4 h-4 animate-spin" />

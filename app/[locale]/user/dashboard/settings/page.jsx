@@ -126,309 +126,311 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-[#020617] p-4 sm:p-8">
       <div className="max-w-4xl mx-auto space-y-8 pb-10">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">
-          <Settings className="w-8 h-8 text-orange-500" />
-          {t("title")}
-        </h1>
-        <p className="text-white/60 mt-1">{t("manageAccount")}</p>
-      </div>
-
-      <div className="grid md:grid-cols-[240px_1fr] gap-8">
-        {/* Sidebar Tabs */}
-        <div className="space-y-2">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                activeTab === tab.id
-                  ? "bg-orange-500 text-white shadow-glow-orange"
-                  : "text-white/60 hover:bg-white/5 hover:text-white"
-              }`}
-            >
-              <tab.icon className="w-5 h-5" />
-              <span className="font-semibold text-sm">{tab.label}</span>
-            </button>
-          ))}
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">
+            <Settings className="w-8 h-8 text-orange-500" />
+            {t("title")}
+          </h1>
+          <p className="text-white/60 mt-1">{t("manageAccount")}</p>
         </div>
 
-        {/* Content Area */}
-        <div className="bg-slate-900/30 backdrop-blur-xl border border-white/5 rounded-3xl p-8 min-h-[500px]">
-          {activeTab === "security" && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div>
-                <h3 className="text-xl font-bold text-white mb-2">
-                  {t("changePassword")}
-                </h3>
-                <p className="text-white/40 text-sm">{t("passwordSecure")}</p>
-              </div>
-
-              <form
-                onSubmit={handlePasswordChange}
-                className="space-y-6 max-w-md"
+        <div className="grid md:grid-cols-[240px_1fr] gap-8">
+          {/* Sidebar Tabs */}
+          <div className="space-y-2">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                  activeTab === tab.id
+                    ? "bg-orange-500 text-white shadow-glow-orange"
+                    : "text-white/60 hover:bg-white/5 hover:text-white"
+                }`}
               >
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-white/60">
-                      {t("currentPassword")}
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showCurrentPass ? "text" : "password"}
-                        required
-                        value={passwordData.currentPassword}
-                        onChange={(e) =>
-                          setPasswordData({
-                            ...passwordData,
-                            currentPassword: e.target.value,
-                          })
-                        }
-                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-orange-500 pr-12"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowCurrentPass(!showCurrentPass)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
-                      >
-                        {showCurrentPass ? (
-                          <EyeOff className="w-4 h-4" />
-                        ) : (
-                          <Eye className="w-4 h-4" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
+                <tab.icon className="w-5 h-5" />
+                <span className="font-semibold text-sm">{tab.label}</span>
+              </button>
+            ))}
+          </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-white/60">
-                      {t("newPassword")}
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showNewPass ? "text" : "password"}
-                        required
-                        value={passwordData.newPassword}
-                        onChange={(e) =>
-                          setPasswordData({
-                            ...passwordData,
-                            newPassword: e.target.value,
-                          })
-                        }
-                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-orange-500 pr-12"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowNewPass(!showNewPass)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
-                      >
-                        {showNewPass ? (
-                          <EyeOff className="w-4 h-4" />
-                        ) : (
-                          <Eye className="w-4 h-4" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-white/60">
-                      {t("confirmNewPassword")}
-                    </label>
-                    <input
-                      type="password"
-                      required
-                      value={passwordData.confirmPassword}
-                      onChange={(e) =>
-                        setPasswordData({
-                          ...passwordData,
-                          confirmPassword: e.target.value,
-                        })
-                      }
-                      className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-orange-500"
-                    />
-                  </div>
+          {/* Content Area */}
+          <div className="bg-slate-900/30 backdrop-blur-xl border border-white/5 rounded-3xl p-8 min-h-[500px]">
+            {activeTab === "security" && (
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-2">
+                    {t("changePassword")}
+                  </h3>
+                  <p className="text-white/40 text-sm">{t("passwordSecure")}</p>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-4 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-orange-600 transition-all shadow-glow-orange disabled:opacity-50"
+                <form
+                  onSubmit={handlePasswordChange}
+                  className="space-y-6 max-w-md"
                 >
-                  {loading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    t("updatePassword")
-                  )}
-                </button>
-              </form>
-            </div>
-          )}
-
-          {activeTab === "notifications" && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div>
-                <h3 className="text-xl font-bold text-white mb-2">
-                  {t("notifPrefs")}
-                </h3>
-                <p className="text-white/40 text-sm">{t("controlComm")}</p>
-              </div>
-
-              <div className="space-y-4">
-                {[
-                  {
-                    key: "email",
-                    title: t("emailNotif"),
-                    desc: t("emailDesc"),
-                  },
-                  {
-                    key: "push",
-                    title: t("pushNotif"),
-                    desc: t("pushDesc"),
-                  },
-                  {
-                    key: "serviceReminders",
-                    title: t("serviceReminders"),
-                    desc: t("serviceRemindersDesc"),
-                  },
-                ].map((item, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl"
-                  >
-                    <div>
-                      <p className="text-white font-medium">{item.title}</p>
-                      <p className="text-xs text-white/40">{item.desc}</p>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-white/60">
+                        {t("currentPassword")}
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showCurrentPass ? "text" : "password"}
+                          required
+                          value={passwordData.currentPassword}
+                          onChange={(e) =>
+                            setPasswordData({
+                              ...passwordData,
+                              currentPassword: e.target.value,
+                            })
+                          }
+                          className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-orange-500 pr-12"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowCurrentPass(!showCurrentPass)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                        >
+                          {showCurrentPass ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-white/60">
+                        {t("newPassword")}
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showNewPass ? "text" : "password"}
+                          required
+                          value={passwordData.newPassword}
+                          onChange={(e) =>
+                            setPasswordData({
+                              ...passwordData,
+                              newPassword: e.target.value,
+                            })
+                          }
+                          className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-orange-500 pr-12"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPass(!showNewPass)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                        >
+                          {showNewPass ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-white/60">
+                        {t("confirmNewPassword")}
+                      </label>
                       <input
-                        type="checkbox"
-                        checked={notificationPrefs[item.key]}
-                        onChange={() => handleNotificationToggle(item.key)}
-                        className="sr-only peer"
+                        type="password"
+                        required
+                        value={passwordData.confirmPassword}
+                        onChange={(e) =>
+                          setPasswordData({
+                            ...passwordData,
+                            confirmPassword: e.target.value,
+                          })
+                        }
+                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-orange-500"
                       />
-                      <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {activeTab === "account" && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div>
-                <h3 className="text-xl font-bold text-white mb-2 text-red-500">
-                  {t("dangerZone")}
-                </h3>
-                <p className="text-white/40 text-sm">{t("beCareful")}</p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="p-6 border border-red-500/20 bg-red-500/5 rounded-3xl">
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 bg-red-500/10 rounded-xl">
-                      <Trash2 className="w-6 h-6 text-red-500" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-white mb-1">
-                        {t("deleteAccount")}
-                      </h4>
-                      <p className="text-sm text-white/40 mb-4">
-                        {t("deleteWarning")}
-                      </p>
-                      <button className="px-6 py-2.5 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-sm font-bold hover:bg-red-500 hover:text-white transition-all">
-                        {t("deactivate")}
-                      </button>
                     </div>
                   </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full py-4 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-orange-600 transition-all shadow-glow-orange disabled:opacity-50"
+                  >
+                    {loading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      t("updatePassword")
+                    )}
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {activeTab === "notifications" && (
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-2">
+                    {t("notifPrefs")}
+                  </h3>
+                  <p className="text-white/40 text-sm">{t("controlComm")}</p>
                 </div>
 
-                <div className="p-6 border border-white/10 bg-white/5 rounded-3xl">
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 bg-orange-500/10 rounded-xl">
-                      <AlertTriangle className="w-6 h-6 text-orange-500" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-white mb-1">
-                        {t("backupData")}
-                      </h4>
-                      <p className="text-sm text-white/40 mb-4">
-                        {t("backupDesc")}
-                      </p>
-                      <button className="px-6 py-2.5 bg-white/10 text-white rounded-xl text-sm font-bold hover:bg-white/20 transition-all">
-                        {t("requestExport")}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === "legal" && user?.contract && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div>
-                <h3 className="text-xl font-bold text-white mb-2">
-                  Legal & Contracts
-                </h3>
-                <p className="text-white/40 text-sm">
-                  Review your active agreements with On-Road Help.
-                </p>
-              </div>
-
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <div className="flex items-center gap-3 mb-1">
-                      <h4 className="text-lg font-semibold text-white">
-                        Enterprise SLA Contract
-                      </h4>
-                      <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
-                          user.contract.status === "active"
-                            ? "bg-green-500/10 border-green-500/30 text-green-400"
-                            : user.contract.status === "pending"
-                            ? "bg-yellow-500/10 border-yellow-500/30 text-yellow-400"
-                            : "bg-red-500/10 border-red-500/30 text-red-400"
-                        }`}
-                      >
-                        {user.contract.status}
-                      </span>
-                    </div>
-                    <p className="text-sm text-white/50">
-                      Valid from{" "}
-                      {new Date(user.contract.startDate).toLocaleDateString()}{" "}
-                      to {new Date(user.contract.endDate).toLocaleDateString()}
-                    </p>
-                  </div>
-                  {user.contract.documentUrl && (
-                    <a
-                      href={user.contract.documentUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-xl transition-all flex items-center gap-2"
+                <div className="space-y-4">
+                  {[
+                    {
+                      key: "email",
+                      title: t("emailNotif"),
+                      desc: t("emailDesc"),
+                    },
+                    {
+                      key: "push",
+                      title: t("pushNotif"),
+                      desc: t("pushDesc"),
+                    },
+                    {
+                      key: "serviceReminders",
+                      title: t("serviceReminders"),
+                      desc: t("serviceRemindersDesc"),
+                    },
+                  ].map((item, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl"
                     >
-                      <FileText className="w-4 h-4" />
-                      View PDF
-                    </a>
+                      <div>
+                        <p className="text-white font-medium">{item.title}</p>
+                        <p className="text-xs text-white/40">{item.desc}</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={notificationPrefs[item.key]}
+                          onChange={() => handleNotificationToggle(item.key)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === "account" && (
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-2 text-red-500">
+                    {t("dangerZone")}
+                  </h3>
+                  <p className="text-white/40 text-sm">{t("beCareful")}</p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="p-6 border border-red-500/20 bg-red-500/5 rounded-3xl">
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 bg-red-500/10 rounded-xl">
+                        <Trash2 className="w-6 h-6 text-red-500" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-white mb-1">
+                          {t("deleteAccount")}
+                        </h4>
+                        <p className="text-sm text-white/40 mb-4">
+                          {t("deleteWarning")}
+                        </p>
+                        <button className="px-6 py-2.5 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-sm font-bold hover:bg-red-500 hover:text-white transition-all">
+                          {t("deactivate")}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-6 border border-white/10 bg-white/5 rounded-3xl">
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 bg-orange-500/10 rounded-xl">
+                        <AlertTriangle className="w-6 h-6 text-orange-500" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-white mb-1">
+                          {t("backupData")}
+                        </h4>
+                        <p className="text-sm text-white/40 mb-4">
+                          {t("backupDesc")}
+                        </p>
+                        <button className="px-6 py-2.5 bg-white/10 text-white rounded-xl text-sm font-bold hover:bg-white/20 transition-all">
+                          {t("requestExport")}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "legal" && user?.contract && (
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-2">
+                    Legal & Contracts
+                  </h3>
+                  <p className="text-white/40 text-sm">
+                    Review your active agreements with On-Road Help.
+                  </p>
+                </div>
+
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <div className="flex items-center gap-3 mb-1">
+                        <h4 className="text-lg font-semibold text-white">
+                          Enterprise SLA Contract
+                        </h4>
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
+                            user.contract.status === "active"
+                              ? "bg-green-500/10 border-green-500/30 text-green-400"
+                              : user.contract.status === "pending"
+                              ? "bg-yellow-500/10 border-yellow-500/30 text-yellow-400"
+                              : "bg-red-500/10 border-red-500/30 text-red-400"
+                          }`}
+                        >
+                          {user.contract.status}
+                        </span>
+                      </div>
+                      <p className="text-sm text-white/50">
+                        Valid from{" "}
+                        {new Date(user.contract.startDate).toLocaleDateString()}{" "}
+                        to{" "}
+                        {new Date(user.contract.endDate).toLocaleDateString()}
+                      </p>
+                    </div>
+                    {user.contract.documentUrl && (
+                      <a
+                        href={user.contract.documentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-xl transition-all flex items-center gap-2"
+                      >
+                        <FileText className="w-4 h-4" />
+                        View PDF
+                      </a>
+                    )}
+                  </div>
+
+                  {user.contract.customTerms && (
+                    <div className="bg-black/20 rounded-xl p-4 border border-white/5">
+                      <h5 className="text-sm font-semibold text-white/80 mb-2">
+                        Custom Terms Summary
+                      </h5>
+                      <p className="text-sm text-white/60 leading-relaxed">
+                        {user.contract.customTerms}
+                      </p>
+                    </div>
                   )}
                 </div>
-
-                {user.contract.customTerms && (
-                  <div className="bg-black/20 rounded-xl p-4 border border-white/5">
-                    <h5 className="text-sm font-semibold text-white/80 mb-2">
-                      Custom Terms Summary
-                    </h5>
-                    <p className="text-sm text-white/60 leading-relaxed">
-                      {user.contract.customTerms}
-                    </p>
-                  </div>
-                )}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

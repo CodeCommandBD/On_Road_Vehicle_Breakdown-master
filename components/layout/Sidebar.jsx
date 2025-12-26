@@ -22,6 +22,7 @@ import {
   FileText,
   Heart,
   Zap,
+  Home,
 } from "lucide-react";
 import {
   selectSidebarOpen,
@@ -56,6 +57,7 @@ export default function Sidebar() {
 
   const sidebarLinks = {
     user: [
+      { href: "/", label: "Home", icon: Home },
       { href: "/user/dashboard", label: t("dashboard"), icon: LayoutDashboard },
       {
         href: "/user/dashboard/analytics",
@@ -140,6 +142,7 @@ export default function Sidebar() {
       },
     ],
     garage: [
+      { href: "/", label: "Home", icon: Home },
       {
         href: "/garage/dashboard",
         label: t("dashboard"),
@@ -194,6 +197,7 @@ export default function Sidebar() {
       },
     ],
     admin: [
+      { href: "/", label: "Home", icon: Home },
       {
         href: "/admin/dashboard",
         label: t("dashboard"),
@@ -256,8 +260,10 @@ export default function Sidebar() {
             <ul className="space-y-1 px-3">
               {links.map((link) => {
                 const isActive =
-                  link.href.endsWith("/dashboard") ||
-                  link.href.endsWith("/dashboard/")
+                  link.href === "/"
+                    ? pathname === "/"
+                    : link.href.endsWith("/dashboard") ||
+                      link.href.endsWith("/dashboard/")
                     ? pathname === link.href
                     : pathname.startsWith(link.href);
                 return (

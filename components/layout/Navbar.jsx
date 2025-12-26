@@ -15,7 +15,7 @@ import {
   selectUnreadNotificationsCount,
   setUnreadNotificationsCount,
 } from "@/store/slices/uiSlice";
-import { Bell } from "lucide-react";
+import { Bell, Menu, X } from "lucide-react";
 import axios from "axios";
 
 const WaveText = ({ text }) => {
@@ -38,6 +38,7 @@ export default function Navbar() {
   const [isServicesOpen, setIsServicesOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotifyOpen, setIsNotifyOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const dropdownRef = useRef(null);
   const notifyRef = useRef(null);
@@ -126,7 +127,16 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="px-5 lg:px-20 h-[70px] sticky top-0 w-full z-[999] bg-[#020617] transition-all duration-400 flex items-center justify-between">
+      <nav className="px-4 lg:px-20 h-[70px] sticky top-0 w-full z-[999] bg-[#020617] transition-all duration-400 flex items-center justify-between">
+        {/* Mobile Menu Button - Left Side */}
+        <button
+          className="md:hidden text-white p-2 -ml-2 hover:text-[#ff4800] transition-colors"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+        </button>
+
+        {/* Logo */}
         <Link
           href="/"
           className="group flex items-center gap-3 transition-transform duration-300 hover:scale-105"
@@ -134,15 +144,16 @@ export default function Navbar() {
           <Image
             src="/images/nav/main-logo.svg"
             alt="Logo"
-            width={150}
-            height={50}
-            className="h-[50px] w-auto drop-shadow-[0_0_15px_rgba(255,72,0,0.5)] transition-all duration-300 group-hover:drop-shadow-[0_0_25px_rgba(255,72,0,0.8)]"
+            width={120}
+            height={40}
+            className="h-[35px] md:h-[50px] w-auto drop-shadow-[0_0_15px_rgba(255,72,0,0.5)] transition-all duration-300 group-hover:drop-shadow-[0_0_25px_rgba(255,72,0,0.8)]"
             priority
           />
         </Link>
 
-        <div>
-          <ul className="hidden md:flex gap-[30px] items-center p-0 m-0 list-none">
+        {/* Desktop Navigation */}
+        <div className="hidden md:block">
+          <ul className="flex gap-[30px] items-center p-0 m-0 list-none">
             <li>
               <Link
                 href="/"
@@ -171,7 +182,6 @@ export default function Navbar() {
               <div
                 className="flex items-center gap-[5px] bg-none border-none cursor-pointer"
                 onClick={() => setIsServicesOpen(!isServicesOpen)}
-                onMouseEnter={() => setIsServicesOpen(true)}
               >
                 <span className="group inline-block text-[18px] font-semibold cursor-pointer relative text-white no-underline transition-colors duration-300 hover:text-[#ff4800]">
                   <WaveText text="SERVICES" />
@@ -188,7 +198,6 @@ export default function Navbar() {
                       ? "opacity-100 max-h-[500px] translate-y-0"
                       : "opacity-0 max-h-0 -translate-y-[15px]"
                   }`}
-                  onMouseLeave={() => setIsServicesOpen(false)}
                 >
                   <div className="grid grid-cols-2 gap-[15px] p-[10px] max-h-[400px] overflow-y-auto custom-scrollbar">
                     {services.length > 0 ? (
@@ -228,7 +237,7 @@ export default function Navbar() {
           </ul>
         </div>
 
-        <div className="flex items-center gap-[15px] md:gap-[28px]">
+        <div className="flex items-center gap-2 md:gap-[28px]">
           {/* Notifications */}
           {isAuthenticated && (
             <div className="relative" ref={notifyRef}>
@@ -239,14 +248,14 @@ export default function Navbar() {
                 }}
                 className="relative p-2 text-white/70 hover:text-white transition-colors"
               >
-                <Bell className="w-6 h-6" />
+                <Bell className="w-5 h-5 md:w-6 md:h-6" />
                 {unreadCount > 0 && (
                   <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-[#ff4800] rounded-full border-2 border-[#020617]"></span>
                 )}
               </button>
 
               {isNotifyOpen && (
-                <div className="absolute top-[60px] right-0 bg-[#141414fa] backdrop-blur-[20px] border border-[#ff48004d] rounded-[16px] min-w-[300px] shadow-2xl z-[1000] overflow-hidden transition-all duration-300">
+                <div className="absolute top-[50px] md:top-[60px] right-[-60px] md:right-0 bg-[#141414fa] backdrop-blur-[20px] border border-[#ff48004d] rounded-[16px] w-[280px] md:min-w-[300px] shadow-2xl z-[1000] overflow-hidden transition-all duration-300">
                   <div className="p-4 border-b border-[#ff480033] flex justify-between items-center bg-[#ff48001a]">
                     <h4 className="text-white text-sm font-bold">
                       Notifications
@@ -255,7 +264,7 @@ export default function Navbar() {
                       {unreadCount} NEW
                     </span>
                   </div>
-                  <div className="max-h-96 overflow-y-auto custom-scrollbar">
+                  <div className="max-h-80 md:max-h-96 overflow-y-auto custom-scrollbar">
                     {notifications.length > 0 ? (
                       notifications.map((n) => (
                         <div
@@ -264,7 +273,7 @@ export default function Navbar() {
                             if (n.link) router.push(n.link);
                             setIsNotifyOpen(false);
                           }}
-                          className="p-4 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer group"
+                          className="p-3 md:p-4 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer group"
                         >
                           <p className="text-xs font-bold text-white mb-1 group-hover:text-[#ff4800]">
                             {n.title}
@@ -295,7 +304,7 @@ export default function Navbar() {
                 className="relative cursor-pointer flex items-center gap-[10px]"
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
               >
-                <div className="w-[40px] h-[40px] rounded-full border-[2px] border-[#ff4800] shadow-[0_0_0_4px_rgba(255,72,0,0.2)] transition-all duration-300 overflow-hidden hover:border-white hover:shadow-[0_0_0_6px_rgba(255,72,0,0.3),0_0_20px_rgba(255,72,0,0.5)] hover:scale-110">
+                <div className="w-[32px] h-[32px] md:w-[40px] md:h-[40px] rounded-full border-[2px] border-[#ff4800] shadow-[0_0_0_4px_rgba(255,72,0,0.2)] transition-all duration-300 overflow-hidden hover:border-white hover:shadow-[0_0_0_6px_rgba(255,72,0,0.3),0_0_20px_rgba(255,72,0,0.5)] hover:scale-110">
                   <Image
                     src={user.avatar || "/images/users/default-avatar.jpg"}
                     alt="User"
@@ -311,7 +320,7 @@ export default function Navbar() {
 
               {/* Profile Dropdown */}
               <div
-                className={`absolute top-[60px] right-0 bg-[#141414fa] bg-gradient-to-br from-[#141414fa] to-[#1e1e1ef2] backdrop-blur-[20px] border border-[#ff48004d] rounded-[16px] min-w-[280px] shadow-[0_20px_60px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,72,0,0.1),inset_0_1px_1px_rgba(255,255,255,0.1)] overflow-hidden z-[1000] transition-all duration-300 cubic-bezier(0.4,0,0.2,1) ${
+                className={`absolute top-[50px] md:top-[60px] right-0 bg-[#141414fa] bg-gradient-to-br from-[#141414fa] to-[#1e1e1ef2] backdrop-blur-[20px] border border-[#ff48004d] rounded-[16px] min-w-[260px] md:min-w-[280px] shadow-[0_20px_60px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,72,0,0.1),inset_0_1px_1px_rgba(255,255,255,0.1)] overflow-hidden z-[1000] transition-all duration-300 cubic-bezier(0.4,0,0.2,1) ${
                   isProfileOpen
                     ? "opacity-100 visible translate-y-0 scale-100"
                     : "opacity-0 invisible -translate-y-[15px] scale-95"
@@ -319,12 +328,12 @@ export default function Navbar() {
               >
                 <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#ff480080] to-transparent"></div>
 
-                <div className="p-[20px] bg-gradient-to-br from-[#ff48001a] to-[#ff48000d] border-b border-[#ff480033] relative">
+                <div className="p-[15px] md:p-[20px] bg-gradient-to-br from-[#ff48001a] to-[#ff48000d] border-b border-[#ff480033] relative">
                   <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#ff480080] to-transparent"></div>
-                  <h4 className="text-white text-[17px] font-bold mb-[6px] tracking-[0.3px]">
+                  <h4 className="text-white text-[15px] md:text-[17px] font-bold mb-[6px] tracking-[0.3px]">
                     {user.name}
                   </h4>
-                  <p className="text-[#ffffff99] text-[13px] mb-[8px] whitespace-nowrap overflow-hidden text-ellipsis">
+                  <p className="text-[#ffffff99] text-[12px] md:text-[13px] mb-[8px] whitespace-nowrap overflow-hidden text-ellipsis">
                     {user.email}
                   </p>
                   <span className="inline-block bg-gradient-to-br from-[#ff4800] to-[#ff6a3d] text-white text-[11px] font-semibold px-[12px] py-[4px] rounded-[12px] mt-[2px] capitalize shadow-[0_2px_8px_rgba(255,72,0,0.3)] tracking-[0.5px]">
@@ -332,7 +341,7 @@ export default function Navbar() {
                   </span>
                 </div>
 
-                <div className="p-[10px] flex flex-col gap-[10px]">
+                <div className="p-[10px] flex flex-col gap-[8px] md:gap-[10px]">
                   <Link
                     href={
                       userRole === "admin"
@@ -341,7 +350,7 @@ export default function Navbar() {
                         ? "/garage/dashboard"
                         : "/user/dashboard"
                     }
-                    className="flex gap-[14px] items-center p-[12px_16px] text-[#ffffffe6] text-[14px] font-medium transition-all duration-300 rounded-[10px] my-[4px_0] relative overflow-hidden group/item hover:bg-gradient-to-r hover:from-[#ff480026] hover:to-[#ff48000d] hover:text-[#ff6a3d] hover:translate-x-[4px] hover:pl-[20px]"
+                    className="flex gap-[14px] items-center p-[10px_14px] md:p-[12px_16px] text-[#ffffffe6] text-[13px] md:text-[14px] font-medium transition-all duration-300 rounded-[10px] my-[2px] md:my-[4px_0] relative overflow-hidden group/item hover:bg-gradient-to-r hover:from-[#ff480026] hover:to-[#ff48000d] hover:text-[#ff6a3d] hover:translate-x-[4px] hover:pl-[20px]"
                     onClick={() => setIsProfileOpen(false)}
                   >
                     <span className="absolute left-0 top-0 h-full w-[3px] bg-gradient-to-b from-[#ff4800] to-[#ff6a3d] scale-y-0 transition-transform duration-300 group-hover/item:scale-y-100"></span>
@@ -373,7 +382,7 @@ export default function Navbar() {
                         ? "/garage/dashboard/profile"
                         : "/user/dashboard/profile"
                     }
-                    className="flex gap-[14px] items-center p-[12px_16px] text-[#ffffffe6] text-[14px] font-medium transition-all duration-300 rounded-[10px] my-[4px_0] relative overflow-hidden group/item hover:bg-gradient-to-r hover:from-[#ff480026] hover:to-[#ff48000d] hover:text-[#ff6a3d] hover:translate-x-[4px] hover:pl-[20px]"
+                    className="flex gap-[14px] items-center p-[10px_14px] md:p-[12px_16px] text-[#ffffffe6] text-[13px] md:text-[14px] font-medium transition-all duration-300 rounded-[10px] my-[2px] md:my-[4px_0] relative overflow-hidden group/item hover:bg-gradient-to-r hover:from-[#ff480026] hover:to-[#ff48000d] hover:text-[#ff6a3d] hover:translate-x-[4px] hover:pl-[20px]"
                     onClick={() => setIsProfileOpen(false)}
                   >
                     <span className="absolute left-0 top-0 h-full w-[3px] bg-gradient-to-b from-[#ff4800] to-[#ff6a3d] scale-y-0 transition-transform duration-300 group-hover/item:scale-y-100"></span>
@@ -399,7 +408,7 @@ export default function Navbar() {
 
                   <button
                     onClick={handleLogout}
-                    className="flex w-full gap-[14px] items-center p-[12px_16px] text-[#ffffffe6] text-[14px] font-medium transition-all duration-300 rounded-[10px] my-[4px_0] relative overflow-hidden group/item hover:bg-gradient-to-r hover:from-[#ff480026] hover:to-[#ff48000d] hover:text-[#ff6a3d] hover:translate-x-[4px] hover:pl-[20px]"
+                    className="flex w-full gap-[14px] items-center p-[10px_14px] md:p-[12px_16px] text-[#ffffffe6] text-[13px] md:text-[14px] font-medium transition-all duration-300 rounded-[10px] my-[2px] md:my-[4px_0] relative overflow-hidden group/item hover:bg-gradient-to-r hover:from-[#ff480026] hover:to-[#ff48000d] hover:text-[#ff6a3d] hover:translate-x-[4px] hover:pl-[20px]"
                   >
                     <span className="absolute left-0 top-0 h-full w-[3px] bg-gradient-to-b from-[#ff4800] to-[#ff6a3d] scale-y-0 transition-transform duration-300 group-hover/item:scale-y-100"></span>
                     <div className="w-[20px] h-[20px] min-w-[20px] flex items-center justify-center rounded-[6px] bg-[#ff48001a] p-[4px] transition-all duration-300 flex-shrink-0 group-hover/item:bg-[#ff480033] group-hover/item:rotate-[5deg] group-hover/item:scale-110">
@@ -436,11 +445,11 @@ export default function Navbar() {
                   : "/book"
                 : "/login"
             }
-            className="inline-block text-white px-[30px] py-[10px] text-[14px] md:px-[50px] md:py-[12px] md:text-[16px] bg-[#ff4800] rounded-[7px] font-medium tracking-[0.5px] transition-all duration-300 relative z-10 animate-[pulse-glow_2s_infinite] hover:bg-[#cb2500] hover:animate-none hover:-translate-y-[2px]"
+            className="inline-block text-white px-[15px] py-[8px] text-[12px] md:px-[50px] md:py-[12px] md:text-[16px] bg-[#ff4800] rounded-[7px] font-medium tracking-[0.5px] transition-all duration-300 relative z-10 animate-[pulse-glow_2s_infinite] hover:bg-[#cb2500] hover:animate-none hover:-translate-y-[2px]"
           >
             {isAuthenticated
               ? userRole === "admin"
-                ? "Admin Panel"
+                ? "Admin"
                 : userRole === "garage"
                 ? "Dashboard"
                 : "Book Service"
@@ -448,6 +457,96 @@ export default function Navbar() {
           </Link>
         </div>
       </nav>
+
+      {/* Mobile Menu Overlay */}
+      <div
+        className={`fixed inset-0 z-[998] md:hidden transition-all duration-300 ${
+          isMobileMenuOpen ? "opacity-100 visible" : "opacity-0 invisible"
+        }`}
+      >
+        <div
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          onClick={() => setIsMobileMenuOpen(false)}
+        ></div>
+        <div
+          className={`absolute top-0 left-0 w-[280px] h-full bg-[#0d0f19] border-r border-white/10 shadow-2xl transition-transform duration-300 flex flex-col ${
+            isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <div className="p-6 border-b border-white/10">
+            <Image
+              src="/images/nav/main-logo.svg"
+              alt="Logo"
+              width={140}
+              height={50}
+              className="h-[40px] w-auto"
+            />
+          </div>
+
+          <div className="flex-1 overflow-y-auto py-4">
+            <div className="flex flex-col">
+              <Link
+                href="/"
+                className="px-6 py-4 text-white font-medium hover:bg-white/5 border-l-4 border-transparent hover:border-[#ff4800] transition-all"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                HOME
+              </Link>
+              <Link
+                href="/garages"
+                className="px-6 py-4 text-white font-medium hover:bg-white/5 border-l-4 border-transparent hover:border-[#ff4800] transition-all"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                FIND GARAGE
+              </Link>
+              <Link
+                href="/about"
+                className="px-6 py-4 text-white font-medium hover:bg-white/5 border-l-4 border-transparent hover:border-[#ff4800] transition-all"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                ABOUT
+              </Link>
+
+              <div className="px-6 py-4 text-white font-medium hover:bg-white/5 border-l-4 border-transparent hover:border-[#ff4800] transition-all cursor-pointer">
+                <div
+                  className="flex justify-between items-center"
+                  onClick={() => setIsServicesOpen(!isServicesOpen)}
+                >
+                  SERVICES
+                  <span className="text-[#ff4800] text-xl font-bold">
+                    {isServicesOpen ? "-" : "+"}
+                  </span>
+                </div>
+
+                {/* Mobile Services Dropdown */}
+                {isServicesOpen && (
+                  <div className="mt-4 pl-4 space-y-3">
+                    {services.map((service, index) => (
+                      <Link
+                        key={index}
+                        href={`/garages?service=${service.slug}`}
+                        className="block text-sm text-white/70 hover:text-[#ff4800]"
+                        onClick={() => {
+                          setIsServicesOpen(false);
+                          setIsMobileMenuOpen(false);
+                        }}
+                      >
+                        {service.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 border-t border-white/10">
+            <p className="text-white/40 text-xs text-center">
+              &copy; 2025 Vehicle Breakdown
+            </p>
+          </div>
+        </div>
+      </div>
     </>
   );
 }
