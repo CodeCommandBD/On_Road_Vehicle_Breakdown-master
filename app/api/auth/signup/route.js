@@ -2,41 +2,27 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db/connect";
 import User from "@/lib/db/models/User";
 import Garage from "@/lib/db/models/Garage";
-import { createToken, setTokenCookie } from "@/lib/utils/auth";
+import { createToken, setTokenCookie, hashPassword } from "@/lib/utils/auth";
+import { signupSchema } from "@/lib/validations/auth";
+import { handleError, ConflictError } from "@/lib/utils/errorHandler";
+import { createdResponse } from "@/lib/utils/apiResponse";
+import { MESSAGES, BUSINESS } from "@/lib/utils/constants";
 
 export async function POST(request) {
   try {
     await connectDB();
 
     const body = await request.json();
-    const { name, email, password, phone, role, garageName, address } = body;
 
-    // Validate required fields
-    if (!name || !email || !password) {
-      return NextResponse.json(
-        { success: false, message: "Name, email, and password are required" },
-        { status: 400 }
-      );
-    }
+    // Validate request body using Zod
+    const validatedData = signupSchema.parse(body);
+    const { name, email, password, phone, role, garageName, address } =
+      validatedData;
 
     // Check if email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "This email is already registered. Please login instead.",
-        },
-        { status: 409 }
-      );
-    }
-
-    // Validate password
-    if (password.length < 6) {
-      return NextResponse.json(
-        { success: false, message: "Password must be at least 6 characters" },
-        { status: 400 }
-      );
+      throw new ConflictError(MESSAGES.ERROR.EMAIL_EXISTS);
     }
 
     // Format address into an object if it's a string
@@ -44,17 +30,17 @@ export async function POST(request) {
       typeof address === "string"
         ? {
             street: address,
-            city: "Dhaka",
-            district: "Dhaka",
-            postalCode: "",
+            city: BUSINESS.DEFAULT_ADDRESS.city,
+            district: BUSINESS.DEFAULT_ADDRESS.district,
+            postalCode: BUSINESS.DEFAULT_ADDRESS.postalCode,
           }
-        : address;
+        : address || BUSINESS.DEFAULT_ADDRESS;
 
     // Create user
     const userData = {
       name,
       email,
-      password,
+      password, // Will be hashed by User model pre-save hook
       phone: phone || null,
       role: role || "user",
     };
@@ -73,16 +59,19 @@ export async function POST(request) {
         owner: user._id,
         email: email,
         phone: phone || "",
-        address: formattedAddress || {
-          street: "",
-          city: "Dhaka",
-          district: "Dhaka",
+        address: formattedAddress || BUSINESS.DEFAULT_ADDRESS,
+        location: {
+          type: "Point",
+          coordinates: [
+            BUSINESS.DEFAULT_COORDINATES.longitude,
+            BUSINESS.DEFAULT_COORDINATES.latitude,
+          ],
         },
       });
       await garage.save();
     }
 
-    // Create JWT token (optional if redirecting to login)
+    // Create JWT token
     const tokenPayload = {
       userId: user._id.toString(),
       email: user.email,
@@ -90,34 +79,18 @@ export async function POST(request) {
     };
     const token = await createToken(tokenPayload);
 
-    // Skip setting cookie to allow redirect to login page as requested by user
+    // Set cookie (optional - can skip if redirecting to login)
     // await setTokenCookie(token);
 
-    // Return success
-    return NextResponse.json(
+    // Return success response
+    return createdResponse(
       {
-        success: true,
-        message: "Registration successful. Please login.",
         user: user.toPublicJSON(),
-        token, // Still return token in case frontend wants it
+        token,
       },
-      { status: 201 }
+      MESSAGES.SUCCESS.SIGNUP
     );
   } catch (error) {
-    console.error("Signup error:", error);
-
-    // Handle mongoose validation errors
-    if (error.name === "ValidationError") {
-      const messages = Object.values(error.errors).map((e) => e.message);
-      return NextResponse.json(
-        { success: false, message: messages.join(", ") },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json(
-      { success: false, message: "Internal server error" },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }
