@@ -44,6 +44,7 @@ export default function MechanicDashboard() {
   const [billModalOpen, setBillModalOpen] = useState(false);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [diagnosisModalOpen, setDiagnosisModalOpen] = useState(false);
+  const [shiftReminderShown, setShiftReminderShown] = useState(false);
 
   const [estimateItems, setEstimateItems] = useState([
     { description: "", amount: "", category: "part" },
@@ -70,9 +71,31 @@ export default function MechanicDashboard() {
       fetchDashboardData();
       // Add fail-safe notification check if listener fails
       // In a real app, we'd dispatch(fetchNotifications())
+
+      checkShiftDuration();
     }, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [data, shiftReminderShown]); // Add dependencies for accurate state access
+
+  const checkShiftDuration = () => {
+    if (
+      data?.attendance?.clockIn &&
+      !data?.attendance?.clockOut &&
+      !shiftReminderShown
+    ) {
+      const clockInTime = new Date(data.attendance.clockIn).getTime();
+      const now = Date.now();
+      const hoursOnline = (now - clockInTime) / (1000 * 60 * 60);
+
+      const SHIFT_LIMIT_HOURS = 9; // Configurable limit
+
+      if (hoursOnline >= SHIFT_LIMIT_HOURS) {
+        setModalType("shift_reminder");
+        setIsModalOpen(true);
+        setShiftReminderShown(true); // Prevent repeated popups for this session
+      }
+    }
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -952,6 +975,8 @@ export default function MechanicDashboard() {
             ? "CRITICAL SOS ALERT"
             : modalType === "attendance_in"
             ? "Initialize Duty"
+            : modalType === "shift_reminder"
+            ? "Shift Limit Reached"
             : "Terminate Shift"
         }
         message={
@@ -959,6 +984,8 @@ export default function MechanicDashboard() {
             ? "This will transmit your live coordinates to HQ and the local response team. Use only in extreme emergency."
             : modalType === "attendance_in"
             ? "You are about to go online. New missions will be visible in your local sector."
+            : modalType === "shift_reminder"
+            ? "You have been online for over 9 hours. Standard safety protocols recommend terminating your shift to prevent fatigue."
             : "Confirm shift termination. You will no longer be visible for priority mission deployments."
         }
         confirmText={
