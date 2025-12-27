@@ -2,61 +2,51 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db/connect";
 import User from "@/lib/db/models/User";
 import { createToken, setTokenCookie } from "@/lib/utils/auth";
+import { loginSchema } from "@/lib/validations/auth";
+import {
+  handleError,
+  UnauthorizedError,
+  ForbiddenError,
+  NotFoundError,
+} from "@/lib/utils/errorHandler";
+import { successResponse } from "@/lib/utils/apiResponse";
+import { MESSAGES } from "@/lib/utils/constants";
 
 export async function POST(request) {
   try {
     await connectDB();
 
     const body = await request.json();
-    const { email, password, role } = body;
 
-    // Validate input
-    if (!email || !password) {
-      return NextResponse.json(
-        { success: false, message: "Email and password are required" },
-        { status: 400 }
-      );
-    }
+    // Validate request body using Zod
+    const validatedData = loginSchema.parse(body);
+    const { email, password } = validatedData;
+    const { role } = body; // Optional role check
 
-    // Find user with password
+    // Find user with password (support both email and phone)
     const user = await User.findOne({
       $or: [{ email: email }, { phone: email }],
     }).select("+password");
 
     if (!user) {
-      return NextResponse.json(
-        { success: false, message: "Invalid email/phone or password" },
-        { status: 401 }
-      );
+      throw new NotFoundError(MESSAGES.ERROR.INVALID_CREDENTIALS);
     }
 
     // Check if user is active
     if (!user.isActive) {
-      return NextResponse.json(
-        { success: false, message: "Your account has been deactivated" },
-        { status: 403 }
-      );
+      throw new ForbiddenError("আপনার অ্যাকাউন্ট নিষ্ক্রিয় করা হয়েছে");
     }
 
     // Verify password
     const isPasswordValid = await user.comparePassword(password);
 
     if (!isPasswordValid) {
-      return NextResponse.json(
-        { success: false, message: "Invalid email or password" },
-        { status: 401 }
-      );
+      throw new UnauthorizedError(MESSAGES.ERROR.INVALID_CREDENTIALS);
     }
 
     // Check role if specified
     if (role && user.role !== role) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: `This account is not registered as a ${role}`,
-        },
-        { status: 401 }
-      );
+      throw new UnauthorizedError(`এই অ্যাকাউন্ট ${role} হিসাবে নিবন্ধিত নয়`);
     }
 
     // Update last login
@@ -146,20 +136,14 @@ export async function POST(request) {
     await setTokenCookie(token);
 
     // Return success response
-    return NextResponse.json(
+    return successResponse(
       {
-        success: true,
-        message: "Login successful",
         user: userPublic,
         token,
       },
-      { status: 200 }
+      MESSAGES.SUCCESS.LOGIN
     );
   } catch (error) {
-    console.error("Login error:", error);
-    return NextResponse.json(
-      { success: false, message: "Internal server error" },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }

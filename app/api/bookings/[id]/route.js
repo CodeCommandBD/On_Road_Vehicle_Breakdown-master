@@ -8,24 +8,27 @@ import Notification from "@/lib/db/models/Notification";
 import PointsRecord from "@/lib/db/models/PointsRecord";
 import User from "@/lib/db/models/User";
 import Payment from "@/lib/db/models/Payment";
-import JobCard from "@/lib/db/models/JobCard"; // Ensure strict population knows the model
-import { verifyToken } from "@/lib/utils/auth";
+import JobCard from "@/lib/db/models/JobCard";
+import { requireAuth } from "@/lib/utils/auth";
 import { validateStatusTransition } from "@/lib/utils/bookingHelpers";
+import {
+  handleError,
+  NotFoundError,
+  ForbiddenError,
+} from "@/lib/utils/errorHandler";
+import { successResponse } from "@/lib/utils/apiResponse";
+import { MESSAGES } from "@/lib/utils/constants";
 
+/**
+ * GET /api/bookings/[id]
+ * Get single booking details
+ */
 export async function GET(request, { params }) {
   try {
     await connectDB();
 
-    const token = request.cookies.get("token")?.value;
-    const decoded = await verifyToken(token);
-
-    if (!decoded) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
+    // Require authentication
+    const currentUser = await requireAuth(request);
     const { id } = await params;
 
     const booking = await Booking.findById(id)
@@ -35,11 +38,11 @@ export async function GET(request, { params }) {
         path: "assignedMechanic",
         select: "name phone avatar",
         strictPopulate: false,
-      }) // Populate Mechanic safely
+      })
       .populate({
         path: "jobCard",
         strictPopulate: false,
-      }); // Fetch Diagnosis Report
+      });
 
     // Fetch review separately if exists
     const review = await Review.findOne({ booking: id });
@@ -49,70 +52,58 @@ export async function GET(request, { params }) {
     });
 
     if (!booking) {
-      return NextResponse.json(
-        { success: false, message: "Booking not found" },
-        { status: 404 }
-      );
+      throw new NotFoundError(MESSAGES.ERROR.BOOKING_NOT_FOUND);
     }
 
     // Authorization check
     let isAuthorized = false;
 
-    if (decoded.role === "admin") {
+    if (currentUser.role === "admin") {
       isAuthorized = true;
-    } else if (booking.user._id.toString() === decoded.userId) {
+    } else if (booking.user._id.toString() === currentUser.userId) {
       isAuthorized = true;
     } else if (
       booking.garage &&
       booking.garage.owner &&
-      booking.garage.owner.toString() === decoded.userId
+      booking.garage.owner.toString() === currentUser.userId
     ) {
       isAuthorized = true;
     } else if (
-      decoded.role === "mechanic" &&
-      booking.assignedMechanic?._id?.toString() === decoded.userId
+      currentUser.role === "mechanic" &&
+      booking.assignedMechanic?._id?.toString() === currentUser.userId
     ) {
       isAuthorized = true;
     }
 
     if (!isAuthorized) {
-      return NextResponse.json(
-        { success: false, message: "Forbidden" },
-        { status: 403 }
-      );
+      throw new ForbiddenError(MESSAGES.ERROR.FORBIDDEN);
     }
 
-    return NextResponse.json({
-      success: true,
-      booking: {
-        ...booking.toObject(),
-        review: review,
-        paymentInfo: payment,
+    return successResponse(
+      {
+        booking: {
+          ...booking.toObject(),
+          review: review,
+          paymentInfo: payment,
+        },
       },
-    });
-  } catch (error) {
-    console.error("Booking GET error:", error);
-    return NextResponse.json(
-      { success: false, message: "Internal server error" },
-      { status: 500 }
+      "বুকিং বিস্তারিত সফলভাবে পাওয়া গেছে"
     );
+  } catch (error) {
+    return handleError(error);
   }
 }
 
+/**
+ * PATCH /api/bookings/[id]
+ * Update booking status and details
+ */
 export async function PATCH(request, { params }) {
   try {
     await connectDB();
 
-    const token = request.cookies.get("token")?.value;
-    const decoded = await verifyToken(token);
-
-    if (!decoded) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
+    // Require authentication
+    const currentUser = await requireAuth(request);
     const { id } = await params;
     const body = await request.json();
     const {
@@ -122,50 +113,43 @@ export async function PATCH(request, { params }) {
       billItems,
       towingRequested,
       towingCost,
-      assignedMechanic, // Allow updating assigned mechanic
+      assignedMechanic,
     } = body;
 
     const booking = await Booking.findById(id).populate("garage", "owner");
     if (!booking) {
-      return NextResponse.json(
-        { success: false, message: "Booking not found" },
-        { status: 404 }
-      );
+      throw new NotFoundError(MESSAGES.ERROR.BOOKING_NOT_FOUND);
     }
 
     // Authorization check
     let isAuthorized = false;
 
-    if (decoded.role === "admin") {
+    if (currentUser.role === "admin") {
       isAuthorized = true;
     } else if (
-      decoded.role === "garage" &&
-      booking.garage?.owner?.toString() === decoded.userId
+      currentUser.role === "garage" &&
+      booking.garage?.owner?.toString() === currentUser.userId
     ) {
       isAuthorized = true;
     } else if (
-      decoded.role === "mechanic" &&
-      booking.assignedMechanic?.toString() === decoded.userId
+      currentUser.role === "mechanic" &&
+      booking.assignedMechanic?.toString() === currentUser.userId
     ) {
       isAuthorized = true;
     } else if (
-      // Allow USER to update (e.g. cancel) their OWN booking
-      decoded.role === "user" &&
-      booking.user?.toString() === decoded.userId
+      currentUser.role === "user" &&
+      booking.user?.toString() === currentUser.userId
     ) {
       isAuthorized = true;
     }
 
     if (!isAuthorized) {
-      return NextResponse.json(
-        { success: false, message: "Forbidden: You do not have permission" },
-        { status: 403 }
-      );
+      throw new ForbiddenError(MESSAGES.ERROR.FORBIDDEN);
     }
 
     // Update fields
     if (status) {
-      // STRICT STATE MACHINE: Validate transition
+      // Validate transition
       const validation = validateStatusTransition(booking.status, status);
       if (validation !== true) {
         return NextResponse.json(
@@ -182,10 +166,9 @@ export async function PATCH(request, { params }) {
       if (status === "completed") {
         booking.completedAt = new Date();
 
-        // --- POINTS LOGIC START ---
+        // Award points
         try {
           if (booking.actualCost && booking.actualCost > 0) {
-            // Fetch User to check tier for multiplier
             const customer = await User.findById(booking.user);
             let multiplier = 1;
 
@@ -202,7 +185,6 @@ export async function PATCH(request, { params }) {
             );
 
             if (pointsEarned > 0) {
-              // 1. Update User Points & Stats
               await User.findByIdAndUpdate(booking.user, {
                 $inc: {
                   rewardPoints: pointsEarned,
@@ -211,7 +193,6 @@ export async function PATCH(request, { params }) {
                 },
               });
 
-              // 2. Create History Record
               await PointsRecord.create({
                 user: booking.user,
                 points: pointsEarned,
@@ -225,20 +206,13 @@ export async function PATCH(request, { params }) {
                   tier: customer?.membershipTier || "free",
                 },
               });
-
-              console.log(
-                `Awarded ${pointsEarned} points to user ${booking.user} (Tier: ${customer?.membershipTier}, Multiplier: ${multiplier}x)`
-              );
             }
           }
         } catch (pointError) {
           console.error("Failed to award points:", pointError);
-          // Don't protect against error, just log it so booking still completes
         }
-        // --- POINTS LOGIC END ---
       } else if (status === "cancelled") {
         booking.cancelledAt = new Date();
-        // CANCELLATION POLICY: If cancelled after start, charge fee
         if (booking.status === "in_progress" || booking.startedAt) {
           const cancellationFee = 100;
           booking.billItems.push({
@@ -258,36 +232,28 @@ export async function PATCH(request, { params }) {
       booking.towingRequested = towingRequested;
 
     if (towingCost !== undefined) {
-      // Check for Free Towing Benefit (Enterprise/Premium)
       const customerForTowing = await User.findById(booking.user);
       if (
         customerForTowing &&
         ["enterprise", "premium"].includes(customerForTowing.membershipTier)
       ) {
         booking.towingCost = 0;
-        // Optionally add a note to billItems if not already there?
-        // For now, just overriding cost is enough to ensure they aren't charged.
-        console.log(
-          `🚚 Free Towing applied for ${customerForTowing.membershipTier} member.`
-        );
       } else {
         booking.towingCost = towingCost;
       }
     }
     if (notes) booking.notes = notes;
 
-    // Handle Manual Assignment
+    // Handle mechanic assignment
     if (assignedMechanic) {
-      // Validate that the mechanic belongs to this garage (security check)
       const mechanicUser = await User.findById(assignedMechanic);
       if (
         mechanicUser &&
         mechanicUser.garageId.toString() === booking.garage._id.toString()
       ) {
         booking.assignedMechanic = assignedMechanic;
-        booking.status = "confirmed"; // Auto-confirm if assigned
+        booking.status = "confirmed";
 
-        // Notify Mechanic
         await Notification.create({
           recipient: assignedMechanic,
           type: "system_alert",
@@ -314,7 +280,6 @@ export async function PATCH(request, { params }) {
           metadata: { bookingId: booking._id, status },
         });
 
-        // Notify Assigned Mechanic if Cancelled
         if (status === "cancelled" && booking.assignedMechanic) {
           await Notification.create({
             recipient: booking.assignedMechanic,
@@ -322,40 +287,88 @@ export async function PATCH(request, { params }) {
             title: "Job Cancelled ❌",
             message: `Booking #${
               booking.bookingNumber || booking._id
-            } has been cancelled by the user/admin.`,
+            } has been cancelled.`,
             link: `/mechanic/dashboard`,
-          });
-        } else if (
-          status &&
-          booking.assignedMechanic &&
-          decoded.userId !== booking.assignedMechanic.toString()
-        ) {
-          // General status update notification for mechanic (if not updated by themselves)
-          await Notification.create({
-            recipient: booking.assignedMechanic,
-            type: "system_alert",
-            title: "Booking Updated 🔔",
-            message: `Booking #${
-              booking.bookingNumber || booking._id
-            } status updated to: ${status}`,
-            link: `/mechanic/dashboard/bookings/${booking._id}`,
           });
         }
       } catch (err) {
-        console.error("Failed to create status update notification:", err);
+        console.error("Failed to create notification:", err);
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      message: `Booking updated to ${status}`,
-      booking,
-    });
-  } catch (error) {
-    console.error("Booking PATCH error:", error);
-    return NextResponse.json(
-      { success: false, message: "Internal server error" },
-      { status: 500 }
+    return successResponse(
+      { booking },
+      `বুকিং আপডেট হয়েছে: ${status || "সফল"}`
     );
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+/**
+ * DELETE /api/bookings/[id]
+ * Delete/Cancel a booking
+ */
+export async function DELETE(request, { params }) {
+  try {
+    await connectDB();
+
+    // Require authentication
+    const currentUser = await requireAuth(request);
+    const { id } = await params;
+
+    const booking = await Booking.findById(id);
+    if (!booking) {
+      throw new NotFoundError(MESSAGES.ERROR.BOOKING_NOT_FOUND);
+    }
+
+    // Authorization check - Only admin or booking owner can delete
+    let isAuthorized = false;
+
+    if (currentUser.role === "admin") {
+      isAuthorized = true;
+    } else if (booking.user.toString() === currentUser.userId) {
+      // User can only delete if booking is still pending
+      if (booking.status === "pending") {
+        isAuthorized = true;
+      }
+    }
+
+    if (!isAuthorized) {
+      throw new ForbiddenError(
+        "শুধুমাত্র অ্যাডমিন অথবা pending বুকিং এর মালিক মুছে ফেলতে পারবেন"
+      );
+    }
+
+    // Soft delete - mark as cancelled instead of hard delete
+    booking.status = "cancelled";
+    booking.cancelledAt = new Date();
+    booking.cancellationReason = "Deleted by user/admin";
+    await booking.save();
+
+    // Notify garage if assigned
+    if (booking.garage) {
+      try {
+        const garage = await Garage.findById(booking.garage);
+        if (garage && garage.owner) {
+          await Notification.create({
+            recipient: garage.owner,
+            type: "booking_update",
+            title: "Booking Cancelled",
+            message: `Booking #${
+              booking.bookingNumber || booking._id
+            } has been cancelled.`,
+            link: `/garage/dashboard/bookings`,
+            metadata: { bookingId: booking._id },
+          });
+        }
+      } catch (err) {
+        console.error("Failed to notify garage:", err);
+      }
+    }
+
+    return successResponse({ bookingId: id }, "বুকিং বাতিল করা হয়েছে");
+  } catch (error) {
+    return handleError(error);
   }
 }

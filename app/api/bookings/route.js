@@ -5,6 +5,7 @@ import Garage from "@/lib/db/models/Garage";
 import Service from "@/lib/db/models/Service";
 import Notification from "@/lib/db/models/Notification";
 import { triggerWebhook } from "@/lib/utils/webhook";
+import { BUSINESS } from "@/lib/utils/constants";
 
 // Basic API route for creating bookings
 // Authentication details handled via searchParams or logic below
@@ -20,7 +21,11 @@ export async function POST(req) {
     // AUTOMATED DISPATCH: If no garage selected, find the nearest one
     if (!body.garage && body.location?.coordinates) {
       const [lng, lat] = body.location.coordinates;
-      const nearbyGarages = await Garage.findNearby(lng, lat, 20000); // 20km radius
+      const nearbyGarages = await Garage.findNearby(
+        lng,
+        lat,
+        BUSINESS.SEARCH_RADIUS_METERS
+      ); // Use constant instead of hardcoded value
 
       if (nearbyGarages && nearbyGarages.length > 0) {
         body.garage = nearbyGarages[0]._id; // Assign the closest one

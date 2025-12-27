@@ -2,88 +2,76 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db/connect";
 import User from "@/lib/db/models/User";
 import PointsRecord from "@/lib/db/models/PointsRecord";
-import { verifyToken } from "@/lib/utils/auth";
+import { requireAuth, requireRole } from "@/lib/utils/auth";
+import { handleError, NotFoundError } from "@/lib/utils/errorHandler";
+import { successResponse, paginatedResponse } from "@/lib/utils/apiResponse";
+import { MESSAGES, PAGINATION } from "@/lib/utils/constants";
 
-async function checkAdmin(request) {
-  try {
-    const token = request.cookies.get("token")?.value;
-    if (!token) {
-      console.log("No token found in cookies");
-      return null;
-    }
-
-    const decoded = await verifyToken(token);
-    console.log("Decoded token:", decoded?.email, "role:", decoded?.role);
-
-    if (!decoded) {
-      console.log("Token verification failed");
-      return null;
-    }
-
-    if (decoded.role !== "admin") {
-      console.log("User is not admin, role is:", decoded.role);
-      return null;
-    }
-
-    return decoded;
-  } catch (error) {
-    console.error("checkAdmin error:", error);
-    return null;
-  }
-}
-
+/**
+ * GET /api/admin/users
+ * Get all users (Admin only)
+ */
 export async function GET(request) {
   try {
-    const admin = await checkAdmin(request);
-    if (!admin)
-      return NextResponse.json(
-        { success: false, message: "Forbidden" },
-        { status: 403 }
-      );
-
     await connectDB();
+
+    // Require admin authentication
+    const currentUser = await requireAuth(request);
+    requireRole(currentUser, "admin");
+
+    // Get pagination params
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page")) || PAGINATION.DEFAULT_PAGE;
+    const limit =
+      parseInt(searchParams.get("limit")) || PAGINATION.DEFAULT_LIMIT;
+    const skip = (page - 1) * limit;
+
+    // Get total count
+    const total = await User.countDocuments();
+
+    // Fetch users
     const users = await User.find()
       .populate("garageId", "name")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
-    return NextResponse.json({
-      success: true,
-      users: users.map((u) => u.toPublicJSON()),
-    });
-  } catch (error) {
-    console.error("Admin User Fetch Error:", error);
-    return NextResponse.json(
-      { success: false, message: "Internal server error" },
-      { status: 500 }
+    return paginatedResponse(
+      users.map((u) => u.toPublicJSON()),
+      page,
+      limit,
+      total,
+      "ব্যবহারকারী তালিকা সফলভাবে পাওয়া গেছে"
     );
+  } catch (error) {
+    return handleError(error);
   }
 }
 
+/**
+ * PUT /api/admin/users
+ * Update user details (Admin only)
+ */
 export async function PUT(request) {
   try {
-    const admin = await checkAdmin(request);
-    if (!admin)
-      return NextResponse.json(
-        { success: false, message: "Forbidden" },
-        { status: 403 }
-      );
-
     await connectDB();
+
+    // Require admin authentication
+    const currentUser = await requireAuth(request);
+    requireRole(currentUser, "admin");
+
     const { userId, rewardPoints, isActive, role } = await request.json();
 
     if (!userId) {
       return NextResponse.json(
-        { success: false, message: "User ID required" },
+        { success: false, message: "ব্যবহারকারী ID প্রয়োজন" },
         { status: 400 }
       );
     }
 
     const user = await User.findById(userId);
     if (!user) {
-      return NextResponse.json(
-        { success: false, message: "User not found" },
-        { status: 404 }
-      );
+      throw new NotFoundError(MESSAGES.ERROR.USER_NOT_FOUND);
     }
 
     // Handle points adjustment
@@ -100,7 +88,7 @@ export async function PUT(request) {
           reason: `Admin adjustment: ${
             diff > 0 ? "Added" : "Removed"
           } by administrator`,
-          metadata: { adminId: admin.userId },
+          metadata: { adminId: currentUser.userId },
         });
       }
     }
@@ -110,57 +98,44 @@ export async function PUT(request) {
 
     await user.save();
 
-    return NextResponse.json({
-      success: true,
-      message: "User updated successfully",
-      user: user.toPublicJSON(),
-    });
-  } catch (error) {
-    console.error("Admin User Update Error:", error);
-    return NextResponse.json(
-      { success: false, message: "Internal server error" },
-      { status: 500 }
+    return successResponse(
+      { user: user.toPublicJSON() },
+      "ব্যবহারকারী সফলভাবে আপডেট হয়েছে"
     );
+  } catch (error) {
+    return handleError(error);
   }
 }
 
+/**
+ * DELETE /api/admin/users
+ * Delete user (Admin only)
+ */
 export async function DELETE(request) {
   try {
-    const admin = await checkAdmin(request);
-    if (!admin)
-      return NextResponse.json(
-        { success: false, message: "Forbidden" },
-        { status: 403 }
-      );
-
     await connectDB();
+
+    // Require admin authentication
+    const currentUser = await requireAuth(request);
+    requireRole(currentUser, "admin");
+
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
 
     if (!userId) {
       return NextResponse.json(
-        { success: false, message: "User ID required" },
+        { success: false, message: "ব্যবহারকারী ID প্রয়োজন" },
         { status: 400 }
       );
     }
 
     const user = await User.findByIdAndDelete(userId);
     if (!user) {
-      return NextResponse.json(
-        { success: false, message: "User not found" },
-        { status: 404 }
-      );
+      throw new NotFoundError(MESSAGES.ERROR.USER_NOT_FOUND);
     }
 
-    return NextResponse.json({
-      success: true,
-      message: "User deleted successfully",
-    });
+    return successResponse({ userId }, "ব্যবহারকারী মুছে ফেলা হয়েছে");
   } catch (error) {
-    console.error("Admin User Delete Error:", error);
-    return NextResponse.json(
-      { success: false, message: "Internal server error" },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }
