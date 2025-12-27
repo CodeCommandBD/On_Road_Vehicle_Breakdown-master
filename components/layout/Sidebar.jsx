@@ -63,32 +63,16 @@ export default function Sidebar() {
         href: "/user/dashboard/analytics",
         label: "Analytics",
         icon: TrendingUp,
-        locked:
-          (user?.membershipTier !== "premium" &&
-            user?.membershipTier !== "enterprise") ||
-          (user?.membershipExpiry &&
-            new Date(user.membershipExpiry) < new Date()),
       },
       {
         href: "/user/dashboard/integrations",
         label: "CRM / Integrations",
         icon: Webhook,
-        locked:
-          (user?.membershipTier !== "premium" &&
-            user?.membershipTier !== "enterprise") ||
-          (user?.membershipExpiry &&
-            new Date(user.membershipExpiry) < new Date()),
       },
       {
         href: "/user/dashboard/team",
         label: "Team Management",
         icon: Users,
-        locked:
-          ((user?.membershipTier !== "premium" &&
-            user?.membershipTier !== "enterprise") ||
-            (user?.membershipExpiry &&
-              new Date(user.membershipExpiry) < new Date())) &&
-          !user?.isTeamMember,
       },
       {
         href: "/user/dashboard/bookings",
@@ -109,11 +93,6 @@ export default function Sidebar() {
         href: "/user/dashboard/automation",
         label: "Automation",
         icon: Activity,
-        locked:
-          user?.membershipTier === "free" ||
-          user?.membershipTier === "trial" ||
-          (user?.membershipExpiry &&
-            new Date(user.membershipExpiry) < new Date()),
       },
       { href: "/user/dashboard/profile", label: t("profile"), icon: User },
       {
@@ -125,11 +104,6 @@ export default function Sidebar() {
         href: "/user/dashboard/reports",
         label: "Reports",
         icon: FileText,
-        locked:
-          (user?.membershipTier !== "premium" &&
-            user?.membershipTier !== "enterprise") ||
-          (user?.membershipExpiry &&
-            new Date(user.membershipExpiry) < new Date()),
       },
       {
         href: "/user/dashboard/support",

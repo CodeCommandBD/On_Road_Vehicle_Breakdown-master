@@ -407,6 +407,13 @@ export default function ProfilePage() {
                   {user.membershipExpiry &&
                   new Date(user.membershipExpiry) < new Date()
                     ? "EXPIRED"
+                    : user.isEnterpriseOwner ||
+                      (user.enterpriseTeam &&
+                        (user.enterpriseTeam.isOwner ||
+                          user.enterpriseTeam.role === "owner"))
+                    ? "ENTERPRISE Owner"
+                    : user.isTeamMember
+                    ? "ENTERPRISE Member"
                     : `${user.membershipTier?.toUpperCase() || "FREE"} ${t(
                         "member"
                       )}`}

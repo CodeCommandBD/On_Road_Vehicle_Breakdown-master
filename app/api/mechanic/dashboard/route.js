@@ -70,8 +70,9 @@ export async function GET(request) {
     }
 
     // 3. Fetch Open Jobs (for the same garage, not assigned)
+    // ONLY show if mechanic is clocked in
     let openJobs = [];
-    if (mechanic.garageId) {
+    if (mechanic.garageId && attendance?.clockIn && !attendance?.clockOut) {
       openJobs = await Booking.find({
         garage: mechanic.garageId._id,
         status: { $in: ["pending", "confirmed"] },

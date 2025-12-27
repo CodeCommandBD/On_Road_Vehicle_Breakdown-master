@@ -30,8 +30,54 @@ export async function POST(req) {
       }
     }
 
+    // Verify user to track creator
+    const { verifyToken } = await import("@/lib/utils/auth");
+    const User = (await import("@/lib/db/models/User")).default;
+
+    const token = req.cookies.get("token")?.value;
+    let createdByMember = null;
+
+    if (token) {
+      const decoded = await verifyToken(token);
+      if (decoded) {
+        const currentUser = await User.findById(decoded.userId).select(
+          "name enterpriseTeam"
+        );
+
+        if (currentUser) {
+          // Check if enterprise user (owner or member)
+          if (
+            currentUser.membershipTier === "enterprise" ||
+            currentUser.enterpriseTeam?.isOwner ||
+            currentUser.enterpriseTeam?.parentAccount
+          ) {
+            createdByMember = {
+              userId: currentUser._id,
+              name: currentUser.name,
+              isOwner: currentUser.enterpriseTeam?.isOwner !== false, // Default to true if not explicitly false
+            };
+
+            // If it's a member creating booking, ensure booking is assigned to parent account if intended
+            // (Business logic: Bookings usually belong to the company account)
+            if (
+              !createdByMember.isOwner &&
+              currentUser.enterpriseTeam?.parentAccount
+            ) {
+              // Optionally override body.user to be the parent account if your business logic requires all bookings to be centralized
+              // body.user = currentUser.enterpriseTeam.parentAccount;
+            }
+          }
+        }
+      }
+    }
+
     // Create the booking
-    const booking = await Booking.create(body);
+    const bookingData = {
+      ...body,
+      createdByMember,
+    };
+
+    const booking = await Booking.create(bookingData);
 
     // Create notification for garage if assigned
     if (body.garage) {

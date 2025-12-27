@@ -13,18 +13,62 @@ export default function AnalyticsPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Determine access
-  const hasAccess =
+  // Role Check State
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [roleChecked, setRoleChecked] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+
+    // Check if user is on Enterprise plan
+    const isEnterprise =
+      user.membershipTier === "enterprise" || user.planTier === "enterprise";
+
+    if (isEnterprise) {
+      // For Enterprise: Must be Owner or Admin
+      axios
+        .get("/api/organizations")
+        .then((res) => {
+          const orgs = res.data.data || [];
+          // Authorized if they have 'owner' or 'admin' role in ANY active org
+          const hasAuthRole = orgs.some(
+            (o) => o.role === "admin" || o.role === "owner"
+          );
+          setIsAuthorized(hasAuthRole);
+        })
+        .catch((err) => {
+          console.error("Auth check failed:", err);
+          setIsAuthorized(false);
+        })
+        .finally(() => setRoleChecked(true));
+    } else {
+      // Non-Enterprise (Private/Premium):
+      // Usually these users are Owners of their own solo account.
+      // Or if Premium is also restricted? User said "Only Enterprise Admin/Owner".
+      // Assuming Premium users HAVE access (as per original logic "Upgrade to Premium").
+      // So if not Enterprise, we grant access if plan is eligible.
+      setIsAuthorized(true);
+      setRoleChecked(true);
+    }
+  }, [user]);
+
+  const isPlanEligible =
     ["premium", "enterprise"].includes(user?.membershipTier) ||
     ["premium", "enterprise"].includes(user?.planTier);
+
+  // Access is granted if:
+  // 1. Plan is eligible (Premium/Enterprise)
+  // 2. Role check passed (If Enterprise, must be Owner/Admin. If Premium, passed by default)
+  const hasAccess = isPlanEligible && isAuthorized && roleChecked;
+  const isRestricted = !isAuthorized && roleChecked && isPlanEligible; // specifically restricted by role
 
   useEffect(() => {
     if (hasAccess) {
       fetchAnalytics();
-    } else {
-      setLoading(false); // Stop loading if no access
+    } else if (roleChecked) {
+      setLoading(false);
     }
-  }, [hasAccess]);
+  }, [hasAccess, roleChecked]);
 
   const fetchAnalytics = async () => {
     try {
@@ -68,14 +112,20 @@ export default function AnalyticsPage() {
             <p className="text-white/60 mb-6 relative z-10">
               Unlock detailed cost analysis, vehicle health trends, and service
               history reports with the Premium plan.
+              <br />
+              {isRestricted
+                ? "Access restricted to Organization Owners & Admins."
+                : ""}
             </p>
 
-            <Link
-              href="/pricing"
-              className="block w-full py-3 rounded-xl bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold hover:shadow-[0_0_20px_rgba(234,179,8,0.3)] transition-all relative z-10"
-            >
-              Upgrade to Premium
-            </Link>
+            {!isRestricted && (
+              <Link
+                href="/pricing"
+                className="block w-full py-3 rounded-xl bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold hover:shadow-[0_0_20px_rgba(234,179,8,0.3)] transition-all relative z-10"
+              >
+                Upgrade to Premium
+              </Link>
+            )}
           </div>
         </div>
       ) : (

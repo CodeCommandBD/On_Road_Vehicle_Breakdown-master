@@ -49,7 +49,7 @@ export async function POST(request) {
       validationResult.status === "VALID" ||
       validationResult.status === "VALIDATED"
     ) {
-      // Update payment record
+      // Update payment record to success (payment verified by SSLCommerz)
       await Payment.findByIdAndUpdate(payment._id, {
         status: "success",
         paidAt: new Date(),
@@ -57,46 +57,69 @@ export async function POST(request) {
         "sslcommerz.validationId": val_id,
       });
 
-      // Update booking
+      console.log(
+        "🔵 IPN DEBUG: SSLCommerz payment verified, setting status to PENDING",
+        {
+          transactionId: tran_id,
+          amount: payment.amount,
+          bookingId: value_b,
+        }
+      );
+
+      // Update booking - Payment Submitted, Awaiting Approval
       const booking = await Booking.findByIdAndUpdate(
         value_b,
         {
-          isPaid: true,
-          status: "completed",
-          completedAt: new Date(),
-          paymentInfo: {
-            status: "success",
+          isPaid: false,
+          status: "payment_pending",
+          isPaymentSubmitted: true,
+          isPaymentApproved: false,
+          paymentDetails: {
             transactionId: tran_id,
             amount: payment.amount,
-            paymentMethod: "sslcommerz",
-            paidAt: new Date(),
+            method: "sslcommerz",
+            submittedAt: new Date(),
           },
         },
         { new: true }
-      ).populate("user assignedMechanic");
+      ).populate("user assignedMechanic garage");
 
       if (booking) {
-        // Notify user
+        // Notify user - payment received, waiting for mechanic confirmation
         await Notification.create({
           recipient: booking.user._id,
-          type: "payment_success",
-          title: "Payment Successful ✅",
-          message: `Your payment of ৳${payment.amount} has been confirmed. Service completed!`,
+          type: "info",
+          title: "Payment Received ✅",
+          message: `Your payment of ৳${payment.amount} has been received successfully. Waiting for mechanic verification.`,
           link: `/user/dashboard/bookings/${booking._id}`,
         });
 
-        // Notify mechanic
+        // Notify mechanic - payment received, needs approval
         if (booking.assignedMechanic) {
           await Notification.create({
             recipient: booking.assignedMechanic,
-            type: "payment_success",
+            type: "info",
             title: "Payment Received 💰",
-            message: `Payment of ৳${payment.amount} confirmed for Booking #${booking.bookingNumber}`,
+            message: `Online payment of ৳${payment.amount} received for Booking #${booking.bookingNumber} (TrxID: ${tran_id}). Please verify and confirm.`,
             link: `/mechanic/dashboard`,
           });
         }
 
-        console.log("IPN: Booking updated successfully:", booking._id);
+        // Notify garage owner as well
+        if (booking.garage?.owner) {
+          await Notification.create({
+            recipient: booking.garage.owner,
+            type: "info",
+            title: "Payment Received ৳",
+            message: `Online payment of ৳${payment.amount} received (TrxID: ${tran_id}). Please verify.`,
+            link: `/garage/dashboard/bookings/${booking._id}`,
+          });
+        }
+
+        console.log(
+          "IPN: Booking updated, pending mechanic approval:",
+          booking._id
+        );
       }
 
       return NextResponse.json({ success: true, message: "Payment validated" });

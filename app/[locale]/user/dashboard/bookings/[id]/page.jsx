@@ -256,6 +256,21 @@ export default function BookingDetailsPage() {
 
   if (!booking) return null;
 
+  // 🔍 DEBUG: Payment Status Check
+  console.log("🔍 USER BOOKING DEBUG:", {
+    bookingId: booking._id,
+    bookingStatus: booking.status,
+    isPaid: booking.isPaid,
+    isPaymentSubmitted: booking.isPaymentSubmitted,
+    isPaymentApproved: booking.isPaymentApproved,
+    paymentDetails: booking.paymentDetails,
+    displayText: !booking.isPaymentSubmitted
+      ? "Payment Pending"
+      : booking.isPaymentSubmitted && !booking.isPaymentApproved
+      ? "Payment Verified by Mechanic"
+      : "Payment Successful",
+  });
+
   // Helper to determine step status
   const getStepStatus = (stepId) => {
     const statusOrder = ["pending", "confirmed", "in_progress", "completed"];
@@ -637,29 +652,29 @@ export default function BookingDetailsPage() {
 
               <div
                 className={`mt-4 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-bold ${
-                  booking.isPaid
+                  booking.isPaid && booking.isPaymentApproved
                     ? "bg-green-50 text-green-600"
+                    : booking.isPaymentSubmitted && !booking.isPaymentApproved
+                    ? "bg-blue-50 text-blue-600"
                     : "bg-red-50 text-red-600"
                 }`}
               >
-                {booking.isPaid ? (
+                {booking.isPaid && booking.isPaymentApproved ? (
                   <CheckCircle className="w-4 h-4" />
                 ) : (
                   <CreditCard className="w-4 h-4" />
                 )}
-                {booking.isPaid
-                  ? booking.paymentMethod === "cash"
-                    ? "Payment Verified by Mechanic"
-                    : "Payment Completed"
-                  : booking.paymentInfo?.status === "pending"
-                  ? "Verification Pending"
+                {booking.isPaymentSubmitted && !booking.isPaymentApproved
+                  ? "Payment Verified by Mechanic"
+                  : booking.isPaid && booking.isPaymentApproved
+                  ? "Payment Successful"
                   : "Payment Pending"}
               </div>
 
               {!booking.isPaid &&
                 booking.status !== "disputed" &&
                 booking.status !== "cancelled" &&
-                booking.paymentInfo?.status !== "pending" && (
+                !booking.isPaymentSubmitted && (
                   <div className="space-y-3 mt-4">
                     {booking.towingRequested && (
                       <button
@@ -691,12 +706,12 @@ export default function BookingDetailsPage() {
                   </div>
                 )}
 
-              {booking.paymentInfo?.status === "pending" && (
+              {booking.isPaymentSubmitted && !booking.isPaymentApproved && (
                 <div className="mt-4 p-4 bg-blue-50 text-blue-700 rounded-xl text-sm border border-blue-100 text-center">
                   <p className="font-bold">Payment Verification Pending</p>
-                  <p>TrxID: {booking.paymentInfo.transactionId}</p>
+                  <p>TrxID: {booking.paymentDetails?.transactionId}</p>
                   <p className="text-xs mt-1">
-                    Please wait for garage approval.
+                    Please wait for mechanic approval.
                   </p>
                 </div>
               )}

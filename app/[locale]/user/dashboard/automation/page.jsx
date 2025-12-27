@@ -43,9 +43,44 @@ export default function AutomationPage() {
   const [payloadFormat, setPayloadFormat] = useState("slack");
   const [testing, setTesting] = useState(false);
 
-  const hasAccess =
+  // Role Check State
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [roleChecked, setRoleChecked] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const isEnterprise =
+      user.membershipTier === "enterprise" || user.planTier === "enterprise";
+
+    if (isEnterprise) {
+      axios
+        .get("/api/organizations")
+        .then((res) => {
+          const orgs = res.data.data || [];
+          const hasAuthRole = orgs.some(
+            (o) => o.role === "admin" || o.role === "owner"
+          );
+          setIsAuthorized(hasAuthRole);
+        })
+        .catch((err) => {
+          console.error("Auth check failed:", err);
+          setIsAuthorized(false);
+        })
+        .finally(() => setRoleChecked(true));
+    } else {
+      setIsAuthorized(true);
+      setRoleChecked(true);
+    }
+  }, [user]);
+
+  const isPlanEligible =
     ["premium", "enterprise"].includes(user?.membershipTier) ||
     ["premium", "enterprise"].includes(user?.planTier);
+
+  const hasAccess = isPlanEligible && isAuthorized && roleChecked;
+  const isRestricted = !isAuthorized && roleChecked && isPlanEligible;
+
   const availableEvents = [
     { id: "sos.created", label: "New SOS Alert" },
     { id: "sos.updated", label: "SOS Status Updated" },

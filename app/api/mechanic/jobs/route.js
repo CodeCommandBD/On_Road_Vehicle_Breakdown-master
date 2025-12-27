@@ -67,6 +67,28 @@ export async function POST(request) {
       );
     }
 
+    // Check if mechanic is clocked in
+    const Attendance = (await import("@/lib/db/models/Attendance")).default;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const attendance = await Attendance.findOne({
+      user: decoded.userId,
+      date: today,
+    });
+
+    // Mechanic must be clocked in and not clocked out
+    if (!attendance || !attendance.clockIn || attendance.clockOut) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "You must be clocked in to accept jobs. Please clock in first.",
+        },
+        { status: 403 }
+      );
+    }
+
     const { bookingId } = await request.json();
 
     const booking = await Booking.findById(bookingId).populate(

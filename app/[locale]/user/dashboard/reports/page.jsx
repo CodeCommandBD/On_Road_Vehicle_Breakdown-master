@@ -56,8 +56,49 @@ export default function ReportsPage() {
   const [filterDays, setFilterDays] = useState(30);
   const [fetchingReports, setFetchingReports] = useState(true);
 
+  // Role Check State
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [roleChecked, setRoleChecked] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const isEnterprise =
+      user.membershipTier === "enterprise" || user.planTier === "enterprise";
+
+    if (isEnterprise) {
+      axios
+        .get("/api/organizations")
+        .then((res) => {
+          const orgs = res.data.data || [];
+          const hasAuthRole = orgs.some(
+            (o) => o.role === "admin" || o.role === "owner"
+          );
+          setIsAuthorized(hasAuthRole);
+        })
+        .catch((err) => {
+          console.error("Auth check failed:", err);
+          setIsAuthorized(false);
+        })
+        .finally(() => setRoleChecked(true));
+    } else {
+      setIsAuthorized(true);
+      setRoleChecked(true);
+    }
+  }, [user]);
+
+  const isPlanEligible =
+    ["premium", "enterprise"].includes(user?.membershipTier) ||
+    ["premium", "enterprise"].includes(user?.planTier);
+
+  const hasAccess = isPlanEligible && isAuthorized && roleChecked;
+  const isRestricted = !isAuthorized && roleChecked && isPlanEligible;
+
   const isEnterprise =
     user?.membershipTier === "enterprise" || user?.planTier === "enterprise";
+
+  // Branding: Enterprise Only, Owner OR Admin (reusing isAuthorized check which covers this)
+  const canManageBranding = isEnterprise && isAuthorized;
 
   useEffect(() => {
     if (user?.branding) {
@@ -91,7 +132,10 @@ export default function ReportsPage() {
 
   const handleBrandingSave = async (e) => {
     e.preventDefault();
-    if (!isEnterprise) return;
+    if (!canManageBranding) {
+      toast.error("Only the Organization Owner can manage branding.");
+      return;
+    }
     setIsLoading(true);
     try {
       const response = await axios.put("/api/profile", {
@@ -227,6 +271,48 @@ export default function ReportsPage() {
     "#EC4899",
   ];
 
+  if (!hasAccess) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">
+            <FileText className="w-8 h-8 text-blue-500" />
+            White-label Reports
+          </h1>
+          <p className="text-white/60 mt-1">
+            Generate professional reports with your own company branding.
+          </p>
+        </div>
+
+        <div className="bg-[#1E1E1E] border border-white/10 rounded-2xl p-8 max-w-xl w-full text-center shadow-2xl mx-auto mt-10 relative overflow-hidden">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-blue-500/20 blur-[50px] rounded-full pointer-events-none" />
+          <div className="bg-blue-500/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
+            <Lock className="w-8 h-8 text-blue-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2 relative z-10">
+            Premium Feature
+          </h2>
+          <p className="text-white/60 mb-8 relative z-10">
+            Unlock detailed usage reports, revenue analysis, and white-labeling
+            options.
+            <br />
+            {isRestricted
+              ? "Access restricted to Organization Owners & Admins."
+              : "Upgrade to Premium or Enterprise plan."}
+          </p>
+          {!isRestricted && (
+            <Link
+              href="/pricing"
+              className="inline-block px-8 py-3 rounded-xl bg-blue-600 text-white font-bold hover:shadow-[0_0_20px_rgba(37,99,235,0.3)] transition-all relative z-10"
+            >
+              Upgrade Now
+            </Link>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -255,19 +341,21 @@ export default function ReportsPage() {
             <span className="absolute bottom-[-5px] left-0 w-full h-0.5 bg-blue-400 rounded-t-full" />
           )}
         </button>
-        <button
-          onClick={() => setActiveTab("settings")}
-          className={`px-4 py-2 text-sm font-medium transition-colors relative ${
-            activeTab === "settings"
-              ? "text-blue-400"
-              : "text-white/60 hover:text-white"
-          }`}
-        >
-          Branding Settings
-          {activeTab === "settings" && (
-            <span className="absolute bottom-[-5px] left-0 w-full h-0.5 bg-blue-400 rounded-t-full" />
-          )}
-        </button>
+        {canManageBranding && (
+          <button
+            onClick={() => setActiveTab("settings")}
+            className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+              activeTab === "settings"
+                ? "text-blue-400"
+                : "text-white/60 hover:text-white"
+            }`}
+          >
+            Branding Settings
+            {activeTab === "settings" && (
+              <span className="absolute bottom-[-5px] left-0 w-full h-0.5 bg-blue-400 rounded-t-full" />
+            )}
+          </button>
+        )}
       </div>
 
       {/* Date Filter */}

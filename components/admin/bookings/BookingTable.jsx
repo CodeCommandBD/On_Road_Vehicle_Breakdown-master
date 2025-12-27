@@ -208,6 +208,7 @@ export default function BookingTable() {
               <tr>
                 <th className="px-6 py-5">Booking ID</th>
                 <th className="px-6 py-4">Customer</th>
+                <th className="px-6 py-4">Booked By</th>
                 <th className="px-6 py-4">Service Info</th>
                 <th className="px-6 py-4 text-center">Amount</th>
                 <th className="px-6 py-4">Status</th>
@@ -247,6 +248,30 @@ export default function BookingTable() {
                       <div className="text-white/40 text-xs">
                         {booking.user?.email}
                       </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {booking.createdByMember ? (
+                        <div className="flex flex-col gap-1">
+                          <span className="text-white text-sm font-medium">
+                            {booking.createdByMember.name}
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 w-fit rounded ${
+                              booking.createdByMember.isOwner
+                                ? "bg-indigo-500/20 text-indigo-400"
+                                : "bg-slate-700 text-slate-400"
+                            }`}
+                          >
+                            {booking.createdByMember.isOwner
+                              ? "Owner"
+                              : "Team Member"}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-white/20 text-xs italic">
+                          Self / User
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1">

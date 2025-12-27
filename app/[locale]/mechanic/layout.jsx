@@ -23,7 +23,10 @@ import {
   Settings,
   Loader2,
 } from "lucide-react";
-import { selectUnreadNotificationsCount } from "@/store/slices/uiSlice";
+import {
+  selectUnreadNotificationsCount,
+  setUnreadNotificationsCount,
+} from "@/store/slices/uiSlice";
 
 export default function MechanicLayout({ children }) {
   const pathname = usePathname();
@@ -87,6 +90,7 @@ export default function MechanicLayout({ children }) {
         const res = await axios.get("/api/notifications");
         if (res.data.success) {
           setNotifications(res.data.notifications);
+          dispatch(setUnreadNotificationsCount(res.data.unreadCount));
         }
       } catch (err) {
         console.error("Failed to fetch notifications in mechanic layout:", err);

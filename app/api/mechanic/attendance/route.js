@@ -70,9 +70,26 @@ export async function POST(request) {
 
     if (action === "in") {
       if (attendance) {
+        // Check if already clocked out today
+        if (attendance.clockOut) {
+          return NextResponse.json(
+            {
+              success: false,
+              message:
+                "You already completed your shift today. Please clock in tomorrow.",
+            },
+            { status: 400 }
+          );
+        }
+
+        // Already clocked in - return success with existing data instead of error
         return NextResponse.json(
-          { success: false, message: "Already clocked in today" },
-          { status: 400 }
+          {
+            success: true,
+            message: "Already clocked in",
+            data: attendance,
+          },
+          { status: 200 }
         );
       }
 

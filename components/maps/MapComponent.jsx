@@ -74,11 +74,12 @@ export default function MapComponent({
 
   return (
     <MapContainer
+      key={`${center[0]}-${center[1]}-${zoom}`}
       center={center}
       zoom={zoom}
       scrollWheelZoom={true}
       className={className}
-      style={{ zIndex: 0 }}
+      style={{ height: "400px", width: "100%", zIndex: 0 }}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
