@@ -1,10 +1,163 @@
 import createMiddleware from "next-intl/middleware";
 import { routing } from "./i18n/routing";
+import { NextResponse } from "next/server";
+import { jwtVerify } from "jose";
+import { PUBLIC_ROUTES, PROTECTED_ROUTES } from "./lib/utils/constants";
 
-export default createMiddleware(routing);
+// JWT Secret
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || "your-super-secret-jwt-key-change-in-production"
+);
+
+// Create next-intl middleware
+const intlMiddleware = createMiddleware(routing);
+
+/**
+ * Check if route is public (no authentication needed)
+ */
+function isPublicRoute(pathname) {
+  // Remove locale prefix for checking
+  const pathWithoutLocale = pathname.replace(/^\/(en|bn)/, "");
+
+  return PUBLIC_ROUTES.some((route) => {
+    if (route === "/")
+      return pathWithoutLocale === "" || pathWithoutLocale === "/";
+    return pathWithoutLocale.startsWith(route);
+  });
+}
+
+/**
+ * Check if route requires specific role
+ */
+function getRequiredRole(pathname) {
+  const pathWithoutLocale = pathname.replace(/^\/(en|bn)/, "");
+
+  if (
+    PROTECTED_ROUTES.ADMIN.some((route) => pathWithoutLocale.startsWith(route))
+  ) {
+    return "admin";
+  }
+  if (
+    PROTECTED_ROUTES.GARAGE.some((route) => pathWithoutLocale.startsWith(route))
+  ) {
+    return "garage";
+  }
+  if (
+    PROTECTED_ROUTES.USER.some((route) => pathWithoutLocale.startsWith(route))
+  ) {
+    return "user";
+  }
+
+  return null;
+}
+
+/**
+ * Verify JWT token
+ */
+async function verifyToken(token) {
+  try {
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    return payload;
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Main middleware function
+ */
+export default async function middleware(request) {
+  const { pathname } = request.nextUrl;
+
+  // Skip middleware for static files, API routes (except protected ones), and Next.js internals
+  if (
+    pathname.includes("/_next") ||
+    pathname.includes("/api/_") ||
+    pathname.includes("/_vercel") ||
+    pathname.includes("/manifest.json") ||
+    pathname.includes("/sw.js") ||
+    pathname.includes("/workbox") ||
+    pathname.match(/\.(png|jpg|jpeg|gif|svg|ico|css|js|woff|woff2|ttf|eot)$/)
+  ) {
+    return NextResponse.next();
+  }
+
+  // Apply internationalization middleware first
+  const intlResponse = intlMiddleware(request);
+
+  // If it's a public route, just return the intl response
+  if (isPublicRoute(pathname)) {
+    return intlResponse;
+  }
+
+  // For protected routes, check authentication
+  const token = request.cookies.get("token")?.value;
+
+  if (!token) {
+    // No token - redirect to login for web pages, return 401 for API
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { success: false, message: "অননুমোদিত প্রবেশ" },
+        { status: 401 }
+      );
+    }
+
+    // Redirect to login page
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("redirect", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Verify token
+  const user = await verifyToken(token);
+
+  if (!user) {
+    // Invalid token - redirect to login for web pages, return 401 for API
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { success: false, message: "অবৈধ টোকেন" },
+        { status: 401 }
+      );
+    }
+
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("redirect", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Check role-based access
+  const requiredRole = getRequiredRole(pathname);
+
+  if (requiredRole && user.role !== requiredRole && user.role !== "admin") {
+    // User doesn't have required role
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { success: false, message: "আপনার এই কাজ করার অনুমতি নেই" },
+        { status: 403 }
+      );
+    }
+
+    // Redirect to appropriate dashboard based on user's role
+    const dashboardUrl = new URL(`/${user.role}/dashboard`, request.url);
+    return NextResponse.redirect(dashboardUrl);
+  }
+
+  // Add user info to request headers for use in API routes
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-user-id", user.userId);
+  requestHeaders.set("x-user-role", user.role);
+  requestHeaders.set("x-user-email", user.email);
+
+  // Return response with updated headers
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+}
 
 export const config = {
-  // Match only internationalized pathnames
+  // Match only internationalized pathnames and protected routes
   matcher: [
     "/((?!api|_next|_vercel|manifest.json|sw.js|workbox-.*.js|.*\\..*).*)",
   ],
