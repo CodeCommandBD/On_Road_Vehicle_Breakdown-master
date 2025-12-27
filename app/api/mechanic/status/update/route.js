@@ -48,14 +48,19 @@ export async function POST(request) {
       message = "Mechanic has arrived and is diagnosing the issue. 🔧";
 
     if (message) {
-      await Notification.create({
-        recipient: booking.user,
-        sender: decoded.userId, // FIXED: was decoded.id
-        type: "info",
-        title: "Status Update",
-        message: message,
-        link: `/user/dashboard/bookings/${booking._id}`,
-      });
+      if (message) {
+        const { sendNotification } = await import(
+          "@/lib/utils/notificationHelper"
+        );
+        await sendNotification({
+          recipientId: booking.user,
+          senderId: decoded.userId,
+          type: "info",
+          title: "Status Update",
+          message: message,
+          link: `/user/dashboard/bookings/${booking._id}`,
+        });
+      }
     }
 
     return NextResponse.json({

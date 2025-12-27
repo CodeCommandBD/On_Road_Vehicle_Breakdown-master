@@ -39,9 +39,10 @@ export async function POST(request) {
     await booking.save();
 
     // Notify User
-    await Notification.create({
-      recipient: booking.user,
-      sender: decoded.userId,
+    const { sendNotification } = await import("@/lib/utils/notificationHelper");
+    await sendNotification({
+      recipientId: booking.user,
+      senderId: decoded.userId,
       type: "action_required",
       title: "Bill Ready",
       message: `Total Bill: ৳${totalCost}. Please make payment.`,

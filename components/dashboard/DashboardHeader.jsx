@@ -346,6 +346,7 @@ export default function DashboardHeader() {
       <RewardsInfoModal
         isOpen={isRewardsModalOpen}
         onClose={() => setIsRewardsModalOpen(false)}
+        user={user}
       />
     </header>
   );

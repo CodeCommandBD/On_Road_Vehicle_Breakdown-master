@@ -25,6 +25,8 @@ export async function POST(request) {
       );
     }
 
+    console.log(`📍 Location Update for Booking ${bookingId}:`, location);
+
     // Update driver location (Ensure mechanic is assigned)
     const booking = await Booking.findOneAndUpdate(
       { _id: bookingId, assignedMechanic: decoded.userId },

@@ -28,6 +28,14 @@ import { toast } from "react-toastify";
 import ReviewForm from "@/components/dashboard/ReviewForm";
 import BookingChat from "@/components/dashboard/BookingChat";
 import { downloadReceiptPDF } from "@/lib/utils/clientReceipt";
+import dynamic from "next/dynamic";
+
+const MapComponent = dynamic(() => import("@/components/maps/MapComponent"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-64 w-full bg-slate-900/50 animate-pulse rounded-xl" />
+  ),
+});
 
 export default function BookingDetailsPage() {
   const { id } = useParams();
@@ -74,20 +82,31 @@ export default function BookingDetailsPage() {
     }
   };
 
-  const fetchBookingDetails = async () => {
+  // Poll for location updates when mechanic is on the way
+  useEffect(() => {
+    let interval;
+    if (booking?.status === "on_the_way") {
+      interval = setInterval(() => {
+        fetchBookingDetails(true); // silent update
+      }, 5000);
+    }
+    return () => clearInterval(interval);
+  }, [booking?.status]);
+
+  const fetchBookingDetails = async (silent = false) => {
     try {
       const res = await fetch(`/api/bookings/${id}`);
       const data = await res.json();
       if (data.success) {
         setBooking(data.booking);
-      } else {
+      } else if (!silent) {
         toast.error(data.message);
         router.push("/user/dashboard/bookings");
       }
     } catch (error) {
-      toast.error("Failed to load booking details");
+      if (!silent) toast.error("Failed to load booking details");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -386,6 +405,53 @@ export default function BookingDetailsPage() {
             </div>
           </div>
 
+          {/* Live Map Tracking */}
+          {["on_the_way", "diagnosing"].includes(booking.status) && (
+            <div className="bg-white rounded-3xl p-2 border shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-4">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <div className="relative">
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping" />
+                    <MapPin className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  Live Mechanic Tracking
+                </h3>
+                {booking.driverLocation?.updatedAt && (
+                  <span className="text-xs text-gray-400 font-mono">
+                    Updated:{" "}
+                    {new Date(
+                      booking.driverLocation.updatedAt
+                    ).toLocaleTimeString()}
+                  </span>
+                )}
+              </div>
+              <div className="rounded-2xl overflow-hidden border border-gray-100 h-[300px] w-full relative z-0">
+                {booking.driverLocation?.lat ? (
+                  <MapComponent
+                    center={[
+                      booking.driverLocation.lat,
+                      booking.driverLocation.lng,
+                    ]}
+                    zoom={15}
+                    markers={[
+                      {
+                        lat: booking.driverLocation.lat,
+                        lng: booking.driverLocation.lng,
+                        content: "Mechanic is here 🔧",
+                      },
+                    ]}
+                    className="h-full w-full"
+                  />
+                ) : (
+                  <div className="h-full w-full flex flex-col items-center justify-center bg-gray-50 text-gray-400 gap-2">
+                    <Loader2 className="w-8 h-8 animate-spin text-indigo-300" />
+                    <p>Waiting for mechanic location signal...</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Tracking Progress */}
           <div className="bg-white rounded-3xl p-8 border shadow-sm">
             <h3 className="text-lg font-bold mb-6">Service Timeline</h3>
@@ -573,9 +639,15 @@ export default function BookingDetailsPage() {
                     : "bg-red-50 text-red-600"
                 }`}
               >
-                <CreditCard className="w-4 h-4" />
+                {booking.isPaid ? (
+                  <CheckCircle className="w-4 h-4" />
+                ) : (
+                  <CreditCard className="w-4 h-4" />
+                )}
                 {booking.isPaid
-                  ? "Payment Completed"
+                  ? booking.paymentMethod === "cash"
+                    ? "Payment Verified by Mechanic"
+                    : "Payment Completed"
                   : booking.paymentInfo?.status === "pending"
                   ? "Verification Pending"
                   : "Payment Pending"}

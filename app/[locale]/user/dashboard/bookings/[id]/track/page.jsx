@@ -29,6 +29,8 @@ export default function UserTrackPage() {
       const res = await fetch(`/api/bookings/${id}`);
       const data = await res.json();
       if (data.success) {
+        console.log("Track Page Booking Data:", data.booking);
+        console.log("Driver Location:", data.booking?.driverLocation);
         setBooking(data.booking);
         if (data.booking.driverLocation?.updatedAt) {
           setLastUpdated(new Date(data.booking.driverLocation.updatedAt));

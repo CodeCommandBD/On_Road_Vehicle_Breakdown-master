@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db/connect";
 import Booking from "@/lib/db/models/Booking";
 import Payment from "@/lib/db/models/Payment";
+import User from "@/lib/db/models/User";
+import PointsRecord from "@/lib/db/models/PointsRecord";
 import { verifyToken } from "@/lib/utils/auth";
 import Notification from "@/lib/db/models/Notification";
 
@@ -53,10 +55,58 @@ export async function POST(request) {
         },
       });
 
+      // Award Points with Tier-Based Multiplier ("Cashback")
+      const costForPoints = booking.actualCost || booking.estimatedCost || 0;
+
+      // Fetch user to check tier
+      const customer = await User.findById(booking.user);
+      let multiplier = 1;
+
+      if (customer) {
+        if (["enterprise", "premium"].includes(customer.membershipTier)) {
+          multiplier = 10; // 10% equivalent
+        } else if (customer.membershipTier === "standard") {
+          multiplier = 5; // 5% equivalent
+        }
+      }
+
+      const pointsEarned = Math.floor((costForPoints / 100) * multiplier);
+
+      if (pointsEarned > 0) {
+        // Update User Points & Stats
+        await User.findByIdAndUpdate(booking.user, {
+          $inc: {
+            rewardPoints: pointsEarned,
+            totalBookings: 1,
+            totalSpent: costForPoints,
+          },
+        });
+
+        // Create Record
+        await PointsRecord.create({
+          user: booking.user,
+          points: pointsEarned,
+          type: "earn",
+          reason: `Completed Service: ${booking.bookingNumber} (${multiplier}x Tier Bonus)`,
+          metadata: {
+            bookingId: booking._id,
+            cost: costForPoints,
+            tier: customer?.membershipTier || "free",
+          },
+        });
+
+        console.log(
+          `🏆 Awarded ${pointsEarned} points to user ${booking.user} (Tier: ${customer?.membershipTier}, Multiplier: ${multiplier}x)`
+        );
+      }
+
       // Notify User
-      await Notification.create({
-        recipient: booking.user,
-        sender: decoded.userId,
+      const { sendNotification } = await import(
+        "@/lib/utils/notificationHelper"
+      );
+      await sendNotification({
+        recipientId: booking.user,
+        senderId: decoded.userId,
         type: "success",
         title: "Payment Received",
         message: "Mechanic confirmed cash payment. Thank you!",
@@ -67,6 +117,44 @@ export async function POST(request) {
       if (booking.isPaid) {
         booking.status = "completed";
         booking.completedAt = new Date(); // Set completion timestamp for stats
+
+        // Award Points for Online Payment with Multiplier
+        const costForPoints = booking.actualCost || booking.estimatedCost || 0;
+
+        const customer = await User.findById(booking.user);
+        let multiplier = 1;
+
+        if (customer) {
+          if (["enterprise", "premium"].includes(customer.membershipTier)) {
+            multiplier = 10;
+          } else if (customer.membershipTier === "standard") {
+            multiplier = 5;
+          }
+        }
+
+        const pointsEarned = Math.floor((costForPoints / 100) * multiplier);
+
+        if (pointsEarned > 0) {
+          await User.findByIdAndUpdate(booking.user, {
+            $inc: {
+              rewardPoints: pointsEarned,
+              totalBookings: 1,
+              totalSpent: costForPoints,
+            },
+          });
+
+          await PointsRecord.create({
+            user: booking.user,
+            points: pointsEarned,
+            type: "earn",
+            reason: `Completed Service (Online): ${booking.bookingNumber} (${multiplier}x Tier Bonus)`,
+            metadata: {
+              bookingId: booking._id,
+              cost: costForPoints,
+              tier: customer?.membershipTier || "free",
+            },
+          });
+        }
       } else {
         return NextResponse.json(
           {
