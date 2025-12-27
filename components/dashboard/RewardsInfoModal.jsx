@@ -3,27 +3,29 @@
 import { X, Award, Zap, Shield, Gift, ChevronRight, Info } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-export default function RewardsInfoModal({ isOpen, onClose }) {
+export default function RewardsInfoModal({ isOpen, onClose, user }) {
   const t = useTranslations("Rewards");
 
   if (!isOpen) return null;
 
+  // Determine Point Rate based on Tier
+  let pointRate = "1 Pt / 100 BDT";
+  const tier = user?.membershipTier || user?.planTier || "free";
+
+  if (["enterprise", "premium"].includes(tier)) {
+    pointRate = "10 Pts / 100 BDT";
+  } else if (tier === "standard") {
+    pointRate = "5 Pts / 100 BDT";
+  }
+
   const earnRules = [
     {
       action: t("completeService"),
-      points: "+50 Pts",
+      points: pointRate,
       description: t("completeServiceDesc"),
       icon: Gift,
       color: "text-blue-400",
       bg: "bg-blue-400/10",
-    },
-    {
-      action: t("sosHero"),
-      points: "+100 Pts",
-      description: t("sosHeroDesc"),
-      icon: Zap,
-      color: "text-orange-400",
-      bg: "bg-orange-400/10",
     },
     {
       action: t("sosConfirm"),
@@ -44,6 +46,7 @@ export default function RewardsInfoModal({ isOpen, onClose }) {
       perk: t("standardPerk"),
     },
     { name: "Premium", limit: "3000 Pts", perk: t("premiumPerk") },
+    { name: "Enterprise", limit: "Custom", perk: t("enterprisePerk") },
   ];
 
   return (

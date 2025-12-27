@@ -4,6 +4,8 @@ import User from "@/lib/db/models/User";
 import Garage from "@/lib/db/models/Garage";
 import { verifyToken } from "@/lib/utils/auth";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request) {
   try {
     await connectDB();

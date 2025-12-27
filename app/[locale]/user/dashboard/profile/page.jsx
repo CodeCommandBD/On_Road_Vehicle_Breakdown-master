@@ -76,6 +76,21 @@ export default function ProfilePage() {
     profileDataRef.current = profileFormData;
   }, [profileFormData]);
 
+  // Fetch latest profile data on mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await axios.get("/api/profile");
+        if (response.data.success) {
+          dispatch(updateUser(response.data.user));
+        }
+      } catch (error) {
+        console.error("Failed to fetch fresh profile:", error);
+      }
+    };
+    fetchProfile();
+  }, [dispatch]);
+
   useEffect(() => {
     if (user && !isEditing && !isLoading) {
       console.log("Initializing ProfileForm with user data:", user.location);
@@ -264,6 +279,8 @@ export default function ProfilePage() {
       basic: "from-blue-500 to-blue-600",
       standard: "from-purple-500 to-purple-600",
       premium: "from-yellow-400 to-orange-500",
+      enterprise:
+        "from-slate-900 to-black border border-orange-500 text-orange-500 shadow-glow-orange",
       garage_basic: "from-cyan-500 to-blue-600",
       garage_pro: "from-indigo-600 to-purple-700 shadow-glow-indigo",
     };
@@ -438,7 +455,9 @@ export default function ProfilePage() {
               <p className="text-xs text-white/60 mt-1">{t("bookings")}</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-orange-400">৳0</p>
+              <p className="text-2xl font-bold text-orange-400">
+                ৳{user.totalSpent || 0}
+              </p>
               <p className="text-xs text-white/60 mt-1">{t("totalSpent")}</p>
             </div>
             <div className="text-center">

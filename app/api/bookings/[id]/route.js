@@ -176,7 +176,61 @@ export async function PATCH(request, { params }) {
 
       if (status === "completed") {
         booking.completedAt = new Date();
-        // ... (points logic)
+
+        // --- POINTS LOGIC START ---
+        try {
+          if (booking.actualCost && booking.actualCost > 0) {
+            // Fetch User to check tier for multiplier
+            const customer = await User.findById(booking.user);
+            let multiplier = 1;
+
+            if (customer) {
+              if (["enterprise", "premium"].includes(customer.membershipTier)) {
+                multiplier = 10;
+              } else if (customer.membershipTier === "standard") {
+                multiplier = 5;
+              }
+            }
+
+            const pointsEarned = Math.floor(
+              (booking.actualCost / 100) * multiplier
+            );
+
+            if (pointsEarned > 0) {
+              // 1. Update User Points & Stats
+              await User.findByIdAndUpdate(booking.user, {
+                $inc: {
+                  rewardPoints: pointsEarned,
+                  totalBookings: 1,
+                  totalSpent: booking.actualCost,
+                },
+              });
+
+              // 2. Create History Record
+              await PointsRecord.create({
+                user: booking.user,
+                points: pointsEarned,
+                type: "earn",
+                reason: `Completed Service #${
+                  booking.bookingNumber || booking._id
+                } (${multiplier}x Tier Bonus)`,
+                metadata: {
+                  bookingId: booking._id,
+                  cost: booking.actualCost,
+                  tier: customer?.membershipTier || "free",
+                },
+              });
+
+              console.log(
+                `Awarded ${pointsEarned} points to user ${booking.user} (Tier: ${customer?.membershipTier}, Multiplier: ${multiplier}x)`
+              );
+            }
+          }
+        } catch (pointError) {
+          console.error("Failed to award points:", pointError);
+          // Don't protect against error, just log it so booking still completes
+        }
+        // --- POINTS LOGIC END ---
       } else if (status === "cancelled") {
         booking.cancelledAt = new Date();
         // CANCELLATION POLICY: If cancelled after start, charge fee
@@ -197,7 +251,24 @@ export async function PATCH(request, { params }) {
     if (billItems !== undefined) booking.billItems = billItems;
     if (towingRequested !== undefined)
       booking.towingRequested = towingRequested;
-    if (towingCost !== undefined) booking.towingCost = towingCost;
+
+    if (towingCost !== undefined) {
+      // Check for Free Towing Benefit (Enterprise/Premium)
+      const customerForTowing = await User.findById(booking.user);
+      if (
+        customerForTowing &&
+        ["enterprise", "premium"].includes(customerForTowing.membershipTier)
+      ) {
+        booking.towingCost = 0;
+        // Optionally add a note to billItems if not already there?
+        // For now, just overriding cost is enough to ensure they aren't charged.
+        console.log(
+          `🚚 Free Towing applied for ${customerForTowing.membershipTier} member.`
+        );
+      } else {
+        booking.towingCost = towingCost;
+      }
+    }
     if (notes) booking.notes = notes;
 
     // Handle Manual Assignment

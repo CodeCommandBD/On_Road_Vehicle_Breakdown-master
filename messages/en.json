@@ -382,8 +382,8 @@
     "title": "Reward Points Guide",
     "subtitle": "Earn rewards for every interaction on the platform.",
     "howToEarn": "How to Earn Points",
-    "completeService": "Complete a Service",
-    "completeServiceDesc": "Successfully complete any scheduled maintenance or repair.",
+    "completeService": "Service Payments",
+    "completeServiceDesc": "Earn 1 Point for every 100 BDT spent on services.",
     "sosHero": "Emergency SOS Hero",
     "sosHeroDesc": "Resolve an emergency SOS alert (Garages earn the full amount).",
     "sosConfirm": "SOS Confirmation",
@@ -394,8 +394,9 @@
     "topBenefit": "Top Benefit",
     "freePerk": "Basic support",
     "basicPerk": "5% Cashback & Priority",
-    "standardPerk": "10% Cashback & 24/7 Support",
-    "premiumPerk": "VIP & Free Towing",
+    "standardPerk": "5% Cashback & 24/7 Support",
+    "premiumPerk": "10% Cashback, VIP & Free Towing",
+    "enterprisePerk": "10% Cashback, Free Towing & Dedicated Manager",
     "disclaimer": "* Points specify your rank and maturity on our platform. Higher levels unlock exclusive garage discounts and faster response times."
   }
 }

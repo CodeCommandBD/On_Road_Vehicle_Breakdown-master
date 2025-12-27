@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db/connect";
 import User from "@/lib/db/models/User";
 import Booking from "@/lib/db/models/Booking";
+import JobCard from "@/lib/db/models/JobCard";
 import Attendance from "@/lib/db/models/Attendance";
 import { verifyToken } from "@/lib/utils/auth";
 
@@ -46,10 +47,26 @@ export async function GET(request) {
       "payment_pending",
     ];
 
-    const activeJobs = await Booking.find({
+    let activeJobs = await Booking.find({
       assignedMechanic: decoded.userId,
       status: { $in: activeJobStatuses },
-    }).populate("user", "name phone location");
+    })
+      .populate("user", "name phone location")
+      .lean();
+
+    // Check for Job Cards (Diagnosis Reports)
+    if (activeJobs.length > 0) {
+      const activeJobIds = activeJobs.map((job) => job._id);
+      const jobCards = await JobCard.find({
+        booking: { $in: activeJobIds },
+      }).select("booking");
+      const jobCardSet = new Set(jobCards.map((jc) => jc.booking.toString()));
+
+      activeJobs = activeJobs.map((job) => ({
+        ...job,
+        hasJobCard: jobCardSet.has(job._id.toString()),
+      }));
+    }
 
     // 3. Fetch Open Jobs (for the same garage, not assigned)
     let openJobs = [];

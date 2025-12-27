@@ -65,8 +65,12 @@ export default function MechanicDashboard() {
   useEffect(() => {
     console.log("MechanicDashboard Mounted - v2.0 (Tracking Fix Applied)");
     fetchDashboardData();
-    // Poll for updates every 10 seconds to handle cancellations/new jobs
-    const interval = setInterval(fetchDashboardData, 10000);
+    // Poll for updates every 10 seconds (Dashboard Data + Unread Notifications)
+    const interval = setInterval(() => {
+      fetchDashboardData();
+      // Add fail-safe notification check if listener fails
+      // In a real app, we'd dispatch(fetchNotifications())
+    }, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -159,7 +163,9 @@ export default function MechanicDashboard() {
       const result = await res.json();
       if (result.success) {
         toast.success("Bill finalized!");
-        setBillModalOpen(false);
+        setBillModalOpen(false); // Legacy
+        setModalType(null); // New generic
+        setIsModalOpen(false);
         fetchDashboardData();
       } else {
         toast.error(result.message);
@@ -371,20 +377,20 @@ export default function MechanicDashboard() {
     }
   };
 
-  // Location Tracking Effect
+  // Tracking Feedback State
+  const [trackingStatus, setTrackingStatus] = useState({});
+
+  // Location Tracking Effect (Polling)
   useEffect(() => {
-    let watchId;
-    let lastSent = 0;
+    // Only track if there are active jobs
+    if (!activeJobs || activeJobs.length === 0) return;
 
     const sendLocation = async (lat, lng) => {
-      // Throttle updates: send only every 10 seconds
-      const now = Date.now();
-      if (now - lastSent < 10000) return;
-
-      const jobsToTrack = activeJobs || [];
-      // Send updates for ALL active jobs (ideally backend handles this better, but iterating is safe)
-      for (const job of jobsToTrack) {
+      // Send updates for ALL active jobs
+      for (const job of activeJobs) {
         try {
+          setTrackingStatus((prev) => ({ ...prev, [job._id]: "Sending..." }));
+
           await fetch("/api/mechanic/location/update", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -393,43 +399,46 @@ export default function MechanicDashboard() {
               location: { lat, lng },
             }),
           });
-          lastSent = now;
+          console.log(`📍 Sent location for job ${job._id}`);
+          setTrackingStatus((prev) => ({ ...prev, [job._id]: "Live 🟢" }));
         } catch (err) {
           console.error("Location update failed", err);
+          setTrackingStatus((prev) => ({ ...prev, [job._id]: "Error 🔴" }));
         }
       }
     };
 
-    if (activeJobs && activeJobs.length > 0) {
-      if (navigator.geolocation) {
-        watchId = navigator.geolocation.watchPosition(
-          (pos) => {
-            sendLocation(pos.coords.latitude, pos.coords.longitude);
-          },
-          (err) => {
-            // Downgraded to WARN to avoid cluttering console with expected desktop errors
-            if (err.code === 1) {
-              console.warn("Location Warning: Permission Denied");
-              toast.error(
-                "Please enable Location Services to share your live position."
-              );
-            } else if (err.code === 2) {
-              console.warn(
-                "Location Warning: Position Unavailable (Common on Desktops)"
-              );
-              // No toast loop for unavailable, just log warning
-            } else if (err.code === 3) {
-              console.warn("Location Warning: Timeout");
-            }
-          },
-          { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
-        );
+    const updatePosition = () => {
+      if (!navigator.geolocation) {
+        setTrackingStatus((prev) => ({
+          ...prev,
+          global: "No Geo ❌",
+        }));
+        return;
       }
-    }
 
-    return () => {
-      if (watchId) navigator.geolocation.clearWatch(watchId);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          sendLocation(pos.coords.latitude, pos.coords.longitude);
+        },
+        (err) => {
+          console.warn("Location check failed:", err.message);
+          setTrackingStatus((prev) => ({
+            ...prev,
+            global: "Loc Error ⚠️",
+          }));
+        },
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
     };
+
+    // Initial call
+    updatePosition();
+
+    // Poll every 10 seconds
+    const interval = setInterval(updatePosition, 10000);
+
+    return () => clearInterval(interval);
   }, [activeJobs]);
 
   const triggerModal = (type) => {
@@ -660,6 +669,11 @@ export default function MechanicDashboard() {
                       <span className="px-4 py-1.5 rounded-full bg-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-widest border border-indigo-500/30">
                         Live Operation
                       </span>
+                      {trackingStatus[job._id] && (
+                        <span className="ml-2 px-4 py-1.5 rounded-full bg-slate-800 text-white text-[10px] font-bold uppercase tracking-widest border border-white/10">
+                          {trackingStatus[job._id]}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex flex-col gap-6">
@@ -696,25 +710,27 @@ export default function MechanicDashboard() {
                         {/* Diagnosis and Bill Buttons */}
                         {job.status === "in_progress" && (
                           <div className="flex gap-2">
+                            {!job.hasJobCard && (
+                              <button
+                                onClick={() => {
+                                  setActiveJobForAction(job);
+                                  setDiagnosisModalOpen(true);
+                                }}
+                                className="flex-1 flex items-center justify-center gap-2 py-3 bg-indigo-500/20 text-indigo-300 rounded-xl font-bold uppercase text-xs hover:bg-indigo-500/30 transition-all border border-indigo-500/30"
+                              >
+                                <ClipboardList className="w-4 h-4" />
+                                <span>Diagnosis</span>
+                              </button>
+                            )}
                             <button
                               onClick={() => {
                                 setActiveJobForAction(job);
-                                setDiagnosisModalOpen(true);
-                              }}
-                              className="flex-1 flex items-center justify-center gap-2 py-3 bg-indigo-500/20 text-indigo-300 rounded-xl font-bold uppercase text-xs hover:bg-indigo-500/30 transition-all border border-indigo-500/30"
-                            >
-                              <ClipboardList className="w-4 h-4" />
-                              <span>Diagnosis</span>
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActiveJobForAction(job);
-                                setBillModalOpen(true);
+                                setBillModalOpen(true); // Opens "Add Item" modal
                               }}
                               className="flex-1 flex items-center justify-center gap-2 py-3 bg-emerald-500/20 text-emerald-300 rounded-xl font-bold uppercase text-xs hover:bg-emerald-500/30 transition-all border border-emerald-500/30"
                             >
                               <Plus className="w-4 h-4" />
-                              <span>Add Bill</span>
+                              <span>Add Extra</span>
                             </button>
                           </div>
                         )}
@@ -763,7 +779,16 @@ export default function MechanicDashboard() {
                           <button
                             onClick={() => {
                               setActiveJobForAction(job);
-                              setEstimateModalOpen(true);
+                              // Pre-calculate final bill
+                              const currentTotal =
+                                (job.estimatedCost || 0) +
+                                (job.billItems || []).reduce(
+                                  (sum, i) => sum + i.amount,
+                                  0
+                                );
+                              setFinalBillAmount(currentTotal);
+                              setModalType("final_bill");
+                              setIsModalOpen(true); // Re-using generic modal switch or just use specific state? Using generic + type
                             }}
                             className="w-full py-4 bg-green-600 text-white rounded-2xl font-black uppercase tracking-wider hover:bg-green-500 shadow-lg shadow-green-900/40 active:scale-95 transition-all flex items-center justify-center gap-2"
                           >
@@ -1087,13 +1112,13 @@ export default function MechanicDashboard() {
             <div className="space-y-4">
               <button
                 onClick={() => handleConfirmPayment("cash")}
-                className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-wider hover:bg-emerald-500 shadow-lg shadow-emerald-900/40"
+                className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-wider hover:bg-emerald-500 shadow-lg shadow-emerald-900/40 list-none"
               >
                 Cash Received
               </button>
               <button
                 onClick={() => handleConfirmPayment("online")}
-                className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-wider hover:bg-indigo-500 shadow-lg shadow-indigo-900/40"
+                className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-wider hover:bg-indigo-500 shadow-lg shadow-indigo-900/40 list-none"
               >
                 Verify Online Payment
               </button>
@@ -1102,6 +1127,137 @@ export default function MechanicDashboard() {
                 className="w-full py-3 text-slate-400 font-bold"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Bill Item Modal (During Work) */}
+      {billModalOpen && activeJobForAction && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="bg-slate-900 w-full max-w-md rounded-[2.5rem] p-8 border border-white/10 shadow-2xl animate-in slide-in-from-bottom-10 duration-500">
+            <h3 className="text-2xl font-black text-white mb-6 uppercase tracking-tight">
+              Add Extra Item
+            </h3>
+            <form onSubmit={handleAddBillItem} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                  Description
+                </label>
+                <input
+                  type="text"
+                  name="description"
+                  placeholder="e.g. Extra Engine Oil"
+                  required
+                  className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-white focus:outline-none focus:border-indigo-500 transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                  Amount (৳)
+                </label>
+                <input
+                  type="number"
+                  name="amount"
+                  placeholder="0.00"
+                  required
+                  className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-white focus:outline-none focus:border-indigo-500 transition-all font-mono"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                  Category
+                </label>
+                <select
+                  name="category"
+                  className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-white focus:outline-none focus:border-indigo-500 transition-all bg-slate-900"
+                >
+                  <option value="part">Spare Part</option>
+                  <option value="labor">Labor</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setBillModalOpen(false)}
+                  className="flex-1 py-4 bg-white/5 text-slate-400 rounded-2xl font-black uppercase tracking-widest hover:text-white transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 transition-all"
+                >
+                  {loading ? (
+                    <Loader2 className="animate-spin mx-auto w-5 h-5" />
+                  ) : (
+                    "Add"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Final Bill Modal (Finish Work) */}
+      {modalType === "final_bill" && activeJobForAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-white/10 rounded-3xl w-full max-w-sm p-6 shadow-2xl text-center">
+            <h3 className="text-xl font-black text-white mb-2">
+              Finalize & Close Job
+            </h3>
+            <p className="text-slate-400 text-sm mb-6">
+              Review total bill before submission.
+            </p>
+
+            <div className="mb-6 space-y-2 text-left bg-slate-800/50 p-4 rounded-xl border border-white/5">
+              <div className="flex justify-between text-sm text-slate-400">
+                <span>Base Estimate:</span>
+                <span>৳{activeJobForAction.estimatedCost || 0}</span>
+              </div>
+              {/* Calc extras */}
+              <div className="flex justify-between text-sm text-slate-400">
+                <span>Added Extras:</span>
+                <span>
+                  ৳
+                  {(activeJobForAction.billItems || []).reduce(
+                    (sum, i) => sum + i.amount,
+                    0
+                  )}
+                </span>
+              </div>
+              <div className="border-t border-white/10 pt-2 flex justify-between font-bold text-white text-lg">
+                <span>Total:</span>
+                <span>৳{finalBillAmount}</span>
+              </div>
+            </div>
+
+            <input
+              type="number"
+              placeholder="Total Bill Amount (৳)"
+              className="w-full bg-slate-800 border border-white/10 rounded-2xl px-6 py-4 text-2xl font-bold text-center text-white mb-6 focus:ring-2 ring-indigo-500 outline-none"
+              value={finalBillAmount}
+              onChange={(e) => setFinalBillAmount(e.target.value)}
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setModalType(null);
+                  setIsModalOpen(false);
+                }}
+                className="flex-1 py-3 bg-slate-800 rounded-xl font-bold text-slate-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitBill}
+                className="flex-1 py-3 bg-green-600 rounded-xl font-bold text-white shadow-lg shadow-green-900/20 hover:bg-green-500"
+              >
+                Submit Bill
               </button>
             </div>
           </div>
