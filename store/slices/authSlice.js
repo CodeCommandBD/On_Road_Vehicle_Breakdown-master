@@ -17,9 +17,11 @@ const authSlice = createSlice({
       state.isLoading = action.payload;
     },
     loginSuccess: (state, action) => {
-      state.user = action.payload.user;
-      state.token = action.payload.token;
-      state.role = action.payload.user.role;
+      // Handle both old format and new API response format
+      const payload = action.payload.data || action.payload;
+      state.user = payload.user;
+      state.token = payload.token;
+      state.role = payload.user?.role || null;
       state.isAuthenticated = true;
       state.isLoading = false;
       state.error = null;

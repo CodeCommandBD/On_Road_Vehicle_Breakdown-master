@@ -82,20 +82,25 @@ export default function LoginForm() {
         throw new Error(result.message || "Login failed");
       }
 
+      // Handle new API response format (data wrapper)
+      const userData = result.data || result;
+
       console.log("Dispatching loginSuccess");
       dispatch(loginSuccess(result));
-      toast.success(`Welcome back, ${result.user.name}!`);
+      toast.success(`Welcome back, ${userData.user?.name || "User"}!`);
 
-      // Redirect based on role
       // Redirect based on role or return URL
-      console.log("Redirecting...", { redirectParams, role: result.user.role });
+      console.log("Redirecting...", {
+        redirectParams,
+        role: userData.user?.role,
+      });
       if (redirectParams) {
         router.push(redirectParams);
-      } else if (result.user.role === "admin") {
+      } else if (userData.user?.role === "admin") {
         router.push("/admin/dashboard");
-      } else if (result.user.role === "garage") {
+      } else if (userData.user?.role === "garage") {
         router.push("/garage/dashboard");
-      } else if (result.user.role === "mechanic") {
+      } else if (userData.user?.role === "mechanic") {
         router.push("/mechanic/dashboard");
       } else {
         router.push("/"); // Redirect to home page for users
