@@ -843,16 +843,56 @@ export default function MechanicDashboard() {
                           </button>
                         )}
                         {job.status === "payment_pending" && (
-                          <button
-                            onClick={() => {
-                              setActiveJobForAction(job);
-                              setPaymentModalOpen(true);
-                            }}
-                            className="w-full py-4 bg-orange-600 text-white rounded-2xl font-black uppercase tracking-wider hover:bg-orange-500 shadow-lg shadow-orange-900/40 active:scale-95 transition-all flex items-center justify-center gap-2"
-                          >
-                            <Bell className="w-5 h-5" />
-                            Collect Payment
-                          </button>
+                          <div className="space-y-3">
+                            {/* Payment Info Display */}
+                            {job.paymentInfo && (
+                              <div className="bg-blue-900/40 border border-blue-500/30 rounded-xl p-4 text-sm">
+                                <div className="flex justify-between items-center mb-2 border-b border-blue-500/20 pb-2">
+                                  <span className="text-blue-200 font-bold uppercase tracking-wider text-[10px]">
+                                    Payment Verification
+                                  </span>
+                                  <span
+                                    className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                                      job.paymentInfo.paymentMethod === "cash"
+                                        ? "bg-emerald-500/20 text-emerald-300"
+                                        : "bg-pink-500/20 text-pink-300"
+                                    }`}
+                                  >
+                                    {job.paymentInfo.paymentMethod}
+                                  </span>
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-400">
+                                      TrxID:
+                                    </span>
+                                    <span className="font-mono text-white select-all">
+                                      {job.paymentInfo.transactionId}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-400">
+                                      Amount:
+                                    </span>
+                                    <span className="font-bold text-white">
+                                      ৳{job.paymentInfo.amount}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            <button
+                              onClick={() => {
+                                setActiveJobForAction(job);
+                                setPaymentModalOpen(true);
+                              }}
+                              className="w-full py-4 bg-orange-600 text-white rounded-2xl font-black uppercase tracking-wider hover:bg-orange-500 shadow-lg shadow-orange-900/40 active:scale-95 transition-all flex items-center justify-center gap-2"
+                            >
+                              <Bell className="w-5 h-5" />
+                              Collect Payment
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -1164,6 +1204,31 @@ export default function MechanicDashboard() {
               Confirm Payment
             </h3>
             <div className="space-y-4">
+              {activeJobForAction?.paymentInfo && (
+                <div className="bg-slate-800 rounded-xl p-4 text-left border border-white/5 mb-4">
+                  <p className="text-xs text-slate-400 uppercase tracking-wider font-bold mb-2">
+                    User Submission:
+                  </p>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-slate-400">Method:</span>
+                    <span className="text-white capitalize">
+                      {activeJobForAction.paymentInfo.paymentMethod}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-slate-400">TrxID:</span>
+                    <span className="text-indigo-400 font-mono text-xs">
+                      {activeJobForAction.paymentInfo.transactionId}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-400">Amount:</span>
+                    <span className="text-green-400 font-bold">
+                      ৳{activeJobForAction.paymentInfo.amount}
+                    </span>
+                  </div>
+                </div>
+              )}
               <button
                 onClick={() => handleConfirmPayment("cash")}
                 className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-wider hover:bg-emerald-500 shadow-lg shadow-emerald-900/40 list-none"

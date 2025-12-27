@@ -21,6 +21,7 @@ import {
   Printer,
   FileText,
   Car,
+  ClipboardList,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -82,13 +83,16 @@ export default function BookingDetailsPage() {
     }
   };
 
-  // Poll for location updates when mechanic is on the way
+  // Poll for live updates (status changes, location, etc.) for any active booking
   useEffect(() => {
     let interval;
-    if (booking?.status === "on_the_way") {
+    const terminalStatuses = ["completed", "cancelled", "disputed"];
+
+    // If booking exists and is NOT in a terminal status, poll for updates
+    if (booking && !terminalStatuses.includes(booking.status)) {
       interval = setInterval(() => {
-        fetchBookingDetails(true); // silent update
-      }, 5000);
+        fetchBookingDetails(true); // silent update to sync status & location
+      }, 3000); // reduced to 3s for "live" feel
     }
     return () => clearInterval(interval);
   }, [booking?.status]);
@@ -838,11 +842,74 @@ export default function BookingDetailsPage() {
       {showEstimateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl relative">
+            {/* Diagnosis Report Section */}
+            {booking.jobCard && (
+              <div className="bg-slate-50 rounded-2xl p-4 mb-6 border border-slate-100">
+                <h4 className="text-sm font-black text-slate-700 uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <ClipboardList className="w-4 h-4 text-indigo-500" />
+                  Diagnosis Report
+                </h4>
+
+                {/* Vehicle Stats */}
+                <div className="flex gap-4 mb-4 text-sm">
+                  <div className="bg-white px-3 py-2 rounded-lg border border-slate-100 shadow-sm">
+                    <span className="text-xs text-slate-400 font-bold block">
+                      Odometer
+                    </span>
+                    <span className="font-mono font-bold text-slate-700">
+                      {booking.jobCard.vehicleDetails?.odometer || "N/A"} km
+                    </span>
+                  </div>
+                  <div className="bg-white px-3 py-2 rounded-lg border border-slate-100 shadow-sm">
+                    <span className="text-xs text-slate-400 font-bold block">
+                      Fuel
+                    </span>
+                    <span className="font-bold text-slate-700">
+                      {booking.jobCard.vehicleDetails?.fuelLevel || "N/A"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Inspection Checklist */}
+                <div className="space-y-2 mb-4">
+                  {booking.jobCard.checklist?.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="flex justify-between items-center text-sm border-b border-slate-100 pb-1 last:border-0 hover:bg-white p-1 rounded transition-colors"
+                    >
+                      <span className="text-slate-600 font-medium">
+                        {item.item}
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
+                          item.status === "issue"
+                            ? "bg-red-100 text-red-600 border border-red-200"
+                            : "bg-emerald-100 text-emerald-600 border border-emerald-200"
+                        }`}
+                      >
+                        {item.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Mechanic Notes */}
+                {booking.jobCard.notes && (
+                  <div className="bg-yellow-50 p-3 rounded-xl border border-yellow-100 text-sm text-yellow-800 italic">
+                    <span className="font-bold not-italic text-yellow-900 block text-xs uppercase mb-1">
+                      Mechanic's Observation:
+                    </span>
+                    "{booking.jobCard.notes}"
+                  </div>
+                )}
+              </div>
+            )}
+
             <h3 className="text-xl font-bold mb-4 text-gray-900 flex items-center gap-2">
               <FileText className="w-6 h-6 text-orange-500" />
               Service Estimate
             </h3>
-            <div className="space-y-4 mb-6 max-h-[60vh] overflow-y-auto">
+            <div className="space-y-4 mb-6 max-h-[40vh] overflow-y-auto">
               {booking.billItems &&
                 booking.billItems.map((item, idx) => (
                   <div

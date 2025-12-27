@@ -8,6 +8,7 @@ import Notification from "@/lib/db/models/Notification";
 import PointsRecord from "@/lib/db/models/PointsRecord";
 import User from "@/lib/db/models/User";
 import Payment from "@/lib/db/models/Payment";
+import JobCard from "@/lib/db/models/JobCard"; // Ensure strict population knows the model
 import { verifyToken } from "@/lib/utils/auth";
 import { validateStatusTransition } from "@/lib/utils/bookingHelpers";
 
@@ -34,7 +35,11 @@ export async function GET(request, { params }) {
         path: "assignedMechanic",
         select: "name phone avatar",
         strictPopulate: false,
-      }); // Populate Mechanic safely
+      }) // Populate Mechanic safely
+      .populate({
+        path: "jobCard",
+        strictPopulate: false,
+      }); // Fetch Diagnosis Report
 
     // Fetch review separately if exists
     const review = await Review.findOne({ booking: id });
