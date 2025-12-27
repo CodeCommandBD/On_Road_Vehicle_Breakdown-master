@@ -43,11 +43,14 @@ export async function POST(request) {
       booking.startedAt = new Date();
 
       // Notify Mechanic
-      await Notification.create({
-        recipient: booking.assignedMechanic,
-        sender: decoded.userId,
+      const { sendNotification } = await import(
+        "@/lib/utils/notificationHelper"
+      );
+      await sendNotification({
+        recipientId: booking.assignedMechanic,
+        senderId: decoded.userId,
         type: "success",
-        title: "Estimate Approved",
+        title: "Estimate Approved ✅",
         message: "User approved the estimate. Please start the work.",
         link: `/mechanic/dashboard`,
       });
@@ -64,11 +67,14 @@ export async function POST(request) {
       booking.completedAt = new Date(); // Job essentially ends here
 
       // Notify Mechanic
-      await Notification.create({
-        recipient: booking.assignedMechanic,
-        sender: decoded.userId,
-        type: "action_required", // FIXED: 'warning' might not be in enum, using 'action_required'
-        title: "Estimate Rejected",
+      const { sendNotification } = await import(
+        "@/lib/utils/notificationHelper"
+      );
+      await sendNotification({
+        recipientId: booking.assignedMechanic,
+        senderId: decoded.userId,
+        type: "action_required", // Critical alert for mechanic
+        title: "Estimate Rejected ❌",
         message: "User rejected the estimate. Collect Visit Fee (150 TK).",
         link: `/mechanic/dashboard`,
       });

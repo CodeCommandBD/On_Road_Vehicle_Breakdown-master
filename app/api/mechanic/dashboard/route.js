@@ -4,6 +4,7 @@ import User from "@/lib/db/models/User";
 import Booking from "@/lib/db/models/Booking";
 import JobCard from "@/lib/db/models/JobCard";
 import Attendance from "@/lib/db/models/Attendance";
+import Garage from "@/lib/db/models/Garage";
 import { verifyToken } from "@/lib/utils/auth";
 
 export async function GET(request) {
