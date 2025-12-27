@@ -94,21 +94,40 @@ export async function POST(request, { params }) {
         console.error("Failed to notify user:", err);
       }
     } else {
-      // Handle User Submission (Notify Garage)
+      // Handle User Submission (Notify Garage & Mechanic)
+      const notificationPromises = [];
+
+      // Notify Garage Owner
       if (booking.garage?.owner) {
-        try {
-          await Notification.create({
+        notificationPromises.push(
+          Notification.create({
             recipient: booking.garage.owner,
             type: "payment_update",
-            title: "Payment Submitted",
-            message: `User submitted payment (TrxID: ${transactionId}). Please verify.`,
+            title: "Payment Submitted ৳",
+            message: `User submitted payment of ৳${payment.amount} (TrxID: ${transactionId}). Please verify.`,
             link: `/garage/dashboard/bookings/${id}`,
             metadata: { bookingId: id, paymentId: payment._id },
-          });
-        } catch (err) {
-          console.error("Failed to notify garage:", err);
-        }
+          })
+        );
       }
+
+      // Notify Assigned Mechanic
+      if (booking.assignedMechanic) {
+        notificationPromises.push(
+          Notification.create({
+            recipient: booking.assignedMechanic,
+            type: "payment_update",
+            title: "Payment Submitted ৳",
+            message: `User submitted payment of ৳${payment.amount}. Verify & Confirm.`,
+            link: `/mechanic/dashboard`,
+            metadata: { bookingId: id, paymentId: payment._id },
+          })
+        );
+      }
+
+      await Promise.all(notificationPromises).catch((err) =>
+        console.error("Failed to send payment notifications:", err)
+      );
     }
 
     return NextResponse.json({
