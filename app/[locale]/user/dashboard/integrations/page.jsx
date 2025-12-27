@@ -24,10 +24,43 @@ export default function IntegrationsPage() {
   const [generatedKey, setGeneratedKey] = useState(null);
   const [generating, setGenerating] = useState(false);
 
-  // Access Control: Premium/Enterprise only
-  const hasAccess =
+  // Role Check State
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [roleChecked, setRoleChecked] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const isEnterprise =
+      user.membershipTier === "enterprise" || user.planTier === "enterprise";
+
+    if (isEnterprise) {
+      axios
+        .get("/api/organizations")
+        .then((res) => {
+          const orgs = res.data.data || [];
+          const hasAuthRole = orgs.some(
+            (o) => o.role === "admin" || o.role === "owner"
+          );
+          setIsAuthorized(hasAuthRole);
+        })
+        .catch((err) => {
+          console.error("Auth check failed:", err);
+          setIsAuthorized(false);
+        })
+        .finally(() => setRoleChecked(true));
+    } else {
+      setIsAuthorized(true);
+      setRoleChecked(true);
+    }
+  }, [user]);
+
+  const isPlanEligible =
     ["premium", "enterprise"].includes(user?.membershipTier) ||
     ["premium", "enterprise"].includes(user?.planTier);
+
+  const hasAccess = isPlanEligible && isAuthorized && roleChecked;
+  const isRestricted = !isAuthorized && roleChecked && isPlanEligible;
   const isEnterprise =
     user?.membershipTier === "enterprise" || user?.planTier === "enterprise";
 
@@ -37,10 +70,10 @@ export default function IntegrationsPage() {
       if (isEnterprise) {
         fetchApiKeys();
       }
-    } else {
+    } else if (roleChecked) {
       setLoading(false);
     }
-  }, [hasAccess, isEnterprise]);
+  }, [hasAccess, isEnterprise, roleChecked]);
 
   const fetchConfig = async () => {
     try {
@@ -159,15 +192,19 @@ export default function IntegrationsPage() {
             Connect Salesforce, HubSpot, Slack, or your custom CRM to get
             real-time SOS alerts and booking updates.
             <br />
-            Available exclusively on **Premium** and **Enterprise** plans.
+            {isRestricted
+              ? "Access restricted to Organization Owners & Admins."
+              : "Available exclusively on **Premium** and **Enterprise** plans."}
           </p>
 
-          <Link
-            href="/pricing"
-            className="inline-block px-8 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] transition-all relative z-10"
-          >
-            Upgrade Now
-          </Link>
+          {!isRestricted && (
+            <Link
+              href="/pricing"
+              className="inline-block px-8 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] transition-all relative z-10"
+            >
+              Upgrade Now
+            </Link>
+          )}
         </div>
       ) : (
         <div className="max-w-4xl">

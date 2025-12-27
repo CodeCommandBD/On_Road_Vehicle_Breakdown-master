@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import {
   Users,
@@ -21,40 +22,48 @@ import {
   ExternalLink,
   Info,
   Save,
+  X,
+  Wallet,
+  FileText,
+  Lock,
 } from "lucide-react";
-
-import { toast } from "react-toastify";
+import Link from "next/link";
 
 export default function TeamManagementPage() {
-  const router = useRouter();
-
-  const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
   const [organizations, setOrganizations] = useState([]);
   const [selectedOrg, setSelectedOrg] = useState(null);
-  const [members, setMembers] = useState([]);
-  const [invitations, setInvitations] = useState([]);
-  const [activities, setActivities] = useState([]);
-  const [showInviteModal, setShowInviteModal] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("member");
-  const [inviteLoading, setInviteLoading] = useState(false);
-  const [inviteError, setInviteError] = useState("");
-
-  // New states for enhancements
-  const [activeTab, setActiveTab] = useState("members"); // "members", "branding"
-  const [searchQuery, setSearchQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
-  const [updatingRole, setUpdatingRole] = useState(null); // userId being updated
-  const [resendingInvitation, setResendingInvitation] = useState(null); // invitationId
-  const [brandingEditing, setBrandingEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [hasAccess, setHasAccess] = useState(true);
+  const [activeTab, setActiveTab] = useState("members");
   const [brandingData, setBrandingData] = useState({
     name: "",
     logo: "",
     primaryColor: "#3B82F6",
   });
+  const [brandingEditing, setBrandingEditing] = useState(false);
 
-  // Fetch user and check access
+  // Member management states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [members, setMembers] = useState([]);
+  const [invitations, setInvitations] = useState([]);
+  const [activities, setActivities] = useState([]);
+
+  // Modal states
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("member");
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteError, setInviteError] = useState("");
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [resendingInvitation, setResendingInvitation] = useState(null);
+  const [updatingRole, setUpdatingRole] = useState(null);
+
+  const router = useRouter();
+
+  // ... (keep existing helper functions)
+
   useEffect(() => {
     checkUserAccess();
   }, []);
@@ -78,29 +87,49 @@ export default function TeamManagementPage() {
       setCurrentUser(userData);
       setOrganizations(orgs);
 
-      if (
-        userData.membershipTier !== "enterprise" &&
-        userData.membershipTier !== "premium" &&
-        userData.planTier !== "enterprise" &&
-        userData.planTier !== "premium" &&
-        orgs.length === 0
-      ) {
-        console.log("Access denied - Not premium/enterprise and no orgs");
-        router.push("/user/dashboard");
-      } else {
-        console.log("Access granted");
-        if (orgs.length > 0) {
-          const firstOrg = orgs[0];
-          setSelectedOrg(firstOrg);
-          setBrandingData({
-            name: firstOrg.name || "",
-            logo: firstOrg.settings?.branding?.logo || "",
-            primaryColor:
-              firstOrg.settings?.branding?.primaryColor || "#3B82F6",
-          });
-        }
+      // Strict Enterprise & Premium Check
+      const isEligiblePlan =
+        userData.membershipTier === "enterprise" ||
+        userData.membershipTier === "premium" ||
+        userData.planTier === "enterprise" ||
+        userData.planTier === "premium";
+
+      // Use backend-computed flags for robust role checking
+      const isOwner = userData.isEnterpriseOwner;
+      const isTeamMember = userData.isTeamMember;
+
+      // Access Check:
+      // 1. Must have eligible plan (or be admin)
+      // 2. If Team Member, must belong to an org
+
+      // If NOT eligible plan AND NOT a team member AND NOT Global Admin -> Deny
+      if (!isEligiblePlan && !isTeamMember && userData.role !== "admin") {
+        console.log("Access denied - Plan not eligible");
+        setHasAccess(false);
         setLoading(false);
+        return;
       }
+
+      if (isTeamMember && (!orgs || orgs.length === 0)) {
+        console.log("Access denied - Team member with no org");
+        setHasAccess(false);
+        setLoading(false);
+        return;
+      }
+
+      console.log("Access granted");
+      setHasAccess(true);
+
+      if (orgs.length > 0) {
+        const firstOrg = orgs[0];
+        setSelectedOrg(firstOrg);
+        setBrandingData({
+          name: firstOrg.name || "",
+          logo: firstOrg.settings?.branding?.logo || "",
+          primaryColor: firstOrg.settings?.branding?.primaryColor || "#3B82F6",
+        });
+      }
+      setLoading(false);
     } catch (error) {
       console.error("Failed to check user access:", error);
       router.push("/user/dashboard");
@@ -336,6 +365,109 @@ export default function TeamManagementPage() {
     );
   };
 
+  const MemberDetailsModal = ({ member, onClose }) => {
+    if (!member) return null;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="bg-[#1E1E1E] border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-200">
+          {/* Header Background */}
+          <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-blue-600/20 to-purple-600/20" />
+
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 rounded-full text-white/60 hover:text-white transition-colors z-10"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          <div className="relative pt-16 px-8 pb-8">
+            {/* Avatar & Info */}
+            <div className="flex flex-col items-center text-center">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] shadow-xl mb-4">
+                <div className="w-full h-full rounded-full bg-[#1E1E1E] flex items-center justify-center">
+                  <span className="text-3xl font-bold text-white">
+                    {member.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-1">
+                {member.name}
+              </h2>
+              <p className="text-white/60 mb-2">{member.email}</p>
+              <div className="mb-6">{getRoleBadge(member.role)}</div>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-3 gap-4 mb-8">
+              <div className="bg-white/5 border border-white/5 rounded-xl p-4 text-center">
+                <div className="w-8 h-8 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center mx-auto mb-2">
+                  <Activity className="w-4 h-4" />
+                </div>
+                <div className="text-2xl font-bold text-white">
+                  {member.sosCount}
+                </div>
+                <div className="text-[10px] text-white/40 uppercase font-bold tracking-wider">
+                  SOS Alerts
+                </div>
+              </div>
+              <div className="bg-white/5 border border-white/5 rounded-xl p-4 text-center">
+                <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center mx-auto mb-2">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <div className="text-2xl font-bold text-white">
+                  {member.totalRequests || 0}
+                </div>
+                <div className="text-[10px] text-white/40 uppercase font-bold tracking-wider">
+                  Requests
+                </div>
+              </div>
+              <div className="bg-white/5 border border-white/5 rounded-xl p-4 text-center">
+                <div className="w-8 h-8 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center mx-auto mb-2">
+                  <Wallet className="w-4 h-4" />
+                </div>
+                <div className="text-xl font-bold text-white">
+                  ৳{member.totalSpend?.toLocaleString() || 0}
+                </div>
+                <div className="text-[10px] text-white/40 uppercase font-bold tracking-wider">
+                  Total Spend
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Info */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-center py-3 border-b border-white/5">
+                <span className="text-white/40 text-sm">
+                  Joined Organization
+                </span>
+                <span className="text-white/80 text-sm font-medium">
+                  {new Date(member.joinedAt).toLocaleDateString(undefined, {
+                    dateStyle: "long",
+                  })}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-3 border-b border-white/5">
+                <span className="text-white/40 text-sm">Invited By</span>
+                <span className="text-white/80 text-sm font-medium">
+                  {member.invitedBy || "N/A"}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-3">
+                <span className="text-white/40 text-sm">Last Active</span>
+                <span className="text-white/80 text-sm font-medium">
+                  {member.lastActiveAt
+                    ? new Date(member.lastActiveAt).toLocaleString()
+                    : "Recently"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -369,6 +501,46 @@ export default function TeamManagementPage() {
     );
   }
 
+  // --- LOCK SCREEN ---
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="bg-[#1E1E1E] border border-white/10 rounded-2xl p-8 max-w-2xl w-full text-center shadow-2xl relative overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-orange-500/20 blur-[50px] rounded-full pointer-events-none" />
+
+          <div className="bg-orange-500/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
+            <Lock className="w-8 h-8 text-orange-500" />
+          </div>
+
+          <h2 className="text-2xl font-bold text-white mb-2 relative z-10">
+            Team Management
+          </h2>
+          <p className="text-white/60 mb-8 relative z-10 leading-relaxed">
+            Collaborate with your team, assign roles, and track activity in
+            real-time.
+            <br />
+            Manage your organization efficiently with advanced permissions and
+            audit logs.
+            <br />
+            <span className="block mt-4 text-orange-400 font-semibold">
+              Available exclusively on **Premium** and **Enterprise** plans.
+            </span>
+          </p>
+
+          <Link
+            href="/pricing"
+            className="inline-block px-8 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold hover:shadow-[0_0_20px_rgba(249,115,22,0.4)] transition-all relative z-10 transform hover:scale-105"
+          >
+            Upgrade Now
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const isOrgAdmin =
+    selectedOrg?.role === "owner" || selectedOrg?.role === "admin";
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -396,19 +568,22 @@ export default function TeamManagementPage() {
               Members
             </div>
           </button>
-          <button
-            onClick={() => setActiveTab("branding")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === "branding"
-                ? "bg-blue-600 text-white shadow-lg"
-                : "text-gray-400 hover:text-white"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <Palette className="w-4 h-4" />
-              Branding
-            </div>
-          </button>
+
+          {isOrgAdmin && (
+            <button
+              onClick={() => setActiveTab("branding")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === "branding"
+                  ? "bg-blue-600 text-white shadow-lg"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Palette className="w-4 h-4" />
+                Branding
+              </div>
+            </button>
+          )}
         </div>
       </div>
 
@@ -485,9 +660,9 @@ export default function TeamManagementPage() {
       {activeTab === "members" ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Members List */}
-          <div className="lg:col-span-2">
+          <div className={isOrgAdmin ? "lg:col-span-2" : "lg:col-span-3"}>
             {/* Organization Owner Section (Separated from list) */}
-            {ownerMember && (
+            {isOrgAdmin && ownerMember && (
               <div className="mb-8 p-[1px] rounded-2xl bg-gradient-to-br from-yellow-500/50 via-gray-700/50 to-transparent">
                 <div className="bg-gray-900/90 backdrop-blur-xl rounded-2xl p-6 border border-yellow-500/10">
                   <div className="flex items-center justify-between mb-4">
@@ -573,34 +748,36 @@ export default function TeamManagementPage() {
                   className="w-full pl-10 pr-4 py-2 bg-gray-800/40 border border-gray-700/50 rounded-xl text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
-              <div className="relative sm:w-48">
-                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                <select
-                  value={roleFilter}
-                  onChange={(e) => setRoleFilter(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-gray-800/40 border border-gray-700/50 rounded-xl text-sm text-white focus:outline-none appearance-none"
-                >
-                  <option value="all" className="bg-[#1A1A1A] text-white">
-                    All Roles
-                  </option>
-                  <option value="owner" className="bg-[#1A1A1A] text-white">
-                    Owners
-                  </option>
-                  <option value="admin" className="bg-[#1A1A1A] text-white">
-                    Admins
-                  </option>
-                  <option value="manager" className="bg-[#1A1A1A] text-white">
-                    Managers
-                  </option>
-                  <option value="member" className="bg-[#1A1A1A] text-white">
-                    Members
-                  </option>
-                  <option value="viewer" className="bg-[#1A1A1A] text-white">
-                    Viewers
-                  </option>
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-600 pointer-events-none" />
-              </div>
+              {isOrgAdmin && (
+                <div className="relative sm:w-48">
+                  <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                  <select
+                    value={roleFilter}
+                    onChange={(e) => setRoleFilter(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 bg-gray-800/40 border border-gray-700/50 rounded-xl text-sm text-white focus:outline-none appearance-none"
+                  >
+                    <option value="all" className="bg-[#1A1A1A] text-white">
+                      All Roles
+                    </option>
+                    <option value="owner" className="bg-[#1A1A1A] text-white">
+                      Owners
+                    </option>
+                    <option value="admin" className="bg-[#1A1A1A] text-white">
+                      Admins
+                    </option>
+                    <option value="manager" className="bg-[#1A1A1A] text-white">
+                      Managers
+                    </option>
+                    <option value="member" className="bg-[#1A1A1A] text-white">
+                      Members
+                    </option>
+                    <option value="viewer" className="bg-[#1A1A1A] text-white">
+                      Viewers
+                    </option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-600 pointer-events-none" />
+                </div>
+              )}
             </div>
 
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 overflow-hidden">
@@ -630,20 +807,25 @@ export default function TeamManagementPage() {
                   filteredMembers.map((member) => (
                     <div
                       key={member.id}
-                      className="p-6 hover:bg-gray-700/10 transition-colors"
+                      onClick={() => setSelectedMember(member)}
+                      className="p-6 hover:bg-white/5 transition-all cursor-pointer group border-b border-gray-700/50 last:border-0"
                     >
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-gray-700 flex items-center justify-center text-blue-400 font-bold shadow-inner">
-                            {member.name.charAt(0).toUpperCase()}
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] shadow-lg group-hover:scale-105 transition-transform">
+                            <div className="w-full h-full rounded-full bg-[#1A1A1A] flex items-center justify-center">
+                              <span className="text-lg font-bold text-white">
+                                {member.name.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <h3 className="font-semibold text-white">
+                              <h3 className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors">
                                 {member.name}
                               </h3>
                               {member.userId === currentUser?._id && (
-                                <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-widest border border-blue-500/30">
+                                <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-bold uppercase tracking-widest border border-blue-500/30">
                                   You
                                 </span>
                               )}
@@ -654,16 +836,11 @@ export default function TeamManagementPage() {
                           </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto">
-                          <div className="flex flex-col items-center px-3 py-1 bg-gray-800/40 rounded-lg border border-gray-700/50">
-                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tight">
-                              SOS Usage
-                            </span>
-                            <span className="text-sm font-bold text-red-500/80">
-                              {member.sosCount} alerts
-                            </span>
-                          </div>
-
+                        <div
+                          className="flex flex-wrap items-center gap-4 w-full sm:w-auto"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {/* Role Manager Badge */}
                           {member.canManage &&
                           selectedOrg?.role === "owner" &&
                           member.userId !== currentUser?._id ? (
@@ -677,41 +854,58 @@ export default function TeamManagementPage() {
                                     e.target.value
                                   )
                                 }
-                                className="appearance-none bg-gray-800/80 text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-700 pr-8 focus:outline-none focus:border-blue-500 transition-all uppercase tracking-wide cursor-pointer"
+                                className="appearance-none bg-black/40 hover:bg-black/60 text-white text-xs font-bold px-4 py-2 rounded-xl border border-white/10 pr-10 focus:outline-none focus:border-blue-500 transition-all uppercase tracking-wide cursor-pointer shadow-sm"
                               >
-                                <option
-                                  value="admin"
-                                  className="bg-[#1A1A1A] text-white"
-                                >
+                                <option value="admin" className="bg-[#1A1A1A]">
                                   Admin
                                 </option>
                                 <option
                                   value="manager"
-                                  className="bg-[#1A1A1A] text-white"
+                                  className="bg-[#1A1A1A]"
                                 >
                                   Manager
                                 </option>
-                                <option
-                                  value="member"
-                                  className="bg-[#1A1A1A] text-white"
-                                >
+                                <option value="member" className="bg-[#1A1A1A]">
                                   Member
                                 </option>
-                                <option
-                                  value="viewer"
-                                  className="bg-[#1A1A1A] text-white"
-                                >
+                                <option value="viewer" className="bg-[#1A1A1A]">
                                   Viewer
                                 </option>
                               </select>
-                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
                               {updatingRole === member.userId && (
-                                <RefreshCw className="absolute -right-6 top-1/2 -translate-y-1/2 w-3 h-3 text-blue-500 animate-spin" />
+                                <RefreshCw className="absolute -right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500 animate-spin" />
                               )}
                             </div>
                           ) : (
                             getRoleBadge(member.role)
                           )}
+
+                          {/* Mini Stats (Quick View) */}
+                          <div className="flex items-center gap-3 px-3 py-1.5 bg-white/5 rounded-lg border border-white/5">
+                            <div
+                              className="flex items-center gap-1.5"
+                              title="Total Spend"
+                            >
+                              <Wallet className="w-3.5 h-3.5 text-green-400" />
+                              <span className="text-xs font-bold text-white">
+                                ৳
+                                {member.totalSpend
+                                  ? (member.totalSpend / 1000).toFixed(1) + "k"
+                                  : "0"}
+                              </span>
+                            </div>
+                            <div className="w-[1px] h-3 bg-white/10"></div>
+                            <div
+                              className="flex items-center gap-1.5"
+                              title="SOS Alerts"
+                            >
+                              <Activity className="w-3.5 h-3.5 text-red-400" />
+                              <span className="text-xs font-bold text-white">
+                                {member.sosCount}
+                              </span>
+                            </div>
+                          </div>
 
                           {member.canManage && (
                             <button
@@ -720,7 +914,7 @@ export default function TeamManagementPage() {
                               className={`p-2 rounded-lg transition-colors ${
                                 member.userId === currentUser?._id
                                   ? "opacity-20 cursor-not-allowed"
-                                  : "text-red-400/60 hover:text-red-400 hover:bg-red-500/10"
+                                  : "text-white/40 hover:text-red-400 hover:bg-red-500/10"
                               }`}
                               title="Remove member"
                             >
@@ -804,52 +998,54 @@ export default function TeamManagementPage() {
           </div>
 
           {/* Activity Feed */}
-          <div className="lg:col-span-1">
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 overflow-hidden sticky top-6">
-              <div className="p-6 border-b border-gray-700/50">
-                <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-purple-400" />
-                  Recent Activity
-                </h2>
-              </div>
+          {isOrgAdmin && (
+            <div className="lg:col-span-1">
+              <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 overflow-hidden sticky top-6">
+                <div className="p-6 border-b border-gray-700/50">
+                  <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-purple-400" />
+                    Recent Activity
+                  </h2>
+                </div>
 
-              <div className="max-h-[600px] overflow-y-auto">
-                {activities.length === 0 ? (
-                  <div className="p-6 text-center text-gray-500">
-                    No recent activity
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-700/50">
-                    {activities.map((activity) => (
-                      <div
-                        key={activity._id}
-                        className="p-4 hover:bg-gray-700/10 transition-colors"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0 border border-blue-500/20">
-                            <Activity className="w-3 h-3 text-blue-400" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm text-gray-300">
-                              <span className="font-bold text-white">
-                                {activity.user?.name || "System"}
-                              </span>{" "}
-                              <span className="text-gray-400">
-                                {activity.action.replace(/_/g, " ")}
-                              </span>
-                            </p>
-                            <p className="text-[10px] text-gray-500 mt-1 uppercase font-bold tracking-tight">
-                              {new Date(activity.createdAt).toLocaleString()}
-                            </p>
+                <div className="max-h-[600px] overflow-y-auto">
+                  {activities.length === 0 ? (
+                    <div className="p-6 text-center text-gray-500">
+                      No recent activity
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-700/50">
+                      {activities.map((activity) => (
+                        <div
+                          key={activity._id}
+                          className="p-4 hover:bg-gray-700/10 transition-colors"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0 border border-blue-500/20">
+                              <Activity className="w-3 h-3 text-blue-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-gray-300">
+                                <span className="font-bold text-white">
+                                  {activity.user?.name || "System"}
+                                </span>{" "}
+                                <span className="text-gray-400">
+                                  {activity.action.replace(/_/g, " ")}
+                                </span>
+                              </p>
+                              <p className="text-[10px] text-gray-500 mt-1 uppercase font-bold tracking-tight">
+                                {new Date(activity.createdAt).toLocaleString()}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       ) : (
         // --- BRANDING TAB ---
@@ -1077,6 +1273,14 @@ export default function TeamManagementPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Member Details Modal */}
+      {selectedMember && (
+        <MemberDetailsModal
+          member={selectedMember}
+          onClose={() => setSelectedMember(null)}
+        />
       )}
     </div>
   );

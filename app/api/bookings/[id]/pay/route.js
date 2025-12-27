@@ -3,7 +3,7 @@ import connectDB from "@/lib/db/connect";
 import Booking from "@/lib/db/models/Booking";
 import Payment from "@/lib/db/models/Payment";
 import Notification from "@/lib/db/models/Notification";
-import { verifyToken } from "@/lib/utils/auth";
+import { verifyToken, getCurrentUser } from "@/lib/utils/auth";
 
 // POST: User submits payment (TrxID)
 // POST: Submit payment
@@ -73,6 +73,7 @@ export async function POST(request, { params }) {
       await Booking.findByIdAndUpdate(id, {
         isPaid: true,
         paymentInfo: {
+          paymentId: payment._id,
           status: "success",
           transactionId: transactionId,
           amount: payment.amount,
@@ -94,6 +95,19 @@ export async function POST(request, { params }) {
         console.error("Failed to notify user:", err);
       }
     } else {
+      // Update Booking - Payment Submitted, Awaiting Approval
+      await Booking.findByIdAndUpdate(id, {
+        isPaid: false,
+        isPaymentSubmitted: true,
+        isPaymentApproved: false,
+        paymentDetails: {
+          transactionId: transactionId,
+          amount: payment.amount,
+          method: payment.paymentMethod,
+          submittedAt: new Date(),
+        },
+      });
+
       // Handle User Submission (Notify Garage & Mechanic)
       const notificationPromises = [];
 
@@ -102,12 +116,14 @@ export async function POST(request, { params }) {
         notificationPromises.push(
           Notification.create({
             recipient: booking.garage.owner,
-            type: "payment_update",
+            type: "info",
             title: "Payment Submitted ৳",
             message: `User submitted payment of ৳${payment.amount} (TrxID: ${transactionId}). Please verify.`,
             link: `/garage/dashboard/bookings/${id}`,
             metadata: { bookingId: id, paymentId: payment._id },
-          })
+          }).catch((err) =>
+            console.error("Garage notification failed:", err.message)
+          )
         );
       }
 
@@ -116,12 +132,14 @@ export async function POST(request, { params }) {
         notificationPromises.push(
           Notification.create({
             recipient: booking.assignedMechanic,
-            type: "payment_update",
+            type: "info",
             title: "Payment Submitted ৳",
-            message: `User submitted payment of ৳${payment.amount}. Verify & Confirm.`,
+            message: `User submitted payment of ৳${payment.amount} (TrxID: ${transactionId}). Verify & Confirm.`,
             link: `/mechanic/dashboard`,
             metadata: { bookingId: id, paymentId: payment._id },
-          })
+          }).catch((err) =>
+            console.error("Mechanic notification failed:", err.message)
+          )
         );
       }
 
@@ -158,7 +176,12 @@ export async function PATCH(request, { params }) {
     const token = request.cookies.get("token")?.value;
     const decoded = await verifyToken(token);
 
-    if (!decoded || (decoded.role !== "garage" && decoded.role !== "admin")) {
+    if (
+      !decoded ||
+      (decoded.role !== "garage" &&
+        decoded.role !== "admin" &&
+        decoded.role !== "mechanic")
+    ) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
         { status: 401 }
@@ -179,11 +202,18 @@ export async function PATCH(request, { params }) {
     }
     await payment.save();
 
-    // If success, update Booking
+    // If success, update Booking with Approval
     if (status === "success") {
+      const currentUser = await getCurrentUser();
+
       await Booking.findByIdAndUpdate(id, {
         isPaid: true,
+        isPaymentApproved: true,
         paymentMethod: payment.paymentMethod,
+        status: "completed",
+        completedAt: new Date(),
+        "paymentDetails.approvedAt": new Date(),
+        "paymentDetails.approvedBy": currentUser?.userId || null,
       });
 
       // Notify User

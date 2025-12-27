@@ -101,6 +101,9 @@ export default function BookingTable({
                 {type === "user" ? t("garage") : t("user")}
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
+                Booked By
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
                 {t("service")}
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-white/60 uppercase tracking-wider">
@@ -141,6 +144,28 @@ export default function BookingTable({
                         : booking.user?.name || "Unknown User"}
                     </span>
                   </div>
+                </td>
+                <td className="px-4 py-4">
+                  {booking.createdByMember ? (
+                    <div className="flex flex-col gap-1">
+                      <span className="text-white/90 text-sm font-medium">
+                        {booking.createdByMember.name}
+                      </span>
+                      <span
+                        className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 w-fit rounded ${
+                          booking.createdByMember.isOwner
+                            ? "bg-purple-500/20 text-purple-400 border border-purple-500/20"
+                            : "bg-blue-500/20 text-blue-400 border border-blue-500/20"
+                        }`}
+                      >
+                        {booking.createdByMember.isOwner
+                          ? "Owner"
+                          : "Team Member"}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-white/40 text-xs italic">Self</span>
+                  )}
                 </td>
                 <td className="px-4 py-4 text-white/80">
                   {booking.service?.name ||

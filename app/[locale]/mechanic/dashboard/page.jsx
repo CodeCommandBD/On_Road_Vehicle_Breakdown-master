@@ -34,6 +34,15 @@ export default function MechanicDashboard() {
   const { stats, attendance, activeJobs, openJobs, mechanic } = data || {};
   const isOnDuty = attendance?.clockIn && !attendance?.clockOut;
 
+  // Debug log to check attendance state
+  console.log("🔍 Attendance Debug:", {
+    hasAttendance: !!attendance,
+    clockIn: attendance?.clockIn,
+    clockOut: attendance?.clockOut,
+    isOnDuty,
+    buttonShouldShow: isOnDuty ? "Clock Out" : "Clock In",
+  });
+
   // Modal States
   const [modalType, setModalType] = useState(null); // 'attendance_in', 'attendance_out', 'sos'
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -212,12 +221,37 @@ export default function MechanicDashboard() {
   const handleConfirmPayment = async (method) => {
     try {
       setLoading(true);
-      const res = await fetch("/api/mechanic/payment/confirm", {
-        method: "POST",
+
+      // Get paymentId - either from booking or fetch from Payment collection
+      let paymentId = activeJobForAction?.paymentInfo?.paymentId;
+
+      if (!paymentId) {
+        // For existing bookings without paymentId, find Payment by bookingId
+        try {
+          const paymentRes = await fetch(
+            `/api/payments/by-booking/${activeJobForAction._id}`
+          );
+          const paymentData = await paymentRes.json();
+
+          if (paymentData.success && paymentData.payment) {
+            paymentId = paymentData.payment._id;
+          }
+        } catch (err) {
+          console.error("Failed to fetch payment record:", err);
+        }
+      }
+
+      if (!paymentId) {
+        toast.error("Payment record not found");
+        return;
+      }
+
+      const res = await fetch(`/api/bookings/${activeJobForAction._id}/pay`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          bookingId: activeJobForAction._id,
-          method,
+          status: "success",
+          paymentId: paymentId,
         }),
       });
       const result = await res.json();
@@ -229,6 +263,7 @@ export default function MechanicDashboard() {
         toast.error(result.message);
       }
     } catch (error) {
+      console.error("Payment confirmation error:", error);
       toast.error("Payment confirmation failed");
     } finally {
       setLoading(false);
@@ -339,7 +374,8 @@ export default function MechanicDashboard() {
       const result = await res.json();
       if (result.success) {
         toast.success(result.message);
-        fetchDashboardData();
+        // Immediately refresh dashboard data to sync UI
+        await fetchDashboardData();
       } else {
         toast.error(result.message);
       }
@@ -637,7 +673,7 @@ export default function MechanicDashboard() {
               ) : (
                 <Power className="w-6 h-6" />
               )}
-              {isOnDuty ? "End Shift" : "Begin Shift"}
+              {isOnDuty ? "Clock Out" : "Clock In"}
             </button>
           </div>
 
@@ -845,7 +881,7 @@ export default function MechanicDashboard() {
                         {job.status === "payment_pending" && (
                           <div className="space-y-3">
                             {/* Payment Info Display */}
-                            {job.paymentInfo && (
+                            {job.isPaymentSubmitted && job.paymentDetails && (
                               <div className="bg-blue-900/40 border border-blue-500/30 rounded-xl p-4 text-sm">
                                 <div className="flex justify-between items-center mb-2 border-b border-blue-500/20 pb-2">
                                   <span className="text-blue-200 font-bold uppercase tracking-wider text-[10px]">
@@ -853,12 +889,12 @@ export default function MechanicDashboard() {
                                   </span>
                                   <span
                                     className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
-                                      job.paymentInfo.paymentMethod === "cash"
+                                      job.paymentDetails.method === "cash"
                                         ? "bg-emerald-500/20 text-emerald-300"
                                         : "bg-pink-500/20 text-pink-300"
                                     }`}
                                   >
-                                    {job.paymentInfo.paymentMethod}
+                                    {job.paymentDetails.method}
                                   </span>
                                 </div>
                                 <div className="space-y-1">
@@ -867,7 +903,7 @@ export default function MechanicDashboard() {
                                       TrxID:
                                     </span>
                                     <span className="font-mono text-white select-all">
-                                      {job.paymentInfo.transactionId}
+                                      {job.paymentDetails.transactionId}
                                     </span>
                                   </div>
                                   <div className="flex justify-between">
@@ -875,7 +911,7 @@ export default function MechanicDashboard() {
                                       Amount:
                                     </span>
                                     <span className="font-bold text-white">
-                                      ৳{job.paymentInfo.amount}
+                                      ৳{job.paymentDetails.amount}
                                     </span>
                                   </div>
                                 </div>
@@ -983,8 +1019,24 @@ export default function MechanicDashboard() {
                   </div>
                 ))
               ) : (
-                <div className="py-12 text-center opacity-50 italic">
-                  No external requests in the immediate sector.
+                <div className="bg-[#020617]/40 border-2 border-dashed border-white/5 rounded-[2.5rem] p-12 text-center">
+                  {!isOnDuty ? (
+                    <div className="space-y-3">
+                      <div className="flex justify-center">
+                        <Power className="w-12 h-12 text-slate-600" />
+                      </div>
+                      <p className="text-slate-400 font-bold text-lg">
+                        Clock in to see available requests
+                      </p>
+                      <p className="text-slate-600 text-sm">
+                        You must be on duty to accept jobs
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-slate-500 font-medium italic">
+                      No external requests in the immediate sector.
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -1008,7 +1060,7 @@ export default function MechanicDashboard() {
 
       {/* Confirmation Modal */}
       <ConfirmationModal
-        isOpen={isModalOpen}
+        isOpen={isModalOpen && modalType !== "final_bill"}
         isLoading={processingAttendance || sosLoading}
         title={
           modalType === "sos"

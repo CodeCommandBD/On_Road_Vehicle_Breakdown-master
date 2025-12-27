@@ -53,16 +53,47 @@ export async function GET(req, { params }) {
       .populate("invitedBy", "name")
       .sort({ role: 1, joinedAt: 1 });
 
-    // Get SOS counts for each member in this organization context
-    // Although SOS are global to user, we show them here
+    // Get SOS counts
     const memberUserIds = members.map((m) => m.user._id);
     const sosStats = await SOS.aggregate([
       { $match: { user: { $in: memberUserIds } } },
       { $group: { _id: "$user", count: { $sum: 1 } } },
     ]);
 
+    // Get Booking Stats (Requests & Spend)
+    // We match bookings where 'createdByMember.userId' is in the list OR 'user' is in the list (if they created it directly as a regular user before?)
+    // For enterprise context, we usually care about bookings they created.
+    // Let's match by `createdByMember.userId` for robust enterprise tracking, or fallback to `user` if they are just a user.
+    // Actually, `createdByMember.userId` is the most accurate for "Work done by this member".
+    const bookingStats = await import("@/lib/db/models/Booking")
+      .then((mod) => mod.default)
+      .then((Booking) =>
+        Booking.aggregate([
+          {
+            $match: {
+              "createdByMember.userId": { $in: memberUserIds },
+            },
+          },
+          {
+            $group: {
+              _id: "$createdByMember.userId",
+              totalRequests: { $sum: 1 },
+              totalSpend: { $sum: "$actualCost" }, // aggregate actual spend
+            },
+          },
+        ])
+      );
+
     const sosMap = sosStats.reduce((acc, curr) => {
       acc[curr._id.toString()] = curr.count;
+      return acc;
+    }, {});
+
+    const bookingMap = bookingStats.reduce((acc, curr) => {
+      acc[curr._id.toString()] = {
+        requests: curr.totalRequests,
+        spend: curr.totalSpend,
+      };
       return acc;
     }, {});
 
@@ -78,6 +109,8 @@ export async function GET(req, { params }) {
         lastActiveAt: member.lastActiveAt,
         invitedBy: member.invitedBy?.name,
         sosCount: sosMap[member.user._id.toString()] || 0,
+        totalRequests: bookingMap[member.user._id.toString()]?.requests || 0,
+        totalSpend: bookingMap[member.user._id.toString()]?.spend || 0,
         canManage: canManageRole(membership.role, member.role),
       }));
 

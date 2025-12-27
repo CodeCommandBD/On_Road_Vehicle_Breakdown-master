@@ -28,21 +28,40 @@ export async function POST(request) {
         "sslcommerz.validatedOn": new Date(),
       });
 
-      // Update Booking
+      // Update Booking - Payment Submitted, Awaiting Approval
       const booking = await Booking.findByIdAndUpdate(
         value_b,
         {
-          isPaid: true,
-          paymentInfo: {
-            status: "success",
+          isPaid: false,
+          status: "payment_pending",
+          isPaymentSubmitted: true,
+          isPaymentApproved: false,
+          paymentDetails: {
             transactionId: tran_id,
             amount: payment.amount,
-            paymentMethod: "sslcommerz",
-            paidAt: new Date(),
+            method: "sslcommerz",
+            submittedAt: new Date(),
           },
         },
         { new: true }
-      ).populate("garage");
+      ).populate("garage assignedMechanic");
+
+      // Notify Mechanic - Payment received, needs approval
+      if (booking.assignedMechanic) {
+        try {
+          const Notification = (await import("@/lib/db/models/Notification"))
+            .default;
+          await Notification.create({
+            recipient: booking.assignedMechanic,
+            type: "info",
+            title: "Payment Received 💰",
+            message: `Online payment of ৳${payment.amount} received for Booking #${booking.bookingNumber} (TrxID: ${tran_id}). Please verify and confirm.`,
+            link: `/mechanic/dashboard`,
+          });
+        } catch (err) {
+          console.error("Failed to notify mechanic:", err);
+        }
+      }
 
       // Notify Garage Owner
       if (booking?.garage?.owner) {
@@ -51,9 +70,9 @@ export async function POST(request) {
             .default;
           await Notification.create({
             recipient: booking.garage.owner,
-            type: "payment_success",
-            title: "Payment Received 💰",
-            message: `Online payment of ৳${payment.amount} received for Booking #${booking.bookingNumber}`,
+            type: "info",
+            title: "Payment Received ৳",
+            message: `Online payment of ৳${payment.amount} received for Booking #${booking.bookingNumber} (TrxID: ${tran_id}). Awaiting verification.`,
             link: `/garage/dashboard/bookings/${booking._id}`,
             metadata: { bookingId: booking._id, amount: payment.amount },
           });
