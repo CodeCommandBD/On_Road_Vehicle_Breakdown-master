@@ -352,7 +352,7 @@ export default function BookingDetailsPage() {
       {/* Back Button */}
       <Link
         href="/user/dashboard/bookings"
-        className="flex items-center gap-2 text-gray-500 hover:text-gray-900 mb-6 transition-colors w-fit"
+        className="flex items-center gap-2 text-gray-500 mb-6 transition-colors w-fit"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Bookings
