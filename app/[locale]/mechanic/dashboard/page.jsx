@@ -80,6 +80,15 @@ export default function MechanicDashboard() {
       const json = await res.json();
       if (json.success) {
         setData(json.data);
+        // Update activeJobForAction if it exists to prevent stale state
+        if (activeJobForAction) {
+          const updatedJob = json.data.activeJobs.find(
+            (job) => job._id === activeJobForAction._id
+          );
+          if (updatedJob) {
+            setActiveJobForAction(updatedJob);
+          }
+        }
       } else {
         toast.error(json.message);
       }
@@ -758,16 +767,31 @@ export default function MechanicDashboard() {
                           </button>
                         )}
                         {job.status === "diagnosing" && (
-                          <button
-                            onClick={() => {
-                              setActiveJobForAction(job);
-                              setEstimateModalOpen(true);
-                            }}
-                            className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black uppercase tracking-wider hover:bg-purple-500 shadow-lg shadow-purple-900/40 active:scale-95 transition-all flex items-center justify-center gap-2"
-                          >
-                            <Settings className="w-5 h-5" />
-                            Create Estimate
-                          </button>
+                          <>
+                            {!job.hasJobCard ? (
+                              <button
+                                onClick={() => {
+                                  setActiveJobForAction(job);
+                                  setDiagnosisModalOpen(true);
+                                }}
+                                className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-wider hover:bg-indigo-500 shadow-lg shadow-indigo-900/40 active:scale-95 transition-all flex items-center justify-center gap-2"
+                              >
+                                <ClipboardList className="w-5 h-5" />
+                                Create Diagnosis Report
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setActiveJobForAction(job);
+                                  setEstimateModalOpen(true);
+                                }}
+                                className="w-full py-4 bg-purple-600 text-white rounded-2xl font-black uppercase tracking-wider hover:bg-purple-500 shadow-lg shadow-purple-900/40 active:scale-95 transition-all flex items-center justify-center gap-2"
+                              >
+                                <Settings className="w-5 h-5" />
+                                Create Estimate
+                              </button>
+                            )}
+                          </>
                         )}
                         {job.status === "estimate_sent" && (
                           <div className="w-full py-4 bg-slate-800/50 border border-white/5 rounded-2xl flex items-center justify-center gap-2 text-slate-400 font-bold uppercase tracking-wider animate-pulse">
@@ -781,11 +805,10 @@ export default function MechanicDashboard() {
                               setActiveJobForAction(job);
                               // Pre-calculate final bill
                               const currentTotal =
-                                (job.estimatedCost || 0) +
                                 (job.billItems || []).reduce(
                                   (sum, i) => sum + i.amount,
                                   0
-                                );
+                                ) + 1000; // Add fixed service fee
                               setFinalBillAmount(currentTotal);
                               setModalType("final_bill");
                               setIsModalOpen(true); // Re-using generic modal switch or just use specific state? Using generic + type
@@ -1077,13 +1100,17 @@ export default function MechanicDashboard() {
               </div>
             )}
 
-            <input
-              type="number"
-              placeholder="Total Bill Amount (৳)"
-              className="w-full bg-slate-800 border border-white/10 rounded-2xl px-6 py-4 text-2xl font-bold text-center text-white mb-6 focus:ring-2 ring-indigo-500 outline-none"
-              value={finalBillAmount}
-              onChange={(e) => setFinalBillAmount(e.target.value)}
-            />
+            <div className="w-full bg-slate-800 border border-white/10 rounded-2xl px-6 py-6 text-center mb-6">
+              <p className="text-slate-400 text-xs uppercase tracking-wider mb-2">
+                Total Bill Amount
+              </p>
+              <div className="text-4xl font-black text-white">
+                ৳{finalBillAmount}
+              </div>
+              <p className="text-xs text-slate-500 mt-2">
+                (Estimate + Approved Extras)
+              </p>
+            </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setBillModalOpen(false)}
@@ -1215,9 +1242,10 @@ export default function MechanicDashboard() {
             </p>
 
             <div className="mb-6 space-y-2 text-left bg-slate-800/50 p-4 rounded-xl border border-white/5">
+              {/* Service Fee */}
               <div className="flex justify-between text-sm text-slate-400">
-                <span>Base Estimate:</span>
-                <span>৳{activeJobForAction.estimatedCost || 0}</span>
+                <span>Service Fee:</span>
+                <span>৳1000</span>
               </div>
               {/* Calc extras */}
               <div className="flex justify-between text-sm text-slate-400">
@@ -1369,6 +1397,40 @@ export default function MechanicDashboard() {
                       </div>
                     </div>
                   ))}
+
+                  {/* Add New Inspection Item */}
+                  <div className="flex gap-2 mt-4 pt-4 border-t border-white/5">
+                    <input
+                      type="text"
+                      placeholder="Add custom check..."
+                      className="flex-1 bg-white/5 rounded-xl border border-white/10 px-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                      id="newInspectionInput"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const input =
+                          document.getElementById("newInspectionInput");
+                        if (input.value.trim()) {
+                          setJobCardData({
+                            ...jobCardData,
+                            checklist: [
+                              ...jobCardData.checklist,
+                              {
+                                category: "Custom",
+                                item: input.value.trim(),
+                                status: "ok",
+                              },
+                            ],
+                          });
+                          input.value = "";
+                        }
+                      }}
+                      className="px-4 py-2 bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 rounded-xl text-xs font-bold uppercase hover:bg-indigo-600 hover:text-white transition-all"
+                    >
+                      + Add
+                    </button>
+                  </div>
                 </div>
               </div>
 

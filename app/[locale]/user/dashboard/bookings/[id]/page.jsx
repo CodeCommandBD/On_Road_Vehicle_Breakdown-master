@@ -125,7 +125,7 @@ export default function BookingDetailsPage() {
         body: JSON.stringify({
           status: "cancelled",
           towingRequested: false,
-          actualCost: 100, // Policy fee for rejection
+          actualCost: 150, // Policy fee for rejection
         }),
       });
       const data = await res.json();
@@ -583,18 +583,10 @@ export default function BookingDetailsPage() {
           <div className="bg-white rounded-3xl p-8 border shadow-sm">
             <h3 className="text-lg font-bold mb-6">Payment Summary</h3>
             <div className="space-y-4">
-              <div className="flex justify-between text-gray-600">
-                <span>Estimated Cost</span>
-                <span>৳{booking.estimatedCost}</span>
-              </div>
-              {booking.actualCost && (
-                <div className="flex justify-between text-gray-600">
-                  <span>Actual Cost</span>
-                  <span>৳{booking.actualCost}</span>
-                </div>
-              )}
               <div className="pt-4 border-t flex justify-between items-center">
-                <span className="font-bold text-lg">Total</span>
+                <span className="font-bold text-lg text-gray-900">
+                  Total Cost
+                </span>
                 <span className="text-2xl font-bold text-orange-600">
                   ৳{booking.actualCost || booking.estimatedCost}
                 </span>
@@ -613,6 +605,13 @@ export default function BookingDetailsPage() {
                       </span>
                     </div>
                   ))}
+                  {/* Fixed Service Fee */}
+                  <div className="flex justify-between text-sm border-t border-dashed pt-2 mt-2">
+                    <span className="text-gray-600 font-medium">
+                      Service Fee
+                    </span>
+                    <span className="font-medium text-gray-900">৳1000</span>
+                  </div>
                   {booking.towingRequested && (
                     <div className="flex justify-between text-sm text-blue-600">
                       <span>Towing Service</span>

@@ -40,14 +40,15 @@ export async function POST(request) {
 
     booking.billItems = items;
     booking.estimatedCost = totalCost;
-    booking.actualCost = totalCost; // Set actual cost same as estimate
-    booking.status = "payment_pending"; // Skip estimate_sent, go directly to payment_pending
+    booking.estimatedCost = totalCost;
+    booking.status = "estimate_sent"; // Wait for user approval
     await booking.save();
 
     // Notify User
-    await Notification.create({
-      recipient: booking.user,
-      sender: decoded.userId,
+    const { sendNotification } = await import("@/lib/utils/notificationHelper");
+    await sendNotification({
+      recipientId: booking.user,
+      senderId: decoded.userId,
       type: "action_required",
       title: "Cost Estimate Received",
       message: `Mechanic sent an estimate of ৳${totalCost}. Please approve or reject.`,
