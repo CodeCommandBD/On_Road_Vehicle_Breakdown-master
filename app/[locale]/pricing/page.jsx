@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   Clock,
   CheckCircle,
+  ArrowLeft,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -138,6 +139,17 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-black py-16 px-4 sm:px-6">
+      {/* Back Button */}
+      <div className="max-w-7xl mx-auto mb-8">
+        <button
+          onClick={() => router.back()}
+          className="group flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white transition-all duration-300 hover:-translate-x-1"
+        >
+          <ArrowLeft className="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-1" />
+          <span className="font-medium">Back</span>
+        </button>
+      </div>
+
       {/* Social Proof Banner */}
       <div className="max-w-4xl mx-auto text-center mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
         <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10">
