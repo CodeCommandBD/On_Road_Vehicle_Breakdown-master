@@ -5,6 +5,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination, Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
+import { useTranslations } from "next-intl";
 
 const testimonials = [
   {
@@ -46,6 +47,7 @@ const testimonials = [
 ];
 
 export default function Testimonials() {
+  const t = useTranslations("Home.testimonials");
   return (
     <section className="py-16 sm:py-20 md:py-24 lg:py-28 bg-gradient-to-b from-gray-50 to-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -55,7 +57,8 @@ export default function Testimonials() {
             Testimonials
           </span>
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight mb-4">
-            What Our <span className="text-orange-600">Clients Say</span>
+            {t("title")}{" "}
+            <span className="text-orange-600">{t("highlight")}</span>
           </h2>
           <p className="text-sm sm:text-base md:text-lg text-gray-600 leading-relaxed">
             Don&apos;t just take our word for it. Read what our satisfied

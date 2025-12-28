@@ -17,8 +17,10 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import { useTranslations } from "next-intl";
 
 export default function Footer() {
+  const t = useTranslations("Footer");
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -127,8 +129,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-gray-400 leading-relaxed max-w-sm">
-              Your reliable partner for on-road vehicle assistance. fast,
-              reliable, and available 24/7 across the country.
+              {t("tagline")}
             </p>
             <div className="flex items-center gap-4 pt-4">
               <SocialLink href="#" icon={Facebook} />
@@ -140,7 +141,9 @@ export default function Footer() {
 
           {/* Links Columns */}
           <div className="lg:col-span-2 md:col-span-1">
-            <h3 className="text-white font-semibold text-lg mb-6">Company</h3>
+            <h3 className="text-white font-semibold text-lg mb-6">
+              {t("company")}
+            </h3>
             <ul className="space-y-4">
               {footerLinks.company.length > 0 ? (
                 footerLinks.company.map((link) => (
@@ -155,13 +158,15 @@ export default function Footer() {
                   </li>
                 ))
               ) : (
-                <p className="text-white/20 text-sm">No links</p>
+                <p className="text-white/20 text-sm">{t("noLinks")}</p>
               )}
             </ul>
           </div>
 
           <div className="lg:col-span-2 md:col-span-1">
-            <h3 className="text-white font-semibold text-lg mb-6">Services</h3>
+            <h3 className="text-white font-semibold text-lg mb-6">
+              {t("services")}
+            </h3>
             <ul className="space-y-4">
               {footerLinks.services.length > 0 ? (
                 footerLinks.services.map((link) => (
@@ -176,25 +181,22 @@ export default function Footer() {
                   </li>
                 ))
               ) : (
-                <p className="text-white/20 text-sm">No links</p>
+                <p className="text-white/20 text-sm">{t("noLinks")}</p>
               )}
             </ul>
           </div>
 
           <div className="lg:col-span-4 md:col-span-2 bg-white/5 rounded-3xl p-8 border border-white/10">
             <h3 className="text-white font-semibold text-lg mb-2">
-              Subscribe to our newsletter
+              {t("newsletterTitle")}
             </h3>
-            <p className="text-gray-400 text-sm mb-6">
-              Get the latest updates, articles, and resources sent to your inbox
-              weekly.
-            </p>
+            <p className="text-gray-400 text-sm mb-6">{t("newsletterDesc")}</p>
             <form onSubmit={handleSubscribe} className="space-y-4">
               <div className="relative">
                 <input
                   type="email"
                   required
-                  placeholder="Enter your email"
+                  placeholder={t("emailPlaceholder")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isSubmitting || isSuccess}
@@ -217,16 +219,16 @@ export default function Footer() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Subscribing...
+                    {t("subscribing")}
                   </>
                 ) : isSuccess ? (
                   <>
                     <CheckCircle className="w-4 h-4" />
-                    Subscribed!
+                    {t("subscribed")}
                   </>
                 ) : (
                   <>
-                    Subscribe
+                    {t("subscribe")}
                     <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </>
                 )}
@@ -238,16 +240,16 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-white/10 pt-8 mt-16 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-gray-500 text-sm text-center md:text-left">
-            © {new Date().getFullYear()} OnRoadHelp. All rights reserved.
+            © {new Date().getFullYear()} OnRoadHelp. {t("allRightsReserved")}
           </p>
           <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-500">
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-orange-500" />
-              <span>Dhaka, Bangladesh</span>
+              <span>{t("location")}</span>
             </div>
             <div className="flex items-center gap-2">
               <Phone className="w-4 h-4 text-orange-500" />
-              <span>+880 1234 567890</span>
+              <span>{t("phone")}</span>
             </div>
           </div>
         </div>

@@ -24,6 +24,7 @@ import {
   selectFavorites,
   toggleFavoriteSuccess,
 } from "@/store/slices/authSlice";
+import { useTranslations } from "next-intl";
 
 // Haversine formula to calculate distance
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -47,6 +48,7 @@ const deg2rad = (deg) => {
 };
 
 export default function GaragesPage() {
+  const t = useTranslations("Garages");
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -176,9 +178,7 @@ export default function GaragesPage() {
       {/* Header */}
       <div className="bg-gray-900 text-white py-16 mb-8">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10">
-          <h1 className="text-3xl font-bold mb-6 text-center">
-            Find Nearby Garages
-          </h1>
+          <h1 className="text-3xl font-bold mb-6 text-center">{t("title")}</h1>
 
           {/* Search Box */}
           <div className="max-w-2xl mx-auto bg-white rounded-lg p-2 flex gap-2">
@@ -186,7 +186,7 @@ export default function GaragesPage() {
               <MapPin className="w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by name, city, or district..."
+                placeholder={t("searchPlaceholder")}
                 className="w-full py-2 outline-none text-gray-800"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -210,7 +210,8 @@ export default function GaragesPage() {
         {/* Filters */}
         <div className="flex items-center justify-between mb-8">
           <p className="text-gray-600">
-            Showing <strong>{loading ? "..." : total}</strong> garages
+            {t("showing")} <strong>{loading ? "..." : total}</strong>{" "}
+            {t("garages")}
           </p>
           <div className="flex items-center gap-4">
             <button
@@ -222,7 +223,7 @@ export default function GaragesPage() {
               }`}
             >
               <Navigation className="w-4 h-4" />
-              {coordinates ? "Near Me (Active)" : "Near Me"}
+              {coordinates ? t("nearMeActive") : t("nearMe")}
             </button>
             <button
               onClick={toggleFilter24h}
@@ -233,7 +234,7 @@ export default function GaragesPage() {
               }`}
             >
               <Clock className="w-4 h-4" />
-              24/7 Only
+              {t("24/7Only")}
             </button>
             {filterService && (
               <button
@@ -241,12 +242,12 @@ export default function GaragesPage() {
                 className="flex items-center gap-2 px-4 py-2 rounded-lg border bg-orange-50/50 border-orange-500 text-orange-600 hover:bg-red-50 hover:border-red-500 hover:text-red-500 transition-colors"
               >
                 <Wrench className="w-4 h-4" />
-                Service: {filterService} (x)
+                {t("service")}: {filterService} (x)
               </button>
             )}
             <button className="flex items-center gap-2 px-4 py-2 rounded-lg border bg-white border-gray-200 text-gray-600 hover:bg-gray-50">
               <Filter className="w-4 h-4" />
-              More Filters
+              {t("moreFilters")}
             </button>
           </div>
         </div>
@@ -274,11 +275,9 @@ export default function GaragesPage() {
             <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
               <Wrench className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-gray-800 mb-2">
-                No garages found
+                {t("noGaragesFound")}
               </h3>
-              <p className="text-gray-500">
-                Try adjusting your search or filters.
-              </p>
+              <p className="text-gray-500">{t("tryAdjusting")}</p>
             </div>
           ) : (
             garages.map((garage) => (
@@ -324,7 +323,7 @@ export default function GaragesPage() {
                   </button>
                   {garage.is24Hours && (
                     <div className="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm">
-                      OPEN 24/7
+                      {t("open24/7")}
                     </div>
                   )}
                 </div>
@@ -339,7 +338,7 @@ export default function GaragesPage() {
                           <div className="group relative">
                             <ShieldCheck className="w-5 h-5 text-blue-500 fill-blue-500/10" />
                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                              Verified Garage
+                              {t("verifiedGarage")}
                             </div>
                           </div>
                         )}
@@ -358,7 +357,7 @@ export default function GaragesPage() {
                             garage.location.coordinates[1], // Latitude
                             garage.location.coordinates[0] // Longitude
                           )}{" "}
-                          km away
+                          {t("kmAway")}
                         </div>
                       )}
                     </div>
@@ -386,7 +385,7 @@ export default function GaragesPage() {
                       ))
                     ) : (
                       <span className="text-xs text-gray-400 italic">
-                        No specific services listed
+                        {t("noServices")}
                       </span>
                     )}
                   </div>
@@ -397,18 +396,18 @@ export default function GaragesPage() {
                       href={`/book?garage=${garage._id}`}
                       className="flex-1 text-center px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium text-sm"
                     >
-                      Book Now
+                      {t("bookNow")}
                     </Link>
                     <Link
                       href={`/garages/${garage._id}`}
                       className="flex-1 text-center px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm"
                     >
-                      View Profile
+                      {t("viewProfile")}
                     </Link>
                     <a
                       href={`tel:${garage.phone}`}
                       className="p-2.5 bg-green-50 text-green-600 rounded-lg border border-green-200 hover:bg-green-100 hover:border-green-300 transition-colors"
-                      title="Call Garage"
+                      title={t("callGarage")}
                     >
                       <Phone className="w-5 h-5" />
                     </a>

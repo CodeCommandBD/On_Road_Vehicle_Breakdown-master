@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Check, Settings } from "lucide-react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useTranslations } from "next-intl";
 
 // Register GSAP plugin
 if (typeof window !== "undefined") {
@@ -13,6 +14,7 @@ if (typeof window !== "undefined") {
 }
 
 export default function SubscriptionSection() {
+  const t = useTranslations("Home.premium");
   const [packageData, setPackageData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState("");
@@ -195,14 +197,14 @@ export default function SubscriptionSection() {
             >
               {isExpired ? (
                 <div className="mb-5 bg-red-600 text-white px-6 py-2 rounded-full font-bold text-lg animate-pulse shadow-[0_0_20px_rgba(220,38,38,0.6)]">
-                  OFFER EXPIRED
+                  {t("offerExpired")}
                 </div>
               ) : (
                 <div className="flex gap-2.5 mb-5 items-center">
                   <Settings className="w-4 h-4 text-[#FF6644] animate-[scaleAnimation_3s_ease-in-out_infinite]" />
                   <div>
                     <h5 className="text-[#F23C13] text-xs font-normal tracking-[0.7px] uppercase m-0">
-                      MEMBERSHIP PLAN
+                      {t("membershipPlan")}
                     </h5>
                   </div>
                 </div>
@@ -210,7 +212,7 @@ export default function SubscriptionSection() {
 
               <div className="mb-10 text-center lg:text-left">
                 <h1 className="text-white text-[32px] lg:text-[45px] font-bold tracking-[0.5px] leading-[1.2]">
-                  {packageData?.name || "Premium Membership"}
+                  {packageData?.name || t("title")}
                 </h1>
 
                 {/* PROMO TIMER DISPLAY */}
@@ -218,7 +220,7 @@ export default function SubscriptionSection() {
                   <div className="mt-4 inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/30 px-4 py-2 rounded-lg">
                     <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
                     <span className="text-orange-400 font-mono font-bold tracking-wider">
-                      Ends in: {timeLeft}
+                      {t("endsIn")} {timeLeft}
                     </span>
                   </div>
                 )}
@@ -226,7 +228,7 @@ export default function SubscriptionSection() {
 
               <div className="mb-10 w-full text-center lg:text-left">
                 <h3 className="text-white text-xl lg:text-[26px] font-bold tracking-[1.2px] mb-4">
-                  PREMIUM BEST
+                  {t("premiumBest")}
                 </h3>
                 <h2 className="text-[#F23C13] text-[40px] font-bold tracking-[2px]">
                   {/* Currency Symbol Logic */}
@@ -236,7 +238,7 @@ export default function SubscriptionSection() {
                     ? packageData.price.monthly
                     : packageData?.price || 2500}
                   <span className="text-white text-[25px] font-medium tracking-[1.4px]">
-                    /Monthly
+                    {t("monthly")}
                   </span>
                 </h2>
               </div>
@@ -250,7 +252,7 @@ export default function SubscriptionSection() {
                     </div>
                     <div>
                       <h4 className="text-white text-lg font-medium tracking-[0.8px] m-0">
-                        {benefit}
+                        {t(`benefits.${benefit}`, { default: benefit })}
                       </h4>
                     </div>
                   </div>
@@ -278,7 +280,7 @@ export default function SubscriptionSection() {
                       <span className="absolute top-0 left-0 w-[2px] h-full bg-gradient-to-t from-[#4800ff00] to-white animate-[borderRotate4_2s_linear_infinite]"></span>
                     </>
                   )}
-                  {isExpired ? "OFFER EXPIRED" : "GET MEMBERSHIP"}
+                  {isExpired ? t("offerExpired") : t("getMembership")}
                 </Link>
               </div>
             </div>

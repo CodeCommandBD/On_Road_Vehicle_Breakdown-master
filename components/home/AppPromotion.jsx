@@ -3,8 +3,10 @@
 import Image from "next/image";
 import { Download, Smartphone, QrCode, CheckCircle2, X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 
 export default function AppPromotion() {
+  const t = useTranslations("Home.appPromotion");
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [qrUrl, setQrUrl] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -70,14 +72,13 @@ export default function AppPromotion() {
 
               <div className="space-y-4">
                 <h2 className="text-4xl md:text-5xl font-black text-white leading-tight">
-                  Take <span className="text-orange-500">On Road Help</span>{" "}
+                  {t("title")}{" "}
+                  <span className="text-orange-500">{t("highlight")}</span>{" "}
                   <br />
-                  Wherever You Go
+                  {t("subtitle")}
                 </h2>
                 <p className="text-white/60 text-lg max-w-lg">
-                  Install our lightweight app (PWA) to get instant assistance,
-                  track mechanics in real-time, and manage your vehicle health
-                  even offline.
+                  {t("description")}
                 </p>
               </div>
 
@@ -99,7 +100,7 @@ export default function AppPromotion() {
                   className="w-full sm:w-auto px-10 py-5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black text-lg flex items-center justify-center gap-3 transition-all active:scale-95 shadow-[0_10px_30px_rgba(232,93,4,0.3)]"
                 >
                   <Download size={24} />
-                  INSTALL APP
+                  {t("downloadApp")}
                 </button>
               </div>
             </div>
@@ -135,9 +136,7 @@ export default function AppPromotion() {
                   </div>
                 </div>
                 <div className="text-center">
-                  <p className="text-white font-black text-lg">
-                    Scan to Install
-                  </p>
+                  <p className="text-white font-black text-lg">{t("scanQR")}</p>
                   <p className="text-orange-500 text-xs mt-1 uppercase tracking-widest font-black">
                     Instant Access
                   </p>

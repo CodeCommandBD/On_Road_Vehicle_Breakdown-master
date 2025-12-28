@@ -18,7 +18,18 @@ export default function LanguageSwitcher() {
 
   const handleLanguageChange = (newLocale) => {
     setIsOpen(false);
-    router.replace(pathname, { locale: newLocale });
+
+    // Safety check: remove existing locale prefix if present in pathname
+    // (though usePathname usually handles this, sometimes it might leak in edge cases)
+    let cleanPath = pathname;
+    if (cleanPath.startsWith("/en/"))
+      cleanPath = cleanPath.replace("/en/", "/");
+    if (cleanPath.startsWith("/bn/"))
+      cleanPath = cleanPath.replace("/bn/", "/");
+    if (cleanPath === "/en") cleanPath = "/";
+    if (cleanPath === "/bn") cleanPath = "/";
+
+    router.replace(cleanPath, { locale: newLocale });
   };
 
   return (
@@ -37,10 +48,10 @@ export default function LanguageSwitcher() {
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-[1003]"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute right-0 mt-2 w-40 bg-[#1A1A1A] border border-white/10 rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in zoom-in duration-200">
+          <div className="absolute right-0 mt-2 w-40 bg-[#1A1A1A] border border-white/10 rounded-2xl shadow-2xl p-2 z-[1004] animate-in fade-in zoom-in duration-200">
             {languages.map((lang) => (
               <button
                 key={lang.code}

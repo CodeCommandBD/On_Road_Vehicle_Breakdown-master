@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Star } from "lucide-react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
+import { useTranslations } from "next-intl";
 
 export default function TopGarages() {
+  const t = useTranslations("Home.topGarages");
   const [garages, setGarages] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Scroll animations
   const headerAnimation = useScrollAnimation({ threshold: 0.2 });
 
@@ -18,7 +20,9 @@ export default function TopGarages() {
 
   const fetchTopGarages = async () => {
     try {
-      const response = await fetch("/api/garages?limit=3&sort=rating&isActive=true&isVerified=true");
+      const response = await fetch(
+        "/api/garages?limit=3&sort=rating&isActive=true&isVerified=true"
+      );
       const data = await response.json();
       if (data.success) {
         setGarages(data.data.garages || []);
@@ -34,17 +38,20 @@ export default function TopGarages() {
     <section className="py-16 sm:py-20 md:py-24 lg:py-28 bg-gradient-to-b from-gray-900 to-black">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section Header - Centered */}
-        <div 
+        <div
           ref={headerAnimation.ref}
           className={`text-center mb-12 sm:mb-16 transition-all duration-1000 ${
-            headerAnimation.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+            headerAnimation.isVisible
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-10"
           }`}
         >
           <span className="inline-block text-orange-600 text-xs sm:text-sm font-semibold tracking-widest uppercase mb-3">
             TRUSTED PARTNERS
           </span>
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight">
-            Meet Our <span className="text-orange-600">Top Garages</span>
+            {t("title")}{" "}
+            <span className="text-orange-600">{t("highlight")}</span>
           </h2>
         </div>
 
@@ -52,7 +59,10 @@ export default function TopGarages() {
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-gray-800/60 border border-gray-700/50 rounded-2xl p-8 h-[380px] animate-pulse">
+              <div
+                key={i}
+                className="bg-gray-800/60 border border-gray-700/50 rounded-2xl p-8 h-[380px] animate-pulse"
+              >
                 <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 mx-auto mb-6" />
                 <div className="h-6 bg-gradient-to-r from-gray-700 to-gray-800 rounded w-4/5 mx-auto mb-3" />
                 <div className="h-4 bg-gradient-to-r from-gray-700 to-gray-800 rounded w-3/5 mx-auto" />

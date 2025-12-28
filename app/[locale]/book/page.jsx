@@ -26,30 +26,19 @@ import {
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import { selectUser, selectIsAuthenticated } from "@/store/slices/authSlice";
+import { useTranslations } from "next-intl";
+import { ChevronLeft } from "lucide-react";
 
-// Validation Schema
-const bookingSchema = z.object({
-  vehicleType: z.enum([
-    "car",
-    "motorcycle",
-    "bus",
-    "truck",
-    "cng",
-    "rickshaw",
-    "other",
-  ]),
-  serviceId: z.string().min(1, "Please select a service"),
-  vehicleId: z.string().optional(),
-  brand: z.string().min(1, "Brand is required"),
-  model: z.string().min(1, "Model is required"),
-  plateNumber: z.string().min(1, "Plate number is required"),
-  address: z.string().min(5, "Location address is required"),
-  description: z.string().min(10, "Please describe the issue in detail"),
-  scheduledDate: z.string().optional(),
-  scheduledTime: z.string().optional(),
-});
+// Validation Schema is moved inside component or uses dynamic logic for translation?
+// Zod schema messages cannot be easily translated inside schema definition if defined outside component.
+// We will move schema creation inside component or keep it here but use custom resolver or error map?
+// Simpler approach: define schema inside component memoized or just use default English for Zod internal errors (like invalid email)
+// but for "required" errors we can pass strings.
+// Actually, best practice is to use `useTranslations` and define schema inside or `useMemo`.
 
 function BookingForm() {
+  const t = useTranslations("Booking");
+  const tServices = useTranslations("Home.serviceNames");
   const searchParams = useSearchParams();
   const router = useRouter();
   const user = useSelector(selectUser);
@@ -57,7 +46,33 @@ function BookingForm() {
 
   // Get query params if pre-selecting
   const serviceIdFromUrl = searchParams.get("service");
+  const garageIdFromUrl = searchParams.get("garage"); // Added garage ID handling
   const rebookId = searchParams.get("rebook");
+
+  /* 
+   We need to recreate schema to use translations.
+   Or clearer: define schema inside.
+  */
+  const bookingSchema = z.object({
+    vehicleType: z.enum([
+      "car",
+      "motorcycle",
+      "bus",
+      "truck",
+      "cng",
+      "rickshaw",
+      "other",
+    ]),
+    serviceId: z.string().min(1, t("validation.selectService")),
+    vehicleId: z.string().optional(),
+    brand: z.string().min(1, t("validation.brandRequired")),
+    model: z.string().min(1, t("validation.modelRequired")),
+    plateNumber: z.string().min(1, t("validation.plateRequired")),
+    address: z.string().min(5, t("validation.addressRequired")),
+    description: z.string().min(10, t("validation.descRequired")),
+    scheduledDate: z.string().optional(),
+    scheduledTime: z.string().optional(),
+  });
 
   const {
     register,
@@ -101,7 +116,7 @@ function BookingForm() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      toast.info("Please login to book a service");
+      toast.info(t("toasts.loginRequired"));
       router.push("/login?callbackUrl=/book");
       return;
     }
@@ -147,9 +162,17 @@ function BookingForm() {
             }
           }
         }
+
+        // Fetch selected garage if in URL
+        if (garageIdFromUrl) {
+          const garageRes = await axios.get(`/api/garages/${garageIdFromUrl}`);
+          if (garageRes.data.success) {
+            setSelectedGarage(garageRes.data.data);
+          }
+        }
       } catch (error) {
         console.error("Error fetching initial data:", error);
-        toast.error("Failed to load initial data");
+        toast.error(t("toasts.loadError"));
       } finally {
         setIsLoadingServices(false);
       }
@@ -175,7 +198,7 @@ function BookingForm() {
 
     fetchInitialData();
     fetchUserVehicles();
-  }, [isAuthenticated, router, rebookId, setValue]);
+  }, [isAuthenticated, router, rebookId, setValue, garageIdFromUrl]);
 
   // Auto-fill vehicle details when a saved vehicle is selected
   // Auto-fill vehicle details when a saved vehicle is selected
@@ -226,9 +249,7 @@ function BookingForm() {
       if (response.data.success) {
         setNearbyGarages(response.data.garages);
         if (response.data.garages.length === 0) {
-          toast.info(
-            "No verified garages found nearby. You can still request, admins will assign one."
-          );
+          toast.info(t("noGarages"));
         }
       }
     } catch (error) {
@@ -241,7 +262,7 @@ function BookingForm() {
 
   const handleEstimateCost = async () => {
     if (!description || description.length < 10) {
-      toast.error("Please enter a detailed description first");
+      toast.error(t("toasts.descFirst"));
       return;
     }
 
@@ -257,26 +278,27 @@ function BookingForm() {
         max: totalMin + 1000,
         confidence: "85%",
         breakdown: [
-          { item: "Service Base Charge", cost: basePrice },
+          { item: t("serviceBaseFee"), cost: basePrice },
           { item: "Estimated Parts", cost: partsEst },
           { item: "Labor Estimate", cost: laborEst },
         ],
       });
+
       setIsEstimating(false);
-      toast.success("AI Cost Estimation Generated!");
+      toast.success(t("toasts.aiGenerated"));
     }, 1500);
   };
 
   const onSubmit = async (data) => {
     if (!user) {
-      toast.error("You must be logged in");
+      toast.error(t("toasts.mustLogin"));
       return;
     }
 
     // Require garage selection or use fallback if logic allows (currently requiring selection if available)
     // If no garages found, we might need a "Global Admin" fallback logic, but for now let's enforce selection if list > 0
     if (nearbyGarages.length > 0 && !selectedGarage) {
-      toast.error("Please select a garage from the list");
+      toast.error(t("toasts.selectGarage"));
       return;
     }
 
@@ -321,12 +343,12 @@ function BookingForm() {
       const response = await axios.post("/api/bookings", payload);
 
       if (response.data.success) {
-        toast.success("Booking request submitted successfully!");
+        toast.success(t("toasts.success"));
         router.push("/user/dashboard/bookings");
       }
     } catch (error) {
       console.error("Booking Error:", error);
-      toast.error(error.response?.data?.message || "Failed to submit booking");
+      toast.error(error.response?.data?.message || t("toasts.submitError"));
     } finally {
       setIsSubmitting(false);
     }
@@ -334,7 +356,7 @@ function BookingForm() {
 
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
-      toast.info("Detecting location...");
+      toast.info(t("toasts.detecting"));
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
@@ -345,17 +367,17 @@ function BookingForm() {
               4
             )}, Long: ${longitude.toFixed(4)})`
           );
-          toast.success("Location detected!");
+          toast.success(t("toasts.detected"));
           // Fetch garages immediately
           fetchNearbyGarages(longitude, latitude);
         },
         (error) => {
           console.error(error);
-          toast.error("Unable to retrieve location. Please enter manually.");
+          toast.error(t("toasts.detectError"));
         }
       );
     } else {
-      toast.error("Geolocation is not supported by this browser");
+      toast.error(t("toasts.geoUnsupported"));
     }
   };
 
@@ -363,19 +385,27 @@ function BookingForm() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white flex flex-col justify-center py-12 lg:py-20">
       <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="max-w-3xl mx-auto text-center mb-12 lg:mb-16">
+        <div className="max-w-3xl mx-auto text-center mb-12 lg:mb-16 relative">
+          <Link
+            href="/garages"
+            className="absolute left-0 top-0 md:top-2 md:left-2 flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+          >
+            <ChevronLeft size={20} />
+            <span className="font-medium hidden md:inline">{t("back")}</span>
+          </Link>
+
           <div className="inline-block p-3 rounded-full bg-white/5 backdrop-blur-sm border border-white/10 mb-6 shadow-xl">
             <Sparkles className="w-8 h-8 text-[#ff4800] animate-pulse" />
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 tracking-tight">
-            Book a Service
+            {t("title")}
           </h1>
           <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
-            Fill in the details below. Our{" "}
-            <span className="text-[#ff4800] font-semibold">
-              AI-powered system
-            </span>{" "}
-            will match you with the best garage and estimate the cost.
+            {t.rich("subtitle", {
+              aiSystem: (chunks) => (
+                <span className="text-[#ff4800] font-semibold">{chunks}</span>
+              ),
+            })}
           </p>
         </div>
 
@@ -393,11 +423,10 @@ function BookingForm() {
                     <div>
                       <h4 className="text-xl font-bold text-white flex items-center gap-2 mb-2">
                         <Sparkles className="w-5 h-5 text-blue-400" />
-                        Confused about the problem?
+                        {t("confusedTitle")}
                       </h4>
                       <p className="text-gray-400 text-sm max-w-md">
-                        Our Gemini-powered AI Mechanic can diagnose your
-                        vehicle's symptoms and estimate repair costs in seconds.
+                        {t("confusedDesc")}
                       </p>
                     </div>
                     <Link
@@ -405,7 +434,7 @@ function BookingForm() {
                       className="whitespace-nowrap px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg hover:shadow-blue-500/20"
                     >
                       <BrainCircuit className="w-4 h-4" />
-                      Try AI Mechanic
+                      {t("tryAiMechanic")}
                     </Link>
                   </div>
                 </div>
@@ -417,7 +446,7 @@ function BookingForm() {
                       <div className="p-2 bg-[#ff4800]/10 rounded-lg">
                         <Wrench className="w-5 h-5 text-[#ff4800]" />
                       </div>
-                      Select Service
+                      {t("selectService")}
                     </h3>
                     <button
                       type="button"
@@ -427,7 +456,7 @@ function BookingForm() {
                         );
                         if (diagnosisService) {
                           setValue("serviceId", diagnosisService._id);
-                          toast.info("Selected General Diagnosis & Inspection");
+                          toast.info(t("toasts.selectedDiagnosis"));
                           // Smooth scroll to description
                           document
                             .getElementById("description-area")
@@ -436,7 +465,8 @@ function BookingForm() {
                       }}
                       className="text-sm font-bold text-[#ff4800] hover:text-[#ff6a3d] transition-colors flex items-center gap-2 px-4 py-2 bg-[#ff4800]/5 rounded-xl border border-[#ff4800]/20"
                     >
-                      <AlertCircle className="w-4 h-4" />I don't know the issue
+                      <AlertCircle className="w-4 h-4" />
+                      {t("dontKnowIssue")}
                     </button>
                   </div>
                   <div className="space-y-4">
@@ -445,7 +475,7 @@ function BookingForm() {
                       className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-[#ff4800] focus:ring-1 focus:ring-[#ff4800] transition-all"
                     >
                       <option value="" className="bg-gray-900">
-                        Choose a service...
+                        {t("chooseService")}
                       </option>
                       {services.map((s) => {
                         let displayPrice = s.basePrice;
@@ -462,8 +492,11 @@ function BookingForm() {
                             value={s._id}
                             className="bg-gray-900"
                           >
-                            {s.name} - ৳{displayPrice}{" "}
-                            {displayPrice === 0 ? "(Free Perk)" : "(Base)"}
+                            {tServices(s.name, { default: s.name })} - ৳
+                            {displayPrice}{" "}
+                            {displayPrice === 0
+                              ? `(${t("freePerk")})`
+                              : `(${t("base")})`}
                           </option>
                         );
                       })}
@@ -484,14 +517,14 @@ function BookingForm() {
                     <div className="p-2 bg-[#ff4800]/10 rounded-lg">
                       <Car className="w-5 h-5 text-[#ff4800]" />
                     </div>
-                    Vehicle Information
+                    {t("vehicleInfo")}
                   </h3>
 
                   {/* Saved Vehicles Dropdown */}
                   {(userVehicles.length > 0 || isLoadingVehicles) && (
                     <div className="mb-6 space-y-2">
                       <label className="text-sm font-medium text-gray-400">
-                        Select from your Saved Vehicles
+                        {t("selectSavedVehicle")}
                       </label>
                       <select
                         {...register("vehicleId")}
@@ -501,7 +534,7 @@ function BookingForm() {
                         <option value="" className="bg-gray-900">
                           {isLoadingVehicles
                             ? "Loading vehicles..."
-                            : "Add a new vehicle manually"}
+                            : t("addNewVehicle")}
                         </option>
                         {userVehicles.map((v) => (
                           <option
@@ -522,7 +555,7 @@ function BookingForm() {
                   <div className="grid md:grid-cols-2 gap-6 mb-6">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-gray-400">
-                        Vehicle Type
+                        {t("vehicleType")}
                       </label>
                       <select
                         {...register("vehicleType")}
@@ -547,7 +580,7 @@ function BookingForm() {
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-gray-400">
-                        Brand
+                        {t("brand")}
                       </label>
                       <input
                         {...register("brand")}
@@ -565,7 +598,7 @@ function BookingForm() {
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-gray-400">
-                        Model
+                        {t("model")}
                       </label>
                       <input
                         {...register("model")}
@@ -580,7 +613,7 @@ function BookingForm() {
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-gray-400">
-                        Plate Number
+                        {t("plateNumber")}
                       </label>
                       <input
                         {...register("plateNumber")}
@@ -604,18 +637,18 @@ function BookingForm() {
                     <div className="p-2 bg-[#ff4800]/10 rounded-lg">
                       <MapPin className="w-5 h-5 text-[#ff4800]" />
                     </div>
-                    Location & Schedule
+                    {t("locationSchedule")}
                   </h3>
 
                   <div className="space-y-6">
                     <div className="space-y-2 relative">
                       <label className="text-sm font-medium text-gray-400">
-                        Current Location / Address
+                        {t("currentLocation")}
                       </label>
                       <div className="flex gap-3">
                         <input
                           {...register("address")}
-                          placeholder="Enter pickup/service location"
+                          placeholder={t("enterLocation")}
                           className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white placeholder-gray-600 outline-none focus:border-[#ff4800] focus:ring-1 focus:ring-[#ff4800] transition-all"
                         />
                         <button
@@ -638,13 +671,13 @@ function BookingForm() {
                     {coordinates && (
                       <div className="animate-in fade-in slide-in-from-top-4 duration-500">
                         <label className="text-sm font-medium text-gray-400 block mb-3">
-                          Select Nearby Garage ({nearbyGarages.length} found)
+                          {t("selectGarage", { count: nearbyGarages.length })}
                         </label>
 
                         {isLoadingGarages ? (
                           <div className="flex items-center gap-2 text-sm text-gray-500">
                             <Loader2 className="w-4 h-4 animate-spin" />
-                            Finding nearby mechanics...
+                            {t("findingMechanics")}
                           </div>
                         ) : nearbyGarages.length > 0 ? (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -691,8 +724,7 @@ function BookingForm() {
                           </div>
                         ) : (
                           <p className="text-sm text-yellow-500">
-                            No garages found nearby. Don&apos;t worry, admins
-                            will assign one manually!
+                            {t("noGarages")}
                           </p>
                         )}
                       </div>
@@ -701,7 +733,7 @@ function BookingForm() {
                     <div className="grid md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-400">
-                          Preferred Date
+                          {t("preferredDate")}
                         </label>
                         <div className="relative">
                           <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -714,7 +746,7 @@ function BookingForm() {
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-400">
-                          Preferred Time
+                          {t("preferredTime")}
                         </label>
                         <div className="relative">
                           <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -737,7 +769,7 @@ function BookingForm() {
                     <div className="p-2 bg-[#ff4800]/10 rounded-lg">
                       <FileText className="w-5 h-5 text-[#ff4800]" />
                     </div>
-                    Issue Description
+                    {t("issueDescription")}
                   </h3>
 
                   <div className="space-y-3">
@@ -745,7 +777,7 @@ function BookingForm() {
                       {...register("description")}
                       id="description-area"
                       rows={4}
-                      placeholder="Please describe what's wrong with your vehicle..."
+                      placeholder={t("describeIssue")}
                       className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white placeholder-gray-600 outline-none focus:border-[#ff4800] focus:ring-1 focus:ring-[#ff4800] transition-all resize-none"
                     />
                     {errors.description && (
@@ -764,12 +796,12 @@ function BookingForm() {
                         {isEstimating ? (
                           <>
                             <Loader2 className="w-4 h-4 animate-spin" />
-                            Analyzing with AI...
+                            {t("analyzing")}
                           </>
                         ) : (
                           <>
                             <Sparkles className="w-4 h-4" />
-                            Get AI Cost Estimate
+                            {t("getEstimate")}
                           </>
                         )}
                       </button>
@@ -786,10 +818,10 @@ function BookingForm() {
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Processing Booking...
+                      {t("processing")}
                     </span>
                   ) : (
-                    "Confirm Booking"
+                    t("confirmBooking")
                   )}
                 </button>
               </form>
@@ -811,7 +843,7 @@ function BookingForm() {
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="font-bold text-lg flex items-center gap-2 text-white">
                       <Sparkles className="w-5 h-5 text-[#ff4800]" />
-                      AI Estimate
+                      {t("aiEstimate")}
                     </h3>
                     {estimatedCost && (
                       <span className="bg-[#ff4800]/20 text-[#ff4800] text-xs px-2 py-1 rounded-md border border-[#ff4800]/20 font-medium">
@@ -826,7 +858,7 @@ function BookingForm() {
                         ৳{estimatedCost.min} - ৳{estimatedCost.max}
                       </div>
                       <p className="text-gray-400 text-sm mb-6">
-                        Estimated Total Cost range based on similar repairs
+                        {t("estimateRange")}
                       </p>
 
                       <div className="space-y-3 border-t border-white/10 pt-4">
@@ -866,7 +898,7 @@ function BookingForm() {
               <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
                 <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
                   <Wrench className="w-5 h-5 text-[#ff4800]" />
-                  Selected Garage
+                  {t("selectedGarage")}
                 </h3>
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 bg-gray-800 rounded-xl flex items-center justify-center border border-white/5">
@@ -895,22 +927,24 @@ function BookingForm() {
 
             {/* Summary */}
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
-              <h3 className="font-semibold text-white mb-4">Booking Summary</h3>
+              <h3 className="font-semibold text-white mb-4">
+                {t("bookingSummary")}
+              </h3>
               <ul className="space-y-4 text-sm">
                 <li className="flex justify-between items-center">
-                  <span className="text-gray-400">Service Base Fee</span>
+                  <span className="text-gray-400">{t("serviceBaseFee")}</span>
                   <span className="font-bold text-white">৳{basePrice}</span>
                 </li>
                 <li className="flex justify-between items-center">
-                  <span className="text-gray-400">Urgency</span>
+                  <span className="text-gray-400">{t("urgency")}</span>
                   <span className="bg-green-500/20 text-green-400 px-2 py-0.5 rounded text-xs border border-green-500/20">
-                    Standard
+                    {t("standard")}
                   </span>
                 </li>
                 <li className="h-px bg-white/10 my-2" />
                 <li className="flex justify-between items-center pt-1">
                   <span className="text-gray-300 font-medium">
-                    Total (Estimated)
+                    {t("totalEstimated")}
                   </span>
                   <span className="font-bold text-[#ff4800] text-lg">
                     ৳{estimatedCost ? estimatedCost.min : basePrice}+

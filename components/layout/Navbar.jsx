@@ -17,6 +17,8 @@ import {
 } from "@/store/slices/uiSlice";
 import { Bell, Menu, X } from "lucide-react";
 import axios from "axios";
+import { useTranslations } from "next-intl";
+import SettingsModal from "@/components/common/SettingsModal";
 
 const WaveText = ({ text }) => {
   return (
@@ -39,9 +41,12 @@ export default function Navbar() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotifyOpen, setIsNotifyOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const dropdownRef = useRef(null);
   const notifyRef = useRef(null);
+
+  const t = useTranslations();
 
   // Dynamic Services State
   const [services, setServices] = useState([]);
@@ -320,7 +325,7 @@ export default function Navbar() {
 
               {/* Profile Dropdown */}
               <div
-                className={`absolute top-[50px] md:top-[60px] right-0 bg-[#141414fa] bg-gradient-to-br from-[#141414fa] to-[#1e1e1ef2] backdrop-blur-[20px] border border-[#ff48004d] rounded-[16px] min-w-[260px] md:min-w-[280px] shadow-[0_20px_60px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,72,0,0.1),inset_0_1px_1px_rgba(255,255,255,0.1)] overflow-hidden z-[1000] transition-all duration-300 cubic-bezier(0.4,0,0.2,1) ${
+                className={`absolute top-[50px] md:top-[60px] right-0 bg-[#141414fa] bg-gradient-to-br from-[#141414fa] to-[#1e1e1ef2] backdrop-blur-[20px] border border-[#ff48004d] rounded-[16px] min-w-[260px] md:min-w-[280px] max-h-[80vh] shadow-[0_20px_60px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,72,0,0.1),inset_0_1px_1px_rgba(255,255,255,0.1)] overflow-hidden z-[1000] transition-all duration-300 cubic-bezier(0.4,0,0.2,1) ${
                   isProfileOpen
                     ? "opacity-100 visible translate-y-0 scale-100"
                     : "opacity-0 invisible -translate-y-[15px] scale-95"
@@ -341,7 +346,7 @@ export default function Navbar() {
                   </span>
                 </div>
 
-                <div className="p-[10px] flex flex-col gap-[8px] md:gap-[10px]">
+                <div className="p-[10px] flex flex-col gap-[8px] md:gap-[10px] max-h-[50vh] overflow-y-auto custom-scrollbar">
                   <Link
                     href={
                       userRole === "admin"
@@ -403,6 +408,32 @@ export default function Navbar() {
                     </div>
                     Profile Settings
                   </Link>
+
+                  <button
+                    onClick={() => {
+                      setIsProfileOpen(false);
+                      setIsSettingsOpen(true);
+                    }}
+                    className="flex w-full gap-[14px] items-center p-[10px_14px] md:p-[12px_16px] text-[#ffffffe6] text-[13px] md:text-[14px] font-medium transition-all duration-300 rounded-[10px] my-[2px] md:my-[4px_0] relative overflow-hidden group/item hover:bg-gradient-to-r hover:from-[#ff480026] hover:to-[#ff48000d] hover:text-[#ff6a3d] hover:translate-x-[4px] hover:pl-[20px]"
+                  >
+                    <span className="absolute left-0 top-0 h-full w-[3px] bg-gradient-to-b from-[#ff4800] to-[#ff6a3d] scale-y-0 transition-transform duration-300 group-hover/item:scale-y-100"></span>
+                    <div className="w-[20px] h-[20px] min-w-[20px] flex items-center justify-center rounded-[6px] bg-[#ff48001a] p-[4px] transition-all duration-300 flex-shrink-0 group-hover/item:bg-[#ff480033] group-hover/item:rotate-[5deg] group-hover/item:scale-110">
+                      <svg
+                        width="100%"
+                        height="100%"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6m5.196-13.196l-4.242 4.242m0 6.364l4.242 4.242M23 12h-6m-6 0H1m18.196 5.196l-4.242-4.242m0-6.364l4.242-4.242"></path>
+                      </svg>
+                    </div>
+                    {t("Navigation.settings")}
+                  </button>
 
                   <div className="h-[1px] bg-gradient-to-r from-transparent via-[#ff48004d] to-transparent m-[10px]"></div>
 
@@ -547,6 +578,12 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
     </>
   );
 }

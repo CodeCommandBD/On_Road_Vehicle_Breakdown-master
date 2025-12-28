@@ -5,8 +5,10 @@ import Image from "next/image";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import ServiceCard from "./ServiceCard";
 import axios from "axios";
+import { useTranslations } from "next-intl";
 
 export default function RepairServices() {
+  const t = useTranslations("Home.services");
   const [activeTab, setActiveTab] = useState("cars");
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation();
   const [services, setServices] = useState([]);
@@ -78,8 +80,8 @@ export default function RepairServices() {
                 : "opacity-0 translate-y-12"
             }`}
           >
-            You Get Affordable <br className="hidden sm:block" />
-            Repair Services
+            {t("title")} <br className="hidden sm:block" />
+            {t("subtitle")}
           </h2>
         </div>
 
@@ -93,7 +95,7 @@ export default function RepairServices() {
             }`}
             onClick={() => setActiveTab("cars")}
           >
-            Cars
+            {t("cars")}
             <span
               className={`absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600 transition-all duration-300 ${
                 activeTab === "cars" ? "scale-x-100" : "scale-x-0"
@@ -109,7 +111,7 @@ export default function RepairServices() {
             }`}
             onClick={() => setActiveTab("bikes")}
           >
-            Bikes
+            {t("bikes")}
             <span
               className={`absolute bottom-0 left-0 right-0 h-0.5 bg-orange-600 transition-all duration-300 ${
                 activeTab === "bikes" ? "scale-x-100" : "scale-x-0"

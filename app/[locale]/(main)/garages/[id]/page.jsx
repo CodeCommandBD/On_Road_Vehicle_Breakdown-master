@@ -27,8 +27,11 @@ import {
   selectFavorites,
   toggleFavoriteSuccess,
 } from "@/store/slices/authSlice";
+import { useTranslations } from "next-intl";
 
 export default function GarageDetailsPage() {
+  const t = useTranslations("GarageDetails");
+  const tServices = useTranslations("Home.serviceNames");
   const { id } = useParams();
   const router = useRouter();
   const user = useSelector(selectUser);
@@ -56,9 +59,7 @@ export default function GarageDetailsPage() {
       }
     } catch (err) {
       console.error("Error fetching garage:", err);
-      setError(
-        "Failed to load garage details. It may not exist or has been removed."
-      );
+      setError(t("errorLoading"));
     } finally {
       setLoading(false);
     }
@@ -94,7 +95,7 @@ export default function GarageDetailsPage() {
       <div className="min-h-screen bg-[#111] flex items-center justify-center text-white">
         <div className="animate-pulse flex flex-col items-center">
           <Wrench className="w-10 h-10 text-orange-500 mb-4 animate-spin" />
-          <p>Loading garage details...</p>
+          <p>{t("loading")}</p>
         </div>
       </div>
     );
@@ -105,13 +106,15 @@ export default function GarageDetailsPage() {
       <div className="min-h-screen bg-[#111] flex items-center justify-center p-4">
         <div className="text-center max-w-md">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-white mb-2">Unavailable</h1>
-          <p className="text-white/60 mb-6">{error || "Garage not found."}</p>
+          <h1 className="text-2xl font-bold text-white mb-2">
+            {t("unavailable")}
+          </h1>
+          <p className="text-white/60 mb-6">{error || t("errorLoading")}</p>
           <Link
             href="/garages"
             className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-white font-bold transition-all"
           >
-            Browse All Garages
+            {t("browseAll")}
           </Link>
         </div>
       </div>
@@ -139,7 +142,7 @@ export default function GarageDetailsPage() {
               href="/garages"
               className="absolute top-6 left-4 md:left-10 px-4 py-2 bg-black/40 backdrop-blur-md rounded-lg text-sm font-bold hover:bg-black/60 transition-all flex items-center gap-2"
             >
-              <ChevronLeft size={16} /> Back
+              <ChevronLeft size={16} /> {t("back")}
             </Link>
 
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -152,11 +155,11 @@ export default function GarageDetailsPage() {
                         : "bg-white/10 text-white/60 border-white/10"
                     }`}
                   >
-                    {garage.is24Hours ? "Open 24/7" : "Standard Hours"}
+                    {garage.is24Hours ? t("open247") : t("standardHours")}
                   </span>
                   {garage.isVerified && (
                     <span className="px-2 py-0.5 text-xs font-bold uppercase tracking-wider rounded bg-blue-500 text-white flex items-center gap-1">
-                      <ShieldCheck size={12} /> Verified
+                      <ShieldCheck size={12} /> {t("verified")}
                     </span>
                   )}
                 </div>
@@ -170,7 +173,7 @@ export default function GarageDetailsPage() {
                       {garage.rating?.average || "5.0"}
                     </span>
                     <span className="text-white/40">
-                      ({garage.rating?.count || 0} reviews)
+                      ({garage.rating?.count || 0} {t("reviews")})
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
@@ -214,17 +217,16 @@ export default function GarageDetailsPage() {
           <div className="bg-[#1E1E1E] border border-white/5 rounded-2xl p-6 md:p-8">
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
               <Wrench className="hidden md:block w-5 h-5 text-orange-500" />
-              About This Garage
+              {t("about")}
             </h2>
             <p className="text-white/70 leading-relaxed whitespace-pre-wrap">
-              {garage.description ||
-                "No detailed description provided by this garage."}
+              {garage.description || t("noDescription")}
             </p>
           </div>
 
           {/* Services */}
           <div className="bg-[#1E1E1E] border border-white/5 rounded-2xl p-6 md:p-8">
-            <h2 className="text-xl font-bold mb-6">Services Offered</h2>
+            <h2 className="text-xl font-bold mb-6">{t("servicesOffered")}</h2>
             {garage.services && garage.services.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {garage.services.map((service, index) => (
@@ -236,18 +238,18 @@ export default function GarageDetailsPage() {
                       <Wrench className="w-5 h-5 text-orange-500" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-white">{service.name}</h3>
+                      <h3 className="font-bold text-white">
+                        {tServices(service.name, { default: service.name })}
+                      </h3>
                       <p className="text-sm text-white/50">
-                        {service.category || "General Repair"}
+                        {service.category || t("generalRepair")}
                       </p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-white/40 italic">
-                Services list not available.
-              </p>
+              <p className="text-white/40 italic">{t("noServices")}</p>
             )}
           </div>
         </div>
@@ -256,25 +258,25 @@ export default function GarageDetailsPage() {
         <div className="space-y-6">
           <div className="bg-[#1E1E1E] border border-white/5 rounded-2xl p-6 sticky top-24">
             <div className="mb-6">
-              <h3 className="text-lg font-bold mb-4">Contact Info</h3>
+              <h3 className="text-lg font-bold mb-4">{t("contactInfo")}</h3>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <Clock className="w-5 h-5 text-white/40 mt-0.5" />
                   <div>
                     <p className="font-bold text-sm text-white/80">
-                      Operating Hours
+                      {t("operatingHours")}
                     </p>
                     <p className="text-sm text-white/50">
-                      {garage.is24Hours
-                        ? "Open 24 Hours / 7 Days"
-                        : "Standard 9:00 AM - 6:00 PM"}
+                      {garage.is24Hours ? t("open247Full") : t("standardTime")}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <Phone className="w-5 h-5 text-white/40 mt-0.5" />
                   <div>
-                    <p className="font-bold text-sm text-white/80">Phone</p>
+                    <p className="font-bold text-sm text-white/80">
+                      {t("phone")}
+                    </p>
                     <a
                       href={`tel:${garage.phone}`}
                       className="text-sm text-orange-400 hover:underline"
@@ -286,7 +288,9 @@ export default function GarageDetailsPage() {
                 <div className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-white/40 mt-0.5" />
                   <div>
-                    <p className="font-bold text-sm text-white/80">Address</p>
+                    <p className="font-bold text-sm text-white/80">
+                      {t("address")}
+                    </p>
                     <p className="text-sm text-white/50">
                       {garage.address?.street}, {garage.address?.city}
                     </p>
@@ -302,10 +306,10 @@ export default function GarageDetailsPage() {
               href={`/book?garage=${garage._id}`}
               className="block w-full py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-center shadow-lg shadow-orange-500/20 transition-all transform hover:scale-[1.02]"
             >
-              Book Assistance Now
+              {t("bookNow")}
             </Link>
             <p className="text-center text-xs text-white/30 mt-3">
-              Fast response guaranteed • Verified Partner
+              {t("guarantee")}
             </p>
           </div>
         </div>

@@ -146,7 +146,7 @@ export default function PricingPage() {
           className="group flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white transition-all duration-300 hover:-translate-x-1"
         >
           <ArrowLeft className="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-1" />
-          <span className="font-medium">Back</span>
+          <span className="font-medium">{t("back")}</span>
         </button>
       </div>
 
@@ -162,8 +162,9 @@ export default function PricingPage() {
             ))}
           </div>
           <span className="text-gray-300 text-sm font-medium">
-            Trusted by <span className="text-white font-bold">8,500+</span>{" "}
-            vehicle owners
+            {t("trustedBy")}{" "}
+            <span className="text-white font-bold">8,500+</span>{" "}
+            {t("vehicleOwnersCount")}
           </span>
         </div>
       </div>
@@ -188,7 +189,7 @@ export default function PricingPage() {
                   : "text-gray-400 hover:text-white"
               }`}
             >
-              Vehicle Owners
+              {t("vehicleOwners")}
             </button>
             <button
               onClick={() => setPlanType("garage")}
@@ -198,7 +199,7 @@ export default function PricingPage() {
                   : "text-gray-400 hover:text-white"
               }`}
             >
-              Garage Owners
+              {t("garageOwners")}
             </button>
           </div>
         </div>
@@ -297,14 +298,14 @@ export default function PricingPage() {
               {/* Featured Badge */}
               {plan.isFeatured && !isExpired && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 px-6 py-2 rounded-full text-sm font-bold bg-gradient-to-r from-yellow-500 to-orange-500 text-white flex items-center gap-2 shadow-lg animate-pulse z-10">
-                  <Sparkles size={16} fill="white" />⭐ FEATURED
+                  <Sparkles size={16} fill="white" />⭐ {t("featured")}
                 </div>
               )}
               {/* Expired Overlay */}
               {isExpired && (
                 <div className="absolute inset-0 z-50 flex items-center justify-center p-4">
                   <div className="bg-red-600/90 backdrop-blur-md text-white px-8 py-4 rounded-2xl font-black text-xl rotate-[-12deg] shadow-[0_0_30px_rgba(220,38,38,0.5)] border-4 border-white/20 uppercase tracking-tighter">
-                    Offer Expired
+                    {t("offerExpired")}
                   </div>
                 </div>
               )}
@@ -312,7 +313,7 @@ export default function PricingPage() {
               {isStandard && !isExpired && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                   <span className="bg-[#f97316] text-white px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                    Most Popular
+                    {t("mostPopular")}
                   </span>
                 </div>
               )}
@@ -328,7 +329,7 @@ export default function PricingPage() {
                 </div>
 
                 <h3 className="text-xl font-bold text-white mb-1 uppercase tracking-wider">
-                  {plan.name}
+                  {t(`planNames.${plan.name}`, { default: plan.name })}
                 </h3>
               </div>
 
@@ -336,12 +337,12 @@ export default function PricingPage() {
               <div className="mb-6">
                 <div className="flex items-baseline gap-1">
                   <span className="text-4xl font-bold text-white">
-                    {plan.tier === "enterprise" ? "Custom" : `৳${price}`}
+                    {plan.tier === "enterprise" ? t("custom") : `৳${price}`}
                   </span>
                 </div>
                 {plan.tier !== "enterprise" && (
                   <p className="text-sm text-gray-500 mt-1">
-                    per {billingCycle === "yearly" ? "year" : "month"}
+                    {t(billingCycle === "yearly" ? "perYear" : "perMonthText")}
                   </p>
                 )}
 
@@ -357,7 +358,7 @@ export default function PricingPage() {
                 )}
                 {isTrial && (
                   <div className="mt-3 text-xs text-blue-400 font-bold bg-blue-500/10 px-3 py-2 rounded-lg border border-blue-500/20">
-                    * Credit Card Info Required
+                    {t("creditCardRequired")}
                   </div>
                 )}
               </div>
@@ -367,7 +368,9 @@ export default function PricingPage() {
                 {plan.features.map((feature, idx) => (
                   <li key={idx} className="flex items-center gap-3">
                     <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
-                    <span className="text-sm text-white/80">{feature}</span>
+                    <span className="text-sm text-white/80">
+                      {t(`features.${feature}`, { default: feature })}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -383,12 +386,12 @@ export default function PricingPage() {
                 }`}
               >
                 {isExpired
-                  ? "OFFER EXPIRED"
+                  ? t("offerExpired")
                   : isTrial
-                  ? "Start Trial"
+                  ? t("startTrial")
                   : isFree
-                  ? "Current Plan"
-                  : "Upgrade Now"}
+                  ? t("currentPlan")
+                  : t("upgradNow")}
               </button>
             </div>
           );

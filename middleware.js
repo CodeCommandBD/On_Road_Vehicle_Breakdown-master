@@ -85,6 +85,15 @@ export default async function middleware(request) {
   // Apply internationalization middleware first
   const intlResponse = intlMiddleware(request);
 
+  // If it's a redirect (e.g. /book -> /en/book), return it immediately
+  if (
+    intlResponse.status &&
+    intlResponse.status >= 300 &&
+    intlResponse.status < 400
+  ) {
+    return intlResponse;
+  }
+
   // If it's a public route, just return the intl response
   if (isPublicRoute(pathname)) {
     return intlResponse;

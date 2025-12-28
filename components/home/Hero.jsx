@@ -5,31 +5,31 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 // Import Swiper styles
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 
-const heroSlides = [
-  {
-    image: "/Hero-img/hero-slide-one.png",
-    title: "On-Road Breakdown Service",
-    subtitle: "24/7 Emergency Vehicle Assistance",
-    description:
-      "Get instant help whenever your vehicle breaks down. Our expert mechanics are always ready to assist you.",
-  },
-  {
-    image: "/Hero-img/hero-slide-two.png",
-    title: "Professional Auto Repair",
-    subtitle: "Trusted Garage Network",
-    description:
-      "Connect with certified garages and mechanics in your area for quality vehicle maintenance and repairs.",
-  },
-];
-
 export default function Hero() {
+  const t = useTranslations("Home.hero");
   const swiperRef = useRef(null);
+
+  const heroSlides = [
+    {
+      image: "/Hero-img/hero-slide-one.png",
+      title: t("slide1Title"),
+      subtitle: t("slide1Subtitle"),
+      description: t("slide1Description"),
+    },
+    {
+      image: "/Hero-img/hero-slide-two.png",
+      title: t("slide2Title"),
+      subtitle: t("slide2Subtitle"),
+      description: t("slide2Description"),
+    },
+  ];
 
   return (
     <section id="hero" className="relative isolate overflow-hidden bg-gray-900">
@@ -93,14 +93,14 @@ export default function Hero() {
                         href="/garages"
                         className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-orange-600 to-orange-700 px-6 sm:px-8 py-3 sm:py-3.5 text-sm sm:text-base text-white font-semibold shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:from-orange-700 hover:to-orange-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
                       >
-                        Get Started
+                        {t("getStarted")}
                       </Link>
 
                       <Link
                         href="#services"
                         className="inline-flex items-center justify-center rounded-lg border-2 border-white/30 bg-white/10 backdrop-blur-sm px-6 sm:px-8 py-3 sm:py-3.5 text-sm sm:text-base text-white font-semibold transition-all duration-300 hover:bg-white/20 hover:border-white/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
                       >
-                        Learn More
+                        {t("learnMore")}
                       </Link>
                     </div>
                   </div>
