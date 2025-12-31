@@ -112,7 +112,8 @@ export default async function middleware(request) {
     }
 
     // Redirect to login page
-    const loginUrl = new URL("/login", request.url);
+    const locale = pathname.match(/^\/(en|bn)/)?.[1] || "en";
+    const loginUrl = new URL(`/${locale}/login`, request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
@@ -129,7 +130,8 @@ export default async function middleware(request) {
       );
     }
 
-    const loginUrl = new URL("/login", request.url);
+    const locale = pathname.match(/^\/(en|bn)/)?.[1] || "en";
+    const loginUrl = new URL(`/${locale}/login`, request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
@@ -147,7 +149,12 @@ export default async function middleware(request) {
     }
 
     // Redirect to appropriate dashboard based on user's role
-    const dashboardUrl = new URL(`/${user.role}/dashboard`, request.url);
+    // Extract locale from pathname
+    const locale = pathname.match(/^\/(en|bn)/)?.[1] || "en";
+    const dashboardUrl = new URL(
+      `/${locale}/${user.role}/dashboard`,
+      request.url
+    );
     return NextResponse.redirect(dashboardUrl);
   }
 
