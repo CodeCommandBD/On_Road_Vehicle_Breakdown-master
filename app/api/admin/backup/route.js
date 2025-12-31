@@ -1,82 +1,102 @@
 import { NextResponse } from "next/server";
-import { generateBackup } from "@/lib/services/backup.service";
-import { getServerSession } from "next-auth"; // Adjust import based on your auth implementation
-import User from "@/lib/db/models/User";
-import dbConnect from "@/lib/db/mongodb";
-import { headers } from "next/headers";
+import {
+  createMongoDBBackup,
+  listBackups,
+  deleteBackup,
+} from "@/lib/services/backup.service";
+import { requireAuth, requireRole } from "@/lib/utils/auth";
+import { handleError } from "@/lib/utils/errorHandler";
 
-// Simulating Authentication check (Replace with your actual auth guard)
-async function isAdmin(req) {
-  // 1. Check for Cron Secret (Automated)
-  const authHeader = headers().get("authorization");
-  if (authHeader === `Bearer ${process.env.CRON_SECRET}`) {
-    return true;
-  }
-
-  // 2. Check for Admin User (Manual via UI)
-  // Note: Adjust this based on how you handle sessions in API routes
-  // For now, we'll return true to allow you to test it easily,
-  // BUT you should uncomment the session check below in production.
-
-  /*
-  const session = await getServerSession(); 
-  if (!session || !session.user) return false;
-  await dbConnect();
-  const user = await User.findById(session.user.id);
-  return user && user.role === 'admin';
-  */
-
-  return true; // TEMPORARY: Allow access for testing
-}
-
-export async function GET(req) {
+/**
+ * GET /api/admin/backup
+ * List all backups or create new backup
+ */
+export async function GET(request) {
   try {
-    if (!(await isAdmin(req))) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // Check for cron secret (for automated backups)
+    const authHeader = request.headers.get("authorization");
+    const isCronJob = authHeader === `Bearer ${process.env.CRON_SECRET}`;
+
+    if (!isCronJob) {
+      // Require admin authentication for manual access
+      const currentUser = await requireAuth(request);
+      requireRole(currentUser, "admin");
     }
 
-    const backupData = await generateBackup();
+    // Check if action is to list backups
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get("action");
 
-    // Create a response with the JSON data
-    // We set headers to prompt a file download
-    const filename = `backup-${new Date().toISOString().split("T")[0]}.json`;
-
-    return new NextResponse(JSON.stringify(backupData, null, 2), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Content-Disposition": `attachment; filename="${filename}"`,
-      },
-    });
-  } catch (error) {
-    console.error("Backup failed:", error);
-    return NextResponse.json(
-      { error: "Backup generation failed" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(req) {
-  // Trigger backup creation and maybe email it (Automation Flow)
-  try {
-    if (!(await isAdmin(req))) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (action === "list") {
+      const backups = listBackups();
+      return NextResponse.json({
+        success: true,
+        backups,
+        count: backups.length,
+      });
     }
 
-    // In a real scenario, this would upload to S3 and return a secure link
-    // For now, it behaves same as GET for simplicity in testing
-    const backupData = await generateBackup();
+    // Default: Create new backup
+    const performedBy = isCronJob ? null : (await requireAuth(request)).userId;
+    const result = await createMongoDBBackup(performedBy);
 
     return NextResponse.json({
       success: true,
-      message: "Backup generated successfully",
-      metadata: backupData.metadata,
+      message: "Backup created successfully",
+      backup: result,
     });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Automated backup failed" },
-      { status: 500 }
-    );
+    return handleError(error);
+  }
+}
+
+/**
+ * POST /api/admin/backup
+ * Create a new backup (manual trigger)
+ */
+export async function POST(request) {
+  try {
+    const currentUser = await requireAuth(request);
+    requireRole(currentUser, "admin");
+
+    const result = await createMongoDBBackup(currentUser.userId);
+
+    return NextResponse.json({
+      success: true,
+      message: "Backup created successfully",
+      backup: result,
+    });
+  } catch (error) {
+    return handleError(error);
+  }
+}
+
+/**
+ * DELETE /api/admin/backup
+ * Delete a specific backup
+ */
+export async function DELETE(request) {
+  try {
+    const currentUser = await requireAuth(request);
+    requireRole(currentUser, "admin");
+
+    const { searchParams } = new URL(request.url);
+    const backupName = searchParams.get("name");
+
+    if (!backupName) {
+      return NextResponse.json(
+        { success: false, message: "Backup name is required" },
+        { status: 400 }
+      );
+    }
+
+    await deleteBackup(backupName, currentUser.userId);
+
+    return NextResponse.json({
+      success: true,
+      message: "Backup deleted successfully",
+    });
+  } catch (error) {
+    return handleError(error);
   }
 }

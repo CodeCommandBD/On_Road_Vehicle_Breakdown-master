@@ -5,6 +5,7 @@ import User from "@/lib/db/models/User";
 import { verifyToken } from "@/lib/utils/auth";
 import Garage from "@/lib/db/models/Garage";
 import { sendMechanicSOSEmail } from "@/lib/utils/email";
+import { sendSOSSMS } from "@/lib/utils/sms";
 
 export async function POST(request) {
   try {
@@ -62,10 +63,41 @@ export async function POST(request) {
       console.error(`❌ Failed to send SOS email: ${emailResult.error}`);
     }
 
+    // ==================== SMS NOTIFICATION ====================
+    // Send SMS to garage owner's phone
+    let smsResult = { success: false, message: "No phone number" };
+
+    if (garage.owner.phone) {
+      try {
+        smsResult = await sendSOSSMS({
+          recipientPhone: garage.owner.phone,
+          mechanicName: mechanic.name,
+          location: location,
+          bookingNumber: "N/A", // Can be enhanced to include booking if available
+        });
+
+        if (smsResult.success) {
+          console.log(`✅ SOS SMS sent to garage owner: ${garage.owner.phone}`);
+        } else {
+          console.error(`❌ Failed to send SOS SMS: ${smsResult.error}`);
+        }
+      } catch (smsError) {
+        console.error("SMS sending error:", smsError);
+        smsResult = { success: false, error: smsError.message };
+      }
+    } else {
+      console.warn("⚠️ Garage owner has no phone number for SMS");
+    }
+    // ==========================================================
+
     return NextResponse.json({
       success: true,
       message: "SOS Alert Sent!",
-      emailStatus: emailResult.success ? "sent" : "failed",
+      notifications: {
+        email: emailResult.success ? "sent" : "failed",
+        sms: smsResult.success ? "sent" : "failed",
+        app: "sent",
+      },
     });
   } catch (error) {
     console.error("SOS API Error:", error);
