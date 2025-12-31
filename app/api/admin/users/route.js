@@ -6,6 +6,7 @@ import { requireAuth, requireRole } from "@/lib/utils/auth";
 import { handleError, NotFoundError } from "@/lib/utils/errorHandler";
 import { successResponse, paginatedResponse } from "@/lib/utils/apiResponse";
 import { MESSAGES, PAGINATION } from "@/lib/utils/constants";
+import { logFromRequest, AUDIT_ACTIONS, SEVERITY } from "@/lib/utils/auditLog";
 
 /**
  * GET /api/admin/users
@@ -93,10 +94,37 @@ export async function PUT(request) {
       }
     }
 
-    if (isActive !== undefined) user.isActive = isActive;
-    if (role !== undefined) user.role = role;
+    // Track changes for audit log
+    const changes = {};
+    if (isActive !== undefined && user.isActive !== isActive) {
+      changes.isActive = { before: user.isActive, after: isActive };
+      user.isActive = isActive;
+    }
+    if (role !== undefined && user.role !== role) {
+      changes.role = { before: user.role, after: role };
+      user.role = role;
+    }
+    if (rewardPoints !== undefined) {
+      changes.rewardPoints = {
+        before: user.rewardPoints || 0,
+        after: rewardPoints,
+      };
+    }
 
     await user.save();
+
+    // Log admin action
+    await logFromRequest(request, {
+      action:
+        role !== undefined && changes.role
+          ? AUDIT_ACTIONS.USER_ROLE_CHANGED
+          : AUDIT_ACTIONS.USER_UPDATED,
+      performedBy: currentUser.userId,
+      targetModel: "User",
+      targetId: user._id,
+      changes,
+      severity: role !== undefined ? SEVERITY.HIGH : SEVERITY.MEDIUM,
+    });
 
     return successResponse(
       { user: user.toPublicJSON() },
@@ -129,10 +157,28 @@ export async function DELETE(request) {
       );
     }
 
-    const user = await User.findByIdAndDelete(userId);
+    const user = await User.findById(userId);
     if (!user) {
       throw new NotFoundError(MESSAGES.ERROR.USER_NOT_FOUND);
     }
+
+    // Log deletion before actually deleting
+    await logFromRequest(request, {
+      action: AUDIT_ACTIONS.USER_DELETED,
+      performedBy: currentUser.userId,
+      targetModel: "User",
+      targetId: user._id,
+      changes: {
+        deletedUser: {
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+      },
+      severity: SEVERITY.CRITICAL,
+    });
+
+    await User.findByIdAndDelete(userId);
 
     return successResponse({ userId }, "ব্যবহারকারী মুছে ফেলা হয়েছে");
   } catch (error) {
