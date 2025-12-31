@@ -157,6 +157,18 @@ export async function POST(request) {
       }
       // ----------------------------
 
+      // BROADCAST REAL-TIME ANALYTICS
+      try {
+        const { pusherServer } = await import("@/lib/pusher");
+        await pusherServer.trigger("analytics", "revenue_update", {
+          amount: parseFloat(amount),
+          plan: subscription.planId?.name || "Subscription",
+          timestamp: new Date().toISOString(),
+        });
+      } catch (pusherErr) {
+        console.error("Pusher broadcast failed:", pusherErr);
+      }
+
       // Upgrade Garage Membership
       if (
         subscription.planId.type === "garage" ||

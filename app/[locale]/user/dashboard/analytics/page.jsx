@@ -7,8 +7,10 @@ import { selectUser } from "@/store/slices/authSlice";
 import AnalyticsCharts from "@/components/dashboard/analytics/AnalyticsCharts"; // Ensure this matches path
 import { Lock, Loader2, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 export default function AnalyticsPage() {
+  const t = useTranslations("Analytics");
   const user = useSelector(selectUser);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -88,11 +90,9 @@ export default function AnalyticsPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold flex items-center gap-3">
           <TrendingUp className="text-blue-500" />
-          Advanced Analytics
+          {t("title")}
         </h1>
-        <p className="text-white/60 mt-2">
-          Deep dive into your vehicle's health and spending habits.
-        </p>
+        <p className="text-white/60 mt-2">{t("subtitle")}</p>
       </div>
 
       {!hasAccess ? (
@@ -107,14 +107,15 @@ export default function AnalyticsPage() {
             </div>
 
             <h2 className="text-2xl font-bold text-white mb-2 relative z-10">
-              Premium Feature
+              {t("premiumFeature") || "Premium Feature"}
             </h2>
             <p className="text-white/60 mb-6 relative z-10">
-              Unlock detailed cost analysis, vehicle health trends, and service
-              history reports with the Premium plan.
+              {t("premiumDescription") ||
+                "Unlock detailed cost analysis, vehicle health trends, and service history reports with the Premium plan."}
               <br />
               {isRestricted
-                ? "Access restricted to Organization Owners & Admins."
+                ? t("accessRestricted") ||
+                  "Access restricted to Organization Owners & Admins."
                 : ""}
             </p>
 
@@ -123,7 +124,7 @@ export default function AnalyticsPage() {
                 href="/pricing"
                 className="block w-full py-3 rounded-xl bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold hover:shadow-[0_0_20px_rgba(234,179,8,0.3)] transition-all relative z-10"
               >
-                Upgrade to Premium
+                {t("upgradeToPremium") || "Upgrade to Premium"}
               </Link>
             )}
           </div>

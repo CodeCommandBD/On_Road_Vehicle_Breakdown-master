@@ -19,6 +19,7 @@ import {
   FunnelChart,
   StatCard,
 } from "@/components/analytics/Charts";
+import ExportMenu from "@/components/analytics/ExportMenu";
 import { format } from "date-fns";
 
 export default function AdminAnalyticsPage() {
@@ -31,6 +32,30 @@ export default function AdminAnalyticsPage() {
 
   useEffect(() => {
     fetchAnalytics();
+
+    // Real-time updates
+    const initPusher = async () => {
+      const { pusherClient } = await import("@/lib/pusher");
+      if (pusherClient) {
+        const channel = pusherClient.subscribe("analytics");
+
+        channel.bind("revenue_update", (data) => {
+          toast.success(`Revenue Update: ৳${data.amount} received!`);
+          fetchAnalytics(); // Refresh data
+        });
+
+        channel.bind("booking_new", (data) => {
+          toast.info("New Booking Received!");
+          fetchAnalytics(); // Refresh data
+        });
+
+        return () => {
+          pusherClient.unsubscribe("analytics");
+        };
+      }
+    };
+
+    initPusher();
   }, [dateRange]);
 
   const fetchAnalytics = async () => {
@@ -112,13 +137,15 @@ export default function AdminAnalyticsPage() {
             <RefreshCw className="w-5 h-5" />
           </button>
 
-          <button
-            onClick={handleExport}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 transition-colors"
-          >
-            <Download className="w-4 h-4" />
-            Export
-          </button>
+          <ExportMenu
+            data={{
+              revenue: revenue,
+              revenueData: revenueData,
+              garages: garageData,
+            }}
+            activeTab={activeTab}
+            dateRange={dateRange}
+          />
         </div>
       </div>
 

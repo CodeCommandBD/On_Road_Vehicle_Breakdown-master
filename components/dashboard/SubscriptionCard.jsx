@@ -213,7 +213,7 @@ export default function SubscriptionCard() {
             {isHighUsage && (
               <div className="mt-2 flex items-center gap-2 text-xs text-red-200 bg-red-500/10 p-2 rounded-lg">
                 <AlertTriangle className="w-3 h-3" />
-                <span>Almost confirmed limit! Upgrade now.</span>
+                <span>{t("almostLimit")}</span>
               </div>
             )}
           </div>
@@ -222,7 +222,7 @@ export default function SubscriptionCard() {
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4 mb-6 relative z-10">
           <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
-            <p className="text-white/60 text-xs mb-1">Status</p>
+            <p className="text-white/60 text-xs mb-1">{t("status")}</p>
             <div className="text-white font-bold capitalize flex items-center gap-1">
               <div
                 className={`w-2 h-2 rounded-full ${
@@ -235,13 +235,13 @@ export default function SubscriptionCard() {
             </div>
           </div>
           <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm">
-            <p className="text-white/60 text-xs mb-1">Renews</p>
+            <p className="text-white/60 text-xs mb-1">{t("renews")}</p>
             <p
               className={`font-bold ${
                 isExpiringSoon ? "text-red-300" : "text-white"
               }`}
             >
-              {daysRemaining} Days
+              {t("days", { count: daysRemaining })}
             </p>
           </div>
         </div>
@@ -255,9 +255,11 @@ export default function SubscriptionCard() {
               </div>
               <div>
                 <p className="text-white font-bold text-xs">
-                  Dedicated Account Manager
+                  {t("dedicatedManager")}
                 </p>
-                <p className="text-white/60 text-[10px]">VIP Support Active</p>
+                <p className="text-white/60 text-[10px]">
+                  {t("vipSupportActive")}
+                </p>
               </div>
             </div>
           </div>
@@ -271,7 +273,7 @@ export default function SubscriptionCard() {
               className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 px-6 py-3 rounded-xl font-bold hover:from-yellow-300 hover:to-orange-400 transition-all duration-300 text-center flex items-center justify-center gap-2 shadow-lg animate-pulse-slow"
             >
               <Zap className="w-4 h-4" />
-              {isFree ? "Upgrade to Protected" : "Extend Protection"}
+              {isFree ? t("upgradeToProtected") : t("extendProtection")}
             </Link>
           ) : (
             <div className="flex gap-2">
@@ -279,13 +281,13 @@ export default function SubscriptionCard() {
                 href="/pricing"
                 className="flex-1 bg-white/10 hover:bg-white/20 text-white py-2 rounded-lg text-center text-sm font-medium transition-colors"
               >
-                Change Plan
+                {t("changePlan")}
               </Link>
               <button
                 onClick={() => setShowCancelModal(true)}
                 className="px-3 text-white/40 hover:text-white/80 text-sm transition-colors"
               >
-                Cancel
+                {t("cancel")}
               </button>
             </div>
           )}
@@ -304,12 +306,10 @@ export default function SubscriptionCard() {
             </button>
 
             <h3 className="text-2xl font-bold text-white mb-2">
-              Wait! Don't leave us.
+              {t("cancelTitle")}
             </h3>
             <p className="text-gray-400 mb-6">
-              Your car protection will remain active until{" "}
-              {formatDate(subscription.endDate)}. Are you sure you want to
-              cancel auto-renewal?
+              {t("cancelDesc", { date: formatDate(subscription.endDate) })}
             </p>
 
             <div className="flex flex-col gap-3">
@@ -317,7 +317,7 @@ export default function SubscriptionCard() {
                 onClick={() => setShowCancelModal(false)}
                 className="w-full bg-green-500 text-black px-6 py-3.5 rounded-xl font-bold hover:bg-green-400 transition-all"
               >
-                Keep My Protection
+                {t("keepProtection")}
               </button>
               <button
                 onClick={() => {
@@ -326,14 +326,12 @@ export default function SubscriptionCard() {
                 }}
                 className="w-full bg-white/5 text-gray-400 px-6 py-3 rounded-xl font-medium hover:bg-white/10 hover:text-white transition-all"
               >
-                I still want to cancel
+                {t("confirmCancellation")}
               </button>
             </div>
 
             <div className="mt-6 pt-6 border-t border-white/5 text-center">
-              <p className="text-xs text-green-400">
-                🔥 Pro tip: Switch to annual plan to save 25% instead!
-              </p>
+              <p className="text-xs text-green-400">{t("proTip")}</p>
             </div>
           </div>
         </div>

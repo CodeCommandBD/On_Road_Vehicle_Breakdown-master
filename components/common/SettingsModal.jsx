@@ -48,7 +48,8 @@ export default function SettingsModal({ isOpen, onClose }) {
                     {t("Settings.language")}
                   </h3>
                   <p className="text-[#ffffff99] text-[12px]">
-                    Choose your preferred language
+                    {t("Settings.chooseLanguage") ||
+                      "Choose your preferred language"}
                   </p>
                 </div>
               </div>

@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { logout } from "@/store/slices/authSlice";
 import axios from "axios";
+import { useTranslations } from "next-intl";
 import {
   LayoutDashboard,
   Users,
@@ -25,41 +26,46 @@ import {
   Package,
 } from "lucide-react";
 
-const menuItems = [
-  { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-  { name: "Users", href: "/admin/users", icon: Users },
-  { name: "Garages", href: "/admin/garages", icon: Car },
-  { name: "Bookings", href: "/admin/bookings", icon: CalendarDays },
-  { name: "Payments", href: "/admin/payments", icon: DollarSign },
-  { name: "Reviews", href: "/admin/reviews", icon: Star },
-  { name: "Services", href: "/admin/services", icon: Settings },
+const getMenuItems = (t) => [
+  { name: t("dashboard"), href: "/admin/dashboard", icon: LayoutDashboard },
+  { name: t("users"), href: "/admin/users", icon: Users },
+  { name: t("garages"), href: "/admin/garages", icon: Car },
+  { name: t("bookings"), href: "/admin/bookings", icon: CalendarDays },
+  { name: t("payments"), href: "/admin/payments", icon: DollarSign },
+  { name: t("reviews"), href: "/admin/reviews", icon: Star },
+  { name: t("services"), href: "/admin/services", icon: Settings },
   {
-    name: "Service Analytics",
+    name: t("analytics"),
+    href: "/admin/analytics",
+    icon: BarChart3,
+  },
+  {
+    name: t("serviceAnalytics"),
     href: "/admin/services/analytics",
     icon: BarChart3,
   },
-  { name: "Feature Usage", href: "/admin/features/usage", icon: Zap },
-  { name: "Plans", href: "/admin/plans", icon: Package },
+  { name: t("featureUsage"), href: "/admin/features/usage", icon: Zap },
+  { name: t("plans"), href: "/admin/plans", icon: Package },
   {
-    name: "Subscriptions",
+    name: t("subscriptions"),
     href: "/admin/dashboard/subscriptions",
     icon: Crown,
   },
-  { name: "Contracts", href: "/admin/contracts", icon: FileText },
+  { name: t("contracts"), href: "/admin/contracts", icon: FileText },
   {
-    name: "Inquiries",
+    name: t("inquiries"),
     href: "/admin/inquiries",
     icon: Mail,
     badge: "inquiries",
   },
   {
-    name: "Support",
+    name: t("support"),
     href: "/admin/support",
     icon: MessageSquareWarning,
     badge: "support",
   },
   {
-    name: "Messages",
+    name: t("messages"),
     href: "/admin/messages",
     icon: MessageSquare,
     badge: "messages",
@@ -67,9 +73,11 @@ const menuItems = [
 ];
 
 export default function AdminSidebar({ isOpen, onClose }) {
+  const t = useTranslations("AdminNav");
   const pathname = usePathname();
   const router = useRouter();
   const dispatch = useDispatch();
+  const menuItems = getMenuItems(t);
   const [counts, setCounts] = useState({
     inquiries: 0,
     support: 0,
@@ -167,7 +175,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
         {/* Navigation */}
         <nav className="p-6 space-y-2 overflow-y-auto h-[calc(100vh-80px)]">
           <div className="text-xs font-semibold text-white/30 uppercase tracking-wider mb-4 px-3">
-            Main Menu
+            {t("mainMenu")}
           </div>
 
           {menuItems.map((item) => {
@@ -230,14 +238,14 @@ export default function AdminSidebar({ isOpen, onClose }) {
 
           <div className="pt-8 mt-8 border-t border-[#222]">
             <div className="text-xs font-semibold text-white/30 uppercase tracking-wider mb-4 px-3">
-              Settings
+              {t("settings")}
             </div>
             <button
               onClick={handleLogout}
               className="flex items-center gap-3 px-4 py-3.5 text-white/60 hover:bg-red-500/10 hover:text-red-500 w-full rounded-xl transition-all duration-200 text-left group"
             >
               <LogOut size={20} />
-              <span className="font-medium">Logout</span>
+              <span className="font-medium">{t("logout")}</span>
             </button>
           </div>
         </nav>

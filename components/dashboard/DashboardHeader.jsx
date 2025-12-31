@@ -25,7 +25,6 @@ import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
-import LanguageSwitcher from "../common/LanguageSwitcher";
 import { cn } from "@/lib/utils/helpers";
 import RewardsInfoModal from "./RewardsInfoModal";
 
@@ -175,9 +174,6 @@ export default function DashboardHeader() {
 
         {/* Action icons */}
         <div className="flex items-center gap-2">
-          {/* Language Switcher */}
-          <LanguageSwitcher />
-
           {/* Reward Points - Visible on tablet and desktop */}
           {user?.role !== "admin" && (
             <div

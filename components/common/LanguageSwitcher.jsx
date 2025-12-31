@@ -1,14 +1,11 @@
 "use client";
 
-import { useLocale, useTranslations } from "next-intl";
-import { usePathname, useRouter } from "@/i18n/routing";
+import { useLocale } from "next-intl";
 import { Globe, Check } from "lucide-react";
-import { useState, transition } from "react";
+import { useState } from "react";
 
 export default function LanguageSwitcher() {
   const locale = useLocale();
-  const router = useRouter();
-  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
   const languages = [
@@ -18,18 +15,27 @@ export default function LanguageSwitcher() {
 
   const handleLanguageChange = (newLocale) => {
     setIsOpen(false);
+    if (newLocale === locale) return;
 
-    // Safety check: remove existing locale prefix if present in pathname
-    // (though usePathname usually handles this, sometimes it might leak in edge cases)
-    let cleanPath = pathname;
-    if (cleanPath.startsWith("/en/"))
-      cleanPath = cleanPath.replace("/en/", "/");
-    if (cleanPath.startsWith("/bn/"))
-      cleanPath = cleanPath.replace("/bn/", "/");
-    if (cleanPath === "/en") cleanPath = "/";
-    if (cleanPath === "/bn") cleanPath = "/";
+    try {
+      // Get current path and query
+      const currentPath = window.location.pathname;
+      const currentSearch = window.location.search;
 
-    router.replace(cleanPath, { locale: newLocale });
+      // Remove existing locale from path start
+      let path = currentPath;
+      if (path.startsWith("/en")) path = path.replace("/en", "");
+      else if (path.startsWith("/bn")) path = path.replace("/bn", "");
+
+      // Ensure path consistency
+      if (!path.startsWith("/")) path = "/" + path;
+
+      // Force full page reload with new locale
+      window.location.href = `/${newLocale}${path}${currentSearch}`;
+    } catch (error) {
+      console.error("Language switch failed:", error);
+      window.location.reload();
+    }
   };
 
   return (

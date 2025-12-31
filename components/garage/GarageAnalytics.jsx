@@ -28,8 +28,10 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 export default function GarageAnalytics() {
+  const t = useTranslations("Subscription");
   const user = useSelector(selectUser);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -75,17 +77,17 @@ export default function GarageAnalytics() {
         <div className="w-20 h-20 rounded-full bg-orange-500/20 flex items-center justify-center mb-6">
           <Lock className="text-orange-500" size={40} />
         </div>
-        <h2 className="text-2xl font-bold text-white mb-2">Premium Feature</h2>
+        <h2 className="text-2xl font-bold text-white mb-2">
+          {t("lockedTitle")}
+        </h2>
         <p className="text-white/60 text-center mb-6 max-w-md">
-          Analytics Dashboard is available for Premium and Enterprise garages
-          only. Upgrade your plan to access detailed insights and performance
-          metrics.
+          {t("lockedDesc")}
         </p>
         <Link
           href="/garage/dashboard/subscription"
           className="px-6 py-3 bg-orange-500 hover:bg-orange-600 rounded-xl text-white font-bold transition-colors"
         >
-          Upgrade to Premium
+          {t("upgradePremium")}
         </Link>
       </div>
     );

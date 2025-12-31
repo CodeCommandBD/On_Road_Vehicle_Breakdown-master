@@ -142,7 +142,7 @@ export default function UserRewardsCard({ user, stats }) {
 
       {/* Benefits */}
       <div>
-        <p className="text-white/60 text-sm mb-3">Current Benefits</p>
+        <p className="text-white/60 text-sm mb-3">{t("currentBenefits")}</p>
         <div className="space-y-2">
           {currentTier.benefits.map((benefit, index) => (
             <div

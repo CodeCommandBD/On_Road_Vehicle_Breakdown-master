@@ -40,6 +40,7 @@ import { cn } from "@/lib/utils/helpers";
 export default function Sidebar() {
   const t = useTranslations("Navigation");
   const commonT = useTranslations("Common");
+  const tSub = useTranslations("Subscription");
   const pathname = usePathname();
   const dispatch = useDispatch();
   const sidebarOpen = useSelector(selectSidebarOpen);
@@ -61,17 +62,17 @@ export default function Sidebar() {
       { href: "/user/dashboard", label: t("dashboard"), icon: LayoutDashboard },
       {
         href: "/user/dashboard/analytics",
-        label: "Analytics",
+        label: t("analytics") || "Analytics",
         icon: TrendingUp,
       },
       {
         href: "/user/dashboard/integrations",
-        label: "CRM / Integrations",
+        label: t("crmIntegrations") || "CRM / Integrations",
         icon: Webhook,
       },
       {
         href: "/user/dashboard/team",
-        label: "Team Management",
+        label: t("teamManagement") || "Team Management",
         icon: Users,
       },
       {
@@ -81,7 +82,7 @@ export default function Sidebar() {
       },
       {
         href: "/user/dashboard/favorites",
-        label: "Favorite Garages",
+        label: t("favoriteGarages") || "Favorite Garages",
         icon: Heart,
       },
       {
@@ -91,7 +92,7 @@ export default function Sidebar() {
       },
       {
         href: "/user/dashboard/automation",
-        label: "Automation",
+        label: t("automation") || "Automation",
         icon: Activity,
       },
       { href: "/user/dashboard/profile", label: t("profile"), icon: User },
@@ -102,7 +103,7 @@ export default function Sidebar() {
       },
       {
         href: "/user/dashboard/reports",
-        label: "Reports",
+        label: t("reports") || "Reports",
         icon: FileText,
       },
       {
@@ -146,7 +147,7 @@ export default function Sidebar() {
       },
       {
         href: "/garage/dashboard/analytics",
-        label: "Analytics",
+        label: t("analytics") || "Analytics",
         icon: TrendingUp,
         locked:
           (user?.garage?.membershipTier !== "premium" &&
@@ -157,7 +158,7 @@ export default function Sidebar() {
       },
       {
         href: "/garage/dashboard/team",
-        label: "Team Management",
+        label: t("teamManagement") || "Team Management",
         icon: Users,
         locked:
           (user?.garage?.membershipTier !== "premium" &&
@@ -184,8 +185,12 @@ export default function Sidebar() {
         label: t("dashboard"),
         icon: LayoutDashboard,
       },
-      { href: "/admin/users", label: "Users", icon: User },
-      { href: "/admin/garages", label: "Garages", icon: Wrench },
+      { href: "/admin/users", label: t("users") || "Users", icon: User },
+      {
+        href: "/admin/garages",
+        label: t("garages") || "Garages",
+        icon: Wrench,
+      },
       { href: "/admin/bookings", label: t("bookings"), icon: Calendar },
       { href: "/admin/features/usage", label: t("featureMonitor"), icon: Zap },
       { href: "/admin/settings", label: t("settings"), icon: Settings },
@@ -254,7 +259,7 @@ export default function Sidebar() {
                         className={cn(
                           "flex items-center justify-between px-3 py-2.5 rounded-lg font-medium text-white/40 cursor-not-allowed group"
                         )}
-                        title="Upgrade to unlock"
+                        title={tSub("upgradeToUnlock")}
                       >
                         <div className="flex items-center gap-3">
                           <link.icon className="w-5 h-5" />

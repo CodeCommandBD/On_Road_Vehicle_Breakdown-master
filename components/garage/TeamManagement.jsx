@@ -7,8 +7,10 @@ import axios from "axios";
 import { Users, Plus, Edit2, Trash2, Loader2, Lock, Crown } from "lucide-react";
 import { toast } from "react-toastify";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 export default function TeamManagement() {
+  const t = useTranslations("Subscription");
   const user = useSelector(selectUser);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -97,16 +99,17 @@ export default function TeamManagement() {
         <div className="w-20 h-20 rounded-full bg-orange-500/20 flex items-center justify-center mb-6">
           <Lock className="text-orange-500" size={40} />
         </div>
-        <h2 className="text-2xl font-bold text-white mb-2">Premium Feature</h2>
+        <h2 className="text-2xl font-bold text-white mb-2">
+          {t("lockedTitle")}
+        </h2>
         <p className="text-white/60 text-center mb-6 max-w-md">
-          Team Management is available for Premium and Enterprise garages.
-          Upgrade to collaborate with your team efficiently.
+          {t("lockedDesc")}
         </p>
         <Link
           href="/garage/dashboard/subscription"
           className="px-6 py-3 bg-orange-500 hover:bg-orange-600 rounded-xl text-white font-bold transition-colors"
         >
-          Upgrade to Premium
+          {t("upgradePremium")}
         </Link>
       </div>
     );

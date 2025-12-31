@@ -48,6 +48,28 @@ export async function GET(request) {
 
     // If specific garage requested
     if (garageId) {
+      // CACHE CHECK
+      const cacheKey = `analytics:garage:${garageId}:${period}`;
+      let redis = null;
+
+      try {
+        const redisModule = await import("@/lib/cache/redis");
+        redis = redisModule.default;
+        if (redis) {
+          let cached = await redis.get(cacheKey);
+          if (typeof cached === "string") cached = JSON.parse(cached);
+          if (cached) {
+            return NextResponse.json({
+              success: true,
+              cached: true,
+              performance: cached,
+            });
+          }
+        }
+      } catch (e) {
+        console.warn("Cache error", e);
+      }
+
       const performance = await GaragePerformance.findOne({
         garage: garageId,
         period,
@@ -65,6 +87,17 @@ export async function GET(request) {
         });
       }
 
+      // CACHE SET
+      if (redis) {
+        try {
+          const isUpstash = process.env.UPSTASH_REDIS_REST_URL;
+          if (isUpstash)
+            await redis.set(cacheKey, performance, { ex: 1800 }); // 30 min
+          else
+            await redis.set(cacheKey, JSON.stringify(performance), "EX", 1800);
+        } catch (e) {}
+      }
+
       return NextResponse.json({
         success: true,
         performance,
@@ -79,10 +112,40 @@ export async function GET(request) {
       );
     }
 
+    // CACHE CHECK (Top Performers)
+    const cacheKey = `analytics:garages:top:${limit}:${period}`;
+    try {
+      const redisModule = await import("@/lib/cache/redis");
+      const redis = redisModule.default;
+      if (redis) {
+        let cached = await redis.get(cacheKey);
+        if (typeof cached === "string") cached = JSON.parse(cached);
+        if (cached)
+          return NextResponse.json({
+            success: true,
+            cached: true,
+            topPerformers: cached,
+            count: cached.length,
+          });
+      }
+    } catch (e) {}
+
     const topPerformers = await GaragePerformance.find({ period })
       .sort({ "performanceScore.overall": -1, date: -1 })
       .limit(limit)
       .populate("garage", "name address");
+
+    // CACHE SET (Top Performers)
+    try {
+      const redisModule = await import("@/lib/cache/redis");
+      const redis = redisModule.default;
+      if (redis) {
+        const isUpstash = process.env.UPSTASH_REDIS_REST_URL;
+        if (isUpstash) await redis.set(cacheKey, topPerformers, { ex: 3600 });
+        else
+          await redis.set(cacheKey, JSON.stringify(topPerformers), "EX", 3600);
+      }
+    } catch (e) {}
 
     return NextResponse.json({
       success: true,

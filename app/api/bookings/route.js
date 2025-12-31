@@ -132,8 +132,16 @@ export async function POST(req) {
           body.garage
         );
       }
+
+      // BROADCAST REAL-TIME ANALYTICS
+      const { pusherServer } = await import("@/lib/pusher");
+      await pusherServer.trigger("analytics", "booking_new", {
+        bookingId: booking._id,
+        amount: body.estimatedCost || 0, // Fallback if estimated
+        location: body.location?.coordinates || null,
+      });
     } catch (webhookErr) {
-      console.error("Booking creation webhook failed:", webhookErr);
+      console.error("Booking creation webhook/pusher failed:", webhookErr);
     }
     // ----------------------------------------
 

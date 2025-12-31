@@ -19,6 +19,11 @@ function isPublicRoute(pathname) {
   // Remove locale prefix for checking
   const pathWithoutLocale = pathname.replace(/^\/(en|bn)/, "");
 
+  // Allow cron jobs (Auth handled in route)
+  if (pathWithoutLocale.startsWith("/api/cron")) {
+    return true;
+  }
+
   return PUBLIC_ROUTES.some((route) => {
     if (route === "/")
       return pathWithoutLocale === "" || pathWithoutLocale === "/";

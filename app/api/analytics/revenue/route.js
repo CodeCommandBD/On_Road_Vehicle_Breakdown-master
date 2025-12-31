@@ -33,6 +33,33 @@ export async function GET(request) {
     const period = searchParams.get("period") || "monthly";
     const months = parseInt(searchParams.get("months") || "6");
 
+    // CACHE CHECK
+    const cacheKey = `analytics:revenue:${period}:${months}`;
+    let cachedData = null;
+    let redis = null;
+
+    try {
+      const redisModule = await import("@/lib/cache/redis");
+      redis = redisModule.default;
+      if (redis) {
+        cachedData = await redis.get(cacheKey);
+        // Handle Upstash returning object vs IORedis returning string
+        if (typeof cachedData === "string") {
+          cachedData = JSON.parse(cachedData);
+        }
+      }
+    } catch (err) {
+      console.warn("Redis cache error:", err);
+    }
+
+    if (cachedData) {
+      return NextResponse.json({
+        success: true,
+        cached: true,
+        ...cachedData,
+      });
+    }
+
     // Get historical metrics
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - months);
@@ -56,8 +83,7 @@ export async function GET(request) {
     // Get latest metrics
     const latest = metrics[0];
 
-    return NextResponse.json({
-      success: true,
+    const responseData = {
       current: {
         mrr: latest.mrr,
         arr: latest.arr,
@@ -77,6 +103,26 @@ export async function GET(request) {
         churn: m.churn.rate,
         customers: m.customers.total,
       })),
+    };
+
+    // CACHE SET
+    if (redis) {
+      try {
+        // Support both Upstash (options obj) and IORedis (args)
+        const isUpstash = process.env.UPSTASH_REDIS_REST_URL;
+        if (isUpstash) {
+          await redis.set(cacheKey, responseData, { ex: 3600 });
+        } else {
+          await redis.set(cacheKey, JSON.stringify(responseData), "EX", 3600);
+        }
+      } catch (err) {
+        console.error("Failed to set cache:", err);
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      ...responseData,
     });
   } catch (error) {
     console.error("Revenue analytics error:", error);
