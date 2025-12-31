@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db/connect";
 import Newsletter from "@/lib/models/Newsletter";
+import { sendNewsletterConfirmation } from "@/lib/utils/email";
 
 export async function POST(request) {
   try {
@@ -51,9 +52,13 @@ export async function POST(request) {
         existingSubscriber.subscribedAt = new Date();
         await existingSubscriber.save();
 
+        // Send welcome back email
+        await sendNewsletterConfirmation(email.toLowerCase().trim());
+
         return NextResponse.json({
           success: true,
-          message: "Welcome back! Your subscription has been reactivated.",
+          message:
+            "Welcome back! Your subscription has been reactivated. Check your inbox!",
         });
       }
     }
@@ -64,6 +69,15 @@ export async function POST(request) {
       isActive: true,
       subscribedAt: new Date(),
     });
+
+    // Send confirmation email
+    const emailResult = await sendNewsletterConfirmation(newSubscriber.email);
+
+    if (emailResult.success) {
+      console.log(`✅ Newsletter confirmation sent to ${newSubscriber.email}`);
+    } else {
+      console.error(`❌ Failed to send confirmation: ${emailResult.error}`);
+    }
 
     return NextResponse.json(
       {
