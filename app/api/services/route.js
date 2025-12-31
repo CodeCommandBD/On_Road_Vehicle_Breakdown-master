@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db/connect";
 import Service from "@/lib/db/models/Service";
+import { getOrSet } from "@/lib/cache/helpers";
 
 export async function GET(request) {
   try {
@@ -13,45 +14,59 @@ export async function GET(request) {
     const sort = searchParams.get("sort") || "order";
     const category = searchParams.get("category");
 
-    // Build query
-    const query = {};
-    if (isActive !== undefined) {
-      query.isActive = isActive;
-    }
-    if (category) {
-      query.category = category;
-    }
+    // Generate cache key based on query params
+    const cacheKey = `services:list:${
+      category || "all"
+    }:${limit}:${sort}:${isActive}`;
 
-    // Build sort object
-    let sortObj = {};
-    if (sort === "popular") {
-      sortObj = { isPopular: -1, order: 1 };
-    } else if (sort === "price-asc") {
-      sortObj = { basePrice: 1 };
-    } else if (sort === "price-desc") {
-      sortObj = { basePrice: -1 };
-    } else if (sort === "name") {
-      sortObj = { name: 1 };
-    } else {
-      sortObj = { order: 1, name: 1 };
-    }
+    // Use cache with 5-minute TTL
+    const result = await getOrSet(
+      cacheKey,
+      async () => {
+        // Build query
+        const query = {};
+        if (isActive !== undefined) {
+          query.isActive = isActive;
+        }
+        if (category) {
+          query.category = category;
+        }
 
-    // Fetch  services
-    const services = await Service.find(query)
-      .sort(sortObj)
-      .limit(limit)
-      .lean();
+        // Build sort object
+        let sortObj = {};
+        if (sort === "popular") {
+          sortObj = { isPopular: -1, order: 1 };
+        } else if (sort === "price-asc") {
+          sortObj = { basePrice: 1 };
+        } else if (sort === "price-desc") {
+          sortObj = { basePrice: -1 };
+        } else if (sort === "name") {
+          sortObj = { name: 1 };
+        } else {
+          sortObj = { order: 1, name: 1 };
+        }
 
-    // Get total count
-    const total = await Service.countDocuments(query);
+        // Fetch  services
+        const services = await Service.find(query)
+          .sort(sortObj)
+          .limit(limit)
+          .lean();
+
+        // Get total count
+        const total = await Service.countDocuments(query);
+
+        return {
+          services,
+          total,
+          limit,
+        };
+      },
+      300 // 5 minutes TTL
+    );
 
     return NextResponse.json({
       success: true,
-      data: {
-        services,
-        total,
-        limit,
-      },
+      data: result,
     });
   } catch (error) {
     console.error("Error fetching services:", error);
