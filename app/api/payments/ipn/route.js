@@ -38,19 +38,43 @@ export async function POST(request) {
       );
     }
 
-    // Hash Validation for Security (Prevents Payment Fraud)
-    // SSLCommerz sends a verify_sign which is MD5 hash of specific parameters
+    // ==================== HASH VALIDATION (SECURITY) ====================
+    // SSLCommerz sends verify_sign and verify_key for validation
+    // This prevents fraudulent payment notifications
     const verify_sign = data.verify_sign;
     const verify_key = data.verify_key;
+    const storePassword = process.env.SSLCOMMERZ_STORE_PASSWORD;
 
-    if (verify_sign && verify_key) {
+    // In production mode, hash validation is MANDATORY
+    if (process.env.SSLCOMMERZ_MODE === "live") {
+      if (!verify_sign || !verify_key) {
+        console.error("IPN: Missing verify_sign or verify_key in live mode!");
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Missing verification parameters",
+          },
+          { status: 400 }
+        );
+      }
+
+      if (!storePassword) {
+        console.error("IPN: SSLCOMMERZ_STORE_PASSWORD not configured!");
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Server configuration error",
+          },
+          { status: 500 }
+        );
+      }
+
       // Import crypto for hash validation
       const crypto = await import("crypto");
-      const storePassword = process.env.SSLCOMMERZ_STORE_PASSWORD;
 
-      // Create verification string as per SSLCommerz documentation
-      // Format: store_passwd + tran_id + amount + currency
-      const verificationString = `${storePassword}${tran_id}${data.amount}${data.currency_type}${status}`;
+      // SSLCommerz Hash Format: MD5(store_passwd + val_id)
+      // Reference: https://developer.sslcommerz.com/doc/v4/#hash-validation
+      const verificationString = `${storePassword}${val_id}`;
 
       // Calculate MD5 hash
       const calculatedHash = crypto
@@ -58,11 +82,38 @@ export async function POST(request) {
         .update(verificationString)
         .digest("hex");
 
-      // Compare hashes
+      // Compare hashes (case-insensitive)
       if (calculatedHash.toUpperCase() !== verify_sign.toUpperCase()) {
-        console.error("IPN: Hash validation failed - Possible fraud attempt!");
-        console.error("Expected:", calculatedHash);
-        console.error("Received:", verify_sign);
+        console.error(
+          "🚨 IPN: Hash validation FAILED - Possible fraud attempt!"
+        );
+        console.error("Transaction ID:", tran_id);
+        console.error("Expected Hash:", calculatedHash);
+        console.error("Received Hash:", verify_sign);
+
+        // Log this security incident
+        try {
+          const ActivityLog = (await import("@/lib/db/models/ActivityLog"))
+            .default;
+          await ActivityLog.create({
+            action: "payment_fraud_attempt",
+            performedBy: null,
+            targetModel: "Payment",
+            targetId: value_a,
+            changes: {
+              tran_id,
+              received_hash: verify_sign,
+              expected_hash: calculatedHash,
+            },
+            ipAddress:
+              request.headers.get("x-forwarded-for") ||
+              request.headers.get("x-real-ip") ||
+              "unknown",
+            userAgent: request.headers.get("user-agent"),
+          });
+        } catch (logError) {
+          console.error("Failed to log fraud attempt:", logError);
+        }
 
         return NextResponse.json(
           {
@@ -75,10 +126,29 @@ export async function POST(request) {
 
       console.log("✅ IPN: Hash validation successful");
     } else {
-      console.warn(
-        "⚠️ IPN: No verify_sign found - Hash validation skipped (sandbox mode)"
-      );
+      // Sandbox mode - validation is optional but recommended
+      if (verify_sign && verify_key && storePassword) {
+        const crypto = await import("crypto");
+        const verificationString = `${storePassword}${val_id}`;
+        const calculatedHash = crypto
+          .createHash("md5")
+          .update(verificationString)
+          .digest("hex");
+
+        if (calculatedHash.toUpperCase() === verify_sign.toUpperCase()) {
+          console.log("✅ IPN (Sandbox): Hash validation successful");
+        } else {
+          console.warn(
+            "⚠️ IPN (Sandbox): Hash validation failed but continuing..."
+          );
+        }
+      } else {
+        console.warn(
+          "⚠️ IPN (Sandbox): Hash validation skipped - verify_sign not provided"
+        );
+      }
     }
+    // ====================================================================
 
     // Find payment
     const payment = await Payment.findById(value_a);
