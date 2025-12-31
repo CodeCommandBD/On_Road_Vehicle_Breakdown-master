@@ -18,6 +18,7 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: "2mb",
     },
+    instrumentationHook: true,
   },
   outputFileTracingRoot: process.cwd(),
 };
