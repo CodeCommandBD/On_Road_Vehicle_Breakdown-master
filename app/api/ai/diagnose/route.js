@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/utils/auth";
 import { logActivity } from "@/lib/utils/activity";
 import TeamMember from "@/lib/db/models/TeamMember";
 import User from "@/lib/db/models/User";
+import { rateLimitMiddleware } from "@/lib/utils/rateLimit";
 
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "");
@@ -39,6 +40,10 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
+  // Rate limiting: 10 AI diagnoses per hour (expensive API calls)
+  const rateLimitResult = rateLimitMiddleware(req, 10, 60 * 60 * 1000);
+  if (rateLimitResult) return rateLimitResult;
+
   try {
     await connectDB();
     const verifiedUser = await getCurrentUser();

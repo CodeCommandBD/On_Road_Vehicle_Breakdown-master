@@ -84,6 +84,52 @@ export async function POST(request) {
       text,
     });
 
+    // ✅ REAL-TIME: Broadcast via Pusher for instant delivery
+    try {
+      const { pusherServer } = await import("@/lib/pusher");
+
+      // Populate sender info for the message
+      const populatedMessage = await Message.findById(message._id).populate(
+        "sender",
+        "name avatar onlineStatus"
+      );
+
+      // 1. Broadcast to conversation channel (both participants get it)
+      await pusherServer.trigger(
+        `conversation-${conversation._id}`,
+        "new-message",
+        {
+          message: {
+            _id: populatedMessage._id,
+            text: populatedMessage.text,
+            sender: populatedMessage.sender,
+            createdAt: populatedMessage.createdAt,
+            isRead: populatedMessage.isRead,
+          },
+          conversationId: conversation._id,
+        }
+      );
+
+      // 2. Notify recipient's personal channel for unread count update
+      await pusherServer.trigger(
+        `user-${recipientId}`,
+        "new-message-notification",
+        {
+          conversationId: conversation._id,
+          senderId: decoded.userId,
+          preview: text.substring(0, 50),
+          timestamp: new Date(),
+        }
+      );
+
+      console.log(
+        `✅ Real-time message broadcast to conversation-${conversation._id}`
+      );
+    } catch (pusherError) {
+      console.error("Pusher broadcast error:", pusherError);
+      // Don't fail the message send if Pusher fails
+    }
+
     // Update last message and increment unread count for recipient
     const unreadKey = `unreadCount.${recipientId}`;
     await Conversation.findByIdAndUpdate(conversation._id, {

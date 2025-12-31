@@ -50,19 +50,32 @@ export default function FavoritesPage() {
   const fetchFullFavorites = async () => {
     try {
       setLoading(true);
+      console.log("🔍 Fetching favorites...");
+
       const res = await axios.get("/api/user/favorites");
+
+      console.log("✅ Favorites response:", res.data);
+
       if (res.data.success) {
-        // We need an action to set entire favorites, but toggleFavoriteSuccess is for one.
-        // Let's use updateUser to sync the whole array if needed,
-        // or just let the local state handle it for this page?
-        // No, best is to update Redux.
         dispatch({
           type: "auth/updateUser",
           payload: { favoriteGarages: res.data.favorites },
         });
       }
     } catch (error) {
-      console.error("Failed to fetch full favorites:", error);
+      console.error("❌ Failed to fetch full favorites:", error);
+      console.error("Error response:", error.response?.data);
+      console.error("Error status:", error.response?.status);
+
+      // Show user-friendly error
+      if (error.response?.status === 404) {
+        toast.error("User not found. Please try logging in again.");
+      } else if (error.response?.status === 401) {
+        toast.error("Session expired. Please login again.");
+        // Optionally redirect to login
+      } else {
+        toast.error("Failed to load favorites. Please refresh the page.");
+      }
     } finally {
       setLoading(false);
     }

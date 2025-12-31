@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
+import { rateLimitMiddleware } from "@/lib/utils/rateLimit";
 
 // Configure Cloudinary
 cloudinary.config({
@@ -9,6 +10,10 @@ cloudinary.config({
 });
 
 export async function POST(request) {
+  // Rate limiting: 20 uploads per hour to prevent storage abuse
+  const rateLimitResult = rateLimitMiddleware(request, 20, 60 * 60 * 1000);
+  if (rateLimitResult) return rateLimitResult;
+
   try {
     const formData = await request.formData();
     const file = formData.get("file");

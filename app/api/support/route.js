@@ -4,8 +4,13 @@ import { sendSupportTicketEmail } from "@/lib/utils/email";
 import User from "@/lib/db/models/User";
 import Subscription from "@/lib/db/models/Subscription";
 import { verifyToken } from "@/lib/utils/auth"; // Assuming auth helper exists
+import { rateLimitMiddleware } from "@/lib/utils/rateLimit";
 
 export async function POST(req) {
+  // Rate limiting: 5 support tickets per hour
+  const rateLimitResult = rateLimitMiddleware(req, 5, 60 * 60 * 1000);
+  if (rateLimitResult) return rateLimitResult;
+
   try {
     await connectDB();
 

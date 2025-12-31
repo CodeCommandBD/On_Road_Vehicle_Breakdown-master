@@ -4,9 +4,14 @@ import Payment from "@/lib/db/models/Payment";
 import Subscription from "@/lib/db/models/Subscription";
 import User from "@/lib/db/models/User";
 import Garage from "@/lib/db/models/Garage";
+import { rateLimitMiddleware } from "@/lib/utils/rateLimit";
 
 // IPN (Instant Payment Notification) - Server to server validation
 export async function POST(request) {
+  // Rate limiting: 50 requests per hour (webhooks need higher limit)
+  const rateLimitResult = rateLimitMiddleware(request, 50, 60 * 60 * 1000);
+  if (rateLimitResult) return rateLimitResult;
+
   try {
     await connectDB();
 

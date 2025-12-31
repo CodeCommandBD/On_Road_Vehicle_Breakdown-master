@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db/connect";
 import { sendSupportTicketEmail } from "@/lib/utils/email";
+import { rateLimitMiddleware } from "@/lib/utils/rateLimit";
 
 /**
  * POST /api/contact-sales
  * Handle enterprise sales inquiries
  */
 export async function POST(request) {
+  // Rate limiting: 3 messages per hour to prevent spam
+  const rateLimitResult = rateLimitMiddleware(request, 3, 60 * 60 * 1000);
+  if (rateLimitResult) return rateLimitResult;
+
   try {
     await connectDB();
     const body = await request.json();

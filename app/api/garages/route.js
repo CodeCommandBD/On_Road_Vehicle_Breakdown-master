@@ -2,8 +2,13 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db/connect";
 import Garage from "@/lib/db/models/Garage";
 import Service from "@/lib/db/models/Service";
+import { rateLimitMiddleware } from "@/lib/utils/rateLimit";
 
 export async function GET(request) {
+  // Rate limiting: 100 requests per minute for public data
+  const rateLimitResult = rateLimitMiddleware(request, 100, 60 * 1000);
+  if (rateLimitResult) return rateLimitResult;
+
   try {
     await dbConnect();
 

@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/utils/auth";
 import Booking from "@/lib/db/models/Booking";
 import Payment from "@/lib/db/models/Payment";
 import User from "@/lib/db/models/User";
+import { rateLimitMiddleware } from "@/lib/utils/rateLimit";
 import fs from "fs";
 import path from "path";
 
@@ -21,6 +22,10 @@ const logToFile = (message, data = null) => {
 };
 
 export async function POST(request) {
+  // Rate limiting: 10 payment initiations per hour
+  const rateLimitResult = rateLimitMiddleware(request, 10, 60 * 60 * 1000);
+  if (rateLimitResult) return rateLimitResult;
+
   try {
     await connectDB();
 

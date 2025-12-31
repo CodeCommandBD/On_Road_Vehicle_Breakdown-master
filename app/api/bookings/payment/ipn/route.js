@@ -3,8 +3,13 @@ import connectDB from "@/lib/db/connect";
 import Payment from "@/lib/db/models/Payment";
 import Booking from "@/lib/db/models/Booking";
 import Notification from "@/lib/db/models/Notification";
+import { rateLimitMiddleware } from "@/lib/utils/rateLimit";
 
 export async function POST(request) {
+  // Rate limiting: 50 requests per hour (webhooks need higher limit)
+  const rateLimitResult = rateLimitMiddleware(request, 50, 60 * 60 * 1000);
+  if (rateLimitResult) return rateLimitResult;
+
   try {
     await connectDB();
     const formData = await request.formData();

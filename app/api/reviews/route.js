@@ -4,8 +4,13 @@ import Review from "@/lib/db/models/Review";
 import Booking from "@/lib/db/models/Booking";
 import Garage from "@/lib/db/models/Garage"; // Ensure Garage model is registered for the post-save hook
 import { verifyToken } from "@/lib/utils/auth";
+import { rateLimitMiddleware } from "@/lib/utils/rateLimit";
 
 export async function POST(request) {
+  // Rate limiting: 10 reviews per hour to prevent fake reviews
+  const rateLimitResult = rateLimitMiddleware(request, 10, 60 * 60 * 1000);
+  if (rateLimitResult) return rateLimitResult;
+
   try {
     await connectDB();
 

@@ -480,6 +480,18 @@ export default function TeamManagementPage() {
   }
 
   if (organizations.length === 0) {
+    // Check if user is Enterprise Owner (can create)
+    const isEnterpriseOwner =
+      currentUser?.isEnterpriseOwner ||
+      (currentUser?.membershipTier === "enterprise" &&
+        !currentUser?.isTeamMember);
+
+    // Check if user is Enterprise Member (view only)
+    const isEnterpriseMember = currentUser?.isTeamMember;
+
+    // Normal user (needs upgrade)
+    const isNormalUser = !isEnterpriseOwner && !isEnterpriseMember;
+
     return (
       <div className="p-8">
         <div className="max-w-2xl mx-auto text-center">
@@ -487,15 +499,86 @@ export default function TeamManagementPage() {
           <h2 className="text-2xl font-bold text-white mb-2">
             No Organizations
           </h2>
-          <p className="text-gray-400 mb-6">
-            Create your first organization to start managing team members.
-          </p>
-          <button
-            onClick={() => router.push("/user/dashboard/team/create")}
-            className="btn-primary"
-          >
-            Create Organization
-          </button>
+
+          {/* Enterprise Owner - Can Create */}
+          {isEnterpriseOwner && (
+            <>
+              <p className="text-gray-400 mb-6">
+                Create your first organization to start managing team members.
+              </p>
+              <button
+                onClick={() => router.push("/user/dashboard/team/create")}
+                className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg transition-all"
+              >
+                Create Organization
+              </button>
+            </>
+          )}
+
+          {/* Enterprise Member - View Only */}
+          {isEnterpriseMember && (
+            <>
+              <p className="text-gray-400 mb-4">
+                You don't have access to any organizations yet.
+              </p>
+              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-6 mt-6">
+                <Lock className="w-8 h-8 text-yellow-500 mx-auto mb-3" />
+                <p className="text-yellow-500 font-semibold mb-2">
+                  Member Access Only
+                </p>
+                <p className="text-sm text-gray-400">
+                  As an Enterprise member, you can view organizations you're
+                  invited to, but only the organization owner can create new
+                  organizations.
+                </p>
+                <p className="text-xs text-gray-500 mt-3">
+                  Contact your organization owner to get invited.
+                </p>
+              </div>
+            </>
+          )}
+
+          {/* Normal User - Upgrade Required */}
+          {isNormalUser && (
+            <>
+              <p className="text-gray-400 mb-4">
+                Team Management is available on Premium and Enterprise plans.
+              </p>
+              <div className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-2xl p-8 mt-6">
+                <div className="bg-orange-500/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Lock className="w-8 h-8 text-orange-500" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">
+                  Unlock Team Management
+                </h3>
+                <p className="text-gray-400 mb-6 leading-relaxed">
+                  Collaborate with your team, assign roles, and track activity
+                  in real-time.
+                  <br />
+                  Manage your organization efficiently with advanced
+                  permissions.
+                </p>
+                <div className="grid grid-cols-2 gap-4 mb-6 text-left">
+                  <div className="bg-white/5 rounded-lg p-3">
+                    <p className="text-xs text-gray-500 mb-1">Premium Plan</p>
+                    <p className="text-white font-bold">Up to 50 members</p>
+                  </div>
+                  <div className="bg-white/5 rounded-lg p-3">
+                    <p className="text-xs text-gray-500 mb-1">
+                      Enterprise Plan
+                    </p>
+                    <p className="text-white font-bold">Unlimited members</p>
+                  </div>
+                </div>
+                <Link
+                  href="/pricing"
+                  className="inline-block px-8 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold hover:shadow-[0_0_20px_rgba(249,115,22,0.4)] transition-all transform hover:scale-105"
+                >
+                  View Pricing & Upgrade
+                </Link>
+              </div>
+            </>
+          )}
         </div>
       </div>
     );

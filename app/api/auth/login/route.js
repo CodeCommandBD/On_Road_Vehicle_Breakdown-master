@@ -23,31 +23,57 @@ export async function POST(request) {
     const { email, password } = validatedData;
     const { role } = body; // Optional role check
 
+    console.log("🔍 Login attempt - Email/Phone:", email);
+    console.log("🔍 Login attempt - Role filter:", role || "any");
+
     // Find user with password (support both email and phone)
     const user = await User.findOne({
       $or: [{ email: email }, { phone: email }],
     }).select("+password");
 
     if (!user) {
+      console.log("❌ Login failed - User not found:", email);
       throw new NotFoundError(MESSAGES.ERROR.INVALID_CREDENTIALS);
     }
 
+    console.log(
+      "✅ User found - ID:",
+      user._id,
+      "Role:",
+      user.role,
+      "Active:",
+      user.isActive
+    );
+
     // Check if user is active
     if (!user.isActive) {
+      console.log("❌ Login failed - Account inactive");
       throw new ForbiddenError("আপনার অ্যাকাউন্ট নিষ্ক্রিয় করা হয়েছে");
     }
 
     // Verify password
+    console.log("🔍 Verifying password...");
     const isPasswordValid = await user.comparePassword(password);
 
+    console.log("🔍 Password valid:", isPasswordValid);
+
     if (!isPasswordValid) {
+      console.log("❌ Login failed - Invalid password");
       throw new UnauthorizedError(MESSAGES.ERROR.INVALID_CREDENTIALS);
     }
 
     // Check role if specified
     if (role && user.role !== role) {
+      console.log(
+        "❌ Login failed - Role mismatch. Expected:",
+        role,
+        "Got:",
+        user.role
+      );
       throw new UnauthorizedError(`এই অ্যাকাউন্ট ${role} হিসাবে নিবন্ধিত নয়`);
     }
+
+    console.log("✅ Login successful - User:", user.email);
 
     // Update last login
     user.lastLogin = new Date();

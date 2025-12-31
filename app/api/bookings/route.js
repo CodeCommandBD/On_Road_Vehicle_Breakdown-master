@@ -6,11 +6,16 @@ import Service from "@/lib/db/models/Service";
 import Notification from "@/lib/db/models/Notification";
 import { triggerWebhook } from "@/lib/utils/webhook";
 import { BUSINESS } from "@/lib/utils/constants";
+import { rateLimitMiddleware } from "@/lib/utils/rateLimit";
 
 // Basic API route for creating bookings
 // Authentication details handled via searchParams or logic below
 
 export async function POST(req) {
+  // Rate limiting: 20 bookings per hour to prevent abuse
+  const rateLimitResult = rateLimitMiddleware(req, 20, 60 * 60 * 1000);
+  if (rateLimitResult) return rateLimitResult;
+
   try {
     await connectDB();
 

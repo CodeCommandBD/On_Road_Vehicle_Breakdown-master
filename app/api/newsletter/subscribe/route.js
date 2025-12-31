@@ -2,8 +2,13 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db/connect";
 import Newsletter from "@/lib/models/Newsletter";
 import { sendNewsletterConfirmation } from "@/lib/utils/email";
+import { rateLimitMiddleware } from "@/lib/utils/rateLimit";
 
 export async function POST(request) {
+  // Rate limiting: 5 subscriptions per 15 minutes to prevent spam
+  const rateLimitResult = rateLimitMiddleware(request, 5, 15 * 60 * 1000);
+  if (rateLimitResult) return rateLimitResult;
+
   try {
     await dbConnect();
 

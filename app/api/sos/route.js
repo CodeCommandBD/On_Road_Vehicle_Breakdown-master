@@ -21,8 +21,13 @@ import {
   triggerGlobalSOSWebhooks,
 } from "@/lib/utils/webhook";
 import mongoose from "mongoose";
+import { rateLimitMiddleware } from "@/lib/utils/rateLimit";
 
 export async function POST(request) {
+  // Rate limiting: 10 SOS calls per hour (emergency, but prevent abuse)
+  const rateLimitResult = rateLimitMiddleware(request, 10, 60 * 60 * 1000);
+  if (rateLimitResult) return rateLimitResult;
+
   try {
     await connectDB();
     const body = await request.json();
