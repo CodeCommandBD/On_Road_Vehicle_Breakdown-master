@@ -22,6 +22,7 @@ import {
   FileText,
   Car,
   ClipboardList,
+  Share2,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -116,6 +117,25 @@ export default function BookingDetailsPage() {
 
   const handleDownloadReceipt = () => {
     downloadReceiptPDF(booking);
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+      title: `Booking #${booking.bookingNumber}`,
+      text: `Track my vehicle repair at ${booking.garage?.name}.`,
+      url: window.location.href,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        console.error("Share failed", err);
+      }
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast.success("Link copied to clipboard!");
+    }
   };
 
   const handleConfirmReject = async () => {
@@ -415,6 +435,13 @@ export default function BookingDetailsPage() {
                     {booking.status.replace("_", " ")}
                   </span>
                 </div>
+                <button
+                  onClick={handleShare}
+                  className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full transition-colors font-medium ml-auto sm:ml-0"
+                >
+                  <Share2 className="w-4 h-4 text-blue-400" />
+                  <span>Share</span>
+                </button>
               </div>
             </div>
 

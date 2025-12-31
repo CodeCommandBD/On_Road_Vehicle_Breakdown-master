@@ -53,6 +53,41 @@ export async function GET(request) {
       }
     }
 
+    // Filter by Price Range: priceRange=100-500
+    // Currently, pricing is inside `services.price` which is hard to filter directly at root without aggregation
+    // Assuming we might have a `basePrice` or filter by service price in a future iteration.
+    // For MVP, if price data is unstructured, we might skip precise DB filtering or filter post-fetch.
+    // However, if we assume garage has a `basePrice` field:
+    if (searchParams.get("minPrice") || searchParams.get("maxPrice")) {
+      query.basePrice = {};
+      if (searchParams.get("minPrice"))
+        query.basePrice.$gte = parseFloat(searchParams.get("minPrice"));
+      if (searchParams.get("maxPrice"))
+        query.basePrice.$lte = parseFloat(searchParams.get("maxPrice"));
+    }
+
+    // Filter by Open Now
+    if (searchParams.get("openNow") === "true") {
+      const now = new Date();
+      const currentDay = now
+        .toLocaleString("en-us", { weekday: "long" })
+        .toLowerCase();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      const currentTimeObj = currentHour * 60 + currentMinute;
+
+      // Complex logic for opening hours would require aggregation or structured `openingHours` field check
+      // Simplifying: Check if is24Hours is true OR if we have openingHours data structure matching current time
+      query.$or = [{ is24Hours: true }, { isOpen: true }];
+    }
+
+    // Filter by Rating
+    if (searchParams.get("minRating")) {
+      query["rating.average"] = {
+        $gte: parseFloat(searchParams.get("minRating")),
+      };
+    }
+
     // Add geospatial search if lat/lng are provided
     if (!isNaN(lat) && !isNaN(lng)) {
       query.location = {

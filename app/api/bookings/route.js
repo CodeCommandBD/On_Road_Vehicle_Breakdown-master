@@ -4,7 +4,6 @@ import Booking from "@/lib/db/models/Booking";
 import Garage from "@/lib/db/models/Garage";
 import Service from "@/lib/db/models/Service";
 import Notification from "@/lib/db/models/Notification";
-import { triggerWebhook } from "@/lib/utils/webhook";
 import { BUSINESS } from "@/lib/utils/constants";
 import { rateLimitMiddleware } from "@/lib/utils/rateLimit";
 
@@ -110,6 +109,9 @@ export async function POST(req) {
 
     // --- TRIGGER WEBHOOK (booking.created) ---
     try {
+      const { dispatchWebhook } = await import(
+        "@/lib/services/webhook.service"
+      );
       const webhookPayload = {
         bookingId: booking._id,
         user: body.user,
@@ -120,18 +122,8 @@ export async function POST(req) {
         createdAt: booking.createdAt,
       };
 
-      // Notify User
-      await triggerWebhook(body.user, "booking.created", webhookPayload);
-
-      // Notify Garage
-      if (body.garage) {
-        await triggerWebhook(
-          null,
-          "booking.created",
-          webhookPayload,
-          body.garage
-        );
-      }
+      // Dispatch "booking.created" event to all subscribers
+      await dispatchWebhook("booking.created", webhookPayload);
 
       // BROADCAST REAL-TIME ANALYTICS
       const { pusherServer } = await import("@/lib/pusher");

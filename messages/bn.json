@@ -137,6 +137,18 @@
     "or": "অথবা",
     "not": "না"
   },
+  "Search": {
+    "title": "অনুসন্ধান করুন",
+    "placeholder": "খুঁজুন...",
+    "priceRange": "মূল্য সীমা (টাকা)",
+    "minRating": "ন্যূনতম রেটিং",
+    "openNow": "এখন খোলা",
+    "verifiedOnly": "শুধুমাত্র ভেরিফাইড",
+    "voiceSearch": "ভয়েস সার্চ",
+    "imageSearch": "ইমেজ সার্চ",
+    "searchPlaceholder": "নাম, সার্ভিস বা অবস্থান দিয়ে খুঁজুন...",
+    "filters": "ফিল্টার"
+  },
   "Home": {
     "hero": {
       "slide1Title": "অন-রোড ব্রেকডাউন সার্ভিস",

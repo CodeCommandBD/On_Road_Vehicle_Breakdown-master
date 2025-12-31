@@ -16,6 +16,18 @@
     "showing": "Showing {count} of {total} services",
     "phone": "Phone Number"
   },
+  "Search": {
+    "title": "Search",
+    "placeholder": "Search...",
+    "priceRange": "Price Range (BDT)",
+    "minRating": "Minimum Rating",
+    "openNow": "Open Now",
+    "verifiedOnly": "Verified Only",
+    "voiceSearch": "Voice Search",
+    "imageSearch": "Image Search",
+    "searchPlaceholder": "Search by name, service or location...",
+    "filters": "Filters"
+  },
   "Home": {
     "hero": {
       "slide1Title": "On-Road Breakdown Service",
