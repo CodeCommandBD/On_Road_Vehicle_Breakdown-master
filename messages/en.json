@@ -130,7 +130,8 @@
     "automation": "Automation",
     "reports": "Reports",
     "users": "Users",
-    "garages": "Garages"
+    "garages": "Garages",
+    "rewards": "Rewards"
   },
   "Garage": {
     "addService": "Add Service",
@@ -329,7 +330,21 @@
     "accountActiveDesc": "Keep your account active to receive dashboard updates",
     "verified": "Your garage is verified! You appear at the top of search results.",
     "pendingVerification": "Your garage is pending verification. Complete your profile to speed up the process.",
-    "saveChanges": "Save Changes"
+    "saveChanges": "Save Changes",
+    "Billing": {
+      "title": "Invoice History",
+      "loading": "Loading invoices...",
+      "invoiceNo": "Invoice #",
+      "date": "Date",
+      "amount": "Amount",
+      "status": "Status",
+      "actions": "Actions",
+      "sendEmail": "Send to Email",
+      "downloadPdf": "Download PDF",
+      "noInvoices": "No invoices found.",
+      "emailSent": "Invoice sent to your email!",
+      "emailFailed": "Failed to send email"
+    }
   },
   "Pricing": {
     "title": "Choose Your Perfect Plan",

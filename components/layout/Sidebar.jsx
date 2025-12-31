@@ -23,6 +23,7 @@ import {
   Heart,
   Zap,
   Home,
+  Gift,
 } from "lucide-react";
 import {
   selectSidebarOpen,
@@ -94,6 +95,11 @@ export default function Sidebar() {
         href: "/user/dashboard/automation",
         label: t("automation") || "Automation",
         icon: Activity,
+      },
+      {
+        href: "/user/dashboard/rewards",
+        label: t("rewards") || "Rewards",
+        icon: Gift,
       },
       { href: "/user/dashboard/profile", label: t("profile"), icon: User },
       {

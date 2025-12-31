@@ -151,6 +151,34 @@ export async function POST(request) {
         });
 
         console.log("Invoice auto-generated:", invoice.invoiceNumber);
+
+        // Send Invoice Email
+        try {
+          const { generateInvoicePDF } = await import(
+            "@/lib/utils/invoiceGenerator"
+          );
+          const { sendEmail } = await import("@/lib/utils/email");
+          const pdfBuffer = await generateInvoicePDF(invoice);
+
+          await sendEmail({
+            to: user.email,
+            subject: `Invoice #${invoice.invoiceNumber} from On-Road Help`,
+            html: `
+                <h1>Thank you for your payment!</h1>
+                <p>Your invoice #${invoice.invoiceNumber} for <strong>${plan.name}</strong> is attached.</p>
+                <p>Total Paid: ${invoice.total} ${invoice.currency}</p>
+              `,
+            attachments: [
+              {
+                filename: `Invoice-${invoice.invoiceNumber}.pdf`,
+                content: pdfBuffer,
+              },
+            ],
+          });
+          console.log("Invoice email sent to:", user.email);
+        } catch (emailErr) {
+          console.error("Failed to send invoice email:", emailErr);
+        }
       } catch (invoiceError) {
         console.error("Invoice generation failed:", invoiceError);
         // Don't fail payment if invoice fails - just log

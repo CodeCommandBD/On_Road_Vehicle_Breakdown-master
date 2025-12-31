@@ -15,9 +15,12 @@ import {
   CheckCircle2,
   AlertTriangle,
   FileText,
+  CreditCard,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useTranslations } from "next-intl";
+
+import InvoiceHistory from "@/components/settings/InvoiceHistory";
 
 export default function SettingsPage() {
   const t = useTranslations("Settings");
@@ -116,6 +119,7 @@ export default function SettingsPage() {
   const tabs = [
     { id: "security", label: t("security"), icon: Lock },
     { id: "notifications", label: t("notifications"), icon: Bell },
+    { id: "billing", label: "Billing & Invoices", icon: CreditCard },
     { id: "account", label: t("account"), icon: Shield },
   ];
 
@@ -313,6 +317,12 @@ export default function SettingsPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {activeTab === "billing" && (
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <InvoiceHistory />
               </div>
             )}
 
