@@ -1,12 +1,15 @@
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../globals.css";
+import "@/sentry.client.config.js";
 import StoreProvider from "@/store/provider";
 import NotificationListener from "@/components/providers/NotificationListener";
 import PWAInstallPrompt from "@/components/common/PWAInstallPrompt";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { routing } from "@/i18n/routing";
+import "@/sentry.client.config.js";
+import SentryInitializer from "@/components/providers/SentryInitializer";
 import { notFound } from "next/navigation";
 
 export const metadata = {
@@ -49,6 +52,7 @@ export default async function RootLayout({ children, params }) {
       <body className={`font-sans antialiased bg-[#020617]`}>
         <NextIntlClientProvider messages={messages}>
           <StoreProvider>
+            <SentryInitializer />
             {children}
             <NotificationListener />
             <PWAInstallPrompt />

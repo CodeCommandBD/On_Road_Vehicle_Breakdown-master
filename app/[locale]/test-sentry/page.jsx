@@ -1,10 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import * as Sentry from "@sentry/nextjs";
 
 export default function TestSentry() {
   const [message, setMessage] = useState("");
+
+  // Expose Sentry to window for debugging
+  // useEffect(() => {
+  //   if (typeof window !== "undefined") {
+  //     window.Sentry = Sentry;
+  //     console.log("✅ (Component) Sentry exposed to window.Sentry");
+  //   }
+  // }, []);
 
   const triggerError = () => {
     try {
@@ -40,6 +48,10 @@ export default function TestSentry() {
     setMessage("Message sent to Sentry!");
   };
 
+  const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
+  const env = process.env.NODE_ENV;
+  const isSentryInitialized = Sentry.isInitialized();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-500 to-pink-500 p-8">
       <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-2xl p-8">
@@ -49,6 +61,21 @@ export default function TestSentry() {
         <p className="text-gray-600 mb-8">
           Test your Sentry integration by triggering errors
         </p>
+
+        <div className="mb-6 p-4 bg-gray-100 rounded text-sm text-gray-700 font-mono">
+          <p>
+            <strong>Status:</strong>{" "}
+            {isSentryInitialized ? "✅ Initialized" : "❌ Not Initialized"}
+          </p>
+          <p>
+            <strong>Environment:</strong> {env}
+          </p>
+          <p>
+            <strong>DSN Found:</strong>{" "}
+            {dsn ? "✅ Yes" : "❌ No (Check .env.local)"}
+          </p>
+          {dsn && <p className="text-xs text-gray-500 mt-1 break-all">{dsn}</p>}
+        </div>
 
         {message && (
           <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded">
