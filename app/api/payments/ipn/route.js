@@ -33,10 +33,47 @@ export async function POST(request) {
       );
     }
 
-    // TODO: For production, you must implement the hash validation using the store password
-    // const crypto = require('crypto');
-    // const store_passwd = process.env.STORE_PASSWD;
-    // ... calculate hash ...
+    // Hash Validation for Security (Prevents Payment Fraud)
+    // SSLCommerz sends a verify_sign which is MD5 hash of specific parameters
+    const verify_sign = data.verify_sign;
+    const verify_key = data.verify_key;
+
+    if (verify_sign && verify_key) {
+      // Import crypto for hash validation
+      const crypto = await import("crypto");
+      const storePassword = process.env.SSLCOMMERZ_STORE_PASSWORD;
+
+      // Create verification string as per SSLCommerz documentation
+      // Format: store_passwd + tran_id + amount + currency
+      const verificationString = `${storePassword}${tran_id}${data.amount}${data.currency_type}${status}`;
+
+      // Calculate MD5 hash
+      const calculatedHash = crypto
+        .createHash("md5")
+        .update(verificationString)
+        .digest("hex");
+
+      // Compare hashes
+      if (calculatedHash.toUpperCase() !== verify_sign.toUpperCase()) {
+        console.error("IPN: Hash validation failed - Possible fraud attempt!");
+        console.error("Expected:", calculatedHash);
+        console.error("Received:", verify_sign);
+
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Hash validation failed",
+          },
+          { status: 403 }
+        );
+      }
+
+      console.log("✅ IPN: Hash validation successful");
+    } else {
+      console.warn(
+        "⚠️ IPN: No verify_sign found - Hash validation skipped (sandbox mode)"
+      );
+    }
 
     // Find payment
     const payment = await Payment.findById(value_a);

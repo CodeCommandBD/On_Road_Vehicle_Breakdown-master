@@ -4,6 +4,7 @@ import Notification from "@/lib/db/models/Notification";
 import User from "@/lib/db/models/User";
 import { verifyToken } from "@/lib/utils/auth";
 import Garage from "@/lib/db/models/Garage";
+import { sendMechanicSOSEmail } from "@/lib/utils/email";
 
 export async function POST(request) {
   try {
@@ -28,15 +29,15 @@ export async function POST(request) {
       );
     }
 
-    const garage = await Garage.findById(mechanic.garageId);
+    const garage = await Garage.findById(mechanic.garageId).populate("owner");
 
     // Create Critical Notification for Garage Owner
     await Notification.create({
-      recipient: garage.owner,
-      type: "system_alert", // Could be 'sos_alert' if allowed, sticking to enum
+      recipient: garage.owner._id,
+      type: "system_alert",
       title: "🚨 SOS ALERT: Mechanic in Danger",
       message: `${mechanic.name} has triggered an emergency SOS!`,
-      link: `/garage/dashboard/team`, // Or a specific map view
+      link: `/garage/dashboard/team`,
       metadata: {
         coordinates: location,
         type: "sos",
@@ -45,11 +46,26 @@ export async function POST(request) {
       isRead: false,
     });
 
-    // TODO: Integrate SMS/Twilio here for real-world urgency
+    // Send Email notification to Garage Owner
+    const emailResult = await sendMechanicSOSEmail({
+      to: garage.owner.email,
+      mechanicName: mechanic.name,
+      location: location,
+      garageOwnerName: garage.owner.name,
+      mechanicPhone: mechanic.phone,
+    });
+
+    // Log email result (success or failure)
+    if (emailResult.success) {
+      console.log(`✅ SOS email sent to garage owner: ${garage.owner.email}`);
+    } else {
+      console.error(`❌ Failed to send SOS email: ${emailResult.error}`);
+    }
 
     return NextResponse.json({
       success: true,
       message: "SOS Alert Sent!",
+      emailStatus: emailResult.success ? "sent" : "failed",
     });
   } catch (error) {
     console.error("SOS API Error:", error);
