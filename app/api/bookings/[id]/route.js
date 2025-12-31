@@ -18,6 +18,7 @@ import {
 } from "@/lib/utils/errorHandler";
 import { successResponse } from "@/lib/utils/apiResponse";
 import { MESSAGES } from "@/lib/utils/constants";
+import { processAutomatedRefund } from "@/lib/utils/refund";
 
 /**
  * GET /api/bookings/[id]
@@ -224,6 +225,18 @@ export async function PATCH(request, { params }) {
           booking.cancellationReason =
             booking.cancellationReason || "Cancelled after service started";
         }
+
+        // Process automated refund
+        try {
+          const refundResult = await processAutomatedRefund(
+            booking._id,
+            currentUser.userId
+          );
+          console.log("Automated refund result:", refundResult);
+        } catch (refundError) {
+          console.error("Automated refund failed:", refundError);
+          // Don't fail the cancellation if refund fails
+        }
       }
     }
     if (actualCost !== undefined) booking.actualCost = actualCost;
@@ -345,6 +358,18 @@ export async function DELETE(request, { params }) {
     booking.cancelledAt = new Date();
     booking.cancellationReason = "Deleted by user/admin";
     await booking.save();
+
+    // Process automated refund
+    try {
+      const refundResult = await processAutomatedRefund(
+        booking._id,
+        currentUser.userId
+      );
+      console.log("Automated refund result:", refundResult);
+    } catch (refundError) {
+      console.error("Automated refund failed:", refundError);
+      // Don't fail the cancellation if refund fails
+    }
 
     // Notify garage if assigned
     if (booking.garage) {
