@@ -3,6 +3,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "../globals.css";
 import "@/sentry.client.config.js";
 import StoreProvider from "@/store/provider";
+import SessionProvider from "@/providers/SessionProvider";
 import NotificationListener from "@/components/providers/NotificationListener";
 import PWAInstallPrompt from "@/components/common/PWAInstallPrompt";
 import { NextIntlClientProvider } from "next-intl";
@@ -51,13 +52,15 @@ export default async function RootLayout({ children, params }) {
     <html lang={locale} className="scroll-smooth">
       <body className={`font-sans antialiased bg-[#020617]`}>
         <NextIntlClientProvider messages={messages}>
-          <StoreProvider>
-            <SentryInitializer />
-            {children}
-            <NotificationListener />
-            <PWAInstallPrompt />
-            <ToastContainer position="bottom-right" theme="colored" />
-          </StoreProvider>
+          <SessionProvider>
+            <StoreProvider>
+              <SentryInitializer />
+              {children}
+              <NotificationListener />
+              <PWAInstallPrompt />
+              <ToastContainer position="bottom-right" theme="colored" />
+            </StoreProvider>
+          </SessionProvider>
         </NextIntlClientProvider>
       </body>
     </html>

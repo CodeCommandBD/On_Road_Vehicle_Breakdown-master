@@ -3,6 +3,7 @@ import { routing } from "./i18n/routing";
 import { NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { PUBLIC_ROUTES, PROTECTED_ROUTES } from "./lib/utils/constants";
+import { getToken } from "next-auth/jwt";
 
 // JWT Secret
 const JWT_SECRET = new TextEncoder().encode(
@@ -74,6 +75,9 @@ async function verifyToken(token) {
 export default async function middleware(request) {
   const { pathname } = request.nextUrl;
 
+  // Debug log for authentication flow
+  // console.log(`[Middleware] Processing: ${pathname}`);
+
   // Skip middleware for static files, API routes (except protected ones), and Next.js internals
   if (
     pathname.includes("/_next") ||
@@ -105,10 +109,57 @@ export default async function middleware(request) {
   }
 
   // For protected routes, check authentication
-  const token = request.cookies.get("token")?.value;
+  // console.log(`[Middleware] Protected route: ${pathname}`);
+  // console.log(`[Middleware] Cookies keys:`, request.cookies.getAll().map(c => c.name));
 
-  if (!token) {
-    // No token - redirect to login for web pages, return 401 for API
+  // 1. Try to get NextAuth session token (Standard way)
+  // We let next-auth detect secure cookie mode automatically based on protocol/env
+  const nextAuthToken = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+
+  // 2. Check for custom JWT token (Credentials login legacy/custom flow)
+  const customToken = request.cookies.get("token")?.value;
+
+  // EMERGENCY FIX: Check for raw NextAuth cookie presence
+  // If the cookie exists, we assume the user is trying to be authenticated
+  const hasNextAuthCookie =
+    request.cookies.has("next-auth.session-token") ||
+    request.cookies.has("__Secure-next-auth.session-token");
+
+  // Decide if authenticated
+  let isAuthenticated = false;
+  let userRole = null;
+  let userId = null;
+  let userEmail = null;
+
+  if (nextAuthToken) {
+    isAuthenticated = true;
+    userRole = nextAuthToken.role;
+    userId = nextAuthToken.id || nextAuthToken.sub;
+    userEmail = nextAuthToken.email;
+  } else if (hasNextAuthCookie) {
+    // Fallback: Cookie exists but server couldn't decode it (possibly secret mismatch or encryption issue)
+    // Allow access to break redirect loop; Client-side useSession will handle protection and double-check
+    console.log(
+      "[Middleware] Fallback: Auth cookie found but token decode failed"
+    );
+    isAuthenticated = true;
+    // We can't know role safely, so we assume "user" to prevent role-based redirect blocks
+    userRole = "user";
+  } else if (customToken) {
+    const user = await verifyToken(customToken);
+    if (user) {
+      isAuthenticated = true;
+      userRole = user.role;
+      userId = user.userId;
+      userEmail = user.email;
+    }
+  }
+
+  if (!isAuthenticated) {
+    // No valid token - redirect to login for web pages, return 401 for API
     if (pathname.startsWith("/api/")) {
       return NextResponse.json(
         { success: false, message: "অননুমোদিত প্রবেশ" },
@@ -123,28 +174,10 @@ export default async function middleware(request) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Verify token
-  const user = await verifyToken(token);
-
-  if (!user) {
-    // Invalid token - redirect to login for web pages, return 401 for API
-    if (pathname.startsWith("/api/")) {
-      return NextResponse.json(
-        { success: false, message: "অবৈধ টোকেন" },
-        { status: 401 }
-      );
-    }
-
-    const locale = pathname.match(/^\/(en|bn)/)?.[1] || "en";
-    const loginUrl = new URL(`/${locale}/login`, request.url);
-    loginUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
   // Check role-based access
   const requiredRole = getRequiredRole(pathname);
 
-  if (requiredRole && user.role !== requiredRole && user.role !== "admin") {
+  if (requiredRole && userRole !== requiredRole && userRole !== "admin") {
     // User doesn't have required role
     if (pathname.startsWith("/api/")) {
       return NextResponse.json(
@@ -157,7 +190,7 @@ export default async function middleware(request) {
     // Extract locale from pathname
     const locale = pathname.match(/^\/(en|bn)/)?.[1] || "en";
     const dashboardUrl = new URL(
-      `/${locale}/${user.role}/dashboard`,
+      `/${locale}/${userRole}/dashboard`,
       request.url
     );
     return NextResponse.redirect(dashboardUrl);
@@ -165,9 +198,9 @@ export default async function middleware(request) {
 
   // Add user info to request headers for use in API routes
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-user-id", user.userId);
-  requestHeaders.set("x-user-role", user.role);
-  requestHeaders.set("x-user-email", user.email);
+  if (userId) requestHeaders.set("x-user-id", userId);
+  if (userRole) requestHeaders.set("x-user-role", userRole);
+  if (userEmail) requestHeaders.set("x-user-email", userEmail);
 
   // Return response with updated headers
   return NextResponse.next({

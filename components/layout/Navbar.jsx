@@ -5,11 +5,13 @@ import { Link } from "@/i18n/routing";
 import Image from "next/image";
 import { useSelector, useDispatch } from "react-redux";
 import { useRouter, usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import {
   logout,
   selectIsAuthenticated,
   selectUser,
   selectUserRole,
+  loginSuccess,
 } from "@/store/slices/authSlice";
 import {
   selectUnreadNotificationsCount,
@@ -55,10 +57,18 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const isAuthenticated = useSelector(selectIsAuthenticated);
-  const user = useSelector(selectUser);
+  // NextAuth session
+  const { data: session, status } = useSession();
+
+  // Redux state
+  const isAuthenticatedRedux = useSelector(selectIsAuthenticated);
+  const userRedux = useSelector(selectUser);
   const userRole = useSelector(selectUserRole);
   const unreadCount = useSelector(selectUnreadNotificationsCount);
+
+  // Combine NextAuth session with Redux state
+  const isAuthenticated = status === "authenticated" || isAuthenticatedRedux;
+  const user = session?.user || userRedux;
 
   // Fetch Services on Mount
   useEffect(() => {
@@ -113,8 +123,11 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      // Sign out from NextAuth (for OAuth users)
+      await signOut({ redirect: false });
+      // Clear Redux store (for credentials users)
       dispatch(logout());
+      // Redirect to home
       router.push("/");
     } catch (error) {
       console.error("Logout failed:", error);
