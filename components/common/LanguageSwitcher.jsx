@@ -3,6 +3,7 @@
 import { useLocale } from "next-intl";
 import { Globe, Check } from "lucide-react";
 import { useState } from "react";
+import { setStoredLocale } from "@/lib/i18n/localeStorage";
 
 export default function LanguageSwitcher() {
   const locale = useLocale();
@@ -18,6 +19,9 @@ export default function LanguageSwitcher() {
     if (newLocale === locale) return;
 
     try {
+      // Save locale preference to localStorage
+      setStoredLocale(newLocale);
+
       // Get current path and query
       const currentPath = window.location.pathname;
       const currentSearch = window.location.search;
