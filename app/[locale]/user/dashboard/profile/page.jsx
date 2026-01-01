@@ -24,6 +24,7 @@ import axios from "axios";
 import PasswordChangeModal from "@/components/profile/PasswordChangeModal";
 import ImageUpload from "@/components/common/ImageUpload";
 import { useTranslations } from "next-intl";
+import UserBadge from "@/components/common/UserBadge";
 
 // Dynamically import MapComponent to avoid SSR issues
 const MapComponent = dynamic(() => import("@/components/maps/MapComponent"), {
@@ -393,64 +394,47 @@ export default function ProfilePage() {
               </h2>
               <p className="text-white/60 mt-1">{user.email}</p>
             </div>
-            <div className="flex items-center gap-3">
-              <div
-                className={`px-4 py-2 rounded-xl bg-gradient-to-r ${
-                  user.membershipExpiry &&
-                  new Date(user.membershipExpiry) < new Date()
-                    ? "from-red-500 to-red-600"
-                    : getMembershipColor(user.membershipTier)
-                } text-white font-semibold flex flex-col items-center gap-0.5`}
-              >
-                <div className="flex items-center gap-2">
-                  <Award className="w-4 h-4" />
-                  {user.membershipExpiry &&
-                  new Date(user.membershipExpiry) < new Date()
-                    ? "EXPIRED"
-                    : user.isEnterpriseOwner ||
-                      (user.enterpriseTeam &&
-                        (user.enterpriseTeam.isOwner ||
-                          user.enterpriseTeam.role === "owner"))
-                    ? "ENTERPRISE Owner"
-                    : user.isTeamMember
-                    ? "ENTERPRISE Member"
-                    : `${user.membershipTier?.toUpperCase() || "FREE"} ${t(
-                        "member"
-                      )}`}
-                </div>
-                {user.membershipExpiry && (
-                  <span className="text-[10px] opacity-80">
-                    {new Date(user.membershipExpiry) < new Date() ? (
-                      `Expired on: ${new Date(
-                        user.membershipExpiry
-                      ).toLocaleDateString()}`
-                    ) : (
-                      <>
-                        Renews on:{" "}
-                        {new Date(user.membershipExpiry).toLocaleDateString()}
-                        <span className="ml-1 font-extrabold text-orange-300">
-                          (
-                          {Math.ceil(
-                            (new Date(user.membershipExpiry) - new Date()) /
-                              (1000 * 60 * 60 * 24)
-                          )}{" "}
-                          days left)
-                        </span>
-                      </>
-                    )}
-                  </span>
-                )}
-              </div>
-              {!isEditing && (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl flex items-center gap-2 transition-colors border border-white/20"
+            <div className="flex flex-col items-end gap-2">
+              <UserBadge user={user} />
+
+              {user.membershipExpiry && (
+                <span
+                  className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                    new Date(user.membershipExpiry) < new Date()
+                      ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                      : "bg-green-500/20 text-green-400 border border-green-500/30"
+                  }`}
                 >
-                  <Edit2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">{t("edit")}</span>
-                </button>
+                  {new Date(user.membershipExpiry) < new Date() ? (
+                    `Expired on: ${new Date(
+                      user.membershipExpiry
+                    ).toLocaleDateString()}`
+                  ) : (
+                    <>
+                      Renews:{" "}
+                      {new Date(user.membershipExpiry).toLocaleDateString()}
+                      <span className="ml-1 opacity-75">
+                        (
+                        {Math.ceil(
+                          (new Date(user.membershipExpiry) - new Date()) /
+                            (1000 * 60 * 60 * 24)
+                        )}
+                        d left)
+                      </span>
+                    </>
+                  )}
+                </span>
               )}
             </div>
+            {!isEditing && (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl flex items-center gap-2 transition-colors border border-white/20"
+              >
+                <Edit2 className="w-4 h-4" />
+                <span className="hidden sm:inline">{t("edit")}</span>
+              </button>
+            )}
           </div>
 
           {/* Quick Stats */}

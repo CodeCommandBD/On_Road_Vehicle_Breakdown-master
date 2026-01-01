@@ -45,6 +45,22 @@ export async function GET(request) {
       }
     }
 
+    // Check for Enterprise Role (Member/Admin/Viewer)
+    if (user.enterpriseTeam?.parentAccount) {
+      const parentUser = await User.findById(
+        user.enterpriseTeam.parentAccount
+      ).select("enterpriseTeam.members");
+
+      if (parentUser) {
+        const memberRecord = parentUser.enterpriseTeam.members.find(
+          (m) => m.userId.toString() === user._id.toString()
+        );
+        if (memberRecord) {
+          profileData.enterpriseRole = memberRecord.role; // "admin", "member", or "viewer"
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       user: profileData,

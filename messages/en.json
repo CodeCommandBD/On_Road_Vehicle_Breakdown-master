@@ -14,7 +14,18 @@
     "noNotifications": "No notifications yet",
     "adjustSearch": "Try adjusting your search or filter",
     "showing": "Showing {count} of {total} services",
-    "phone": "Phone Number"
+    "phone": "Phone Number",
+    "systemAdmin": "SYSTEM ADMIN",
+    "enterpriseOwner": "ENTERPRISE OWNER",
+    "enterpriseAdmin": "ENTERPRISE ADMIN",
+    "enterpriseMember": "ENTERPRISE MEMBER",
+    "enterpriseViewer": "ENTERPRISE VIEWER",
+    "premiumMember": "PREMIUM MEMBER",
+    "standardMember": "STANDARD MEMBER",
+    "freeMember": "FREE MEMBER",
+    "garagePro": "GARAGE PRO",
+    "garageBasic": "GARAGE BASIC",
+    "mechanic": "MECHANIC"
   },
   "Search": {
     "title": "Search",
