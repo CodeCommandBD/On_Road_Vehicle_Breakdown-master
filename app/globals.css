@@ -1,4 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap");
 @import "tailwindcss";
 
 @theme {
@@ -48,7 +47,7 @@
   --radius-full: 9999px;
 
   /* Font Family */
-  --font-sans: "Inter", Avenir, Helvetica, Arial, sans-serif;
+  --font-sans: var(--font-inter), "Inter", Avenir, Helvetica, Arial, sans-serif;
 
   /* Animations */
   --animate-wave: wave 0.3s ease-in-out forwards;

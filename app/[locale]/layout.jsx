@@ -13,6 +13,17 @@ import "@/sentry.client.config.js";
 import SentryInitializer from "@/components/providers/SentryInitializer";
 import { notFound } from "next/navigation";
 import { CsrfProvider } from "@/lib/context/CsrfContext";
+import { Inter } from "next/font/google";
+import LanguageAlternates from "@/components/seo/LanguageAlternates";
+
+// Configure Inter font
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+  preload: true,
+  fallback: ["system-ui", "arial"],
+});
 
 export const metadata = {
   title: {
@@ -69,7 +80,10 @@ export default async function RootLayout({ children, params }) {
   const messages = await getMessages();
 
   return (
-    <html lang={locale} className="scroll-smooth">
+    <html lang={locale} className={`scroll-smooth ${inter.variable}`}>
+      <head>
+        <LanguageAlternates />
+      </head>
       <body className={`font-sans antialiased bg-[#020617]`}>
         <NextIntlClientProvider messages={messages}>
           <CsrfProvider>

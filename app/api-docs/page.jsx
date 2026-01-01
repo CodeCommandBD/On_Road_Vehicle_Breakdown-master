@@ -1,14 +1,14 @@
+```javascript
 "use client";
 
-import dynamic from "next/dynamic";
-import "swagger-ui-react/swagger-ui.css";
+import { LazySwaggerUI } from "@/components/lazy";
+import { getApiDocs } from "@/lib/swagger";
 
-const SwaggerUI = dynamic(() => import("swagger-ui-react"), { ssr: false });
-
-export default function ApiDocPage() {
+export default function ApiDoc() {
   return (
-    <div className="bg-white min-h-screen">
-      <SwaggerUI url="/api/doc" />
-    </div>
+    <section className="container mx-auto py-10">
+      <LazySwaggerUI spec={getApiDocs()} />
+    </section>
   );
 }
+```;
