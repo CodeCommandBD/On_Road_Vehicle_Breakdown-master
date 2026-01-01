@@ -6,6 +6,7 @@ import RevenueMetrics from "@/lib/db/models/RevenueMetrics";
 import User from "@/lib/db/models/User";
 import Subscription from "@/lib/db/models/Subscription";
 import Booking from "@/lib/db/models/Booking";
+import Diagnosis from "@/lib/db/models/Diagnosis";
 
 /**
  * GET /api/analytics/revenue
@@ -286,10 +287,63 @@ async function calculateCurrentMetrics() {
     },
   ]);
 
+  // Calculate AI Diagnose Revenue
+  const aiDiagnoses = await Diagnosis.find({
+    createdAt: { $gte: firstDayOfMonth },
+    isPaid: true,
+  });
+
+  const aiDiagnoseRevenue = aiDiagnoses.reduce((sum, diagnosis) => {
+    return sum + (diagnosis.pricePaid || 0);
+  }, 0);
+
+  // Calculate Subscription Expansion MRR (upgrades)
+  const expansions = await Subscription.find({
+    updatedAt: { $gte: firstDayOfMonth },
+    planHistory: { $exists: true, $ne: [] },
+  }).populate("planId previousPlanId");
+
+  let expansionMrr = 0;
+  for (const sub of expansions) {
+    // Check if there's a plan change this month
+    const recentChanges = sub.planHistory.filter(
+      (change) =>
+        change.changedAt >= firstDayOfMonth && change.changeType === "upgrade"
+    );
+
+    if (recentChanges.length > 0) {
+      const currentPrice = sub.planId?.price || 0;
+      const previousPrice = sub.previousPlanId?.price || 0;
+      const priceDiff = currentPrice - previousPrice;
+      if (priceDiff > 0) {
+        expansionMrr += priceDiff;
+      }
+    }
+  }
+
+  // Calculate Subscription Contraction MRR (downgrades)
+  let contractionMrr = 0;
+  for (const sub of expansions) {
+    // Check for downgrades this month
+    const recentDowngrades = sub.planHistory.filter(
+      (change) =>
+        change.changedAt >= firstDayOfMonth && change.changeType === "downgrade"
+    );
+
+    if (recentDowngrades.length > 0) {
+      const currentPrice = sub.planId?.price || 0;
+      const previousPrice = sub.previousPlanId?.price || 0;
+      const priceDiff = previousPrice - currentPrice;
+      if (priceDiff > 0) {
+        contractionMrr += priceDiff;
+      }
+    }
+  }
+
   const revenueBySource = {
     subscriptions: mrrTotal,
     bookings: bookingRevenue[0]?.total || 0,
-    aiDiagnose: 0, // TODO: Add AI diagnose revenue tracking
+    aiDiagnose: Math.round(aiDiagnoseRevenue), // ✅ Implemented: AI diagnosis revenue tracking
     other: 0,
   };
 
@@ -303,8 +357,8 @@ async function calculateCurrentMetrics() {
     mrr: {
       total: Math.round(mrrTotal),
       new: Math.round(mrrNew),
-      expansion: 0, // TODO: Track upgrades (requires planHistory in Subscription model)
-      contraction: 0, // TODO: Track downgrades (requires planHistory in Subscription model)
+      expansion: Math.round(expansionMrr), // ✅ Implemented: Revenue from plan upgrades
+      contraction: Math.round(contractionMrr), // ✅ Implemented: Revenue lost from plan downgrades
       churn: Math.round(churnedMrr), // ✅ Implemented: Revenue lost from cancelled subscriptions
       growth: Math.round(mrrGrowth * 100) / 100,
     },

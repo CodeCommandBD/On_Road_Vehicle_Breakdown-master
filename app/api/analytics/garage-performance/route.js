@@ -430,8 +430,12 @@ async function calculateGaragePerformance(garageId, period = "monthly") {
     },
     ranking: {
       overall: ranking || 0,
-      inCity: 0, // TODO: Calculate city-specific ranking
-      inCategory: 0, // TODO: Calculate category ranking
+      inCity: await calculateCityRanking(garageId, period, overallScore), // ✅ Implemented: Ranking within same city
+      inCategory: await calculateCategoryRanking(
+        garageId,
+        period,
+        overallScore
+      ), // ✅ Implemented: Ranking within same category
       totalGarages: allGarages.length,
     },
     trends: {
@@ -588,4 +592,233 @@ function calculateNPS(reviews) {
       : 0;
 
   return npsScore;
+}
+
+/**
+ * Calculate average service time from OTP timestamps
+ * @param {Array} bookings - Array of booking objects
+ * @returns {Promise<number>} Average service time in hours
+ */
+async function calculateAvgServiceTime(bookings) {
+  try {
+    // Filter bookings with both start and completion OTP verified
+    const completedWithOTP = bookings.filter(
+      (b) =>
+        b.status === "completed" &&
+        b.startOTP?.verifiedAt &&
+        b.completionOTP?.verifiedAt
+    );
+
+    if (completedWithOTP.length === 0) return 0;
+
+    // Calculate service time for each booking
+    let totalServiceTime = 0;
+    for (const booking of completedWithOTP) {
+      const serviceTime =
+        booking.completionOTP.verifiedAt - booking.startOTP.verifiedAt;
+      totalServiceTime += serviceTime;
+    }
+
+    // Return average in hours (rounded to 1 decimal)
+    const avgServiceTime =
+      totalServiceTime / completedWithOTP.length / 1000 / 60 / 60;
+    return Math.round(avgServiceTime * 10) / 10;
+  } catch (error) {
+    console.error("Error calculating avg service time:", error);
+    return 0;
+  }
+}
+
+/**
+ * Calculate first-time fix rate
+ * Percentage of services where customer didn't return within 7 days
+ * @param {string} garageId - Garage ID
+ * @param {Date} startDate - Start date for period
+ * @returns {Promise<number>} First-time fix rate percentage
+ */
+async function calculateFirstTimeFixRate(garageId, startDate) {
+  try {
+    // Get all completed bookings in this period
+    const completedBookings = await Booking.find({
+      garage: garageId,
+      status: "completed",
+      createdAt: { $gte: startDate },
+    }).select("user completedAt");
+
+    if (completedBookings.length === 0) return 0;
+
+    let firstTimeFixes = 0;
+
+    // Check each booking for return visits
+    for (const booking of completedBookings) {
+      const completedDate = booking.completedAt || booking.updatedAt;
+      const sevenDaysLater = new Date(completedDate);
+      sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
+
+      // Check if same user returned within 7 days
+      const returnVisit = await Booking.findOne({
+        garage: garageId,
+        user: booking.user,
+        createdAt: {
+          $gt: completedDate,
+          $lte: sevenDaysLater,
+        },
+      });
+
+      // If no return visit, it's a first-time fix
+      if (!returnVisit) {
+        firstTimeFixes++;
+      }
+    }
+
+    // Calculate percentage
+    const ftfRate = (firstTimeFixes / completedBookings.length) * 100;
+    return Math.round(ftfRate * 100) / 100;
+  } catch (error) {
+    console.error("Error calculating first-time fix rate:", error);
+    return 0;
+  }
+}
+
+/**
+ * Calculate team utilization rate
+ * Percentage of available hours actually used for service
+ * @param {string} garageId - Garage ID
+ * @param {Array} bookings - Array of booking objects
+ * @returns {Promise<number>} Utilization rate percentage
+ */
+async function calculateUtilizationRate(garageId, bookings) {
+  try {
+    // Get garage to find team size
+    const garage = await Garage.findById(garageId).select("teamMembers");
+    if (!garage) return 0;
+
+    // Assume team size (if teamMembers field exists, use it; otherwise estimate)
+    const teamSize = garage.teamMembers?.length || 3; // Default 3 mechanics
+
+    // Calculate available hours
+    // Assumptions: 8 hours/day, 26 working days/month
+    const workingDaysPerMonth = 26;
+    const hoursPerDay = 8;
+    const totalAvailableHours = teamSize * hoursPerDay * workingDaysPerMonth;
+
+    // Calculate actual hours worked from service times
+    const completedWithOTP = bookings.filter(
+      (b) =>
+        b.status === "completed" &&
+        b.startOTP?.verifiedAt &&
+        b.completionOTP?.verifiedAt
+    );
+
+    if (completedWithOTP.length === 0) return 0;
+
+    let totalWorkedHours = 0;
+    for (const booking of completedWithOTP) {
+      const serviceTime =
+        booking.completionOTP.verifiedAt - booking.startOTP.verifiedAt;
+      const hours = serviceTime / 1000 / 60 / 60;
+      totalWorkedHours += hours;
+    }
+
+    // Calculate utilization rate
+    const utilizationRate = (totalWorkedHours / totalAvailableHours) * 100;
+    return Math.round(utilizationRate * 100) / 100;
+  } catch (error) {
+    console.error("Error calculating utilization rate:", error);
+    return 0;
+  }
+}
+
+/**
+ * Calculate city-specific ranking
+ * Ranks garage among all garages in the same city
+ * @param {string} garageId - Garage ID
+ * @param {string} period - Time period
+ * @param {number} overallScore - This garage's performance score
+ * @returns {Promise<number>} Ranking position in city
+ */
+async function calculateCityRanking(garageId, period, overallScore) {
+  try {
+    // Get this garage's city
+    const garage = await Garage.findById(garageId).select("location.city");
+    if (!garage || !garage.location?.city) return 0;
+
+    const city = garage.location.city;
+
+    // Get all garages in the same city
+    const cityGarages = await Garage.find({
+      "location.city": city,
+    }).select("_id");
+
+    if (cityGarages.length === 0) return 0;
+
+    const cityGarageIds = cityGarages.map((g) => g._id.toString());
+
+    // Get performance metrics for all garages in this city
+    const cityPerformances = await GaragePerformance.find({
+      garage: { $in: cityGarageIds },
+      period,
+    })
+      .sort({ "performanceScore.overall": -1 })
+      .select("garage performanceScore");
+
+    // Find this garage's position
+    const position = cityPerformances.findIndex(
+      (p) => p.garage.toString() === garageId
+    );
+
+    return position >= 0 ? position + 1 : 0;
+  } catch (error) {
+    console.error("Error calculating city ranking:", error);
+    return 0;
+  }
+}
+
+/**
+ * Calculate category-specific ranking
+ * Ranks garage among garages with similar specializations
+ * @param {string} garageId - Garage ID
+ * @param {string} period - Time period
+ * @param {number} overallScore - This garage's performance score
+ * @returns {Promise<number>} Ranking position in category
+ */
+async function calculateCategoryRanking(garageId, period, overallScore) {
+  try {
+    // Get this garage's specializations
+    const garage = await Garage.findById(garageId).select("specializations");
+    if (
+      !garage ||
+      !garage.specializations ||
+      garage.specializations.length === 0
+    ) {
+      return 0;
+    }
+
+    // Get all garages with at least one matching specialization
+    const categoryGarages = await Garage.find({
+      specializations: { $in: garage.specializations },
+    }).select("_id");
+
+    if (categoryGarages.length === 0) return 0;
+
+    const categoryGarageIds = categoryGarages.map((g) => g._id.toString());
+
+    // Get performance metrics for all garages in this category
+    const categoryPerformances = await GaragePerformance.find({
+      garage: { $in: categoryGarageIds },
+      period,
+    })
+      .sort({ "performanceScore.overall": -1 })
+      .select("garage performanceScore");
+
+    // Find this garage's position
+    const position = categoryPerformances.findIndex(
+      (p) => p.garage.toString() === garageId
+    );
+
+    return position >= 0 ? position + 1 : 0;
+  } catch (error) {
+    console.error("Error calculating category ranking:", error);
+    return 0;
+  }
 }
