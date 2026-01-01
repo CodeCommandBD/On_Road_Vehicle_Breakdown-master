@@ -9,11 +9,8 @@
 
 import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
-import { useTranslations } from "next-intl";
 
 export default function GlobalError({ error, reset }) {
-  const t = useTranslations();
-
   useEffect(() => {
     // Capture the error in Sentry
     Sentry.captureException(error, {
@@ -99,7 +96,7 @@ export default function GlobalError({ error, reset }) {
                 marginBottom: "12px",
               }}
             >
-              {t?.("error.global.title") || "Something went wrong!"}
+              Something went wrong!
             </h1>
 
             {/* Error Message */}
@@ -111,8 +108,8 @@ export default function GlobalError({ error, reset }) {
                 lineHeight: "1.6",
               }}
             >
-              {t?.("error.global.message") ||
-                "We're sorry, but something unexpected happened. Our team has been notified and we're working on a fix."}
+              We're sorry, but something unexpected happened. Our team has been
+              notified and we're working on a fix.
             </p>
 
             {/* Error Details (Development Only) */}
@@ -181,7 +178,7 @@ export default function GlobalError({ error, reset }) {
                   (e.currentTarget.style.backgroundColor = "#2563eb")
                 }
               >
-                {t?.("error.global.tryAgain") || "Try Again"}
+                Try Again
               </button>
 
               <button
@@ -204,7 +201,7 @@ export default function GlobalError({ error, reset }) {
                   (e.currentTarget.style.backgroundColor = "white")
                 }
               >
-                {t?.("error.global.goHome") || "Go to Homepage"}
+                Go to Homepage
               </button>
             </div>
 
@@ -216,16 +213,16 @@ export default function GlobalError({ error, reset }) {
                 color: "#9ca3af",
               }}
             >
-              {t?.("error.global.support") || "Need help?"}{" "}
+              Need help?{" "}
               <a
-                href="/support"
+                href="/contact"
                 style={{
                   color: "#2563eb",
                   textDecoration: "none",
                   fontWeight: "500",
                 }}
               >
-                {t?.("error.global.contactSupport") || "Contact Support"}
+                Contact Support
               </a>
             </p>
           </div>

@@ -142,24 +142,9 @@ Sentry.init({
     return breadcrumb;
   },
 
-  // Integrations
-  integrations: [
-    // Session Replay integration
-    new Sentry.Replay({
-      maskAllText: true,
-      blockAllMedia: true,
-      maskAllInputs: true,
-    }),
-
-    // Browser Tracing
-    new Sentry.BrowserTracing({
-      tracePropagationTargets: [
-        "localhost",
-        /^\//,
-        process.env.NEXT_PUBLIC_APP_URL || "",
-      ],
-    }),
-  ],
+  // Integrations are now auto-instrumented by default in @sentry/nextjs
+  // Browser tracing and session replay are automatically enabled when enableTracing is true
+  // The SDK will automatically instrument page loads, navigation, and user interactions
 
   // Custom tags for filtering in Sentry dashboard
   initialScope: {

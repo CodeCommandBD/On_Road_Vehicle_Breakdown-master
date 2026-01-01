@@ -20,14 +20,14 @@ export default function RewardsPage() {
     try {
       setLoading(true);
       // Fetch user data (includes points)
-      const userRes = await axios.get("/api/users/profile");
+      const userRes = await axios.get("/api/profile");
       // Fetch history & redemptions
       const historyRes = await axios.get("/api/user/rewards/history");
       // Fetch rewards catalog
       const rewardsRes = await axios.get("/api/rewards");
 
       setData({
-        userPoints: userRes.data.data.rewardPoints || 0,
+        userPoints: userRes.data.user?.rewardPoints || 0,
         history: historyRes.data.history || [],
         redemptions: historyRes.data.redemptions || [],
         rewards: rewardsRes.data.rewards || [],

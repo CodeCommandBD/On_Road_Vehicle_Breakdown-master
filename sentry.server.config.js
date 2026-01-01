@@ -103,20 +103,9 @@ Sentry.init({
     return breadcrumb;
   },
 
-  // Integrations
-  integrations: [
-    // HTTP integration for tracking outgoing requests
-    new Sentry.Integrations.Http({ tracing: true }),
-
-    // MongoDB integration (if available)
-    ...(process.env.MONGODB_URI
-      ? [
-          new Sentry.Integrations.Mongo({
-            useMongoose: true,
-          }),
-        ]
-      : []),
-  ],
+  // Integrations are now auto-instrumented by default in @sentry/nextjs
+  // HTTP and database calls are automatically tracked when enableTracing is true
+  // No need to manually configure Http or Mongo integrations
 
   // Custom tags for filtering in Sentry dashboard
   initialScope: {
