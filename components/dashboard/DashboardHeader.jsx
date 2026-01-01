@@ -27,6 +27,7 @@ import { useRouter } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils/helpers";
 import RewardsInfoModal from "./RewardsInfoModal";
+import UserBadge from "@/components/common/UserBadge";
 
 export default function DashboardHeader() {
   const t = useTranslations("Common");
@@ -271,14 +272,9 @@ export default function DashboardHeader() {
                 <p className="text-sm font-bold text-white group-hover:text-orange-500 transition-colors">
                   {user?.name || dashT("welcome", { name: "Guest" })}
                 </p>
-                <p className="text-[10px] text-white/40 uppercase tracking-widest leading-none font-bold flex items-center justify-end gap-1">
-                  {user?.role || navT("member")}
-                  {user?.planTier && user.planTier !== "free" && (
-                    <span className="bg-yellow-400 text-gray-900 px-1 rounded-[2px] text-[8px]">
-                      PRO
-                    </span>
-                  )}
-                </p>
+                <div className="text-[10px] text-white/40 uppercase tracking-widest leading-none font-bold flex items-center justify-end gap-1">
+                  <UserBadge user={user} className="scale-75 origin-right" />
+                </div>
               </div>
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 p-[1px]">
                 <div className="w-full h-full bg-[#1E1E1E] rounded-xl flex items-center justify-center text-white overflow-hidden">
