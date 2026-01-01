@@ -1,3 +1,9 @@
+/**
+ * Sentry Client-Side Configuration
+ * Handles error tracking for browser runtime (Client Components, User Interactions)
+ * @see https://docs.sentry.io/platforms/javascript/guides/nextjs/
+ */
+
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
@@ -10,7 +16,7 @@ Sentry.init({
 
   // Capture Replay for 10% of all sessions,
   // plus for 100% of sessions with an error
-  replaysSessionSampleRate: 0.1,
+  replaysSessionSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 0,
   replaysOnErrorSampleRate: 1.0,
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
@@ -21,7 +27,10 @@ Sentry.init({
   // that it will also get attached to your source maps
 
   // Environment
-  environment: process.env.NODE_ENV,
+  environment: process.env.NODE_ENV || "development",
+
+  // Enable performance monitoring
+  enableTracing: true,
 
   // Ignore specific errors
   ignoreErrors: [
@@ -39,6 +48,19 @@ Sentry.init({
     "EBCallBackMessageReceived",
     // See http://toolbar.conduit.com/Developer/HtmlAndGadget/Methods/JSInjection.aspx
     "conduitPage",
+    // Network errors
+    "NetworkError",
+    "Network request failed",
+    "Failed to fetch",
+    // Abort errors
+    "AbortError",
+    "The operation was aborted",
+    // ResizeObserver errors (non-critical)
+    "ResizeObserver loop limit exceeded",
+    "ResizeObserver loop completed with undelivered notifications",
+    // Hydration errors (handled by React)
+    "Hydration failed",
+    "There was an error while hydrating",
   ],
 
   // Filter out localhost and development URLs
@@ -47,16 +69,124 @@ Sentry.init({
     /extensions\//i,
     /^chrome:\/\//i,
     /^chrome-extension:\/\//i,
+    // Firefox extensions
+    /^moz-extension:\/\//i,
+    // Safari extensions
+    /^safari-extension:\/\//i,
+    // Edge extensions
+    /^edge:\/\//i,
   ],
 
   // Before sending to Sentry, filter sensitive data
   beforeSend(event, hint) {
+    // Don't send events if DSN is not configured
+    if (!process.env.NEXT_PUBLIC_SENTRY_DSN) {
+      return null;
+    }
+
     // Filter out sensitive data
     if (event.request) {
       delete event.request.cookies;
-      delete event.request.headers;
+
+      // Remove sensitive headers
+      if (event.request.headers) {
+        delete event.request.headers["authorization"];
+        delete event.request.headers["cookie"];
+        delete event.request.headers["x-api-key"];
+      }
+
+      // Sanitize URLs
+      if (event.request.url) {
+        event.request.url = event.request.url.replace(
+          /token=[^&]*/gi,
+          "token=[REDACTED]"
+        );
+      }
     }
+
+    // Add browser context
+    event.contexts = {
+      ...event.contexts,
+      browser: {
+        name: navigator?.userAgent || "Unknown",
+        online: navigator?.onLine,
+        language: navigator?.language,
+      },
+    };
 
     return event;
   },
+
+  // Breadcrumb filtering
+  beforeBreadcrumb(breadcrumb, hint) {
+    // Filter out noisy console logs
+    if (breadcrumb.category === "console" && breadcrumb.level === "log") {
+      return null;
+    }
+
+    // Sanitize URLs in breadcrumbs
+    if (breadcrumb.data?.url) {
+      breadcrumb.data.url = breadcrumb.data.url.replace(
+        /token=[^&]*/gi,
+        "token=[REDACTED]"
+      );
+    }
+
+    // Filter out sensitive input values
+    if (breadcrumb.category === "ui.input") {
+      if (breadcrumb.message?.includes("password")) {
+        breadcrumb.message = "[REDACTED]";
+      }
+    }
+
+    return breadcrumb;
+  },
+
+  // Integrations
+  integrations: [
+    // Session Replay integration
+    new Sentry.Replay({
+      maskAllText: true,
+      blockAllMedia: true,
+      maskAllInputs: true,
+    }),
+
+    // Browser Tracing
+    new Sentry.BrowserTracing({
+      tracePropagationTargets: [
+        "localhost",
+        /^\//,
+        process.env.NEXT_PUBLIC_APP_URL || "",
+      ],
+    }),
+  ],
+
+  // Custom tags for filtering in Sentry dashboard
+  initialScope: {
+    tags: {
+      runtime: "browser",
+      "nextjs.version": "15",
+    },
+  },
 });
+
+// Set user context when available
+if (typeof window !== "undefined") {
+  // Try to get user from localStorage or session
+  try {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      Sentry.setUser({
+        id: user.id || user._id,
+        email: user.email,
+        username: user.name,
+      });
+    }
+  } catch (error) {
+    // Ignore errors in getting user context
+  }
+}
+
+// Export Sentry for use in components
+export { Sentry };
