@@ -247,9 +247,28 @@ async function calculateCurrentMetrics() {
 
   const churnRate = paidUsers > 0 ? (churnedThisMonth / paidUsers) * 100 : 0;
 
+  // Calculate Churned MRR (revenue lost from cancelled subscriptions)
+  const churnedSubscriptions = await Subscription.find({
+    status: "cancelled",
+    endDate: { $gte: firstDayOfMonth, $lte: now },
+  }).populate("planId");
+
+  const churnedMrr = churnedSubscriptions.reduce((sum, sub) => {
+    return sum + (sub.planId?.price || 0);
+  }, 0);
+
   // Calculate LTV (simplified: ARPU / Churn Rate)
   const avgChurnRate = churnRate > 0 ? churnRate / 100 : 0.05; // Default 5%
   const ltvAverage = arpuOverall / avgChurnRate;
+
+  // Calculate Lost Revenue (churned MRR * average customer lifetime)
+  const avgCustomerLifetimeMonths = 12; // Average subscription duration
+  const lostRevenue = churnedMrr * avgCustomerLifetimeMonths;
+
+  // Track New Users This Month
+  const newUsersCount = await User.countDocuments({
+    createdAt: { $gte: firstDayOfMonth, $lte: now },
+  });
 
   // Revenue by source
   const bookingRevenue = await Booking.aggregate([
@@ -284,9 +303,9 @@ async function calculateCurrentMetrics() {
     mrr: {
       total: Math.round(mrrTotal),
       new: Math.round(mrrNew),
-      expansion: 0, // TODO: Track upgrades
-      contraction: 0, // TODO: Track downgrades
-      churn: 0, // TODO: Track churned MRR
+      expansion: 0, // TODO: Track upgrades (requires planHistory in Subscription model)
+      contraction: 0, // TODO: Track downgrades (requires planHistory in Subscription model)
+      churn: Math.round(churnedMrr), // ✅ Implemented: Revenue lost from cancelled subscriptions
       growth: Math.round(mrrGrowth * 100) / 100,
     },
     arr: {
@@ -314,11 +333,11 @@ async function calculateCurrentMetrics() {
     churn: {
       rate: Math.round(churnRate * 100) / 100,
       count: churnedThisMonth,
-      revenue: 0, // TODO: Calculate lost revenue
+      revenue: Math.round(lostRevenue), // ✅ Implemented: Estimated total revenue loss from churned customers
     },
     customers: {
       total: totalUsers,
-      new: 0, // TODO: Track new users this month
+      new: newUsersCount, // ✅ Implemented: New user registrations this month
       active: paidUsers,
       churned: churnedThisMonth,
     },
