@@ -162,7 +162,7 @@ export default async function middleware(request) {
     // No valid token - redirect to login for web pages, return 401 for API
     if (pathname.startsWith("/api/")) {
       return NextResponse.json(
-        { success: false, message: "অননুমোদিত প্রবেশ" },
+        { success: false, message: "Unauthorized access" },
         { status: 401 }
       );
     }
@@ -181,7 +181,10 @@ export default async function middleware(request) {
     // User doesn't have required role
     if (pathname.startsWith("/api/")) {
       return NextResponse.json(
-        { success: false, message: "আপনার এই কাজ করার অনুমতি নেই" },
+        {
+          success: false,
+          message: "You don't have permission to perform this action",
+        },
         { status: 403 }
       );
     }

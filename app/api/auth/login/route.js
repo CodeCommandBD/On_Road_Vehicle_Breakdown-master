@@ -20,7 +20,7 @@ export async function POST(request) {
 
     // Validate request body using Zod
     const validatedData = loginSchema.parse(body);
-    const { email, password } = validatedData;
+    const { email, password, remember } = validatedData;
     const { role } = body; // Optional role check
 
     console.log("🔍 Login attempt - Email/Phone:", email);
@@ -158,8 +158,11 @@ export async function POST(request) {
     };
     const token = await createToken(tokenPayload);
 
-    // Set cookie
-    await setTokenCookie(token);
+    // Set cookie with appropriate expiry based on "Remember Me"
+    const cookieMaxAge = remember
+      ? 30 * 24 * 60 * 60 * 1000 // 30 days if remember me is checked
+      : 7 * 24 * 60 * 60 * 1000; // 7 days default
+    await setTokenCookie(token, cookieMaxAge);
 
     // Return success response
     return successResponse(

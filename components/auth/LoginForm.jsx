@@ -303,9 +303,7 @@ export default function LoginForm() {
               <Checkbox.Root
                 className="flex h-5 w-5 appearance-none items-center justify-center rounded-md border border-gray-600 bg-black/40 shadow-sm outline-none data-[state=checked]:bg-[#ff4800] data-[state=checked]:border-[#ff4800] transition-all duration-200 group-hover:border-gray-500"
                 id="remember"
-                onCheckedChange={(checked) => {
-                  // handle remember me logic
-                }}
+                {...register("remember")}
               >
                 <Checkbox.Indicator className="text-white">
                   <Check className="w-3.5 h-3.5 stroke-[3px]" />
