@@ -6,8 +6,17 @@ import { PUBLIC_ROUTES, PROTECTED_ROUTES } from "./lib/utils/constants";
 import { getToken } from "next-auth/jwt";
 
 // JWT Secret
+// JWT Secret - Enforce environment variable in production
+const SECRET_KEY = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET;
+
+if (!SECRET_KEY && process.env.NODE_ENV === "production") {
+  throw new Error(
+    "❌ JWT_SECRET or NEXTAUTH_SECRET must be defined in .env file"
+  );
+}
+
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "your-super-secret-jwt-key-change-in-production"
+  SECRET_KEY || "dev-secret-key-change-in-prod" // Only for local dev fallback
 );
 
 // Create next-intl middleware

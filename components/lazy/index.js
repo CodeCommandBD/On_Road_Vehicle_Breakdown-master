@@ -1,119 +1,75 @@
-/**
- * Lazy Loading Component Wrappers
- * Dynamic imports for heavy components to reduce bundle size
- */
+"use client";
 
-import dynamic from "next/dynamic";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2 } from "lucide-react";
+import dynamic from "next/dynamic";
 
 /**
- * Loading skeleton for maps
+ * Lazy load Map Component
+ * - Client-side only (Leaflet requires window)
+ * - Custom loading skeleton
  */
-const MapSkeleton = () => (
-  <div className="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center">
-    <div className="text-center">
-      <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
-      <p className="text-sm text-gray-500">Loading map...</p>
-    </div>
-  </div>
-);
-
-/**
- * Loading skeleton for charts
- */
-const ChartSkeleton = () => (
-  <div className="w-full h-64 bg-gray-100 rounded-lg animate-pulse flex items-center justify-center">
-    <div className="text-center">
-      <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
-      <p className="text-sm text-gray-500">Loading chart...</p>
-    </div>
-  </div>
-);
-
-/**
- * Lazy load Map component (react-leaflet)
- * Saves ~70KB from initial bundle
- * COMMENTED OUT: Component does not exist
- */
-// export const LazyMap = dynamic(
-//   () =>
-//     import("@/components/map/MapComponent").catch(() => ({
-//       default: () => <div>Map not available</div>,
-//     })),
-//   {
-//     loading: () => <MapSkeleton />,
-//     ssr: false, // Don't render on server (maps need browser APIs)
-//   }
-// );
+export const LazyMap = dynamic(() => import("@/components/map/MapComponent"), {
+  loading: () => <Skeleton className="h-[400px] w-full rounded-lg" />,
+  ssr: false, // Leaflet only works on client
+});
 
 /**
  * Lazy load Chart components (recharts)
- * Saves ~80KB from initial bundle
- * COMMENTED OUT: Component does not exist
  */
-// export const LazyChart = dynamic(
-//   () =>
-//     import("@/components/charts/ChartComponent").catch(() => ({
-//       default: () => <div>Chart not available</div>,
-//     })),
-//   {
-//     loading: () => <ChartSkeleton />,
-//   }
-// );
+export const LazyChart = dynamic(
+  () => import("@/components/charts/ChartComponent"),
+  {
+    loading: () => <Skeleton className="h-[300px] w-full rounded-lg" />,
+  }
+);
 
 /**
  * Lazy load Analytics Dashboard
- * Saves ~100KB from initial bundle
- * COMMENTED OUT: Component does not exist
  */
-// export const LazyAnalyticsDashboard = dynamic(
-//   () => import("@/components/analytics/AnalyticsDashboard"),
-//   {
-//     loading: () => (
-//       <div className="flex items-center justify-center h-96">
-//         <Loader2 className="w-12 h-12 animate-spin text-primary" />
-//       </div>
-//     ),
-//   }
-// );
+export const LazyAnalyticsDashboard = dynamic(
+  () => import("@/components/analytics/AnalyticsDashboard"),
+  {
+    loading: () => (
+      <div className="space-y-4">
+        <Skeleton className="h-[300px] w-full" />
+        <div className="grid grid-cols-4 gap-4">
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+      </div>
+    ),
+  }
+);
 
 /**
  * Lazy load PDF Viewer
- * Saves ~50KB from initial bundle
- * COMMENTED OUT: Component does not exist
  */
-// export const LazyPDFViewer = dynamic(
-//   () => import("@/components/pdf/PDFViewer"),
-//   {
-//     loading: () => (
-//       <div className="flex items-center justify-center h-96 bg-gray-100 rounded-lg">
-//         <div className="text-center">
-//           <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
-//           <p className="text-sm text-gray-500">Loading PDF...</p>
-//         </div>
-//       </div>
-//     ),
-//     ssr: false,
-//   }
-// );
+export const LazyPDFViewer = dynamic(
+  () => import("@/components/pdf/PDFViewer"),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center h-96 bg-gray-100 rounded-lg">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
+          <p className="text-sm text-gray-500">Loading PDF...</p>
+        </div>
+      </div>
+    ),
+    ssr: false,
+  }
+);
 
 /**
  * Lazy load Swagger UI
- * Saves ~100KB from initial bundle
  */
 export const LazySwaggerUI = dynamic(() => import("swagger-ui-react"), {
   loading: () => (
-    <div className="flex items-center justify-center h-screen">
+    <div className="flex items-center justify-center h-96">
       <Loader2 className="w-12 h-12 animate-spin text-primary" />
     </div>
   ),
   ssr: false,
 });
-
-export default {
-  // LazyMap,
-  // LazyChart,
-  // LazyAnalyticsDashboard,
-  // LazyPDFViewer,
-  LazySwaggerUI,
-};
