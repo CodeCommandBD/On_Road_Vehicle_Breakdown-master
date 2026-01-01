@@ -2,14 +2,8 @@
 
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
+import GarageDashboard from "@/components/dashboard/GarageDashboard";
 import UserDashboard from "@/components/dashboard/UserDashboard";
-import GarageDashboard from "@/components/garage/GarageDashboard";
-
-export const metadata = {
-  title: "Garage Dashboard",
-  description: "Manage your garage services, bookings, and customer requests.",
-  robots: "noindex, nofollow", // Private page
-};
 import { Loader2 } from "lucide-react";
 
 export default function DashboardPage() {

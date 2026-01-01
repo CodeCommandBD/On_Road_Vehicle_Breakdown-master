@@ -2,14 +2,7 @@
 
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
-import UserDashboard from "@/components/user/UserDashboard";
-
-export const metadata = {
-  title: "My Dashboard",
-  description:
-    "Manage your vehicle breakdown requests, bookings, and service history.",
-  robots: "noindex, nofollow", // Private page
-};
+import UserDashboard from "@/components/dashboard/UserDashboard";
 import { Loader2 } from "lucide-react";
 
 export default function UserDashboardPage() {

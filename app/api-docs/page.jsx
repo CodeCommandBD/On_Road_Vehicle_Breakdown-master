@@ -1,14 +1,8 @@
-```javascript
-"use client";
-
-import { LazySwaggerUI } from "@/components/lazy";
 import { getApiDocs } from "@/lib/swagger";
+import SwaggerUIClient from "@/components/swagger/SwaggerUIClient";
 
-export default function ApiDoc() {
-  return (
-    <section className="container mx-auto py-10">
-      <LazySwaggerUI spec={getApiDocs()} />
-    </section>
-  );
+export default async function ApiDoc() {
+  const spec = await getApiDocs();
+
+  return <SwaggerUIClient spec={spec} />;
 }
-```;
