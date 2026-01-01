@@ -16,20 +16,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils/helpers";
 
-export const metadata = {
-  title: "Our Services | Vehicle Breakdown Assistance",
-  description:
-    "Professional vehicle breakdown services in Bangladesh. Towing, roadside repair, battery jump-start, tire change, engine diagnostics, and emergency assistance available 24/7.",
-  keywords:
-    "towing service Bangladesh, roadside repair, battery service, tire change, vehicle rescue, emergency repair, mobile mechanic, breakdown assistance",
-  openGraph: {
-    title: "Our Services | On-Road Vehicle Service",
-    description:
-      "Professional vehicle breakdown services available 24/7 across Bangladesh.",
-    type: "website",
-  },
-};
-
 const categories = [
   { id: "all", label: "All Services" },
   { id: "engine", label: "Engine" },

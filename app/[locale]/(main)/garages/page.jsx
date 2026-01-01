@@ -26,20 +26,8 @@ import {
 import { useTranslations } from "next-intl";
 import AdvancedSearch from "@/components/search/AdvancedSearch";
 import FilterPanel from "@/components/search/FilterPanel";
-
-export const metadata = {
-  title: "Find Garages Near You | Verified Auto Repair Shops",
-  description:
-    "Browse verified garages and auto repair shops across Bangladesh. Find trusted mechanics, compare services, read reviews, and book appointments online.",
-  keywords:
-    "garages Bangladesh, auto repair shops, car service centers, verified mechanics, garage near me, vehicle repair Dhaka",
-  openGraph: {
-    title: "Find Garages Near You | On-Road Vehicle Service",
-    description:
-      "Browse verified garages and auto repair shops across Bangladesh.",
-    type: "website",
-  },
-};
+import Image from "next/image";
+import { commonImageProps } from "@/lib/utils/imageOptimization";
 
 // Haversine formula to calculate distance
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -308,13 +296,16 @@ export default function GaragesPage() {
                     <div className="w-full md:w-48 h-48 md:h-auto bg-gray-100 rounded-lg flex-shrink-0 relative overflow-hidden">
                       {garage.garageImages?.frontView ||
                       garage.images?.[0]?.url ? (
-                        <img
+                        <Image
                           src={
                             garage.garageImages?.frontView ||
                             garage.images?.[0]?.url
                           }
                           alt={garage.name}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          fill
+                          sizes="(max-width: 768px) 100vw, 192px"
+                          className="object-cover group-hover:scale-110 transition-transform duration-500"
+                          {...commonImageProps}
                         />
                       ) : (
                         <div className="absolute inset-0 bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center text-white/20">

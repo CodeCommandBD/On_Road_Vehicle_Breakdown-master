@@ -7,10 +7,23 @@ const withNextIntl = createNextIntlPlugin("./i18n/request.js");
 // Restart trigger
 const nextConfig = {
   images: {
+    formats: ["image/webp", "image/avif"], // Modern formats for better compression
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048], // Responsive image sizes
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384], // Icon and thumbnail sizes
+    minimumCacheTTL: 60, // Cache images for 60 seconds
+    dangerouslyAllowSVG: true,
+    contentDispositionType: "attachment",
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "**",
+        hostname: "res.cloudinary.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "**.cloudinary.com",
+        pathname: "/**",
       },
     ],
   },
@@ -18,6 +31,8 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: "2mb",
     },
+    optimizeCss: true, // Optimize CSS
+    optimizePackageImports: ["lucide-react", "@radix-ui/react-*"], // Tree-shake heavy packages
   },
   outputFileTracingRoot: process.cwd(),
 
