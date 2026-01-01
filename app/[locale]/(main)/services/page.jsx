@@ -2,8 +2,33 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Wrench, Battery, Truck, Key, Thermometer, Settings, Car, Hammer, Music, Droplet } from "lucide-react";
+import {
+  Wrench,
+  Battery,
+  Truck,
+  Key,
+  Thermometer,
+  Settings,
+  Car,
+  Hammer,
+  Music,
+  Droplet,
+} from "lucide-react";
 import { cn } from "@/lib/utils/helpers";
+
+export const metadata = {
+  title: "Our Services | Vehicle Breakdown Assistance",
+  description:
+    "Professional vehicle breakdown services in Bangladesh. Towing, roadside repair, battery jump-start, tire change, engine diagnostics, and emergency assistance available 24/7.",
+  keywords:
+    "towing service Bangladesh, roadside repair, battery service, tire change, vehicle rescue, emergency repair, mobile mechanic, breakdown assistance",
+  openGraph: {
+    title: "Our Services | On-Road Vehicle Service",
+    description:
+      "Professional vehicle breakdown services available 24/7 across Bangladesh.",
+    type: "website",
+  },
+};
 
 const categories = [
   { id: "all", label: "All Services" },
@@ -18,7 +43,8 @@ const services = [
     id: 1,
     title: "Engine Repair",
     category: "engine",
-    description: "Complete engine diagnostics, repair, and rebuilding services.",
+    description:
+      "Complete engine diagnostics, repair, and rebuilding services.",
     price: "From ৳2000",
     icon: Settings,
     color: "bg-orange-100 text-orange-600",
@@ -111,8 +137,8 @@ export default function ServicesPage() {
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 text-center">
           <h1 className="text-4xl font-bold mb-4">Our Services</h1>
           <p className="max-w-2xl mx-auto text-white/90">
-            Professional vehicle breakdown and maintenance services available 24/7.
-            Book online or call us for emergency assistance.
+            Professional vehicle breakdown and maintenance services available
+            24/7. Book online or call us for emergency assistance.
           </p>
         </div>
       </div>
@@ -148,16 +174,16 @@ export default function ServicesPage() {
               >
                 <service.icon className="w-7 h-7" />
               </div>
-              
+
               <div className="flex justify-between items-start mb-2">
                 <h3 className="tex-xl font-bold">{service.title}</h3>
                 <span className="bg-gray-100 text-gray-800 text-xs font-semibold px-2.5 py-0.5 rounded">
                   {service.price}
                 </span>
               </div>
-              
+
               <p className="text-muted text-sm mb-6">{service.description}</p>
-              
+
               <Link
                 href={`/book?service=${service.id}`}
                 className="w-full btn btn-outline hover:bg-primary hover:text-white hover:border-primary"

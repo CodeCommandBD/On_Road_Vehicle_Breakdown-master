@@ -15,21 +15,40 @@ import { notFound } from "next/navigation";
 import { CsrfProvider } from "@/lib/context/CsrfContext";
 
 export const metadata = {
-  title: "On Road Vehicle Breakdown Service",
-  description: "24/7 Vehicle Breakdown Service in Bangladesh",
+  title: {
+    default: "On-Road Vehicle Service | 24/7 Breakdown Assistance",
+    template: "%s | On-Road Vehicle Service",
+  },
+  description:
+    "24/7 Vehicle Breakdown Service in Bangladesh. Get instant mechanic support anywhere, anytime. Emergency roadside assistance, towing, and repair services.",
   keywords:
-    "vehicle, breakdown, service, mechanic, garage, towing, dhaka, bangladesh",
+    "vehicle breakdown, emergency service, mechanic, garage, towing, roadside assistance, Bangladesh, Dhaka, vehicle repair",
   authors: [{ name: "Md. Redwanul Haque" }, { name: "Md. Afsanur Rahman" }],
+  creator: "On-Road Vehicle Service Team",
+  publisher: "On-Road Vehicle Service",
   openGraph: {
-    title: "On Road Vehicle Breakdown Service",
-    description: "Get instant mechanic support anywhere, anytime.",
+    title: "On-Road Vehicle Service | 24/7 Breakdown Assistance",
+    description:
+      "Get instant mechanic support anywhere, anytime in Bangladesh.",
     type: "website",
+    locale: "en_US",
+    siteName: "On-Road Vehicle Service",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "On-Road Vehicle Service",
+    description: "24/7 Vehicle Breakdown Service in Bangladesh",
   },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "On Road Help",
+    title: "On-Road Service",
+  },
+  formatDetection: {
+    telephone: true,
+    email: true,
+    address: true,
   },
 };
 
