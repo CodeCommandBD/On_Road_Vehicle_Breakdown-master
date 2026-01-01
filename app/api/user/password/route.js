@@ -1,12 +1,26 @@
 import { NextResponse } from "next/server";
-import dbConnect from "@/lib/db/connection";
+import connectDB from "@/lib/db/connect";
 import User from "@/lib/db/models/User";
-import bcrypt from "bcrypt";
+import { verifyToken, hashPassword } from "@/lib/utils/auth";
+import { passwordChangeSchema } from "@/lib/validations/auth";
+import { handleError, UnauthorizedError } from "@/lib/utils/errorHandler";
+import { successResponse } from "@/lib/utils/apiResponse";
+import { MESSAGES } from "@/lib/utils/constants";
+import { csrfProtection } from "@/lib/utils/csrf";
 
 // PUT - Change user password
-export async function PUT(request) {
+export async function POST(request) {
+  // CSRF Protection
+  const csrfError = csrfProtection(request);
+  if (csrfError) {
+    return NextResponse.json(
+      { success: false, message: csrfError.message },
+      { status: csrfError.status }
+    );
+  }
+
   try {
-    await dbConnect();
+    await connectDB();
 
     const userId = request.headers.get("x-user-id"); // Placeholder - replace with actual auth
 

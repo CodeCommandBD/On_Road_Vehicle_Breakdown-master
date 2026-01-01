@@ -3,8 +3,13 @@ import connectDB from "@/lib/db/connect";
 import User from "@/lib/db/models/User";
 import { verifyToken, hashPassword } from "@/lib/utils/auth";
 import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
+import { strictRateLimit } from "@/lib/utils/rateLimit";
 
 export async function POST(request) {
+  // Apply strict rate limiting (5 requests per 15 minutes)
+  const rateLimitResponse = strictRateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     await connectDB();
 
@@ -14,9 +19,18 @@ export async function POST(request) {
       return errorResponse("Token and new password are required", 400);
     }
 
-    // Validate password length
-    if (newPassword.length < 6) {
-      return errorResponse("Password must be at least 6 characters long", 400);
+    // Validate password strength
+    if (newPassword.length < 8) {
+      return errorResponse("Password must be at least 8 characters long", 400);
+    }
+
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/;
+    if (!passwordRegex.test(newPassword)) {
+      return errorResponse(
+        "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)",
+        400
+      );
     }
 
     // Verify token

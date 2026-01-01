@@ -5,8 +5,13 @@ import { createToken } from "@/lib/utils/auth";
 import { sendPasswordResetEmail } from "@/lib/utils/passwordResetEmail";
 import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import { MESSAGES } from "@/lib/utils/constants";
+import { rateLimitMiddleware } from "@/lib/utils/rateLimit";
 
 export async function POST(request) {
+  // Very strict rate limiting for forgot password (3 requests per hour)
+  const rateLimitResponse = rateLimitMiddleware(request, 3, 60 * 60 * 1000);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     await connectDB();
 

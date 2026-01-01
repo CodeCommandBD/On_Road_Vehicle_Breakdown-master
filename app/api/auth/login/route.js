@@ -11,8 +11,13 @@ import {
 } from "@/lib/utils/errorHandler";
 import { successResponse } from "@/lib/utils/apiResponse";
 import { MESSAGES } from "@/lib/utils/constants";
+import { strictRateLimit } from "@/lib/utils/rateLimit";
 
 export async function POST(request) {
+  // Apply strict rate limiting (5 requests per 15 minutes)
+  const rateLimitResponse = strictRateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     await connectDB();
 
@@ -48,7 +53,26 @@ export async function POST(request) {
     // Check if user is active
     if (!user.isActive) {
       console.log("❌ Login failed - Account inactive");
-      throw new ForbiddenError("আপনার অ্যাকাউন্ট নিষ্ক্রিয় করা হয়েছে");
+      throw new ForbiddenError("Your account has been deactivated");
+    }
+
+    // Check if account is locked
+    if (user.accountLockedUntil && user.accountLockedUntil > new Date()) {
+      const lockTimeRemaining = Math.ceil(
+        (user.accountLockedUntil - new Date()) / 1000 / 60
+      );
+      console.log(
+        `❌ Login failed - Account locked for ${lockTimeRemaining} more minutes`
+      );
+      throw new ForbiddenError(
+        `Account temporarily locked due to multiple failed login attempts. Please try again in ${lockTimeRemaining} minutes.`
+      );
+    }
+
+    // Reset lockout if time has passed
+    if (user.accountLockedUntil && user.accountLockedUntil <= new Date()) {
+      user.failedLoginAttempts = 0;
+      user.accountLockedUntil = null;
     }
 
     // Verify password
@@ -59,7 +83,31 @@ export async function POST(request) {
 
     if (!isPasswordValid) {
       console.log("❌ Login failed - Invalid password");
-      throw new UnauthorizedError(MESSAGES.ERROR.INVALID_CREDENTIALS);
+
+      // Increment failed login attempts
+      user.failedLoginAttempts += 1;
+
+      // Lock account if 5 failed attempts
+      if (user.failedLoginAttempts >= 5) {
+        user.accountLockedUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+        await user.save();
+        console.log(
+          `🔒 Account locked for 15 minutes after ${user.failedLoginAttempts} failed attempts`
+        );
+        throw new ForbiddenError(
+          "Account locked due to multiple failed login attempts. Please try again in 15 minutes."
+        );
+      }
+
+      await user.save();
+      const attemptsRemaining = 5 - user.failedLoginAttempts;
+      console.log(
+        `⚠️ Failed attempts: ${user.failedLoginAttempts}/5. Remaining: ${attemptsRemaining}`
+      );
+
+      throw new UnauthorizedError(
+        `${MESSAGES.ERROR.INVALID_CREDENTIALS} (${attemptsRemaining} attempts remaining)`
+      );
     }
 
     // Check role if specified
@@ -70,7 +118,14 @@ export async function POST(request) {
         "Got:",
         user.role
       );
-      throw new UnauthorizedError(`এই অ্যাকাউন্ট ${role} হিসাবে নিবন্ধিত নয়`);
+      throw new UnauthorizedError(`This account is not registered as ${role}`);
+    }
+
+    // Reset failed login attempts on successful login
+    if (user.failedLoginAttempts > 0 || user.accountLockedUntil) {
+      user.failedLoginAttempts = 0;
+      user.accountLockedUntil = null;
+      console.log("✅ Failed login attempts reset after successful login");
     }
 
     console.log("✅ Login successful - User:", user.email);

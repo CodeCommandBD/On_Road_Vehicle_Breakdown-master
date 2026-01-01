@@ -6,11 +6,21 @@ import Service from "@/lib/db/models/Service";
 import Notification from "@/lib/db/models/Notification";
 import { BUSINESS } from "@/lib/utils/constants";
 import { rateLimitMiddleware } from "@/lib/utils/rateLimit";
+import { csrfProtection } from "@/lib/utils/csrf";
 
 // Basic API route for creating bookings
 // Authentication details handled via searchParams or logic below
 
 export async function POST(req) {
+  // CSRF Protection
+  const csrfError = csrfProtection(req);
+  if (csrfError) {
+    return NextResponse.json(
+      { success: false, message: csrfError.message },
+      { status: csrfError.status }
+    );
+  }
+
   // Rate limiting: 20 bookings per hour to prevent abuse
   const rateLimitResult = rateLimitMiddleware(req, 20, 60 * 60 * 1000);
   if (rateLimitResult) return rateLimitResult;

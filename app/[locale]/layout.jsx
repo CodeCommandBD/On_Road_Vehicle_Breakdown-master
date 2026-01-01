@@ -12,6 +12,7 @@ import { routing } from "@/i18n/routing";
 import "@/sentry.client.config.js";
 import SentryInitializer from "@/components/providers/SentryInitializer";
 import { notFound } from "next/navigation";
+import { CsrfProvider } from "@/lib/context/CsrfContext";
 
 export const metadata = {
   title: "On Road Vehicle Breakdown Service",
@@ -52,15 +53,17 @@ export default async function RootLayout({ children, params }) {
     <html lang={locale} className="scroll-smooth">
       <body className={`font-sans antialiased bg-[#020617]`}>
         <NextIntlClientProvider messages={messages}>
-          <SessionProvider>
-            <StoreProvider>
-              <SentryInitializer />
-              {children}
-              <NotificationListener />
-              <PWAInstallPrompt />
-              <ToastContainer position="bottom-right" theme="colored" />
-            </StoreProvider>
-          </SessionProvider>
+          <CsrfProvider>
+            <SessionProvider>
+              <StoreProvider>
+                <SentryInitializer />
+                {children}
+                <NotificationListener />
+                <PWAInstallPrompt />
+                <ToastContainer position="bottom-right" theme="colored" />
+              </StoreProvider>
+            </SessionProvider>
+          </CsrfProvider>
         </NextIntlClientProvider>
       </body>
     </html>

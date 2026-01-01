@@ -7,8 +7,13 @@ import { signupSchema } from "@/lib/validations/auth";
 import { handleError, ConflictError } from "@/lib/utils/errorHandler";
 import { createdResponse } from "@/lib/utils/apiResponse";
 import { MESSAGES, BUSINESS } from "@/lib/utils/constants";
+import { strictRateLimit } from "@/lib/utils/rateLimit";
 
 export async function POST(request) {
+  // Apply strict rate limiting (5 requests per 15 minutes)
+  const rateLimitResponse = strictRateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     await connectDB();
 
