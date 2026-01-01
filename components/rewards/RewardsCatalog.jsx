@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
-import { toast } from "react-hot-toast";
+import { toast } from "react-toastify";
 
 export default function RewardsCatalog({ rewards, userPoints, onRedeem }) {
   const t = useTranslations("Rewards"); // Assuming we'll add keys

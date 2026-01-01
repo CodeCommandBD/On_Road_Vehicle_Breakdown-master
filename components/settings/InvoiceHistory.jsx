@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { format } from "date-fns";
 import { Download, FileText, Send } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { toast } from "react-toastify";
 
 import { useTranslations } from "next-intl";
 
