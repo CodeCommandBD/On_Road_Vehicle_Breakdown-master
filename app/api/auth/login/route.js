@@ -1,8 +1,4 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/db/connect";
-import User from "@/lib/db/models/User";
-import { createToken, setTokenCookie } from "@/lib/utils/auth";
-import { loginSchema } from "@/lib/validations/auth";
 import {
   handleError,
   UnauthorizedError,
@@ -14,27 +10,33 @@ import { MESSAGES } from "@/lib/utils/constants";
 import { strictRateLimit } from "@/lib/utils/rateLimit";
 
 export async function POST(request) {
-  // Apply strict rate limiting (5 requests per 15 minutes)
+  // Apply strict rate limiting
   const rateLimitResponse = strictRateLimit(request);
   if (rateLimitResponse) return rateLimitResponse;
 
   try {
+    // Dynamic imports to prevent top-level crashes
+    const connectDB = (await import("@/lib/db/connect")).default;
+    const User = (await import("@/lib/db/models/User")).default;
+    const { createToken, setTokenCookie } = await import("@/lib/utils/auth");
+    const { loginSchema } = await import("@/lib/validations/auth");
+
     await connectDB();
 
     const body = await request.json();
 
-    // Validate request body using Zod
+    // Validate request body
     const validatedData = loginSchema.parse(body);
-    const { email, password, remember } = validatedData;
-    const { role } = body; // Optional role check
+    const { email, password } = validatedData;
+    const { role, remember } = body;
 
-    // Find user with password (support both email and phone)
+    // Find user with password
     const user = await User.findOne({
       $or: [{ email: email }, { phone: email }],
     }).select("+password");
 
     if (!user) {
-      throw new NotFoundError(MESSAGES.ERROR.INVALID_CREDENTIALS);
+      throw new NotFoundError(MESSAGES.EN.ERROR.INVALID_CREDENTIALS);
     }
 
     // Check if user is active
@@ -62,29 +64,26 @@ export async function POST(request) {
     const isPasswordValid = await user.comparePassword(password);
 
     if (!isPasswordValid) {
-      // Increment failed login attempts
       user.failedLoginAttempts += 1;
-
-      // Lock account if 5 failed attempts
       if (user.failedLoginAttempts >= 5) {
-        user.accountLockedUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+        user.accountLockedUntil = new Date(Date.now() + 15 * 60 * 1000);
         await user.save();
         throw new ForbiddenError(
           "Account locked due to multiple failed login attempts. Please try again in 15 minutes."
         );
       }
-
       await user.save();
       const attemptsRemaining = 5 - user.failedLoginAttempts;
-
       throw new UnauthorizedError(
-        `${MESSAGES.ERROR.INVALID_CREDENTIALS} (${attemptsRemaining} attempts remaining)`
+        `${MESSAGES.EN.ERROR.INVALID_CREDENTIALS} (${attemptsRemaining} attempts remaining)`
       );
     }
 
     // Check role if specified
     if (role && user.role !== role) {
-      throw new UnauthorizedError(`This account is not registered as ${role}`);
+      throw new UnauthorizedError(
+        `This account is registered as '${user.role}'. Please switch to that tab to login.`
+      );
     }
 
     // Reset failed login attempts on successful login
@@ -98,107 +97,89 @@ export async function POST(request) {
     await user.save();
 
     // --- EFFECTIVE MEMBERSHIP TIER CALCULATION ---
-    // User might be a member of a Premium/Enterprise organization.
-    // We should give them access to features based on the highest tier they have access to.
-
-    // Import needed models dynamically to avoid circular deps if any
-    const TeamMember = (await import("@/lib/db/models/TeamMember")).default;
-    const Organization = (await import("@/lib/db/models/Organization")).default;
-    const Subscription = (await import("@/lib/db/models/Subscription")).default;
-    // const Plan = (await import("@/lib/db/models/Plan")).default; // Legacy removed
-
-    // Check if personal subscription has expired and downgrade to free
-    const now = new Date();
-    if (user.membershipExpiry && new Date(user.membershipExpiry) < now) {
-      // Subscription expired, downgrade to free
-      user.membershipTier = "free";
-      user.membershipExpiry = null;
-      user.currentSubscription = null;
-      await user.save();
-    }
-
     let effectiveTier = user.membershipTier || "free";
+    try {
+      const TeamMember = (await import("@/lib/db/models/TeamMember")).default;
+      const Package = (await import("@/lib/db/models/Package")).default;
 
-    // Fetch active memberships
-    const memberships = await TeamMember.find({
-      user: user._id,
-      isActive: true,
-    }).populate({
-      path: "organization",
-      populate: {
-        path: "subscription",
-        match: { status: { $in: ["active", "trial"] } }, // Only active/trial subs
+      // Check if personal subscription has expired and downgrade to free
+      const now = new Date();
+      if (user.membershipExpiry && new Date(user.membershipExpiry) < now) {
+        user.membershipTier = "free";
+        user.membershipExpiry = null;
+        user.currentSubscription = null;
+        await user.save();
+      }
+      effectiveTier = user.membershipTier || "free";
+
+      // Simple efficient lookup for active memberships
+      // We skip complex deep population if possible, or keep it minimal
+      const memberships = await TeamMember.find({
+        user: user._id,
+        isActive: true,
+      }).populate({
+        path: "organization",
         populate: {
-          path: "planId",
-          model: "Package", // Changed from Plan to Package
+          path: "subscription",
+          match: { status: { $in: ["active", "trial"] } },
+          populate: { path: "planId", model: "Package" },
         },
-      },
-    });
+      });
 
-    if (memberships && memberships.length > 0) {
-      const tierHierarchy = [
-        "free",
-        "basic",
-        "trial",
-        "standard",
-        "premium",
-        "enterprise",
-      ];
+      if (memberships?.length > 0) {
+        // ... (Simplified logic) ...
+        const tierHierarchy = [
+          "free",
+          "basic",
+          "trial",
+          "standard",
+          "premium",
+          "enterprise",
+        ];
+        const getTierValue = (t) => Math.max(0, tierHierarchy.indexOf(t));
+        let maxTierValue = getTierValue(effectiveTier);
 
-      const getTierValue = (tier) => {
-        const index = tierHierarchy.indexOf(tier);
-        return index === -1 ? 0 : index;
-      };
-
-      let maxTierValue = getTierValue(effectiveTier);
-
-      memberships.forEach((member) => {
-        const org = member.organization;
-        if (org && org.subscription && org.subscription.planId) {
-          const planTier = org.subscription.planId.tier;
-          // Check if subscription is strictly valid by date (re-verify)
-          const now = new Date();
-          const sub = org.subscription;
-          const isActive =
-            new Date(sub.startDate) <= now && new Date(sub.endDate) >= now;
-
-          if (isActive) {
-            const planValue = getTierValue(planTier);
-            if (planValue > maxTierValue) {
-              maxTierValue = planValue;
-              effectiveTier = planTier;
+        memberships.forEach((member) => {
+          const org = member.organization;
+          if (org?.subscription?.planId?.tier) {
+            const planTier = org.subscription.planId.tier;
+            const sub = org.subscription;
+            const isActive =
+              new Date(sub.startDate) <= new Date() &&
+              new Date(sub.endDate) >= new Date();
+            if (isActive) {
+              const val = getTierValue(planTier);
+              if (val > maxTierValue) {
+                maxTierValue = val;
+                effectiveTier = planTier;
+              }
             }
           }
-        }
-      });
+        });
+      }
+    } catch (tierError) {
+      console.error("Membership calculation error:", tierError);
+      effectiveTier = user.membershipTier || "free";
     }
 
-    // Override the user object for the response (don't save to DB to keep personal record clean)
     const userPublic = user.toPublicJSON();
     userPublic.membershipTier = effectiveTier;
 
-    // Create JWT token with effective tier
-    const tokenPayload = {
+    const token = await createToken({
       userId: user._id.toString(),
       email: user.email,
       role: user.role,
-      membershipTier: effectiveTier, // Add this to token for easier access if needed
-    };
-    const token = await createToken(tokenPayload);
+      membershipTier: effectiveTier,
+    });
 
-    // Set cookie with appropriate expiry based on "Remember Me"
     const cookieMaxAge = remember
-      ? 30 * 24 * 60 * 60 * 1000 // 30 days if remember me is checked
-      : 7 * 24 * 60 * 60 * 1000; // 7 days default
+      ? 30 * 24 * 60 * 60 * 1000
+      : 7 * 24 * 60 * 60 * 1000;
     await setTokenCookie(token, cookieMaxAge);
 
-    // Return success response
     return successResponse(
-      {
-        user: userPublic,
-        token,
-      },
-      MESSAGES.SUCCESS.LOGIN
+      { user: userPublic, token },
+      MESSAGES.EN.SUCCESS.LOGIN
     );
   } catch (error) {
     return handleError(error);

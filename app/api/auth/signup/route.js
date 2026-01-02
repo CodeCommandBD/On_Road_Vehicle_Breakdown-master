@@ -24,10 +24,28 @@ export async function POST(request) {
     const { name, email, password, phone, role, garageName, address } =
       validatedData;
 
+    // Get language from request body, default to English
+    const lang =
+      body.lang && (body.lang === "bn" || body.lang === "en")
+        ? body.lang.toUpperCase()
+        : "EN";
+    const messages = MESSAGES[lang];
+
     // Check if email already exists
     const existingUser = await User.findOne({ email });
+
     if (existingUser) {
-      throw new ConflictError(MESSAGES.ERROR.EMAIL_EXISTS);
+      // STRICT POLICY: One email = One account type
+      const existingRole =
+        existingUser.role.charAt(0).toUpperCase() + existingUser.role.slice(1);
+      const requestedRole = role.charAt(0).toUpperCase() + role.slice(1);
+
+      const errorMessage =
+        lang === "BN"
+          ? `এই ইমেইলটি ইতিমধ্যে '${existingRole}' হিসেবে নিবন্ধিত আছে। আপনি এটি দিয়ে '${requestedRole}' একাউন্ট তৈরি করতে পারবেন না।`
+          : `This email is already registered as a '${existingRole}'. You cannot use it to create a '${requestedRole}' account.`;
+
+      throw new ConflictError(errorMessage);
     }
 
     // Format address into an object if it's a string
@@ -74,6 +92,10 @@ export async function POST(request) {
         },
       });
       await garage.save();
+
+      // Update user with garageId
+      user.garageId = garage._id;
+      await user.save();
     }
 
     // Create JWT token
@@ -93,7 +115,7 @@ export async function POST(request) {
         user: user.toPublicJSON(),
         token,
       },
-      MESSAGES.SUCCESS.SIGNUP
+      messages.SUCCESS.SIGNUP
     );
   } catch (error) {
     return handleError(error);

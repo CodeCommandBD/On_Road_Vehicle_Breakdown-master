@@ -39,10 +39,15 @@ const loginSchema = z.object({
 export default function LoginForm() {
   const t = useTranslations("Auth");
   const commonT = useTranslations("Common");
-  const [activeTab, setActiveTab] = useState("user");
+  const searchParams = useSearchParams();
+  const initialRole = searchParams.get("role");
+  const [activeTab, setActiveTab] = useState(
+    ["user", "garage", "mechanic", "admin"].includes(initialRole)
+      ? initialRole
+      : "user"
+  );
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouterWithLoading(true); // true for i18n support
-  const searchParams = useSearchParams();
   const redirectParams = searchParams.get("redirect");
   const dispatch = useDispatch();
   const isLoading = useSelector(selectAuthLoading);
@@ -340,7 +345,7 @@ export default function LoginForm() {
             <p className="text-gray-400 font-medium">
               {t("noAccount")}{" "}
               <Link
-                href="/signup"
+                href={`/signup?role=${activeTab}`}
                 className="text-white font-bold hover:text-[#ff4800] transition-colors ml-1"
               >
                 {t("signup")}

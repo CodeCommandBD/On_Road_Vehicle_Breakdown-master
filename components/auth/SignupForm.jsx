@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
+import { useSearchParams } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,9 +19,11 @@ import {
   Home,
   Eye,
   EyeOff,
+  Crosshair as LocateIcon,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import * as Tabs from "@radix-ui/react-tabs";
+import { useLocale } from "next-intl"; // Import useLocale
 import {
   loginSuccess,
   loginFailure,
@@ -46,9 +49,16 @@ const signupSchema = z
   });
 
 export default function SignupForm() {
-  const [activeTab, setActiveTab] = useState("user");
+  const locale = useLocale(); // Get current locale (en or bn)
+  const searchParams = useSearchParams();
+  const initialRole = searchParams.get("role");
+
+  const [activeTab, setActiveTab] = useState(
+    ["user", "garage"].includes(initialRole) ? initialRole : "user"
+  );
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loadingLocation, setLoadingLocation] = useState(false);
   const router = useRouterWithLoading(); // Regular routing for signup
   const dispatch = useDispatch();
   const isLoading = useSelector(selectAuthLoading);
@@ -56,6 +66,7 @@ export default function SignupForm() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
     reset,
   } = useForm({
@@ -70,6 +81,53 @@ export default function SignupForm() {
       address: "",
     },
   });
+
+  const handleAutoLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setLoadingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          // Use our internal proxy API with language parameter
+          const response = await fetch(
+            `/api/geocode?lat=${latitude}&lon=${longitude}&lang=${locale}`
+          );
+          const data = await response.json();
+          // ... rest of the function
+
+          if (data && data.display_name) {
+            setValue("address", data.display_name);
+            toast.success("Address fetched successfully!");
+          } else {
+            console.error("Geocode response:", data);
+            toast.error(data.error || "Could not find address from location");
+            // Fallback to coords
+            setValue("address", `Lat: ${latitude}, Lng: ${longitude}`);
+          }
+        } catch (error) {
+          console.error("Geocoding error:", error);
+          toast.error("Failed to fetch address details");
+        } finally {
+          setLoadingLocation(false);
+        }
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        let msg = "Failed to get location";
+        if (error.code === 1) msg = "Location permission denied";
+        if (error.code === 2) msg = "Location unavailable";
+        if (error.code === 3) msg = "Location request timed out";
+        toast.error(msg);
+        setLoadingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
 
   const onSubmit = async (data) => {
     if (activeTab === "garage" && (!data.garageName || !data.address)) {
@@ -90,10 +148,13 @@ export default function SignupForm() {
     const timeoutId = setTimeout(() => controller.abort(), 10000); // Reduce to 10s for better UX
 
     try {
+      const pathname = window.location.pathname;
+      const lang = pathname.startsWith("/bn") ? "bn" : "en";
+
       const response = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, role: activeTab }),
+        body: JSON.stringify({ ...data, role: activeTab, lang }),
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
@@ -108,8 +169,8 @@ export default function SignupForm() {
         result.message || "Account created successfully! Please login."
       );
 
-      // Redirect to login page after signup
-      router.push("/login");
+      // Redirect to login page after signup with specific role tab
+      router.push(`/login?role=${activeTab}`);
     } catch (error) {
       dispatch(loginFailure(error.message || "An unexpected error occurred"));
       toast.error(error.message || "Signup failed");
@@ -245,6 +306,19 @@ export default function SignupForm() {
                     className="bg-transparent text-white w-full outline-none placeholder-gray-600 font-medium"
                     {...register("address")}
                   />
+                  <button
+                    type="button"
+                    onClick={handleAutoLocation}
+                    disabled={loadingLocation}
+                    className="p-2 text-gray-400 hover:text-[#ff4800] transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Use current location"
+                  >
+                    {loadingLocation ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <LocateIcon className="w-5 h-5" />
+                    )}
+                  </button>
                 </div>
               </div>
             </>
