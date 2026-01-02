@@ -123,7 +123,8 @@ export default function DashboardHeader() {
     try {
       await axios.post("/api/auth/logout");
       dispatch(logout());
-      router.push("/login");
+      // Use window.location for hard redirect to ensure clean logout
+      window.location.href = "/login";
     } catch (err) {
       console.error("Logout failed:", err);
     }

@@ -100,7 +100,10 @@ export default function Navbar() {
           dispatch(setUnreadNotificationsCount(res.data.unreadCount));
         }
       } catch (err) {
-        console.error("Failed to fetch notifications in navbar:", err);
+        // Silently ignore 401 errors (user not authenticated)
+        if (err.response?.status !== 401) {
+          console.error("Failed to fetch notifications in navbar:", err);
+        }
       }
     };
     fetchNotifications();

@@ -5,6 +5,8 @@ import { connectDB } from "@/lib/db/connect";
 import Subscription from "@/lib/db/models/Subscription";
 import User from "@/lib/db/models/User";
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/auth/me
  * Get current authenticated user details
@@ -24,29 +26,55 @@ export async function GET(request) {
     }
 
     // --- SUBSCRIPTION VALIDATION & AUTO-DOWNGRADE ---
-    // If user has a currentSubscription ID, verify it still exists in DB
-    if (user.currentSubscription) {
-      const subscription = await Subscription.findById(
-        user.currentSubscription
+    // Rule: Paid tiers (and Trial) MUST have a valid active subscription.
+    const tiersRequiringSubscription = [
+      "trial",
+      "standard",
+      "premium",
+      "enterprise",
+      "garage_pro",
+    ];
+    const isTierRequiringSub = tiersRequiringSubscription.includes(
+      user.membershipTier
+    );
+
+    // Check if subscription ID exists in User doc
+    const subscriptionId = user.currentSubscription;
+
+    let isValidSubscription = false;
+
+    if (subscriptionId) {
+      // Verify it exists in DB
+      const subscription = await Subscription.findById(subscriptionId);
+      if (
+        subscription &&
+        (subscription.status === "active" || subscription.status === "trial")
+      ) {
+        isValidSubscription = true;
+      }
+    }
+
+    // Downgrade if:
+    // 1. User is on paid/trial tier BUT has no subscription ID OR subscription is invalid/inactive
+    // 2. User has a subscription ID that doesn't exist in DB (orphan reference)
+    if (
+      (isTierRequiringSub && !isValidSubscription) ||
+      (subscriptionId && !isValidSubscription)
+    ) {
+      console.log(
+        `Auto-downgrading user ${user._id} to free tier. Tier: ${user.membershipTier}, SubId: ${subscriptionId}`
       );
 
-      // If subscription was deleted from DB, auto-downgrade to free
-      if (!subscription) {
-        console.log(
-          `Auto-downgrading user ${user._id} to free tier (subscription deleted)`
-        );
+      await User.findByIdAndUpdate(user._id, {
+        membershipTier: "free",
+        currentSubscription: null,
+        membershipExpiry: null,
+      });
 
-        await User.findByIdAndUpdate(user._id, {
-          membershipTier: "free",
-          currentSubscription: null,
-          membershipExpiry: null,
-        });
-
-        // Update the user object for response
-        user.membershipTier = "free";
-        user.currentSubscription = null;
-        user.membershipExpiry = null;
-      }
+      // Update the user object for response
+      user.membershipTier = "free";
+      user.currentSubscription = null;
+      user.membershipExpiry = null;
     }
     // -----------------------------------------------
 

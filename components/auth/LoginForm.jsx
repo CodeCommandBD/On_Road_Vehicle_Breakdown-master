@@ -88,7 +88,10 @@ export default function LoginForm() {
 
       // Redirect based on role or return URL
       if (redirectParams) {
-        router.push(redirectParams);
+        // Strip duplicate locale if present in redirect URL (e.g., /en/en/...)
+        // next-intl router automatically adds the current locale
+        const cleanPath = redirectParams.replace(/^\/(en|bn)/, "") || "/";
+        router.push(cleanPath);
       } else if (userData.user?.role === "admin") {
         router.push("/admin/dashboard");
       } else if (userData.user?.role === "garage") {
