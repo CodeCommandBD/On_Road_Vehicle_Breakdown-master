@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-require("dotenv").config({ path: ".env.local" });
+require("dotenv").config({ path: "../../.env.local" });
 
 const packageSchema = new mongoose.Schema(
   {
