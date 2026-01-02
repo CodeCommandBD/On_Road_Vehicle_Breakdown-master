@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "@/i18n/routing";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import { useSelector, useDispatch } from "react-redux";
 import {
   selectIsAuthenticated,
@@ -17,7 +17,7 @@ import axios from "axios";
 // Prevent hydration mismatch by using client component for state
 export default function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const dispatch = useDispatch();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const isLoading = useSelector(selectAuthLoading);

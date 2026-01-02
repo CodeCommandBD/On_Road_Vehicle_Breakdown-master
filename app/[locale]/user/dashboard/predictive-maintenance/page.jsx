@@ -22,14 +22,14 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
-import { useRouter } from "next/navigation";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import { Download } from "lucide-react";
 import DiagnosisDocument from "@/components/pdf/DiagnosisDocument";
 
 export default function PredictiveMaintenancePage() {
   const t = useTranslations("Dashboard"); // You might want to add specific translations later
   const user = useSelector(selectUser);
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
 
   const [symptoms, setSymptoms] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);

@@ -10,7 +10,7 @@ import { selectUserRole, updateUser } from "@/store/slices/authSlice";
 import axios from "axios";
 
 export default function PaymentSuccessPage() {
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const searchParams = useSearchParams();
   const [countdown, setCountdown] = useState(10);
   const userRole = useSelector(selectUserRole);

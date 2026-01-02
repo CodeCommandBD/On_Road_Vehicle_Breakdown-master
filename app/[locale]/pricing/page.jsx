@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import { useSelector } from "react-redux";
 import { selectIsAuthenticated, selectUser } from "@/store/slices/authSlice";
 import Link from "next/link";
@@ -20,7 +20,7 @@ import { useTranslations } from "next-intl";
 
 export default function PricingPage() {
   const t = useTranslations("Pricing");
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const user = useSelector(selectUser);
   const [plans, setPlans] = useState([]);

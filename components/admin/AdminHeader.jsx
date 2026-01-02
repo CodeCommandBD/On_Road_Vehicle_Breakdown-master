@@ -4,7 +4,7 @@ import { Bell, Menu, User, LogOut, Settings, Search } from "lucide-react";
 import Breadcrumb from "@/components/dashboard/Breadcrumb";
 import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useRouter } from "next/navigation";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import axios from "axios";
 import {
   selectUnreadNotificationsCount,
@@ -17,7 +17,7 @@ import Link from "next/link";
 
 export default function AdminHeader({ onMenuClick }) {
   const dispatch = useDispatch();
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const user = useSelector(selectUser);
   const unreadCount = useSelector(selectUnreadNotificationsCount);
   const searchTerm = useSelector(selectSearchTerm);

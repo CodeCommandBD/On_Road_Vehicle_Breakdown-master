@@ -31,7 +31,7 @@ import {
 export default function MechanicLayout({ children }) {
   const pathname = usePathname();
   const dispatch = useDispatch();
-  const router = useRouter();
+  const router = useRouterWithLoading(true); // i18n routing
   const unreadCount = useSelector(selectUnreadNotificationsCount);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const isLoading = useSelector(selectAuthLoading);

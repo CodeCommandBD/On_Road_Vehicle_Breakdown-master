@@ -55,7 +55,7 @@ const PLANS = {
 
 export default function CheckoutPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const user = useSelector(selectUser);
 
   const [isProcessing, setIsProcessing] = useState(false);

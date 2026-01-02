@@ -40,7 +40,7 @@ function BookingForm() {
   const t = useTranslations("Booking");
   const tServices = useTranslations("Home.serviceNames");
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
 

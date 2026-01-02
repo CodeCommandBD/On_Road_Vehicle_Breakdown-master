@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import {
   Star,
   MapPin,
@@ -53,7 +54,7 @@ const deg2rad = (deg) => {
 export default function GaragesPage() {
   const t = useTranslations("Garages");
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const pathname = usePathname();
 
   const [garages, setGarages] = useState([]);

@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from "react";
 import { Link } from "@/i18n/routing";
 import Image from "next/image";
 import { useSelector, useDispatch } from "react-redux";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
+import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import {
   logout,
@@ -54,7 +55,7 @@ export default function Navbar() {
   const [services, setServices] = useState([]);
 
   const dispatch = useDispatch();
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const pathname = usePathname();
 
   // NextAuth session

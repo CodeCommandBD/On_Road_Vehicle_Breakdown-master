@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import axios from "axios";
 import { ArrowLeft, CheckCircle, XCircle } from "lucide-react";
 
 export default function CreateOrganizationPage() {
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState("success"); // 'success' or 'error'

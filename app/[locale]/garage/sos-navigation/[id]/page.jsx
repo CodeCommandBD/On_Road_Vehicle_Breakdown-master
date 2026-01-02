@@ -32,7 +32,7 @@ const MapComponent = dynamic(() => import("@/components/maps/MapComponent"), {
 
 export default function SOSNavigationPage() {
   const params = useParams();
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const [sos, setSos] = useState(null);
   const [garage, setGarage] = useState(null);
   const [loading, setLoading] = useState(true);

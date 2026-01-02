@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import {
   Crown,
   Calendar,
@@ -19,7 +19,7 @@ import { useTranslations } from "next-intl";
 export default function SubscriptionCard() {
   const t = useTranslations("Subscription");
   const commonT = useTranslations("Common");
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showCancelModal, setShowCancelModal] = useState(false);

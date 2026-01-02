@@ -24,7 +24,7 @@ import ConfirmationModal from "@/components/common/ConfirmationModal";
 
 export default function MechanicJobDetails() {
   const { id } = useParams();
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState(null);
   const [updating, setUpdating] = useState(false);

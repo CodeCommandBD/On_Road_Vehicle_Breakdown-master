@@ -18,7 +18,7 @@ import {
 export default function CheckoutPage() {
   const params = useParams();
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const user = useSelector(selectUser);
 

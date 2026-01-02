@@ -23,7 +23,7 @@ import BreadcrumbNav from "./Breadcrumb";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import Link from "next/link";
-import { useRouter } from "@/i18n/routing";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils/helpers";
 import RewardsInfoModal from "./RewardsInfoModal";
@@ -34,7 +34,7 @@ export default function DashboardHeader() {
   const navT = useTranslations("Navigation");
   const dashT = useTranslations("Dashboard");
   const dispatch = useDispatch();
-  const router = useRouter();
+  const router = useRouterWithLoading(true); // i18n routing
   const user = useSelector(selectUser);
   const searchTerm = useSelector(selectSearchTerm);
   const unreadCount = useSelector(selectUnreadNotificationsCount);

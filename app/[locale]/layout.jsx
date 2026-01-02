@@ -13,6 +13,9 @@ import { CsrfProvider } from "@/lib/context/CsrfContext";
 import { Inter } from "next/font/google";
 import LanguageAlternates from "@/components/seo/LanguageAlternates";
 import LocaleProvider from "@/components/providers/LocaleProvider";
+import { LoadingProvider } from "@/components/providers/LoadingProvider";
+import LoadingOverlay from "@/components/ui/LoadingOverlay";
+import { LinkLoadingInterceptor } from "@/components/providers/LinkLoadingInterceptor";
 
 // Configure Inter font
 const inter = Inter({
@@ -113,12 +116,16 @@ export default async function RootLayout({ children, params }) {
           <CsrfProvider>
             <SessionProvider>
               <StoreProvider>
-                <LocaleProvider currentLocale={locale}>
-                  {children}
-                  <NotificationListener />
-                  <PWAInstallPrompt />
-                  <ToastContainer position="bottom-right" theme="colored" />
-                </LocaleProvider>
+                <LoadingProvider>
+                  <LocaleProvider currentLocale={locale}>
+                    <LinkLoadingInterceptor />
+                    {children}
+                    <NotificationListener />
+                    <PWAInstallPrompt />
+                    <ToastContainer position="bottom-right" theme="colored" />
+                    <LoadingOverlay />
+                  </LocaleProvider>
+                </LoadingProvider>
               </StoreProvider>
             </SessionProvider>
           </CsrfProvider>

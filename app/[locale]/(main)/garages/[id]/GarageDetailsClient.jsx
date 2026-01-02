@@ -29,7 +29,7 @@ import { useTranslations } from "next-intl";
 export default function GarageDetailsClient({ garage, id }) {
   const t = useTranslations("GarageDetails");
   const tServices = useTranslations("Home.serviceNames");
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const user = useSelector(selectUser);
   const favorites = useSelector(selectFavorites);
   const dispatch = useDispatch();

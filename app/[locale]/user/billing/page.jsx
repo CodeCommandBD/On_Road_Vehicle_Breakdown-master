@@ -25,7 +25,7 @@ import axios from "axios";
 import InvoiceDocument from "@/components/pdf/InvoiceDocument";
 
 export default function BillingPage() {
-  const router = useRouter();
+  const router = useRouterWithLoading(true); // i18n routing
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);

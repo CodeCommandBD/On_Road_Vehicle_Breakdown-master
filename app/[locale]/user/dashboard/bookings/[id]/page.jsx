@@ -41,7 +41,7 @@ const MapComponent = dynamic(() => import("@/components/maps/MapComponent"), {
 
 export default function BookingDetailsPage() {
   const { id } = useParams();
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);

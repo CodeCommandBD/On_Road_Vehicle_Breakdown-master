@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "@/i18n/routing";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import { useSelector, useDispatch } from "react-redux";
 import {
   selectIsAuthenticated,
@@ -14,7 +14,7 @@ import { Loader2 } from "lucide-react";
 import axios from "axios";
 
 export default function DashboardLayout({ children }) {
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const dispatch = useDispatch();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const isLoading = useSelector(selectAuthLoading);

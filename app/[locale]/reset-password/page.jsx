@@ -32,7 +32,7 @@ export default function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [token, setToken] = useState(null);
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const searchParams = useSearchParams();
 
   useEffect(() => {

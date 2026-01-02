@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import { useSelector } from "react-redux";
 import { selectIsAuthenticated } from "@/store/slices/authSlice";
 import {
@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 export default function TrialActivatePage() {
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

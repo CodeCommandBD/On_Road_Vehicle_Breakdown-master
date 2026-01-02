@@ -5,7 +5,7 @@ import { XCircle, ArrowLeft, RefreshCcw } from "lucide-react";
 import Link from "next/link";
 
 export default function PaymentFailPage() {
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const searchParams = useSearchParams();
 
   const transaction = searchParams.get("transaction");

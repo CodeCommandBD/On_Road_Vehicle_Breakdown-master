@@ -17,11 +17,11 @@ import {
 import axios from "axios";
 import { toast } from "react-toastify";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 
 export default function SubscriptionPage() {
   const user = useSelector(selectUser);
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const [isLoading, setIsLoading] = useState(true);
   const [subscription, setSubscription] = useState(null);
   const [plans, setPlans] = useState([]);

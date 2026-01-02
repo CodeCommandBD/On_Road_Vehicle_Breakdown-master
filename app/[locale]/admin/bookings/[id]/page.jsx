@@ -24,12 +24,12 @@ import {
 import Link from "next/link";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { useRouter } from "next/navigation";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 
 export default function AdminBookingDetailPage({ params }) {
   const resolvedParams = use(params);
   const { id } = resolvedParams;
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);

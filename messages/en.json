@@ -755,6 +755,7 @@
     "phone": "+880 1234 567890"
   },
   "Garages": {
+    "filters": "Filters",
     "title": "Find Nearby Garages",
     "searchPlaceholder": "Search by name, city, or district...",
     "showing": "Showing",

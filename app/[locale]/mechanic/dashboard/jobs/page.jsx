@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import {
   MapPin,
   Car,
@@ -13,7 +13,7 @@ import {
 import { toast } from "react-toastify";
 
 export default function OpenJobsPage() {
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState([]);
   const [acceptingId, setAcceptingId] = useState(null);

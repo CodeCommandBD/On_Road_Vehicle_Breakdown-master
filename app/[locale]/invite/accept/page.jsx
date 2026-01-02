@@ -9,7 +9,7 @@ import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 
 function InviteAcceptContent() {
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const dispatch = useDispatch();

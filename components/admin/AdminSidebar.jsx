@@ -1,6 +1,7 @@
 "use client";
 
-import { Link, usePathname, useRouter } from "@/i18n/routing";
+import { Link, usePathname } from "@/i18n/routing";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { logout } from "@/store/slices/authSlice";
@@ -75,7 +76,7 @@ const getMenuItems = (t) => [
 export default function AdminSidebar({ isOpen, onClose }) {
   const t = useTranslations("AdminNav");
   const pathname = usePathname();
-  const router = useRouter();
+  const router = useRouterWithLoading(true); // i18n routing
   const dispatch = useDispatch();
   const menuItems = getMenuItems(t);
   const [counts, setCounts] = useState({

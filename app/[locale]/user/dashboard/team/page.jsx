@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { useRouter } from "next/navigation";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import {
   Users,
   UserPlus,
@@ -60,7 +60,7 @@ export default function TeamManagementPage() {
   const [resendingInvitation, setResendingInvitation] = useState(null);
   const [updatingRole, setUpdatingRole] = useState(null);
 
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
 
   // ... (keep existing helper functions)
 

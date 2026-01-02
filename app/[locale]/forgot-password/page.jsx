@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "@/i18n/routing";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
@@ -29,7 +29,7 @@ export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [activeTab, setActiveTab] = useState("user");
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
 
   const {
     register,

@@ -26,7 +26,7 @@ const MapComponent = dynamic(() => import("@/components/maps/MapComponent"), {
 
 export default function GarageTrackPage() {
   const { id } = useParams();
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const [isTracking, setIsTracking] = useState(false);
   const [location, setLocation] = useState(null);
   const [error, setError] = useState(null);

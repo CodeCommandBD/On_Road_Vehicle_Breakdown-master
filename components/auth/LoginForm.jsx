@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "@/i18n/routing";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -41,7 +41,7 @@ export default function LoginForm() {
   const commonT = useTranslations("Common");
   const [activeTab, setActiveTab] = useState("user");
   const [showPassword, setShowPassword] = useState(false);
-  const router = useRouter();
+  const router = useRouterWithLoading(true); // true for i18n support
   const searchParams = useSearchParams();
   const redirectParams = searchParams.get("redirect");
   const dispatch = useDispatch();

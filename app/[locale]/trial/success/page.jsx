@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import { Sparkles, CheckCircle, ArrowRight, Clock } from "lucide-react";
 import Link from "next/link";
 import confetti from "canvas-confetti";
@@ -9,7 +9,7 @@ import { useSelector } from "react-redux";
 import { selectUserRole } from "@/store/slices/authSlice";
 
 export default function TrialSuccessPage() {
-  const router = useRouter();
+  const router = useRouterWithLoading(); // Regular routing
   const userRole = useSelector(selectUserRole);
 
   useEffect(() => {
