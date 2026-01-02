@@ -49,14 +49,6 @@ export default function Sidebar() {
   const user = useSelector(selectUser);
   const favorites = useSelector(selectFavorites);
 
-  // Debug: Log user membership tier
-  console.log("Sidebar - User data:", {
-    hasUser: !!user,
-    membershipTier: user?.membershipTier,
-    isTeamMember: user?.isTeamMember,
-    email: user?.email,
-  });
-
   const sidebarLinks = {
     user: [
       { href: "/", label: "Home", icon: Home },

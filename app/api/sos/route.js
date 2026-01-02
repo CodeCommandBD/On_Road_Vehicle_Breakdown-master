@@ -104,9 +104,9 @@ export async function POST(request) {
           subscription.planId = freePlan;
           plan = freePlan;
 
-          console.log(
-            `✅ Auto-created ${freePlan.tier} subscription for user: ${decoded.userId}`
-          );
+          // Manually assign the plan object (instead of re-querying)
+          subscription.planId = freePlan;
+          plan = freePlan;
         } else {
           // No free plan found in database
           return NextResponse.json(
@@ -118,7 +118,6 @@ export async function POST(request) {
           );
         }
       } catch (autoSubError) {
-        console.error("Failed to auto-create subscription:", autoSubError);
         return NextResponse.json(
           {
             success: false,
@@ -134,9 +133,6 @@ export async function POST(request) {
 
       // Fix corrupted subscription (planId is null)
       if (!plan) {
-        console.warn(
-          "⚠️ Found subscription with null planId, attempting to fix..."
-        );
         try {
           // Determine plan based on amount or status
           let planToAssign;
@@ -168,11 +164,7 @@ export async function POST(request) {
 
             // Assign plan for current request
             plan = planToAssign;
-            console.log(`✅ Fixed subscription planId: ${planToAssign.tier}`);
           } else {
-            console.error(
-              "❌ No plans available in database to fix subscription"
-            );
             return NextResponse.json(
               {
                 success: false,
@@ -182,7 +174,6 @@ export async function POST(request) {
             );
           }
         } catch (fixError) {
-          console.error("Failed to fix subscription:", fixError);
           return NextResponse.json(
             {
               success: false,
@@ -196,7 +187,6 @@ export async function POST(request) {
 
     // Double check if plan is populated
     if (!plan) {
-      console.error("Plan not populated for subscription:", subscription);
       return NextResponse.json(
         {
           success: false,
@@ -269,9 +259,7 @@ export async function POST(request) {
           }
         }
       }
-    } catch (err) {
-      console.error("Error updating usage:", err);
-    }
+    } catch (err) {}
     // ------------------------------------------
 
     // --- TRIGGER WEBHOOKS (Multi-level, Fire & Forget) ---
@@ -289,11 +277,8 @@ export async function POST(request) {
 
     // 1. Individual User Webhook
     try {
-      console.log(`Triggering user webhook for: ${decoded.userId}`);
       await triggerWebhook(decoded.userId, "sos.created", webhookPayload);
-    } catch (webhookErr) {
-      console.error("User webhook trigger failed:", webhookErr);
-    }
+    } catch (webhookErr) {}
 
     // 2. Organization Webhooks
     try {
@@ -301,7 +286,6 @@ export async function POST(request) {
         user: decoded.userId,
         isActive: true,
       });
-      console.log(`Found ${memberships.length} active memberships for user`);
 
       const orgWebhookPromises = memberships.map((m) =>
         triggerOrganizationWebhook(
@@ -311,17 +295,12 @@ export async function POST(request) {
         )
       );
       await Promise.all(orgWebhookPromises);
-    } catch (orgWebhookErr) {
-      console.error("Org webhook trigger failed:", orgWebhookErr);
-    }
+    } catch (orgWebhookErr) {}
 
     // 3. Global Admin/System Webhooks
     try {
-      console.log("Triggering global SOS webhooks");
       await triggerGlobalSOSWebhooks("sos.created", webhookPayload);
-    } catch (globalWebhookErr) {
-      console.error("Global webhook trigger failed:", globalWebhookErr);
-    }
+    } catch (globalWebhookErr) {}
     // ---------------------------------------
 
     // --- SEARCH LOGIC UPDATED FOR COVERAGE LIMITS ---
@@ -372,7 +351,7 @@ export async function POST(request) {
           } SOS ALERT`,
           message: `${user?.name || "A user"} (${
             priority === "critical" ? "VIP" : "User"
-          }) needs help! Deadline: ${slaMinutes}m.`,
+          }) needs help! Deadline: ${responseTimeLimit}m.`,
           link: `/garage/sos-navigation/${sosAlert._id}`,
         })
       );
@@ -396,9 +375,7 @@ export async function POST(request) {
         ...adminNotificationPromises,
         ...emailPromises,
       ]);
-    } catch (notifyErr) {
-      console.error("Failed to send SOS alerts:", notifyErr);
-    }
+    } catch (notifyErr) {}
 
     return NextResponse.json({
       success: true,
@@ -406,12 +383,6 @@ export async function POST(request) {
       message: "Emergency alert sent successfully. Help is on the way!",
     });
   } catch (error) {
-    console.error("============ SOS POST Error ============");
-    console.error("Error Message:", error.message);
-    console.error("Error Stack:", error.stack);
-    console.error("Error:", error);
-    console.error("========================================");
-
     return NextResponse.json(
       {
         success: false,

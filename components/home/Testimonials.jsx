@@ -6,6 +6,7 @@ import { Pagination, Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
 import { useTranslations } from "next-intl";
+import Image from "next/image";
 
 const testimonials = [
   {

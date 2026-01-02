@@ -66,8 +66,6 @@ export default function ImageUpload({
         if (oldUrl) {
           const publicId = getPublicIdFromUrl(oldUrl);
           if (publicId) {
-            console.log("Auto-deleting replaced image:", publicId);
-            // Fire and forget delete request to avoid blocking UI
             axios
               .delete("/api/upload", { data: { public_id: publicId } })
               .catch((err) =>
@@ -91,7 +89,6 @@ export default function ImageUpload({
 
     // Check if it's a cloudinary URL to attempt deletion
     const publicId = getPublicIdFromUrl(value);
-    console.log("Attempting to delete. URL:", value, "Extracted ID:", publicId);
 
     if (publicId) {
       setDeleting(true);
@@ -100,12 +97,9 @@ export default function ImageUpload({
           data: { public_id: publicId },
         });
 
-        console.log("Delete Response:", res.data);
-
         if (res.data.success) {
           toast.info("Image deleted from cloud");
         } else {
-          console.warn("Server reported delete failure:", res.data);
           // Show error to user so they know it didn't strictly work
           toast.warning(
             `Cloud delete failed: ${res.data.message || "Unknown error"}`
@@ -118,7 +112,6 @@ export default function ImageUpload({
         setDeleting(false);
       }
     } else {
-      console.warn("Could not extract public ID from URL");
       toast.warning("Could not identify image ID for cloud deletion");
     }
 

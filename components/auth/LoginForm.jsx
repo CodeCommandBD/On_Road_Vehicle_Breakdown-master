@@ -76,8 +76,6 @@ export default function LoginForm() {
       clearTimeout(timeoutId);
 
       const result = await response.json();
-      console.log("Login result:", result);
-
       if (!response.ok) {
         throw new Error(result.message || "Login failed");
       }
@@ -85,15 +83,10 @@ export default function LoginForm() {
       // Handle new API response format (data wrapper)
       const userData = result.data || result;
 
-      console.log("Dispatching loginSuccess");
       dispatch(loginSuccess(result));
       toast.success(`Welcome back, ${userData.user?.name || "User"}!`);
 
       // Redirect based on role or return URL
-      console.log("Redirecting...", {
-        redirectParams,
-        role: userData.user?.role,
-      });
       if (redirectParams) {
         router.push(redirectParams);
       } else if (userData.user?.role === "admin") {
@@ -106,7 +99,6 @@ export default function LoginForm() {
         router.push("/"); // Redirect to home page for users
       }
     } catch (error) {
-      console.error("Login Error Catch:", error);
       dispatch(loginFailure(error.message || "An unexpected error occurred"));
       toast.error(error.message || "Login failed");
     } finally {

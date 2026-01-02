@@ -99,7 +99,6 @@ export default function SignupForm() {
       clearTimeout(timeoutId);
 
       const result = await response.json();
-      console.log("Signup result:", result);
 
       if (!response.ok) {
         throw new Error(result.message || "Signup failed");
@@ -112,7 +111,6 @@ export default function SignupForm() {
       // Redirect to login page after signup
       router.push("/login");
     } catch (error) {
-      console.error("Signup Error:", error);
       dispatch(loginFailure(error.message || "An unexpected error occurred"));
       toast.error(error.message || "Signup failed");
     } finally {

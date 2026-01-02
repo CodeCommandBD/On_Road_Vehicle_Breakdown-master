@@ -84,9 +84,6 @@ async function verifyToken(token) {
 export default async function middleware(request) {
   const { pathname } = request.nextUrl;
 
-  // Debug log for authentication flow
-  // console.log(`[Middleware] Processing: ${pathname}`);
-
   // Skip middleware for static files, API routes (except protected ones), and Next.js internals
   if (
     pathname.includes("/_next") ||
@@ -118,9 +115,6 @@ export default async function middleware(request) {
   }
 
   // For protected routes, check authentication
-  // console.log(`[Middleware] Protected route: ${pathname}`);
-  // console.log(`[Middleware] Cookies keys:`, request.cookies.getAll().map(c => c.name));
-
   // 1. Try to get NextAuth session token (Standard way)
   // We let next-auth detect secure cookie mode automatically based on protocol/env
   const nextAuthToken = await getToken({

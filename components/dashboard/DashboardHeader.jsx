@@ -55,10 +55,7 @@ export default function DashboardHeader() {
           setNotifications(res.data.notifications);
           dispatch(setUnreadNotificationsCount(res.data.unreadCount));
           if (res.data.notifications.length > 0) {
-            console.log(
-              "🔔 Notifications synced:",
-              res.data.notifications.length
-            );
+            // Notifications synced
           }
         }
       } catch (err) {
@@ -121,8 +118,6 @@ export default function DashboardHeader() {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
-
-  console.log("🔔 NOTIFICATIONS STATE IN HEADER:", notifications);
 
   const handleLogout = async () => {
     try {
@@ -222,12 +217,8 @@ export default function DashboardHeader() {
                       <div
                         key={n._id}
                         onClick={() => {
-                          console.log("🔔 Notification Clicked:", n);
                           if (n.link) {
-                            console.log("🚀 Redirecting to:", n.link);
                             router.push(n.link);
-                          } else {
-                            console.log("⚠️ No link found in notification");
                           }
                           setIsNotifyOpen(false);
                         }}

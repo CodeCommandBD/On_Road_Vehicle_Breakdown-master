@@ -50,11 +50,8 @@ export default function FavoritesPage() {
   const fetchFullFavorites = async () => {
     try {
       setLoading(true);
-      console.log("🔍 Fetching favorites...");
 
       const res = await axios.get("/api/user/favorites");
-
-      console.log("✅ Favorites response:", res.data);
 
       if (res.data.success) {
         dispatch({

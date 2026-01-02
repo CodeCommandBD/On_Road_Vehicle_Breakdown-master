@@ -94,7 +94,6 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user && !isEditing && !isLoading) {
-      console.log("Initializing ProfileForm with user data:", user.location);
       setProfileFormData({
         name: user.name || "",
         email: user.email || "",
@@ -187,16 +186,10 @@ export default function ProfilePage() {
       vehicles: Array.isArray(currentData.vehicles) ? currentData.vehicles : [],
     };
 
-    console.log("FINAL SUBMISSION PAYLOAD:", JSON.stringify(payload));
-
     try {
       const response = await axios.put("/api/profile", payload);
 
       if (response.data.success) {
-        console.log(
-          "Profile update success. Response user location:",
-          response.data.user.location
-        );
         const updatedUser = response.data.user;
 
         // Update local state immediately to avoid flickers

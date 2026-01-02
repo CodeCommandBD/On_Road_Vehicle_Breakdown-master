@@ -70,7 +70,6 @@ export default function TeamManagementPage() {
 
   const checkUserAccess = async () => {
     try {
-      console.log("Fetching user data and organizations...");
       const [profileRes, orgsRes] = await Promise.all([
         axios.get("/api/profile"),
         axios.get("/api/organizations"),
@@ -78,11 +77,6 @@ export default function TeamManagementPage() {
 
       const userData = profileRes.data.user;
       const orgs = orgsRes.data.data || [];
-
-      console.log("Access check:", {
-        tier: userData.membershipTier,
-        orgCount: orgs.length,
-      });
 
       setCurrentUser(userData);
       setOrganizations(orgs);
@@ -104,20 +98,17 @@ export default function TeamManagementPage() {
 
       // If NOT eligible plan AND NOT a team member AND NOT Global Admin -> Deny
       if (!isEligiblePlan && !isTeamMember && userData.role !== "admin") {
-        console.log("Access denied - Plan not eligible");
         setHasAccess(false);
         setLoading(false);
         return;
       }
 
       if (isTeamMember && (!orgs || orgs.length === 0)) {
-        console.log("Access denied - Team member with no org");
         setHasAccess(false);
         setLoading(false);
         return;
       }
 
-      console.log("Access granted");
       setHasAccess(true);
 
       if (orgs.length > 0) {
@@ -147,7 +138,6 @@ export default function TeamManagementPage() {
 
   const loadOrganizations = async () => {
     try {
-      console.log("Loading organizations...");
       const res = await axios.get("/api/organizations");
       console.log("Organizations response:", res.data);
       setOrganizations(res.data.data || []);

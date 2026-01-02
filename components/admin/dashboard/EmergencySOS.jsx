@@ -13,10 +13,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import dynamic from "next/dynamic";
 import { toast } from "react-toastify";
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
-
-dayjs.extend(relativeTime);
+import { formatDistanceToNow } from "date-fns";
 
 const MapComponent = dynamic(() => import("@/components/maps/MapComponent"), {
   ssr: false,
@@ -210,7 +207,10 @@ export default function EmergencySOS() {
                         {alert.user?.name || "Anonymous User"}
                       </span>
                       <span className="text-xs text-white/30">
-                        • {dayjs(alert.createdAt).fromNow()}
+                        •{" "}
+                        {formatDistanceToNow(new Date(alert.createdAt), {
+                          addSuffix: true,
+                        })}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
