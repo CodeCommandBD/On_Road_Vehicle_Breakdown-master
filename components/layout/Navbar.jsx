@@ -161,7 +161,7 @@ export default function Navbar() {
           className="group flex items-center gap-3 transition-transform duration-300 hover:scale-105"
         >
           <Image
-            src="/images/nav/main-logo.svg"
+            src="/images/main-logo.webp"
             alt="Logo"
             width={120}
             height={40}
@@ -325,7 +325,7 @@ export default function Navbar() {
               >
                 <div className="w-[32px] h-[32px] md:w-[40px] md:h-[40px] rounded-full border-[2px] border-[#ff4800] shadow-[0_0_0_4px_rgba(255,72,0,0.2)] transition-all duration-300 overflow-hidden hover:border-white hover:shadow-[0_0_0_6px_rgba(255,72,0,0.3),0_0_20px_rgba(255,72,0,0.5)] hover:scale-110">
                   <Image
-                    src={user.avatar || "/images/users/default-avatar.jpg"}
+                    src={user.avatar || "/images/default-avatar.webp"}
                     alt="User"
                     width={40}
                     height={40}
@@ -520,7 +520,7 @@ export default function Navbar() {
         >
           <div className="p-6 border-b border-white/10">
             <Image
-              src="/images/nav/main-logo.svg"
+              src="/images/main-logo.webp"
               alt="Logo"
               width={140}
               height={50}
