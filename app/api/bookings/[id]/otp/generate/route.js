@@ -124,10 +124,6 @@ export async function POST(request, { params }) {
     // TODO: Send SMS to user's phone with OTP
     // Example: await sendSMS(booking.user.phone, `Your ${otpType} OTP: ${otpData.code}`);
 
-    console.log(
-      `✅ OTP Generated for booking ${booking.bookingNumber}: ${otpData.code} (${type})`
-    );
-
     return NextResponse.json(
       {
         success: true,

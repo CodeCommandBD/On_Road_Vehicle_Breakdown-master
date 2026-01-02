@@ -74,26 +74,18 @@ export async function GET(request) {
   try {
     await connectDB();
     const token = request.cookies.get("token")?.value;
-
-    console.log("🔍 Favorites GET - Token exists:", !!token);
-
     const decoded = await verifyToken(token);
 
     if (!decoded) {
-      console.log("❌ Favorites GET - Token verification failed");
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    console.log("✅ Favorites GET - User ID from token:", decoded.userId);
-
     const user = await User.findById(decoded.userId).populate(
       "favoriteGarages"
     );
-
-    console.log("🔍 Favorites GET - User found:", !!user);
 
     if (!user) {
       return NextResponse.json(

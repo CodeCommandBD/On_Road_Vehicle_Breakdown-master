@@ -5,19 +5,17 @@ import { jwtVerify } from "jose";
 import { PUBLIC_ROUTES, PROTECTED_ROUTES } from "./lib/utils/constants";
 import { getToken } from "next-auth/jwt";
 
-// JWT Secret
-// JWT Secret - Enforce environment variable in production
+// JWT Secret - Enforce environment variable (no fallback)
 const SECRET_KEY = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET;
 
-if (!SECRET_KEY && process.env.NODE_ENV === "production") {
+if (!SECRET_KEY) {
   throw new Error(
-    "❌ JWT_SECRET or NEXTAUTH_SECRET must be defined in .env file"
+    "❌ SECURITY ERROR: JWT_SECRET or NEXTAUTH_SECRET must be defined in .env file. " +
+      "Generate a secure secret with: openssl rand -base64 32"
   );
 }
 
-const JWT_SECRET = new TextEncoder().encode(
-  SECRET_KEY || "dev-secret-key-change-in-prod" // Only for local dev fallback
-);
+const JWT_SECRET = new TextEncoder().encode(SECRET_KEY);
 
 // Create next-intl middleware
 const intlMiddleware = createMiddleware(routing);

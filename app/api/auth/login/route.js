@@ -28,31 +28,17 @@ export async function POST(request) {
     const { email, password, remember } = validatedData;
     const { role } = body; // Optional role check
 
-    console.log("🔍 Login attempt - Email/Phone:", email);
-    console.log("🔍 Login attempt - Role filter:", role || "any");
-
     // Find user with password (support both email and phone)
     const user = await User.findOne({
       $or: [{ email: email }, { phone: email }],
     }).select("+password");
 
     if (!user) {
-      console.log("❌ Login failed - User not found:", email);
       throw new NotFoundError(MESSAGES.ERROR.INVALID_CREDENTIALS);
     }
 
-    console.log(
-      "✅ User found - ID:",
-      user._id,
-      "Role:",
-      user.role,
-      "Active:",
-      user.isActive
-    );
-
     // Check if user is active
     if (!user.isActive) {
-      console.log("❌ Login failed - Account inactive");
       throw new ForbiddenError("Your account has been deactivated");
     }
 
@@ -60,9 +46,6 @@ export async function POST(request) {
     if (user.accountLockedUntil && user.accountLockedUntil > new Date()) {
       const lockTimeRemaining = Math.ceil(
         (user.accountLockedUntil - new Date()) / 1000 / 60
-      );
-      console.log(
-        `❌ Login failed - Account locked for ${lockTimeRemaining} more minutes`
       );
       throw new ForbiddenError(
         `Account temporarily locked due to multiple failed login attempts. Please try again in ${lockTimeRemaining} minutes.`
@@ -76,14 +59,9 @@ export async function POST(request) {
     }
 
     // Verify password
-    console.log("🔍 Verifying password...");
     const isPasswordValid = await user.comparePassword(password);
 
-    console.log("🔍 Password valid:", isPasswordValid);
-
     if (!isPasswordValid) {
-      console.log("❌ Login failed - Invalid password");
-
       // Increment failed login attempts
       user.failedLoginAttempts += 1;
 
@@ -91,9 +69,6 @@ export async function POST(request) {
       if (user.failedLoginAttempts >= 5) {
         user.accountLockedUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
         await user.save();
-        console.log(
-          `🔒 Account locked for 15 minutes after ${user.failedLoginAttempts} failed attempts`
-        );
         throw new ForbiddenError(
           "Account locked due to multiple failed login attempts. Please try again in 15 minutes."
         );
@@ -101,9 +76,6 @@ export async function POST(request) {
 
       await user.save();
       const attemptsRemaining = 5 - user.failedLoginAttempts;
-      console.log(
-        `⚠️ Failed attempts: ${user.failedLoginAttempts}/5. Remaining: ${attemptsRemaining}`
-      );
 
       throw new UnauthorizedError(
         `${MESSAGES.ERROR.INVALID_CREDENTIALS} (${attemptsRemaining} attempts remaining)`
@@ -112,12 +84,6 @@ export async function POST(request) {
 
     // Check role if specified
     if (role && user.role !== role) {
-      console.log(
-        "❌ Login failed - Role mismatch. Expected:",
-        role,
-        "Got:",
-        user.role
-      );
       throw new UnauthorizedError(`This account is not registered as ${role}`);
     }
 
@@ -125,10 +91,7 @@ export async function POST(request) {
     if (user.failedLoginAttempts > 0 || user.accountLockedUntil) {
       user.failedLoginAttempts = 0;
       user.accountLockedUntil = null;
-      console.log("✅ Failed login attempts reset after successful login");
     }
-
-    console.log("✅ Login successful - User:", user.email);
 
     // Update last login
     user.lastLogin = new Date();

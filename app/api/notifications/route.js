@@ -25,7 +25,6 @@ export async function GET(req) {
   try {
     const token = req.cookies.get("token")?.value;
     if (!token) {
-      console.log("No token found in cookies");
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
         { status: 401 }
@@ -44,19 +43,11 @@ export async function GET(req) {
     }
 
     if (!decoded || !decoded.userId) {
-      console.log("Decoded token invalid or missing userId:", decoded);
       return NextResponse.json(
         { success: false, message: "Invalid or expired token" },
         { status: 401 }
       );
     }
-
-    console.log(
-      "Fetching notifications for user:",
-      decoded.userId,
-      "role:",
-      decoded.role
-    );
 
     await connectDB();
 

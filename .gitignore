@@ -38,3 +38,15 @@ Thumbs.db
 # Testing
 coverage
 .nyc_output
+
+# Debug files
+*.log
+debug.log
+*.BACKUP.*
+debug-*.js
+
+# Temporary files
+*.tmp
+*.temp
+result.json
+subscription_check_result.txt
