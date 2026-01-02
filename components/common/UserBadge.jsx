@@ -91,13 +91,13 @@ export default function UserBadge({ user, className = "" }) {
 
   // 3. Garage Logic
   if (user.role === "garage") {
-    if (user.membershipTier === "garage_pro") {
+    if (user.membershipTier === "professional") {
       return (
         <div
           className={`px-3 py-1 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 border border-purple-400 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-indigo-500/30 ${className}`}
         >
           <Wrench className="w-3.5 h-3.5" />
-          {t("garagePro", { defaultMessage: "GARAGE PRO" })}
+          {t("professional", { defaultMessage: "PROFESSIONAL" })}
         </div>
       );
     }

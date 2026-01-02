@@ -130,11 +130,12 @@ export async function POST(request) {
         // ... (Simplified logic) ...
         const tierHierarchy = [
           "free",
-          "basic",
           "trial",
           "standard",
           "premium",
           "enterprise",
+          "garage_basic",
+          "professional",
         ];
         const getTierValue = (t) => Math.max(0, tierHierarchy.indexOf(t));
         let maxTierValue = getTierValue(effectiveTier);

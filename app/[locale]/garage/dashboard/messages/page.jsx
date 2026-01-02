@@ -34,14 +34,14 @@ export default function GarageMessagesPage() {
       <div className="bg-[#1A1A1A] border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
         {(user?.garage?.membershipTier === "premium" ||
           user?.garage?.membershipTier === "enterprise" ||
-          user?.garage?.membershipTier === "garage_pro") &&
+          user?.garage?.membershipTier === "professional") &&
         (!user?.garage?.membershipExpiry ||
           new Date(user.garage.membershipExpiry) > new Date()) ? (
           <ChatInterface userId={user._id} />
         ) : (
           <LockedFeature
             title="Direct Customer Chat"
-            description="Engage with your customers in real-time to build trust and close more bookings. Upgrade to Garage Pro to unlock this feature."
+            description="Engage with your customers in real-time to build trust and close more bookings. Upgrade to Professional to unlock this feature."
           />
         )}
       </div>

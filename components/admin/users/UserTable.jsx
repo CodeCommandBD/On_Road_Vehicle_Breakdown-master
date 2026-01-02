@@ -93,7 +93,7 @@ export default function UserTable() {
     try {
       const response = await axios.get("/api/admin/users");
       if (response.data.success) {
-        setUsers(response.data.users);
+        setUsers(response.data.data || []);
       }
     } catch (error) {
       console.error("Fetch Users Error:", error);
@@ -107,7 +107,7 @@ export default function UserTable() {
     fetchUsers();
   }, []);
 
-  const filteredUsers = users.filter((user) => {
+  const filteredUsers = (users || []).filter((user) => {
     const matchesSearch =
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase());

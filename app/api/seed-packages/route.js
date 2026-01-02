@@ -129,9 +129,9 @@ export async function GET() {
         color: "#4B5563",
       },
       {
-        name: "Garage Pro",
+        name: "Professional",
         type: "garage",
-        tier: "garage_pro",
+        tier: "professional",
         price: { monthly: 2499, yearly: 23990 },
         discount: 20,
         description: "Maximize your earnings and visibility.",

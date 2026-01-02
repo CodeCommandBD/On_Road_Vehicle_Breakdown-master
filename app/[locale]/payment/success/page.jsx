@@ -66,14 +66,17 @@ function PaymentSuccessContent() {
     };
   }, []);
 
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
   // Handle auto-redirect when countdown reaches 0
   useEffect(() => {
-    if (countdown === 0) {
+    if (countdown === 0 && !isRedirecting) {
+      setIsRedirecting(true);
       const dashboardPath =
         userRole === "garage" ? "/garage/dashboard" : "/user/dashboard";
       router.push(dashboardPath);
     }
-  }, [countdown, userRole, router]);
+  }, [countdown, userRole, router, isRedirecting]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-900 via-gray-900 to-black flex items-center justify-center px-4">

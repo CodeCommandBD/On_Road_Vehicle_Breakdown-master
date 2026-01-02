@@ -35,7 +35,7 @@ export default function TeamManagementPage() {
   const isPremium =
     (user?.garage?.membershipTier === "premium" ||
       user?.garage?.membershipTier === "enterprise" ||
-      user?.garage?.membershipTier === "garage_pro") &&
+      user?.garage?.membershipTier === "professional") &&
     (!user?.garage?.membershipExpiry ||
       new Date(user.garage.membershipExpiry) > new Date());
 
@@ -66,7 +66,7 @@ export default function TeamManagementPage() {
         <div className="bg-white rounded-3xl overflow-hidden shadow-2xl">
           <LockedFeature
             title="Team Management"
-            description="Add mechanics, assign roles, and track performance. Upgrade to Garage Pro to unlock professional team management tools."
+            description="Add mechanics, assign roles, and track performance. Upgrade to Professional to unlock professional team management tools."
           />
         </div>
       </div>

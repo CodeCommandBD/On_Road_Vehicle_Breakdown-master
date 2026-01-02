@@ -10,6 +10,7 @@ import {
   TrendingDown,
   Loader2,
 } from "lucide-react";
+import Link from "next/link";
 import axios from "axios";
 
 export default function DashboardStats() {
@@ -59,6 +60,7 @@ export default function DashboardStats() {
       icon: Users,
       color: "bg-blue-500/10 text-blue-500",
       gradient: "from-blue-500",
+      link: "/admin/users",
     },
     {
       title: "Active Garages",
@@ -68,6 +70,7 @@ export default function DashboardStats() {
       icon: Building2,
       color: "bg-green-500/10 text-green-500",
       gradient: "from-green-500",
+      link: "/admin/garages",
     },
     {
       title: "Pending Requests",
@@ -81,6 +84,7 @@ export default function DashboardStats() {
       color: "bg-orange-500/10 text-orange-500",
       gradient: "from-orange-500",
       alert: stats.bookings.pending > 0 || stats.sos.active > 0,
+      link: "/admin/bookings?status=pending",
     },
     {
       title: "Total Bookings",
@@ -90,15 +94,17 @@ export default function DashboardStats() {
       icon: CalendarDays,
       color: "bg-purple-500/10 text-purple-500",
       gradient: "from-purple-500",
+      link: "/admin/bookings",
     },
   ];
 
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
       {statCards.map((stat, index) => (
-        <div
+        <Link
+          href={stat.link}
           key={index}
-          className="bg-[#121212] p-6 rounded-2xl border border-white/5 shadow-xl hover:shadow-2xl hover:border-[#FF532D]/30 transition-all duration-300 group relative overflow-hidden"
+          className="bg-[#121212] p-6 rounded-2xl border border-white/5 shadow-xl hover:shadow-2xl hover:border-[#FF532D]/30 transition-all duration-300 group relative overflow-hidden block"
         >
           {/* Background Gradient */}
           <div
@@ -141,7 +147,7 @@ export default function DashboardStats() {
               <p className="text-xs text-white/40">{stat.description}</p>
             </div>
           </div>
-        </div>
+        </Link>
       ))}
     </div>
   );

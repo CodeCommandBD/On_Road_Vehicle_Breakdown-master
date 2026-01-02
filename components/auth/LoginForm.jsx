@@ -96,7 +96,16 @@ export default function LoginForm() {
         // Strip duplicate locale if present in redirect URL (e.g., /en/en/...)
         // next-intl router automatically adds the current locale
         const cleanPath = redirectParams.replace(/^\/(en|bn)/, "") || "/";
-        router.push(cleanPath);
+
+        // If admin, prioritize admin dashboard unless returning to an admin page
+        if (
+          userData.user?.role === "admin" &&
+          !cleanPath.startsWith("/admin")
+        ) {
+          router.push("/admin/dashboard");
+        } else {
+          router.push(cleanPath);
+        }
       } else if (userData.user?.role === "admin") {
         router.push("/admin/dashboard");
       } else if (userData.user?.role === "garage") {

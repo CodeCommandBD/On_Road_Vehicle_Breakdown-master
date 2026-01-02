@@ -23,8 +23,8 @@
     "premiumMember": "PREMIUM MEMBER",
     "standardMember": "STANDARD MEMBER",
     "freeMember": "FREE MEMBER",
-    "garagePro": "GARAGE PRO",
     "garageBasic": "GARAGE BASIC",
+    "professional": "PROFESSIONAL",
     "mechanic": "MECHANIC"
   },
   "Search": {

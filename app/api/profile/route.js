@@ -28,7 +28,75 @@ export async function GET(request) {
       );
     }
 
+    // --- EFFECTIVE MEMBERSHIP TIER CALCULATION ---
+    let effectiveTier = user.membershipTier || "free";
+    try {
+      // Import needed models dynamically to avoid circular deps if any
+      const TeamMember = (await import("@/lib/db/models/TeamMember")).default;
+      const Package = (await import("@/lib/db/models/Package")).default;
+
+      // Check if personal subscription has expired and downgrade to free
+      const now = new Date();
+      if (user.membershipExpiry && new Date(user.membershipExpiry) < now) {
+        user.membershipTier = "free";
+        user.membershipExpiry = null;
+        user.currentSubscription = null;
+        await user.save();
+      }
+      effectiveTier = user.membershipTier || "free";
+
+      // Fetch active memberships
+      const memberships = await TeamMember.find({
+        user: user._id,
+        isActive: true,
+      }).populate({
+        path: "organization",
+        populate: {
+          path: "subscription",
+          match: { status: { $in: ["active", "trial"] } },
+          populate: { path: "planId", model: "Package" },
+        },
+      });
+
+      if (memberships?.length > 0) {
+        const tierHierarchy = [
+          "free",
+          "trial",
+          "standard",
+          "premium",
+          "enterprise",
+          "garage_basic",
+          "professional",
+        ];
+        const getTierValue = (t) => Math.max(0, tierHierarchy.indexOf(t));
+        let maxTierValue = getTierValue(effectiveTier);
+
+        memberships.forEach((member) => {
+          const org = member.organization;
+          if (org?.subscription?.planId?.tier) {
+            const planTier = org.subscription.planId.tier;
+            const sub = org.subscription;
+            const isActive =
+              new Date(sub.startDate) <= new Date() &&
+              new Date(sub.endDate) >= new Date();
+            if (isActive) {
+              const val = getTierValue(planTier);
+              if (val > maxTierValue) {
+                maxTierValue = val;
+                effectiveTier = planTier;
+              }
+            }
+          }
+        });
+      }
+    } catch (tierError) {
+      console.error("Profile Tier Calculation Error:", tierError);
+      effectiveTier = user.membershipTier || "free";
+    }
+    // ---------------------------------------------
+
     const profileData = user.toPublicJSON();
+    profileData.membershipTier = effectiveTier; // Override with calculated tier
 
     // Attach role-specific data
     if (user.role === "garage") {

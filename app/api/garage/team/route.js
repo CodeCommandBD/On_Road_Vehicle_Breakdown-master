@@ -83,6 +83,49 @@ export async function POST(request) {
     });
 
     if (existingUser) {
+      // Self-healing: If user exists, is a mechanic, belongs to this garage, but NOT in team list
+      // This happens if User was created but Garage update failed previously
+      if (
+        existingUser.role === "mechanic" &&
+        existingUser.garageId?.toString() === garage._id.toString()
+      ) {
+        const alreadyInTeam = garage.teamMembers.some(
+          (member) => member.user.toString() === existingUser._id.toString()
+        );
+
+        if (!alreadyInTeam) {
+          // Update the existing orphaned user with new details
+          existingUser.name = name;
+          if (email) existingUser.email = email;
+          existingUser.password = password; // Will be hashed by pre-save hook
+          existingUser.mechanicProfile = { skills: skills || [] };
+          await existingUser.save();
+
+          // Add to garage team
+          garage.teamMembers.push({
+            user: existingUser._id,
+            name: existingUser.name,
+            email: existingUser.email,
+            phone: existingUser.phone,
+            initialPassword: password,
+            role: "mechanic",
+            isActive: true,
+          });
+
+          await garage.save();
+
+          return NextResponse.json({
+            success: true,
+            message: "Mechanic recovered and added successfully",
+            mechanic: {
+              _id: existingUser._id,
+              name: existingUser.name,
+              phone: existingUser.phone,
+            },
+          });
+        }
+      }
+
       return NextResponse.json(
         {
           success: false,

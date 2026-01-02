@@ -40,7 +40,7 @@ export default function GarageAnalytics() {
   const isPremium =
     (user?.garage?.membershipTier === "premium" ||
       user?.garage?.membershipTier === "enterprise" ||
-      user?.garage?.membershipTier === "garage_pro") &&
+      user?.garage?.membershipTier === "professional") &&
     (!user?.garage?.membershipExpiry ||
       new Date(user.garage.membershipExpiry) > new Date());
 

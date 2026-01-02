@@ -276,7 +276,7 @@ export default function ProfilePage() {
       enterprise:
         "from-slate-900 to-black border border-orange-500 text-orange-500 shadow-glow-orange",
       garage_basic: "from-cyan-500 to-blue-600",
-      garage_pro: "from-indigo-600 to-purple-700 shadow-glow-indigo",
+      professional: "from-indigo-600 to-purple-700 shadow-glow-indigo",
     };
     return colors[tier] || colors.free;
   };
