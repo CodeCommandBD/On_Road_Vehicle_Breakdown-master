@@ -23,7 +23,6 @@ import {
   Settings,
   Loader2,
 } from "lucide-react";
-import NotificationSound from "@/components/common/NotificationSound";
 import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import {
   selectUnreadNotificationsCount,
