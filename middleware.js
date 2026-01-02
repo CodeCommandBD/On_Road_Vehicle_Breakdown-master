@@ -5,17 +5,17 @@ import { jwtVerify } from "jose";
 import { PUBLIC_ROUTES, PROTECTED_ROUTES } from "./lib/utils/constants";
 import { getToken } from "next-auth/jwt";
 
-// JWT Secret - Enforce environment variable (no fallback)
+// JWT Secret - Warn if missing but allow to proceed
 const SECRET_KEY = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET;
 
-if (!SECRET_KEY) {
-  throw new Error(
-    "❌ SECURITY ERROR: JWT_SECRET or NEXTAUTH_SECRET must be defined in .env file. " +
-      "Generate a secure secret with: openssl rand -base64 32"
+if (!SECRET_KEY && process.env.NODE_ENV !== "production") {
+  console.warn(
+    "⚠️ WARNING: JWT_SECRET or NEXTAUTH_SECRET not defined. " +
+      "Authentication will fail. Generate a secure secret with: openssl rand -base64 32"
   );
 }
 
-const JWT_SECRET = new TextEncoder().encode(SECRET_KEY);
+const JWT_SECRET = SECRET_KEY ? new TextEncoder().encode(SECRET_KEY) : null;
 
 // Create next-intl middleware
 const intlMiddleware = createMiddleware(routing);
@@ -68,6 +68,11 @@ function getRequiredRole(pathname) {
  * Verify JWT token
  */
 async function verifyToken(token) {
+  if (!JWT_SECRET) {
+    console.error("JWT_SECRET not configured in middleware");
+    return null;
+  }
+
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     return payload;
