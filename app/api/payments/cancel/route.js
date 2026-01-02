@@ -34,12 +34,27 @@ export async function POST(request) {
       });
     }
 
-    // Redirect back to pricing page
+    // Sanitize base URL for redirect
+    let baseUrl =
+      request.nextUrl.origin ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      "http://localhost:3000";
+    baseUrl = baseUrl.replace(/\/$/, "");
+
+    // Redirect to fail page with cancel reason and 303 status
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/pricing?cancelled=true`
+      `${baseUrl}/payment/fail?error=payment_cancelled`,
+      { status: 303 }
     );
   } catch (error) {
     console.error("Payment cancel callback error:", error);
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/pricing`);
+    let baseUrl =
+      request.nextUrl.origin ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      "http://localhost:3000";
+    baseUrl = baseUrl.replace(/\/$/, "");
+    return NextResponse.redirect(`${baseUrl}/payment/fail?error=server_error`, {
+      status: 303,
+    });
   }
 }

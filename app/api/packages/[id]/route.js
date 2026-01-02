@@ -19,9 +19,13 @@ export async function GET(request, { params }) {
     // Transform Package to match Plan structure expected by frontend
     // The Checkout page expects: success, data: { plan: { ... } }
     // It also expects fields like features array
+    const featuresList =
+      pkg.features && pkg.features.length > 0
+        ? pkg.features
+        : pkg.benefits || [];
     const transformedPlan = {
       ...pkg,
-      features: pkg.features.map((f) => f.name || f), // Handle if features is array of objects or strings
+      features: featuresList.map((f) => (typeof f === "object" ? f.name : f)),
     };
 
     return NextResponse.json({

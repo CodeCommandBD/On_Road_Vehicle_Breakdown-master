@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle, ArrowRight, Download } from "lucide-react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
+import { CheckCircle, ArrowRight, Download, Loader2 } from "lucide-react";
 import Link from "next/link";
 import confetti from "canvas-confetti";
 import { useSelector, useDispatch } from "react-redux";
 import { selectUserRole, updateUser } from "@/store/slices/authSlice";
 import axios from "axios";
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const router = useRouterWithLoading(); // Regular routing
   const searchParams = useSearchParams();
   const [countdown, setCountdown] = useState(10);
@@ -56,23 +57,23 @@ export default function PaymentSuccessPage() {
 
     // Countdown timer
     const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          const dashboardPath =
-            userRole === "garage" ? "/garage/dashboard" : "/user/dashboard";
-          router.push(dashboardPath);
-          return 0;
-        }
-        return prev - 1;
-      });
+      setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
 
     return () => {
       clearInterval(interval);
       clearInterval(timer);
     };
-  }, [router]);
+  }, []);
+
+  // Handle auto-redirect when countdown reaches 0
+  useEffect(() => {
+    if (countdown === 0) {
+      const dashboardPath =
+        userRole === "garage" ? "/garage/dashboard" : "/user/dashboard";
+      router.push(dashboardPath);
+    }
+  }, [countdown, userRole, router]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-900 via-gray-900 to-black flex items-center justify-center px-4">
@@ -155,5 +156,19 @@ export default function PaymentSuccessPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-black flex items-center justify-center">
+          <Loader2 className="w-10 h-10 text-green-500 animate-spin" />
+        </div>
+      }
+    >
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }

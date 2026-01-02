@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, Link } from "@/i18n/routing";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import { useSelector, useDispatch } from "react-redux";
 import {
   selectUser,

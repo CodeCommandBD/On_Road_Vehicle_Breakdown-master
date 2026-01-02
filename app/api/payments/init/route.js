@@ -99,6 +99,7 @@ export async function POST(request) {
     const subscription = await Subscription.create({
       userId: user._id,
       planId: pkg._id,
+      planName: pkg.name, // Store human-readable name
       status: "pending",
       billingCycle,
       startDate: new Date(),
@@ -147,8 +148,13 @@ export async function POST(request) {
       throw new Error("SSLCommerz credentials missing");
     }
 
-    // App base URL
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    // App base URL - Use request origin to support localhost/preview/prod automatically
+    let baseUrl =
+      request.nextUrl.origin ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      "http://localhost:3000";
+    baseUrl = baseUrl.replace(/\/$/, ""); // Remove trailing slash
+    baseUrl = baseUrl.replace(/\/(en|bn)$/, ""); // Remove locale suffix if inadvertently added
 
     // Prepare data for SSLCommerz
     const initData = {

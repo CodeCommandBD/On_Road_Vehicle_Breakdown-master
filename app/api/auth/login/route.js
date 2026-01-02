@@ -105,7 +105,7 @@ export async function POST(request) {
     const TeamMember = (await import("@/lib/db/models/TeamMember")).default;
     const Organization = (await import("@/lib/db/models/Organization")).default;
     const Subscription = (await import("@/lib/db/models/Subscription")).default;
-    const Plan = (await import("@/lib/db/models/Plan")).default;
+    // const Plan = (await import("@/lib/db/models/Plan")).default; // Legacy removed
 
     let effectiveTier = user.membershipTier || "free";
 
@@ -120,7 +120,7 @@ export async function POST(request) {
         match: { status: { $in: ["active", "trial"] } }, // Only active/trial subs
         populate: {
           path: "planId",
-          model: "Plan",
+          model: "Package", // Changed from Plan to Package
         },
       },
     });

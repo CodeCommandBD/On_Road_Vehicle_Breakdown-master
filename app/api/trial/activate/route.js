@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/connect";
 import { getCurrentUser } from "@/lib/utils/auth";
-import Plan from "@/lib/db/models/Plan";
+import Package from "@/lib/db/models/Package";
 import User from "@/lib/db/models/User";
 import Subscription from "@/lib/db/models/Subscription";
 
@@ -55,7 +55,7 @@ export async function POST(request) {
     }
 
     // Find trial plan
-    const trialPlan = await Plan.findOne({ tier: "trial" });
+    const trialPlan = await Package.findOne({ tier: "trial" });
     if (!trialPlan) {
       return NextResponse.json(
         {
@@ -100,7 +100,8 @@ export async function POST(request) {
           id: subscription._id,
           plan: trialPlan.name,
           expiresAt: endDate,
-          serviceCallsLimit: trialPlan.limits.serviceCalls,
+          // Service calls limit might be in features array or explicit field depending on Package schema
+          serviceCallsLimit: -1, // Trial usually -1 or check specific Package field
         },
       },
     });

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db/connect";
-import Plan from "@/lib/db/models/Plan";
+import Package from "@/lib/db/models/Package";
 
 export async function GET() {
   try {
@@ -137,11 +137,11 @@ export async function GET() {
     ];
 
     // Wipe existing user plans to avoid duplicates and ensure freshness
-    await Plan.deleteMany({ type: "user" });
+    await Package.deleteMany({ type: "user" });
 
     // Insert new plans
     for (const planData of userPlans) {
-      await Plan.create(planData);
+      await Package.create(planData);
     }
 
     return NextResponse.json({

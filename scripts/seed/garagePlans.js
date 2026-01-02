@@ -16,7 +16,7 @@ const connectDB = async () => {
   }
 };
 
-const Plan = require("../../../lib/db/models/Plan").default;
+const Package = require("../../../lib/db/models/Package").default;
 
 const seedGaragePlans = async () => {
   await connectDB();
@@ -73,10 +73,10 @@ const seedGaragePlans = async () => {
     console.log("Seeding Garage Plans...");
 
     // Delete existing garage plans to avoid duplicates during dev
-    await Plan.deleteMany({ type: "garage" });
+    await Package.deleteMany({ type: "garage" });
 
     for (const plan of plans) {
-      await Plan.create(plan);
+      await Package.create(plan);
     }
 
     console.log("Garage Plans Seeded Successfully!");

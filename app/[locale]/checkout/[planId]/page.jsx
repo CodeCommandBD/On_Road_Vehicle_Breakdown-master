@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import { useSelector } from "react-redux";
 import { selectIsAuthenticated, selectUser } from "@/store/slices/authSlice";
 import { Check, Lock, CreditCard, Loader2 } from "lucide-react";
@@ -156,12 +157,17 @@ export default function CheckoutPage() {
     );
   }
 
-  const price =
-    billingCycle === "monthly" ? plan.price.monthly : plan.price.yearly;
+  const price = plan?.price
+    ? billingCycle === "monthly"
+      ? plan.price.monthly
+      : plan.price.yearly
+    : 0;
   const monthlyEquivalent =
     billingCycle === "yearly" ? Math.round(price / 12) : price;
   const savings =
-    billingCycle === "yearly" ? plan.price.monthly * 12 - plan.price.yearly : 0;
+    billingCycle === "yearly" && plan?.price
+      ? plan.price.monthly * 12 - plan.price.yearly
+      : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-black py-8 px-4 sm:px-6 lg:px-8">
@@ -306,22 +312,28 @@ export default function CheckoutPage() {
               {/* Plan Details */}
               <div className="bg-white/10 rounded-xl p-5 mb-6 backdrop-blur">
                 <h3 className="text-lg font-bold text-white mb-1">
-                  {plan.name}
+                  {plan?.name || "Unknown Plan"}
                 </h3>
-                <p className="text-white/80 text-xs mb-4">{plan.description}</p>
+                <p className="text-white/80 text-xs mb-4">
+                  {plan?.description || "No description available"}
+                </p>
 
                 <div className="space-y-2">
-                  {plan.features.slice(0, 4).map((feature, idx) => (
-                    <div key={idx} className="flex items-start gap-2">
-                      <Check className="w-3.5 h-3.5 text-white mt-0.5 flex-shrink-0" />
-                      <span className="text-xs text-white/90">{feature}</span>
-                    </div>
-                  ))}
-                  {plan.features.length > 4 && (
-                    <p className="text-[10px] text-white/70 mt-2 pl-5">
-                      +{plan.features.length - 4} more features
-                    </p>
-                  )}
+                  {plan?.features &&
+                    Array.isArray(plan.features) &&
+                    plan.features.slice(0, 4).map((feature, idx) => (
+                      <div key={idx} className="flex items-start gap-2">
+                        <Check className="w-3.5 h-3.5 text-white mt-0.5 flex-shrink-0" />
+                        <span className="text-xs text-white/90">{feature}</span>
+                      </div>
+                    ))}
+                  {plan?.features &&
+                    Array.isArray(plan.features) &&
+                    plan.features.length > 4 && (
+                      <p className="text-[10px] text-white/70 mt-2 pl-5">
+                        +{plan.features.length - 4} more features
+                      </p>
+                    )}
                 </div>
               </div>
 

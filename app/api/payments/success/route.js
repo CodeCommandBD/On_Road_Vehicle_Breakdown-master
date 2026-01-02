@@ -221,31 +221,43 @@ export async function POST(request) {
         );
       }
 
-      // Redirect to success page
+      // Sanitize base URL for redirect
+      let baseUrl =
+        request.nextUrl.origin ||
+        process.env.NEXT_PUBLIC_APP_URL ||
+        "http://localhost:3000";
+      baseUrl = baseUrl.replace(/\/$/, "");
+
+      // Redirect to success page with 303 See Other to ensure GET request and cookie preservation
+      const planName = encodeURIComponent(
+        subscription.planId.name || "Subscription"
+      );
+      const cycle = encodeURIComponent(subscription.billingCycle);
+
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/payment/success?transaction=${tran_id}&plan=${subscription.planId}&cycle=${subscription.billingCycle}`
+        `${baseUrl}/payment/success?transaction=${tran_id}&plan=${planName}&cycle=${cycle}`,
+        { status: 303 }
       );
     } else {
-      // Validation failed
-      console.error("Payment validation failed:", { status, val_id });
-
-      await Payment.findByIdAndUpdate(payment._id, {
-        status: "failed",
-        errorMessage: "Payment validation failed",
-      });
-
-      await Subscription.findByIdAndUpdate(subscription._id, {
-        status: "cancelled",
-      });
-
+      console.error("Payment validation failed. Status:", status);
+      const baseUrl =
+        request.nextUrl.origin ||
+        process.env.NEXT_PUBLIC_APP_URL ||
+        "http://localhost:3000";
       return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/payment/fail?error=validation_failed`
+        `${baseUrl}/payment/fail?error=payment_validation_failed`,
+        { status: 303 }
       );
     }
   } catch (error) {
     console.error("Payment success callback error:", error);
-    return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/payment/fail?error=server_error`
-    );
+    let baseUrl =
+      request.nextUrl.origin ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      "http://localhost:3000";
+    baseUrl = baseUrl.replace(/\/$/, "");
+    return NextResponse.redirect(`${baseUrl}/payment/fail?error=server_error`, {
+      status: 303,
+    });
   }
 }

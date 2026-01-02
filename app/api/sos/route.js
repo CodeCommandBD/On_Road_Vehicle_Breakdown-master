@@ -6,7 +6,8 @@ import Notification from "@/lib/db/models/Notification";
 import User from "@/lib/db/models/User";
 import PointsRecord from "@/lib/db/models/PointsRecord";
 import Subscription from "@/lib/db/models/Subscription";
-import Plan from "@/lib/db/models/Plan";
+// import Plan from "@/lib/db/models/Plan"; // Legacy
+import Package from "@/lib/db/models/Package";
 import { verifyToken } from "@/lib/utils/auth";
 import TeamMember from "@/lib/db/models/TeamMember";
 import {
@@ -76,7 +77,7 @@ export async function POST(request) {
     if (!subscription) {
       try {
         // Find the free/trial plan
-        const freePlan = await Plan.findOne({
+        const freePlan = await Package.findOne({
           tier: { $in: ["free", "trial"] },
         }).sort({ tier: 1 });
 
@@ -139,21 +140,21 @@ export async function POST(request) {
 
           if (subscription.status === "trial" || subscription.amount === 0) {
             // Trial or free
-            planToAssign = await Plan.findOne({
+            planToAssign = await Package.findOne({
               tier: { $in: ["trial", "free"] },
             }).sort({ tier: 1 });
           } else {
             // Find plan by amount
-            planToAssign = await Plan.findOne({
+            planToAssign = await Package.findOne({
               $or: [
-                { "pricing.monthly": subscription.amount },
-                { "pricing.yearly": subscription.amount },
+                { "price.monthly": subscription.amount },
+                { "price.yearly": subscription.amount },
               ],
             });
 
             // If not found by amount, default to standard plan
             if (!planToAssign) {
-              planToAssign = await Plan.findOne({ tier: "standard" });
+              planToAssign = await Package.findOne({ tier: "standard" });
             }
           }
 

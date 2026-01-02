@@ -36,18 +36,31 @@ export async function POST(request) {
       });
     }
 
-    // Redirect to fail page
+    // Sanitize base URL for redirect
+    let baseUrl =
+      request.nextUrl.origin ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      "http://localhost:3000";
+    baseUrl = baseUrl.replace(/\/$/, "");
+
+    const errorMessage = error || "Payment failed";
+
+    // Redirect to fail page with error details and 303 status
     return NextResponse.redirect(
-      `${
-        process.env.NEXT_PUBLIC_APP_URL
-      }/payment/fail?transaction=${tran_id}&reason=${encodeURIComponent(
-        error || "Payment failed"
-      )}`
+      `${baseUrl}/payment/fail?error=payment_failed&message=${encodeURIComponent(
+        errorMessage
+      )}`,
+      { status: 303 }
     );
   } catch (error) {
     console.error("Payment fail callback error:", error);
-    return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/payment/fail?error=callback_error`
-    );
+    let baseUrl =
+      request.nextUrl.origin ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      "http://localhost:3000";
+    baseUrl = baseUrl.replace(/\/$/, "");
+    return NextResponse.redirect(`${baseUrl}/payment/fail?error=server_error`, {
+      status: 303,
+    });
   }
 }

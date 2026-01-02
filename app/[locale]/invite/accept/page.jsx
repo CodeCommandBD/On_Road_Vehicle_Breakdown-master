@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { updateUser } from "@/store/slices/authSlice";

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, Suspense, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
