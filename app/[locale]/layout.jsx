@@ -81,6 +81,32 @@ export default async function RootLayout({ children, params }) {
     <html lang={locale} className={`scroll-smooth ${inter.variable}`}>
       <head>
         <LanguageAlternates />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "On-Road Vehicle Service",
+              url:
+                process.env.NEXT_PUBLIC_APP_URL ||
+                "https://on-road-vehicle-service.com",
+              logo: `${
+                process.env.NEXT_PUBLIC_APP_URL ||
+                "https://on-road-vehicle-service.com"
+              }/images/nav/main-logo.svg`,
+              contactPoint: {
+                "@type": "ContactPoint",
+                telephone: "+8801XXXXXXXXX",
+                contactType: "customer service",
+                areaServed: "BD",
+                availableLanguage: ["en", "bn"],
+              },
+              description:
+                "24/7 Vehicle Breakdown Service in Bangladesh. Get instant mechanic support anywhere, anytime.",
+            }),
+          }}
+        />
       </head>
       <body className={`font-sans antialiased bg-[#020617]`}>
         <NextIntlClientProvider messages={messages}>

@@ -120,11 +120,19 @@ export default function Testimonials() {
 
                   {/* User Info */}
                   <div className="mt-auto">
-                    <div className="w-14 h-14 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full mx-auto mb-3 overflow-hidden border-2 border-orange-300 transition-transform duration-300 group-hover:scale-110">
-                      {/* Placeholder for image if not found */}
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-400 to-orange-500 text-white text-xl font-bold">
-                        {item.name[0]}
-                      </div>
+                    <div className="w-14 h-14 relative rounded-full mx-auto mb-3 overflow-hidden border-2 border-orange-300 transition-transform duration-300 group-hover:scale-110">
+                      {item.image ? (
+                        <Image
+                          src={item.image}
+                          alt={item.name}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-400 to-orange-500 text-white text-xl font-bold">
+                          {item.name[0]}
+                        </div>
+                      )}
                     </div>
                     <h4 className="font-semibold text-base sm:text-lg text-gray-900">
                       {item.name}

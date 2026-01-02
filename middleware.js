@@ -131,12 +131,6 @@ export default async function middleware(request) {
   // 2. Check for custom JWT token (Credentials login legacy/custom flow)
   const customToken = request.cookies.get("token")?.value;
 
-  // EMERGENCY FIX: Check for raw NextAuth cookie presence
-  // If the cookie exists, we assume the user is trying to be authenticated
-  const hasNextAuthCookie =
-    request.cookies.has("next-auth.session-token") ||
-    request.cookies.has("__Secure-next-auth.session-token");
-
   // Decide if authenticated
   let isAuthenticated = false;
   let userRole = null;
@@ -148,15 +142,6 @@ export default async function middleware(request) {
     userRole = nextAuthToken.role;
     userId = nextAuthToken.id || nextAuthToken.sub;
     userEmail = nextAuthToken.email;
-  } else if (hasNextAuthCookie) {
-    // Fallback: Cookie exists but server couldn't decode it (possibly secret mismatch or encryption issue)
-    // Allow access to break redirect loop; Client-side useSession will handle protection and double-check
-    console.log(
-      "[Middleware] Fallback: Auth cookie found but token decode failed"
-    );
-    isAuthenticated = true;
-    // We can't know role safely, so we assume "user" to prevent role-based redirect blocks
-    userRole = "user";
   } else if (customToken) {
     const user = await verifyToken(customToken);
     if (user) {
