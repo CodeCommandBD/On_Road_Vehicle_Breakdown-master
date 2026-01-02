@@ -55,81 +55,92 @@ export default function AppPromotion() {
   ];
 
   return (
-    <section className="py-16 sm:py-24 bg-[#111] overflow-hidden">
-      <div className="container mx-auto px-4">
-        <div className="bg-gradient-to-br from-orange-500/10 to-transparent border border-white/10 rounded-[30px] sm:rounded-[40px] p-6 sm:p-10 md:p-16 relative">
-          {/* Background Decorative Circles */}
-          <div className="absolute top-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-orange-500/5 rounded-full blur-[60px] sm:blur-[100px] -z-10"></div>
-          <div className="absolute bottom-0 left-0 w-64 h-64 sm:w-96 sm:h-96 bg-orange-500/5 rounded-full blur-[60px] sm:blur-[100px] -z-10"></div>
+    <section className="py-20 lg:py-32 bg-[#0B0B0F] overflow-hidden relative">
+      {/* Ambient Background Effects */}
+      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-orange-600/20 rounded-full blur-[120px] -z-10 animate-pulse-slow"></div>
+      <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-purple-900/10 rounded-full blur-[140px] -z-10"></div>
 
-          <div className="flex flex-col lg:grid lg:grid-cols-2 gap-10 sm:gap-16 items-center text-center lg:text-left">
+      <div className="container mx-auto px-4 relative z-10">
+        <div className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[40px] lg:rounded-[60px] p-8 md:p-16 relative overflow-hidden shadow-2xl">
+          <div className="flex flex-col lg:grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
             {/* Content Side */}
-            <div className="space-y-6 sm:space-y-8 order-2 lg:order-1">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/10 border border-orange-500/20 rounded-full text-orange-500 text-xs sm:text-sm font-semibold uppercase tracking-wider mx-auto lg:mx-0">
-                <Smartphone size={16} />
-                Now Available on Mobile
+            <div className="lg:col-span-7 space-y-8 lg:pr-12 order-2 lg:order-1 text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-orange-500/20 to-orange-500/5 border border-orange-500/20 rounded-full text-orange-400 text-sm font-bold uppercase tracking-wider shadow-[0_0_20px_rgba(232,93,4,0.2)] mx-auto lg:mx-0">
+                <Smartphone size={18} className="animate-bounce-slight" />
+                <span>Now Available on Mobile</span>
               </div>
 
-              <div className="space-y-4">
-                <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-tight">
+              <div className="space-y-6">
+                <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tight">
                   {t("title")}{" "}
-                  <span className="text-orange-500">{t("highlight")}</span>{" "}
-                  <br className="hidden sm:block" />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-500">
+                    {t("highlight")}
+                  </span>{" "}
+                  <br className="hidden lg:block" />
                   {t("subtitle")}
                 </h2>
-                <p className="text-white/60 text-base sm:text-lg max-w-lg mx-auto lg:mx-0">
+                <p className="text-gray-400 text-lg lg:text-xl max-w-xl leading-relaxed mx-auto lg:mx-0">
                   {t("description")}
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-w-md mx-auto lg:mx-0 text-left">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto lg:mx-0">
                 {features.map((feature, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-center sm:justify-start gap-3 text-white/80"
+                    className="flex items-center justify-center lg:justify-start gap-4 p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors duration-300"
                   >
-                    <CheckCircle2
-                      className="text-orange-500 shrink-0"
-                      size={20}
-                    />
-                    <span>{feature}</span>
+                    <div className="p-2 rounded-full bg-orange-500/20 text-orange-400">
+                      <CheckCircle2 size={20} />
+                    </div>
+                    <span className="text-gray-200 font-medium">{feature}</span>
                   </div>
                 ))}
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-5 sm:gap-8 pt-4">
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 pt-6">
                 <button
                   onClick={handleInstallClick}
-                  className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl sm:rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-3 transition-all active:scale-95 shadow-[0_10px_30px_rgba(232,93,4,0.3)]"
+                  className="group relative w-full sm:w-auto px-10 py-5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 text-white rounded-2xl font-bold text-lg flex items-center justify-center gap-3 transition-all transform hover:-translate-y-1 shadow-[0_20px_40px_rgba(232,93,4,0.3)] overflow-hidden"
                 >
+                  <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
                   <Download size={24} />
-                  {t("downloadApp")}
+                  <span>{t("downloadApp")}</span>
                 </button>
+
+                <span className="text-gray-500 font-medium hidden sm:block">
+                  or scan code
+                </span>
               </div>
             </div>
 
-            {/* Mockup Side */}
-            <div className="relative group perspective-1000 flex flex-col items-center gap-8 order-1 lg:order-2 w-full">
-              <div className="relative z-10 animate-float translate-z-20 w-full max-w-[280px] sm:max-w-[350px] lg:max-w-[450px] mx-auto">
+            {/* Mockup & QR Side */}
+            <div className="lg:col-span-5 relative order-1 lg:order-2 w-full flex flex-col items-center justify-center lg:justify-end gap-8 pt-8 lg:pt-0">
+              <div className="relative z-10 w-full max-w-[280px] sm:max-w-[320px] lg:max-w-[400px]">
+                {/* Floating Glow Behind */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-orange-500/20 rounded-full blur-[80px] -z-10 animate-pulse"></div>
+
                 <Image
                   src="/images/app-mockup.webp"
                   alt="On Road Help Mobile App"
                   width={600}
                   height={800}
-                  className="w-full h-auto drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] group-hover:scale-105 transition-transform duration-700"
+                  className="w-full h-auto drop-shadow-2xl animate-float"
+                  style={{ animationDuration: "6s" }}
                 />
-              </div>
 
-              {/* QR Code Next to Mobile */}
-              <div className="hidden md:flex flex-col items-center gap-4 shrink-0 animate-in fade-in slide-in-from-right duration-1000">
-                <div className="p-5 bg-white/5 backdrop-blur-md border border-white/10 rounded-[40px] shadow-2xl">
-                  <div className="w-44 h-44 bg-white p-4 rounded-3xl overflow-hidden shadow-inner flex items-center justify-center">
+                {/* Floating Glass Card for QR (Desktop Only) */}
+                <div
+                  className="hidden lg:flex absolute -bottom-10 -left-20 p-5 bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] shadow-[0_20px_60px_rgba(0,0,0,0.5)] animate-float-delayed flex-col items-center gap-4 max-w-[200px]"
+                  style={{ animationDuration: "8s" }}
+                >
+                  <div className="bg-white p-3 rounded-2xl shadow-inner w-full aspect-square flex items-center justify-center">
                     {qrUrl ? (
                       <Image
                         src={qrUrl}
                         alt="Scan to install"
-                        width={176}
-                        height={176}
+                        width={150}
+                        height={150}
                         className="w-full h-full object-contain"
                         unoptimized
                       />
@@ -137,29 +148,46 @@ export default function AppPromotion() {
                       <div className="w-full h-full bg-gray-100 animate-pulse rounded-xl"></div>
                     )}
                   </div>
+                  <div className="text-center w-full">
+                    <p className="text-white text-sm font-bold leading-tight mb-1">
+                      Scan to Install
+                    </p>
+                    <p className="text-orange-400 text-[10px] uppercase tracking-widest font-bold">
+                      iOS & Android
+                    </p>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <p className="text-white font-black text-lg">{t("scanQR")}</p>
-                  <p className="text-orange-500 text-xs mt-1 uppercase tracking-widest font-black">
-                    Instant Access
-                  </p>
+
+                {/* Desktop Overlay Stats Card */}
+                <div className="hidden lg:block absolute bottom-20 -right-12 bg-white/10 backdrop-blur-2xl border border-white/20 p-6 rounded-[32px] shadow-2xl animate-pulse-slow z-20 min-w-[200px]">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-green-500/20 rounded-2xl flex items-center justify-center border border-green-500/20">
+                      <CheckCircle2 className="text-green-500" size={24} />
+                    </div>
+                    <div>
+                      <p className="text-white/40 text-[10px] font-bold uppercase tracking-wider">
+                        Network Status
+                      </p>
+                      <p className="text-white font-black text-base italic">
+                        24/7 ACTIVE
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Stats Card Overlay */}
-              <div className="absolute bottom-16 left-1/2 md:left-4 -translate-x-1/2 md:-translate-x-0 bg-white/10 backdrop-blur-2xl border border-white/20 p-6 rounded-[32px] shadow-2xl animate-pulse-slow z-20 min-w-[200px]">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-green-500/20 rounded-2xl flex items-center justify-center border border-green-500/20">
-                    <CheckCircle2 className="text-green-500" size={24} />
-                  </div>
-                  <div>
-                    <p className="text-white/40 text-[10px] font-bold uppercase tracking-wider">
-                      Network Status
-                    </p>
-                    <p className="text-white font-black text-base italic">
-                      24/7 ACTIVE
-                    </p>
-                  </div>
+              {/* Mobile Stats Card (Below Phone) */}
+              <div className="lg:hidden w-full max-w-[280px] bg-white/5 backdrop-blur-xl border border-white/10 p-5 rounded-[24px] flex items-center gap-4 mx-auto">
+                <div className="w-12 h-12 bg-green-500/20 rounded-2xl flex items-center justify-center border border-green-500/20 shrink-0">
+                  <CheckCircle2 className="text-green-500" size={24} />
+                </div>
+                <div>
+                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-wider">
+                    Network Status
+                  </p>
+                  <p className="text-white font-black text-base italic">
+                    24/7 ACTIVE
+                  </p>
                 </div>
               </div>
             </div>
