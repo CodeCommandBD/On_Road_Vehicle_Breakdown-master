@@ -38,6 +38,9 @@ export const metadata = {
   },
 };
 
+// Enable ISR: Revalidate every 5 minutes
+export const revalidate = 300;
+
 export default function Home() {
   const schemas = [generateLocalBusinessSchema(), generateWebSiteSchema()];
 

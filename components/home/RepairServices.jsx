@@ -131,7 +131,7 @@ export default function RepairServices() {
               currentServices.map((service, index) => (
                 <ServiceCard
                   key={`${activeTab}-${service._id || index}`}
-                  icon={service.image || "/images/nav/nav-one.png"}
+                  icon={service.image || "/images/nav-one.webp"}
                   title={service.name}
                   link={`/garages?service=${service.slug}`}
                 />
@@ -146,7 +146,7 @@ export default function RepairServices() {
           <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
             <div className="w-24 h-24 mb-6 relative opacity-30 grayscale">
               <Image
-                src="/images/nav/nav-one.png"
+                src="/images/nav-one.webp"
                 alt="Coming Soon"
                 fill
                 className="object-contain"

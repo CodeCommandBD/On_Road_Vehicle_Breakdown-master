@@ -293,7 +293,7 @@ export default function SubscriptionSection() {
               <div className="relative w-full max-w-[700px] h-[400px] lg:h-[550px] flex items-center justify-center">
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-[radial-gradient(circle,rgba(255,83,45,0.3)_0%,rgba(255,83,45,0.1)_40%,transparent_70%)] animate-[pulse_3s_ease-in-out_infinite]"></div>
                 <Image
-                  src="/images/mustang-car.png"
+                  src="/images/mustang-car.webp"
                   alt="Premium Package - Orange Sports Car"
                   fill
                   className={`relative z-[2] object-contain drop-shadow-[0_20px_40px_rgba(255,83,45,0.4)] animate-[float_6s_ease-in-out_infinite] ${

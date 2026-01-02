@@ -13,7 +13,7 @@ const testimonials = [
     id: 1,
     name: "Rahim Ahmed",
     role: "Car Owner",
-    image: "/images/user-1.jpg",
+    image: "/images/user-1.webp",
     content:
       "My car broke down in the middle of the night. QuickService connected me with a nearby garage within minutes. Highly recommended!",
     rating: 5,
@@ -22,7 +22,7 @@ const testimonials = [
     id: 2,
     name: "Fatima Khan",
     role: "Regular User",
-    image: "/images/user-2.jpg",
+    image: "/images/user-2.webp",
     content:
       "Excellent service! The app is very easy to use, and the garage they suggested provided professional service at a reasonable price.",
     rating: 5,
@@ -31,7 +31,7 @@ const testimonials = [
     id: 3,
     name: "Karim Uddin",
     role: "Truck Driver",
-    image: "/images/user-3.jpg",
+    image: "/images/user-3.webp",
     content:
       "As a truck driver, breakdowns are a nightmare. This service is a lifesaver. Fast response and reliable mechanics.",
     rating: 4,
@@ -40,7 +40,7 @@ const testimonials = [
     id: 4,
     name: "Nusrat Jahan",
     role: "Car Owner",
-    image: "/images/user-4.jpg",
+    image: "/images/user-4.webp",
     content:
       "The membership package is worth every penny. I saved a lot on regular maintenance and got priority support during an emergency.",
     rating: 5,

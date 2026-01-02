@@ -18,13 +18,13 @@ export default function Hero() {
 
   const heroSlides = [
     {
-      image: "/Hero-img/hero-slide-one.png",
+      image: "/images/hero-slide-one.webp",
       title: t("slide1Title"),
       subtitle: t("slide1Subtitle"),
       description: t("slide1Description"),
     },
     {
-      image: "/Hero-img/hero-slide-two.png",
+      image: "/images/hero-slide-two.webp",
       title: t("slide2Title"),
       subtitle: t("slide2Subtitle"),
       description: t("slide2Description"),
@@ -68,6 +68,8 @@ export default function Hero() {
                 alt={slide.title}
                 fill
                 priority={index === 0}
+                quality={85}
+                sizes="100vw"
                 className="object-cover -z-10"
               />
               {/* Dark Overlay */}

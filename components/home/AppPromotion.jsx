@@ -109,7 +109,7 @@ export default function AppPromotion() {
             <div className="relative group perspective-1000 flex flex-col md:flex-row items-center gap-8">
               <div className="relative z-10 animate-float translate-z-20 flex-1">
                 <Image
-                  src="/images/app-mockup.png"
+                  src="/images/app-mockup.webp"
                   alt="On Road Help Mobile App"
                   width={600}
                   height={800}

@@ -160,14 +160,23 @@ export async function GET(request) {
         ? await Garage.countDocuments(query)
         : garages.length;
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        garages,
-        total,
-        limit,
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          garages,
+          total,
+          limit,
+        },
       },
-    });
+      {
+        status: 200,
+        headers: {
+          // Cache for 5 minutes, serve stale for 10 minutes while revalidating
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error fetching garages:", error);
     return NextResponse.json(

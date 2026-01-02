@@ -228,7 +228,7 @@ export default function Navbar() {
                           onClick={() => setIsServicesOpen(false)}
                         >
                           <Image
-                            src={service.image || "/images/nav/nav-one.png"}
+                            src={service.image || "/images/nav-one.webp"}
                             alt={service.name}
                             width={40}
                             height={40}
@@ -331,7 +331,7 @@ export default function Navbar() {
                     height={40}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      e.target.src = "/images/users/default-avatar.jpg";
+                      e.target.src = "/images/default-avatar.webp";
                     }}
                   />
                 </div>

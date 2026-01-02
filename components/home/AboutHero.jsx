@@ -77,7 +77,7 @@ export default function AboutHero() {
           >
             <div className="relative aspect-square rounded-2xl overflow-hidden glass-card">
               <Image
-                src="/Hero-img/hero-slide-one.png"
+                src="/images/hero-slide-one.webp"
                 alt="About Us"
                 fill
                 className="object-cover"
