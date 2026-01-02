@@ -16,6 +16,7 @@ import LocaleProvider from "@/components/providers/LocaleProvider";
 import { LoadingProvider } from "@/components/providers/LoadingProvider";
 import LoadingOverlay from "@/components/ui/LoadingOverlay";
 import { LinkLoadingInterceptor } from "@/components/providers/LinkLoadingInterceptor";
+import "@/lib/utils/console-suppressor"; // Suppress console.log in production
 
 // Configure Inter font
 const inter = Inter({
@@ -100,13 +101,47 @@ export default async function RootLayout({ children, params }) {
               }/images/nav/main-logo.svg`,
               contactPoint: {
                 "@type": "ContactPoint",
-                telephone: "+8801XXXXXXXXX",
+                telephone:
+                  process.env.NEXT_PUBLIC_COMPANY_PHONE || "+8801XXXXXXXXX",
                 contactType: "customer service",
                 areaServed: "BD",
                 availableLanguage: ["en", "bn"],
               },
               description:
                 "24/7 Vehicle Breakdown Service in Bangladesh. Get instant mechanic support anywhere, anytime.",
+            }),
+          }}
+        />
+        {/* Structured Data - Organization Schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "On-Road Vehicle Breakdown Service",
+              url:
+                process.env.NEXT_PUBLIC_APP_URL ||
+                "https://on-road-vehicle-service.com",
+              logo: `${
+                process.env.NEXT_PUBLIC_APP_URL ||
+                "https://on-road-vehicle-service.com"
+              }/logo.png`,
+              description:
+                "24/7 vehicle breakdown assistance service in Bangladesh",
+              address: {
+                "@type": "PostalAddress",
+                addressCountry: "BD",
+                addressLocality: "Dhaka",
+              },
+              contactPoint: {
+                "@type": "ContactPoint",
+                telephone:
+                  process.env.NEXT_PUBLIC_COMPANY_PHONE || "+8801XXXXXXXXX",
+                contactType: "Customer Service",
+                availableLanguage: ["English", "Bengali"],
+                areaServed: "BD",
+              },
             }),
           }}
         />

@@ -192,7 +192,9 @@ const InvoiceDocument = ({ payment, user }) => {
             <Text style={styles.companyName}>On-Road Help</Text>
             <Text style={styles.companyDetails}>Dhaka, Bangladesh</Text>
             <Text style={styles.companyDetails}>support@onroadhelp.com</Text>
-            <Text style={styles.companyDetails}>+880 1XXX-XXXXXX</Text>
+            <Text style={styles.companyDetails}>
+              {process.env.NEXT_PUBLIC_COMPANY_PHONE || "+880 1XXX-XXXXXX"}
+            </Text>
           </View>
           <View style={styles.invoiceInfo}>
             <Text style={styles.invoiceTitle}>INVOICE</Text>

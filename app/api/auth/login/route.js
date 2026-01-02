@@ -42,8 +42,6 @@ export async function POST(request) {
       throw new ForbiddenError("Your account has been deactivated");
     }
 
-    // TEMPORARILY DISABLED FOR TESTING - TODO: Re-enable before production
-    /*
     // Check if account is locked
     if (user.accountLockedUntil && user.accountLockedUntil > new Date()) {
       const lockTimeRemaining = Math.ceil(
@@ -53,7 +51,6 @@ export async function POST(request) {
         `Account temporarily locked due to multiple failed login attempts. Please try again in ${lockTimeRemaining} minutes.`
       );
     }
-    */
 
     // Reset lockout if time has passed
     if (user.accountLockedUntil && user.accountLockedUntil <= new Date()) {
@@ -65,8 +62,6 @@ export async function POST(request) {
     const isPasswordValid = await user.comparePassword(password);
 
     if (!isPasswordValid) {
-      // TEMPORARILY DISABLED FOR TESTING - TODO: Re-enable before production
-      /*
       // Increment failed login attempts
       user.failedLoginAttempts += 1;
 
@@ -85,10 +80,6 @@ export async function POST(request) {
       throw new UnauthorizedError(
         `${MESSAGES.ERROR.INVALID_CREDENTIALS} (${attemptsRemaining} attempts remaining)`
       );
-      */
-
-      // Simple error without rate limiting (TESTING ONLY)
-      throw new UnauthorizedError(MESSAGES.ERROR.INVALID_CREDENTIALS);
     }
 
     // Check role if specified
