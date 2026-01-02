@@ -42,14 +42,14 @@ export default function TrustedBy() {
           Trusted by top automotive partners
         </p>
 
-        <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:flex lg:flex-wrap justify-center items-center gap-x-8 gap-y-12 lg:gap-16 opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
           {partners.map((partner, index) => (
             <div
               key={index}
-              className="flex items-center gap-2 group cursor-pointer"
+              className="flex flex-col sm:flex-row items-center justify-center gap-3 group cursor-pointer"
             >
-              <partner.icon className="w-8 h-8 text-gray-400 group-hover:text-orange-500 transition-colors" />
-              <span className="text-xl font-bold text-gray-400 group-hover:text-white transition-colors">
+              <partner.icon className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 group-hover:text-orange-500 transition-colors duration-300" />
+              <span className="text-base sm:text-xl font-bold text-gray-400 group-hover:text-white transition-colors duration-300">
                 {partner.name}
               </span>
             </div>

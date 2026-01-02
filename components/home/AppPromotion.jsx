@@ -55,49 +55,52 @@ export default function AppPromotion() {
   ];
 
   return (
-    <section className="py-24 bg-[#111] overflow-hidden">
+    <section className="py-16 sm:py-24 bg-[#111] overflow-hidden">
       <div className="container mx-auto px-4">
-        <div className="bg-gradient-to-br from-orange-500/10 to-transparent border border-white/10 rounded-[40px] p-8 md:p-16 relative">
+        <div className="bg-gradient-to-br from-orange-500/10 to-transparent border border-white/10 rounded-[30px] sm:rounded-[40px] p-6 sm:p-10 md:p-16 relative">
           {/* Background Decorative Circles */}
-          <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/5 rounded-full blur-[100px] -z-10"></div>
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-orange-500/5 rounded-full blur-[100px] -z-10"></div>
+          <div className="absolute top-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-orange-500/5 rounded-full blur-[60px] sm:blur-[100px] -z-10"></div>
+          <div className="absolute bottom-0 left-0 w-64 h-64 sm:w-96 sm:h-96 bg-orange-500/5 rounded-full blur-[60px] sm:blur-[100px] -z-10"></div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div className="flex flex-col lg:grid lg:grid-cols-2 gap-10 sm:gap-16 items-center text-center lg:text-left">
             {/* Content Side */}
-            <div className="space-y-8">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/10 border border-orange-500/20 rounded-full text-orange-500 text-sm font-semibold uppercase tracking-wider">
+            <div className="space-y-6 sm:space-y-8 order-2 lg:order-1">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/10 border border-orange-500/20 rounded-full text-orange-500 text-xs sm:text-sm font-semibold uppercase tracking-wider mx-auto lg:mx-0">
                 <Smartphone size={16} />
                 Now Available on Mobile
               </div>
 
               <div className="space-y-4">
-                <h2 className="text-4xl md:text-5xl font-black text-white leading-tight">
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-tight">
                   {t("title")}{" "}
                   <span className="text-orange-500">{t("highlight")}</span>{" "}
-                  <br />
+                  <br className="hidden sm:block" />
                   {t("subtitle")}
                 </h2>
-                <p className="text-white/60 text-lg max-w-lg">
+                <p className="text-white/60 text-base sm:text-lg max-w-lg mx-auto lg:mx-0">
                   {t("description")}
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-w-md mx-auto lg:mx-0 text-left">
                 {features.map((feature, index) => (
                   <div
                     key={index}
-                    className="flex items-center gap-3 text-white/80"
+                    className="flex items-center justify-center sm:justify-start gap-3 text-white/80"
                   >
-                    <CheckCircle2 className="text-orange-500" size={20} />
+                    <CheckCircle2
+                      className="text-orange-500 shrink-0"
+                      size={20}
+                    />
                     <span>{feature}</span>
                   </div>
                 ))}
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center gap-8 pt-4">
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-5 sm:gap-8 pt-4">
                 <button
                   onClick={handleInstallClick}
-                  className="w-full sm:w-auto px-10 py-5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black text-lg flex items-center justify-center gap-3 transition-all active:scale-95 shadow-[0_10px_30px_rgba(232,93,4,0.3)]"
+                  className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl sm:rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-3 transition-all active:scale-95 shadow-[0_10px_30px_rgba(232,93,4,0.3)]"
                 >
                   <Download size={24} />
                   {t("downloadApp")}
@@ -106,14 +109,14 @@ export default function AppPromotion() {
             </div>
 
             {/* Mockup Side */}
-            <div className="relative group perspective-1000 flex flex-col md:flex-row items-center gap-8">
-              <div className="relative z-10 animate-float translate-z-20 flex-1">
+            <div className="relative group perspective-1000 flex flex-col items-center gap-8 order-1 lg:order-2 w-full">
+              <div className="relative z-10 animate-float translate-z-20 w-full max-w-[280px] sm:max-w-[350px] lg:max-w-[450px] mx-auto">
                 <Image
                   src="/images/app-mockup.webp"
                   alt="On Road Help Mobile App"
                   width={600}
                   height={800}
-                  className="w-full max-w-[450px] mx-auto drop-shadow-[0_50px_100px_rgba(0,0,0,0.5)] group-hover:scale-105 transition-transform duration-700"
+                  className="w-full h-auto drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] group-hover:scale-105 transition-transform duration-700"
                 />
               </div>
 

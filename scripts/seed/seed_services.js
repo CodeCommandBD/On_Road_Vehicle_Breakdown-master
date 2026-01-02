@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const path = require("path");
 const fs = require("fs");
-require("dotenv").config({ path: "../../.env.local" });
+require("dotenv").config({ path: path.join(__dirname, "../../.env.local") });
 
 // Define Schema inline to avoid module import issues in standalone script
 const serviceSchema = new mongoose.Schema(
