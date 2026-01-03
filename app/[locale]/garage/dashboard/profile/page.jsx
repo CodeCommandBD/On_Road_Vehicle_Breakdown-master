@@ -198,6 +198,70 @@ export default function GarageProfilePage() {
     }
   };
 
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error(
+        "Your browser doesn't support geolocation. Please use Edit Map to set location manually."
+      );
+      return;
+    }
+
+    toast.info("Detecting your location...");
+
+    // Unlock map before setting location
+    setIsLocationLocked(false);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setFormData((prev) => ({
+          ...prev,
+          location: {
+            ...prev.location,
+            coordinates: [longitude, latitude],
+          },
+        }));
+
+        // Show success with save reminder
+        toast.success(
+          `Location detected: ${latitude.toFixed(4)}, ${longitude.toFixed(
+            4
+          )}. Don't forget to save!`,
+          { autoClose: 5000 }
+        );
+
+        // Lock map after 1 second to allow map to update
+        setTimeout(() => {
+          setIsLocationLocked(true);
+        }, 1000);
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        let errorMessage = "Could not detect location.";
+
+        if (error.code === 1) {
+          errorMessage =
+            "Location permission denied. Please enable location access or use Edit Map to set manually.";
+        } else if (error.code === 2) {
+          errorMessage =
+            "Location unavailable. If you're on a PC, please use Edit Map to set location manually.";
+        } else if (error.code === 3) {
+          errorMessage =
+            "Location request timeout. Please try again or use Edit Map.";
+        }
+
+        toast.error(errorMessage);
+        // Lock map again if error occurs
+        setIsLocationLocked(true);
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+  };
+
   const handleLocationSelect = useCallback((latlng) => {
     setFormData((prev) => ({
       ...prev,
@@ -589,25 +653,34 @@ export default function GarageProfilePage() {
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <label className="block text-white/80 text-sm font-medium">
                 {t("mapPicker")}
               </label>
-              <button
-                type="button"
-                onClick={() => setIsLocationLocked(!isLocationLocked)}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  isLocationLocked
-                    ? "bg-orange-500/20 text-orange-500 border border-orange-500/30 hover:bg-orange-500/30"
-                    : "bg-green-500/20 text-green-500 border border-green-500/30 hover:bg-green-500/30"
-                }`}
-              >
-                {isLocationLocked ? (
-                  <>🛠️ {t("editLocation")}</>
-                ) : (
-                  <>✅ {t("confirmLocation")}</>
-                )}
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Get Current Location Button */}
+                <button
+                  type="button"
+                  onClick={getCurrentLocation}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 rounded-lg text-xs font-bold transition-all"
+                >
+                  <span className="text-base">📍</span>
+                  Current Location
+                </button>
+
+                {/* Edit Map Toggle Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsLocationLocked(!isLocationLocked)}
+                  className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    isLocationLocked
+                      ? "bg-orange-500/20 text-orange-500 border border-orange-500/30 hover:bg-orange-500/30"
+                      : "bg-green-500/20 text-green-500 border border-green-500/30 hover:bg-green-500/30"
+                  }`}
+                >
+                  {isLocationLocked ? <>🛠️ Edit Map</> : <>✅ Confirm</>}
+                </button>
+              </div>
             </div>
 
             <div
@@ -655,6 +728,43 @@ export default function GarageProfilePage() {
                 <code>{formData.location.coordinates[1].toFixed(6)}</code>
               </div>
             </div>
+
+            {/* Save Location Button */}
+            <button
+              type="button"
+              onClick={async () => {
+                setIsSaving(true);
+                try {
+                  const response = await axios.put("/api/profile", {
+                    location: formData.location,
+                  });
+                  if (response.data.success) {
+                    toast.success("Location saved successfully!");
+                  }
+                } catch (error) {
+                  console.error("Error saving location:", error);
+                  toast.error(
+                    error.response?.data?.message || "Failed to save location"
+                  );
+                } finally {
+                  setIsSaving(false);
+                }
+              }}
+              disabled={isSaving}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:shadow-lg hover:shadow-orange-500/30 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  Save Location
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>
