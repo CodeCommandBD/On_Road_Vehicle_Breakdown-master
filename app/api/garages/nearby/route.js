@@ -21,14 +21,41 @@ export async function GET(req) {
     const latitude = searchParams.get("latitude") || searchParams.get("lat");
     const longitude = searchParams.get("longitude") || searchParams.get("lng");
 
-    // Validate query parameters using Zod
-    const validatedParams = garageSearchSchema.parse({
+    // Build validation object, only including non-null values
+    const validationData = {
       latitude,
       longitude,
-      radius: searchParams.get("radius") || searchParams.get("maxDistance"),
-      services: searchParams.get("services"),
-      verified: searchParams.get("verified"),
-    });
+    };
+
+    // Only add optional params if they exist
+    const radiusParam =
+      searchParams.get("radius") || searchParams.get("maxDistance");
+    const servicesParam = searchParams.get("services");
+    const verifiedParam = searchParams.get("verified");
+
+    if (radiusParam !== null) validationData.radius = radiusParam;
+    if (servicesParam !== null) validationData.services = servicesParam;
+    if (verifiedParam !== null) validationData.verified = verifiedParam;
+
+    // Validate query parameters using Zod with safeParse for better error messages
+    const validationResult = garageSearchSchema.safeParse(validationData);
+
+    if (!validationResult.success) {
+      console.error("Validation failed:", {
+        errors: validationResult.error.errors,
+        received: { latitude, longitude },
+      });
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Data validation failed.",
+          errors: validationResult.error.errors,
+        },
+        { status: 400 }
+      );
+    }
+
+    const validatedParams = validationResult.data;
 
     const {
       latitude: lat,
@@ -75,9 +102,30 @@ export async function GET(req) {
     const limit = parseInt(searchParams.get("limit")) || 20;
     const garages = await garagesQuery.limit(limit);
 
-    // If no garages found
+    // Log search details for debugging
+    console.log("Nearby garages search:", {
+      coordinates: { latitude: lat, longitude: lng },
+      radius: searchRadius,
+      radiusInRadians,
+      foundCount: garages.length,
+      query: JSON.stringify(query),
+    });
+
+    // If no garages found, return empty array instead of error
     if (!garages || garages.length === 0) {
-      throw new NotFoundError(MESSAGES.ERROR.NO_NEARBY_GARAGES);
+      console.warn("No nearby garages found for:", { lat, lng, searchRadius });
+      return successResponse(
+        {
+          garages: [],
+          count: 0,
+          searchRadius: searchRadius,
+          searchLocation: {
+            latitude: lat,
+            longitude: lng,
+          },
+        },
+        "কোনো গ্যারেজ পাওয়া যায়নি"
+      );
     }
 
     // Haversine distance calculation

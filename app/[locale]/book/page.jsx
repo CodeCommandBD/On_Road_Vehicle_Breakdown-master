@@ -248,18 +248,48 @@ function BookingForm() {
   const fetchNearbyGarages = async (lng, lat) => {
     setIsLoadingGarages(true);
     try {
+      // Use correct parameter names: latitude and longitude
       const response = await axios.get(
-        `/api/garages/nearby?lng=${lng}&lat=${lat}`
+        `/api/garages/nearby?longitude=${lng}&latitude=${lat}`
       );
+
+      console.log("Nearby garages API response:", response.data);
+
       if (response.data.success) {
-        setNearbyGarages(response.data.garages);
-        if (response.data.garages.length === 0) {
+        const garages =
+          response.data.garages || response.data.data?.garages || [];
+        setNearbyGarages(garages);
+
+        if (garages.length === 0) {
+          console.warn("No nearby garages found for coordinates:", {
+            lng,
+            lat,
+          });
           toast.info(t("noGarages"));
+        } else {
+          console.log(`Found ${garages.length} nearby garages`);
+          toast.success(`${garages.length}টি গ্যারেজ পাওয়া গেছে`);
         }
+      } else {
+        console.error("API returned success=false:", response.data);
+        toast.warning(t("noGarages"));
       }
     } catch (error) {
-      console.error("Error fetching garages:", error);
-      toast.error("Could not load nearby garages");
+      console.error("Error fetching nearby garages:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        coordinates: { lng, lat },
+      });
+
+      // Show more specific error message
+      if (error.response?.status === 404) {
+        toast.info(t("noGarages"));
+      } else {
+        toast.error(
+          error.response?.data?.message || "Could not load nearby garages"
+        );
+      }
     } finally {
       setIsLoadingGarages(false);
     }

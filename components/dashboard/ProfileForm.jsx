@@ -237,7 +237,7 @@ export default function ProfileForm() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 border-t pt-6">
+          <div className="grid lg:grid-cols-2 gap-8 border-t pt-6">
             <div className="space-y-4">
               <h3 className="font-bold text-gray-700 flex items-center gap-2">
                 <MapPin size={16} /> Address Details
@@ -296,7 +296,7 @@ export default function ProfileForm() {
                   value={formData.address.postalCode}
                   onChange={handleInputChange}
                   className="w-full p-2.5 bg-gray-50 border rounded-xl text-sm"
-                  placeholder="1207"
+                  placeholder="1200"
                 />
               </div>
 
@@ -304,40 +304,48 @@ export default function ProfileForm() {
                 type="button"
                 onClick={handleGeocode}
                 disabled={isGeocoding || !formData.address.city}
-                className="w-full py-2.5 bg-blue-50 text-blue-600 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-100 transition-all disabled:opacity-50 border border-blue-100 mt-2"
+                className="w-full flex items-center justify-center gap-2 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold transition-all disabled:opacity-50"
               >
                 {isGeocoding ? (
-                  <Loader2 size={16} className="animate-spin" />
+                  <Loader2 size={18} className="animate-spin" />
                 ) : (
-                  <Search size={16} />
+                  <Search size={18} />
                 )}
-                Set Map from Address
+                Find on Map
               </button>
+              <p className="text-[10px] text-gray-400 italic">
+                * After clicking, we will pinpoint your address on the map. You
+                can also drag the map or click manually to refine.
+              </p>
             </div>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-bold text-gray-700">
-                  Map Location (Home/Base)
-                </h3>
+                <label className="block text-gray-700 text-sm font-bold">
+                  Map Picker
+                </label>
                 <button
                   type="button"
                   onClick={() => setIsLocationLocked(!isLocationLocked)}
-                  className={`flex items-center gap-2 px-3 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                  className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
                     isLocationLocked
-                      ? "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20"
-                      : "bg-green-100 text-green-700 border border-green-200 hover:bg-green-200"
+                      ? "bg-orange-500/20 text-orange-500 border border-orange-500/30 hover:bg-orange-500/30"
+                      : "bg-green-500/20 text-green-500 border border-green-500/30 hover:bg-green-500/30"
                   }`}
                 >
-                  {isLocationLocked ? "🛠️ Edit" : "✅ Confirm"}
+                  {isLocationLocked ? (
+                    <>🛠️ Edit Location</>
+                  ) : (
+                    <>✅ Confirm Location</>
+                  )}
                 </button>
               </div>
 
               <div
                 className={`relative rounded-2xl overflow-hidden border transition-all ${
                   isLocationLocked
-                    ? "border-gray-200"
-                    : "ring-2 ring-green-500/20 border-green-500/50"
+                    ? "border-gray-200 opacity-80"
+                    : "border-green-500/50 ring-2 ring-green-500/20"
                 }`}
               >
                 <MapComponent
@@ -354,25 +362,32 @@ export default function ProfileForm() {
                       lat: formData.location.coordinates[1],
                       lng: formData.location.coordinates[0],
                       content: isLocationLocked
-                        ? "Locked"
-                        : "Setting Location...",
+                        ? "Your Location"
+                        : "Click to set location",
                     },
                   ]}
-                  className="h-[250px] w-full"
+                  className="h-[350px] w-full"
                 />
                 {isLocationLocked && (
-                  <div className="absolute inset-0 z-[1001] bg-black/5 cursor-not-allowed flex items-center justify-center group">
-                    <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm border border-gray-100 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                        Click "Edit" to move
+                  <div className="absolute inset-0 z-[1001] bg-black/5 cursor-not-allowed group">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/80 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <p className="text-[10px] text-white">
+                        Click "Edit Location" to move pin
                       </p>
                     </div>
                   </div>
                 )}
               </div>
-              <p className="text-[10px] text-gray-400 italic text-center">
-                Your default service location is pinned here
-              </p>
+              <div className="flex items-center gap-4 text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
+                <div className="flex-1">
+                  <span className="block font-bold">Longitude</span>
+                  <code>{formData.location.coordinates[0].toFixed(6)}</code>
+                </div>
+                <div className="flex-1">
+                  <span className="block font-bold">Latitude</span>
+                  <code>{formData.location.coordinates[1].toFixed(6)}</code>
+                </div>
+              </div>
             </div>
           </div>
 
