@@ -22,6 +22,7 @@ import {
   Star,
   BadgeCheck,
   BrainCircuit,
+  Loader2,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
