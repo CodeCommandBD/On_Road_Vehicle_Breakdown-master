@@ -77,6 +77,16 @@ export default function GarageDetailsClient({ garage, id }) {
     }
   };
 
+  const handleBookNow = () => {
+    const bookingUrl = `/book?garage=${garage._id}`;
+    if (!user) {
+      toast.info(t("loginRequired") || "Please login to book a service");
+      router.push(`/login?redirect=${encodeURIComponent(bookingUrl)}`);
+    } else {
+      router.push(bookingUrl);
+    }
+  };
+
   if (!garage) {
     return (
       <div className="min-h-screen bg-[#111] flex items-center justify-center p-4">
@@ -301,12 +311,12 @@ export default function GarageDetailsClient({ garage, id }) {
               </div>
             </div>
 
-            <Link
-              href={`/book?garage=${garage._id}`}
+            <button
+              onClick={handleBookNow}
               className="block w-full py-5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-2xl font-black text-center shadow-xl shadow-orange-500/20 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] text-lg uppercase tracking-wider"
             >
               {t("bookNow")}
-            </Link>
+            </button>
             <div className="flex items-center justify-center gap-2 mt-4 text-gray-500">
               <ShieldCheck size={14} className="text-green-500" />
               <p className="text-xs font-bold uppercase tracking-widest text-[10px]">

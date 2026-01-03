@@ -1,6 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
-import { Upload, X, ExternalLink, Loader2 } from "lucide-react";
+import { Upload, X, ExternalLink, Wrench } from "lucide-react";
 import { toast } from "react-toastify";
 
 export default function ImageUpload({
@@ -152,7 +152,7 @@ export default function ImageUpload({
                 title="Clear & Delete"
               >
                 {deleting ? (
-                  <Loader2 size={16} className="animate-spin" />
+                  <Wrench size={16} className="animate-spin" />
                 ) : (
                   <X size={16} />
                 )}
@@ -174,7 +174,7 @@ export default function ImageUpload({
             disabled={uploading}
           />
           {uploading ? (
-            <Loader2 className="animate-spin w-5 h-5 text-orange-500" />
+            <Wrench className="animate-spin w-5 h-5 text-orange-500" />
           ) : (
             <Upload className="w-5 h-5 text-white/60 hover:text-white" />
           )}

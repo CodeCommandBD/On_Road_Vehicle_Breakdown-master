@@ -8,7 +8,7 @@ import {
   Calendar,
   Search,
   Filter,
-  Loader2,
+  Wrench,
   Plus,
   LayoutGrid,
   List as ListIcon,
@@ -174,7 +174,7 @@ export default function MyBookingsPage() {
       {/* Content Section */}
       {loading ? (
         <div className="flex flex-col items-center justify-center h-64 bg-[#1E1E1E] border border-white/10 rounded-2xl">
-          <Loader2 className="w-10 h-10 animate-spin text-orange-500 mb-4" />
+          <Wrench className="w-10 h-10 animate-spin text-orange-500 mb-4" />
           <p className="text-white/60">Loading your bookings...</p>
         </div>
       ) : filteredBookings.length > 0 ? (

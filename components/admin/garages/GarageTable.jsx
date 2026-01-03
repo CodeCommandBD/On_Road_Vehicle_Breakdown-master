@@ -4,7 +4,7 @@ import {
   X,
   Eye,
   Filter,
-  Loader2,
+  Wrench,
   Search,
   Award,
   MoreVertical,
@@ -122,7 +122,7 @@ export default function GarageTable() {
   if (isLoading) {
     return (
       <div className="flex justify-center p-12">
-        <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+        <Wrench className="w-8 h-8 animate-spin text-orange-500" />
       </div>
     );
   }

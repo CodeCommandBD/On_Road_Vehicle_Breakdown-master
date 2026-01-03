@@ -48,7 +48,8 @@ export default function LoginForm() {
   );
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouterWithLoading(true); // true for i18n support
-  const redirectParams = searchParams.get("redirect");
+  const redirectParams =
+    searchParams.get("redirect") || searchParams.get("callbackUrl");
   const dispatch = useDispatch();
   const isLoading = useSelector(selectAuthLoading);
 
@@ -341,7 +342,7 @@ export default function LoginForm() {
           >
             {isLoading ? (
               <span className="flex items-center justify-center gap-3">
-                <Loader2 className="w-6 h-6 animate-spin" />
+                <Wrench className="w-6 h-6 animate-spin" />
                 {t("authenticating")}
               </span>
             ) : (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MoreVertical, Loader2 } from "lucide-react";
+import { MoreVertical, Wrench } from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
 import axios from "axios";
@@ -76,7 +76,7 @@ export default function RecentBookings() {
 
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+          <Wrench className="w-8 h-8 text-orange-500 animate-spin" />
         </div>
       ) : bookings.length === 0 ? (
         <div className="flex items-center justify-center h-64">

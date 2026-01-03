@@ -14,7 +14,7 @@ import LeaderboardWidget from "@/components/dashboard/LeaderboardWidget";
 import SubscriptionCard from "@/components/dashboard/SubscriptionCard";
 import Link from "next/link";
 import {
-  Loader2,
+  Wrench,
   Siren,
   Phone,
   AlertCircle,
@@ -211,7 +211,7 @@ export default function UserDashboard({ user }) {
   if (isLoading) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <Loader2 className="w-12 h-12 animate-spin text-orange-500" />
+        <Wrench className="w-12 h-12 animate-spin text-orange-500" />
       </div>
     );
   }
@@ -284,7 +284,7 @@ export default function UserDashboard({ user }) {
           >
             {isCancelling ? (
               <>
-                <Loader2 size={16} className="animate-spin" />
+                <Wrench size={16} className="animate-spin" />
                 {t("cancelling")}
               </>
             ) : (
@@ -330,7 +330,7 @@ export default function UserDashboard({ user }) {
                 >
                   {isCancelling ? (
                     <>
-                      <Loader2 size={20} className="animate-spin" />
+                      <Wrench size={20} className="animate-spin" />
                       {t("cancelling")}
                     </>
                   ) : (

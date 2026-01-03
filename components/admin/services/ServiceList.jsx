@@ -10,7 +10,6 @@ import {
   ToggleLeft,
   ToggleRight,
   Wrench,
-  Loader2,
   Filter,
 } from "lucide-react";
 import CreateServiceModal from "./CreateServiceModal";
@@ -264,8 +263,10 @@ export default function ServiceList() {
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
-              className="h-64 bg-white/5 rounded-2xl animate-pulse"
-            ></div>
+              className="h-64 bg-white/5 rounded-2xl animate-pulse flex items-center justify-center"
+            >
+              <Wrench className="w-12 h-12 text-white/5 animate-spin" />
+            </div>
           ))}
         </div>
       ) : filteredServices.length === 0 ? (

@@ -447,7 +447,7 @@ export default function SignupForm() {
           >
             {isLoading ? (
               <span className="flex items-center justify-center gap-3">
-                <Loader2 className="w-6 h-6 animate-spin" />
+                <Wrench className="w-6 h-6 animate-spin" />
                 Creating Account...
               </span>
             ) : (

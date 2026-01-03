@@ -6,7 +6,7 @@ import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
 import {
-  Loader2,
+  Wrench,
   CheckCircle,
   ShieldCheck,
   CreditCard,
@@ -343,7 +343,7 @@ export default function CheckoutPage() {
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="w-6 h-6 animate-spin" />
+                    <Wrench className="w-6 h-6 animate-spin" />
                     Processing Payment...
                   </>
                 ) : (

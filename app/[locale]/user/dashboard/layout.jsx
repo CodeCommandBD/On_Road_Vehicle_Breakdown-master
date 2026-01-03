@@ -11,7 +11,7 @@ import {
 } from "@/store/slices/authSlice";
 import Sidebar from "@/components/layout/Sidebar";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import { Loader2 } from "lucide-react";
+import { Wrench } from "lucide-react";
 import axios from "axios";
 
 export default function UserDashboardLayout({ children }) {

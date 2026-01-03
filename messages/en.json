@@ -104,7 +104,8 @@
     "topGarages": {
       "title": "Meet Our",
       "highlight": "Top Garages",
-      "viewAll": "View All Garages"
+      "viewAll": "View All Garages",
+      "loginRequired": "Please login to book a service"
     },
     "appPromotion": {
       "title": "Take",
@@ -773,7 +774,8 @@
     "noServices": "No specific services listed",
     "bookNow": "Book Now",
     "viewProfile": "View Profile",
-    "callGarage": "Call Garage"
+    "callGarage": "Call Garage",
+    "loginRequired": "Please login to book a service"
   },
   "GarageDetails": {
     "loading": "Loading garage details...",
@@ -797,7 +799,8 @@
     "phone": "Phone",
     "address": "Address",
     "bookNow": "Book Assistance Now",
-    "guarantee": "Fast response guaranteed • Verified Partner"
+    "guarantee": "Fast response guaranteed • Verified Partner",
+    "loginRequired": "Please login to book a service"
   },
   "Booking": {
     "title": "Book a Service",

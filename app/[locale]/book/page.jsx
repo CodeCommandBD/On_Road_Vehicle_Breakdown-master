@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -14,9 +14,8 @@ import {
   Calendar,
   Clock,
   FileText,
-  Loader2,
-  Sparkles,
   Wrench,
+  Sparkles,
   User,
   AlertCircle,
   CheckCircle2,
@@ -42,6 +41,7 @@ function BookingForm() {
   const tServices = useTranslations("Home.serviceNames");
   const searchParams = useSearchParams();
   const router = useRouterWithLoading(); // Regular routing
+  const hasRedirected = useRef(false);
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
 
@@ -117,8 +117,11 @@ function BookingForm() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      toast.info(t("toasts.loginRequired"));
-      router.push("/login?callbackUrl=/book");
+      if (!hasRedirected.current) {
+        hasRedirected.current = true;
+        toast.info(t("toasts.loginRequired"));
+        router.push("/login?redirect=/book");
+      }
       return;
     }
 
@@ -796,7 +799,7 @@ function BookingForm() {
                       >
                         {isEstimating ? (
                           <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <Wrench className="w-4 h-4 animate-spin" />
                             {t("analyzing")}
                           </>
                         ) : (
@@ -818,7 +821,7 @@ function BookingForm() {
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Wrench className="w-5 h-5 animate-spin" />
                       {t("processing")}
                     </span>
                   ) : (
@@ -965,7 +968,7 @@ export default function BookingPage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-gray-900 flex justify-center items-center">
-          <Loader2 className="w-10 h-10 animate-spin text-[#ff4800]" />
+          <Wrench className="w-10 h-10 animate-spin text-[#ff4800]" />
         </div>
       }
     >

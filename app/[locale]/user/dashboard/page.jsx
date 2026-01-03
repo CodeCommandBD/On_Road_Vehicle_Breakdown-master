@@ -3,7 +3,7 @@
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
 import UserDashboard from "@/components/dashboard/UserDashboard";
-import { Loader2 } from "lucide-react";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 export default function UserDashboardPage() {
   const user = useSelector(selectUser);
@@ -11,7 +11,7 @@ export default function UserDashboardPage() {
   if (!user) {
     return (
       <div className="flex h-full items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+        <LoadingSpinner size={32} />
       </div>
     );
   }

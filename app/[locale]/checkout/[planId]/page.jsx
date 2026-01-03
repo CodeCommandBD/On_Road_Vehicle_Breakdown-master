@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import { useSelector } from "react-redux";
 import { selectIsAuthenticated, selectUser } from "@/store/slices/authSlice";
-import { Check, Lock, CreditCard, Loader2 } from "lucide-react";
+import { Check, Lock, CreditCard, Wrench } from "lucide-react";
 import Image from "next/image";
 import {
   Breadcrumb,
@@ -126,7 +126,7 @@ export default function CheckoutPage() {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-orange-500 animate-spin mx-auto mb-4" />
+          <Wrench className="w-12 h-12 text-orange-500 animate-spin mx-auto mb-4" />
           <p className="text-white text-xl">Loading checkout...</p>
         </div>
       </div>
@@ -378,7 +378,7 @@ export default function CheckoutPage() {
               >
                 {processing ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Wrench className="w-4 h-4 animate-spin" />
                     Processing...
                   </>
                 ) : (

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
-import { Loader2, Filter, Search } from "lucide-react";
+import { Wrench, Filter, Search } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import BookingTable from "@/components/dashboard/BookingTable";
@@ -104,7 +104,7 @@ export default function BookingsPage() {
   if (isLoading) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <Loader2 className="w-12 h-12 animate-spin text-orange-500" />
+        <Wrench className="w-12 h-12 animate-spin text-orange-500" />
       </div>
     );
   }

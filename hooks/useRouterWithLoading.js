@@ -3,7 +3,7 @@
 import { useRouter as useNextRouter } from "next/navigation";
 import { useRouter as useI18nRouter } from "@/i18n/routing";
 import { useLoading } from "@/components/providers/LoadingProvider";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 /**
  * Custom hook that wraps Next.js router with loading state
@@ -58,11 +58,14 @@ export function useRouterWithLoading(useI18n = false) {
     }, 800);
   }, [router, startLoading, stopLoading]);
 
-  return {
-    ...router,
-    push,
-    replace,
-    back,
-    forward,
-  };
+  return useMemo(
+    () => ({
+      ...router,
+      push,
+      replace,
+      back,
+      forward,
+    }),
+    [router, push, replace, back, forward]
+  );
 }

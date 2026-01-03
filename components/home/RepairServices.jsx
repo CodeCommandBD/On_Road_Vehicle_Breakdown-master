@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import ServiceCard from "./ServiceCard";
+import { Wrench } from "lucide-react";
 import axios from "axios";
 import { useTranslations } from "next-intl";
 
@@ -125,7 +126,7 @@ export default function RepairServices() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-5 md:gap-6">
             {loading ? (
               <div className="col-span-full flex justify-center py-12">
-                <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                <Wrench className="w-8 h-8 text-orange-500 animate-spin" />
               </div>
             ) : currentServices.length > 0 ? (
               currentServices.map((service, index) => (

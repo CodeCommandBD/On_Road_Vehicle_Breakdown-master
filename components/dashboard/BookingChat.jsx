@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
   Send,
-  Loader2,
+  Wrench,
   MessageSquare,
   X,
   User,
@@ -207,7 +207,7 @@ export default function BookingChat({
       <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-black/20 custom-scrollbar">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-full gap-4 opacity-40">
-            <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+            <Wrench className="w-8 h-8 animate-spin text-indigo-500" />
             <p className="text-[10px] font-black uppercase tracking-[0.2em]">
               Synchronizing...
             </p>
@@ -276,7 +276,7 @@ export default function BookingChat({
             className="p-3 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-500 transition-all disabled:opacity-50 shadow-glow-indigo active:scale-95"
           >
             {sending ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <Wrench className="w-5 h-5 animate-spin" />
             ) : (
               <Send className="w-5 h-5" />
             )}

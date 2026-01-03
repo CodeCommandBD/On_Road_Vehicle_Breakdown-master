@@ -7,7 +7,7 @@ import RevenueChart from "@/components/dashboard/RevenueChart";
 
 import {
   Plus,
-  Loader2,
+  Wrench,
   MapPin,
   Star,
   CheckCircle,
@@ -133,7 +133,7 @@ export default function GarageDashboard({ user }) {
   if (isLoading) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <Loader2 className="w-12 h-12 animate-spin text-orange-500" />
+        <Wrench className="w-12 h-12 animate-spin text-orange-500" />
       </div>
     );
   }

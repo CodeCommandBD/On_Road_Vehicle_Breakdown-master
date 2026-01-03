@@ -11,7 +11,7 @@ import {
   Power,
   ChevronRight,
   Phone,
-  Loader2,
+  Wrench,
   Trophy,
   Star,
   Settings,
@@ -517,7 +517,7 @@ export default function MechanicDashboard() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-white">
-        <Loader2 className="w-12 h-12 animate-spin text-indigo-500 mb-4" />
+        <Wrench className="w-12 h-12 animate-spin text-indigo-500 mb-4" />
         <p className="text-slate-400 font-medium">Synchronizing Dashboard...</p>
       </div>
     );
@@ -669,7 +669,7 @@ export default function MechanicDashboard() {
               }`}
             >
               {processingAttendance ? (
-                <Loader2 className="w-6 h-6 animate-spin" />
+                <Wrench className="w-6 h-6 animate-spin" />
               ) : (
                 <Power className="w-6 h-6" />
               )}

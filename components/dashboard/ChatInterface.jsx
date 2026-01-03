@@ -10,7 +10,7 @@ import {
   Paperclip,
   Smile,
   Clock,
-  Loader2,
+  Wrench,
   Inbox,
   PlusCircle,
   MessageSquare,
@@ -355,7 +355,7 @@ export default function ChatInterface({ userId }) {
   if (loading && conversations.length === 0) {
     return (
       <div className="flex justify-center items-center h-96">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <Wrench className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -633,7 +633,7 @@ export default function ChatInterface({ userId }) {
                   className="p-4 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-500 transition-all disabled:opacity-50 shadow-glow-indigo active:scale-95 border border-indigo-400/20"
                 >
                   {sending ? (
-                    <Loader2 className="w-6 h-6 animate-spin" />
+                    <Wrench className="w-6 h-6 animate-spin" />
                   ) : (
                     <Send className="w-6 h-6" />
                   )}
@@ -706,7 +706,7 @@ export default function ChatInterface({ userId }) {
                   <div className="space-y-3">
                     {fetchingRecipients ? (
                       <div className="p-8 text-center">
-                        <Loader2 className="animate-spin mx-auto w-8 h-8 text-indigo-500" />
+                        <Wrench className="animate-spin mx-auto w-8 h-8 text-indigo-500" />
                       </div>
                     ) : recipients.searchResult?.length > 0 ? (
                       recipients.searchResult.map((u) => (
@@ -746,7 +746,7 @@ export default function ChatInterface({ userId }) {
                   <div className="space-y-3">
                     {fetchingRecipients && !recipientSearch ? (
                       <div className="p-8 text-center">
-                        <Loader2 className="animate-spin mx-auto w-8 h-8 text-indigo-500" />
+                        <Wrench className="animate-spin mx-auto w-8 h-8 text-indigo-500" />
                       </div>
                     ) : recipients.support?.length > 0 ? (
                       recipients.support.map((admin) => (

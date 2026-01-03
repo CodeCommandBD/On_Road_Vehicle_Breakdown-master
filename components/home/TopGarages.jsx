@@ -1,15 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Star } from "lucide-react";
+import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
+import { Star, Wrench } from "lucide-react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { useTranslations } from "next-intl";
+import { useSelector } from "react-redux";
+import { selectUser } from "@/store/slices/authSlice";
+import { toast } from "react-toastify";
 
 export default function TopGarages() {
   const t = useTranslations("Home.topGarages");
   const [garages, setGarages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouterWithLoading();
+  const user = useSelector(selectUser);
 
   // Scroll animations
   const headerAnimation = useScrollAnimation({ threshold: 0.2 });
@@ -32,6 +37,22 @@ export default function TopGarages() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleBookNow = (e, garageId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const bookingUrl = `/book?garage=${garageId}`;
+    if (!user) {
+      toast.info(t("loginRequired") || "Please login to book a service");
+      router.push(`/login?redirect=${encodeURIComponent(bookingUrl)}`);
+    } else {
+      router.push(bookingUrl);
+    }
+  };
+
+  const handleCardClick = (garageId) => {
+    router.push(`/garages/${garageId}`);
   };
 
   return (
@@ -63,7 +84,9 @@ export default function TopGarages() {
                 key={i}
                 className="bg-gray-800/60 border border-gray-700/50 rounded-2xl p-8 h-[380px] animate-pulse"
               >
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 mx-auto mb-6" />
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 mx-auto mb-6 flex items-center justify-center">
+                  <Wrench className="w-10 h-10 text-gray-600 animate-spin" />
+                </div>
                 <div className="h-6 bg-gradient-to-r from-gray-700 to-gray-800 rounded w-4/5 mx-auto mb-3" />
                 <div className="h-4 bg-gradient-to-r from-gray-700 to-gray-800 rounded w-3/5 mx-auto" />
               </div>
@@ -75,9 +98,9 @@ export default function TopGarages() {
               // Garage logo emojis
               const logos = ["🏎️", "🚗", "🏁"];
               return (
-                <Link
+                <div
                   key={garage._id}
-                  href={`/garages/${garage._id}`}
+                  onClick={() => handleCardClick(garage._id)}
                   className="group relative bg-gray-800/60 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 sm:p-8 text-center transition-all duration-500 ease-out cursor-pointer overflow-hidden hover:-translate-y-2 hover:border-orange-600/50 hover:bg-gray-800/90 hover:shadow-[0_20px_60px_rgba(255,83,45,0.3)]"
                 >
                   {/* Top Border Hover Effect */}
@@ -118,10 +141,13 @@ export default function TopGarages() {
                   </div>
 
                   {/* CTA Button */}
-                  <span className="inline-block px-6 sm:px-9 py-3 bg-gradient-to-r from-orange-600 to-orange-700 text-white text-sm sm:text-base font-semibold rounded-lg transition-all duration-300 shadow-lg group-hover:scale-105 group-hover:shadow-[0_8px_24px_rgba(255,83,45,0.5)]">
+                  <button
+                    onClick={(e) => handleBookNow(e, garage._id)}
+                    className="inline-block px-6 sm:px-9 py-3 bg-gradient-to-r from-orange-600 to-orange-700 text-white text-sm sm:text-base font-semibold rounded-lg transition-all duration-300 shadow-lg group-hover:scale-105 group-hover:shadow-[0_8px_24px_rgba(255,83,45,0.5)] border-none cursor-pointer"
+                  >
                     BOOK NOW
-                  </span>
-                </Link>
+                  </button>
+                </div>
               );
             })}
           </div>

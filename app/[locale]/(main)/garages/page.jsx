@@ -10,7 +10,6 @@ import {
   Clock,
   Phone,
   Wrench,
-  Loader2,
   ShieldCheck,
   Navigation,
   Heart,
@@ -184,6 +183,16 @@ export default function GaragesPage() {
     }
   };
 
+  const handleBookNow = (garageId) => {
+    const bookingUrl = `/book?garage=${garageId}`;
+    if (!user) {
+      toast.info(t("loginRequired") || "Please login to book a service");
+      router.push(`/login?redirect=${encodeURIComponent(bookingUrl)}`);
+    } else {
+      router.push(bookingUrl);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header with Advanced Search */}
@@ -270,7 +279,9 @@ export default function GaragesPage() {
                     className="bg-white rounded-xl p-6 shadow-sm border h-48 animate-pulse"
                   >
                     <div className="flex gap-6">
-                      <div className="w-48 h-36 bg-gray-200 rounded-lg" />
+                      <div className="w-48 h-36 bg-gray-200 rounded-lg flex items-center justify-center">
+                        <Wrench className="w-12 h-12 text-gray-300 animate-spin" />
+                      </div>
                       <div className="flex-1 space-y-4">
                         <div className="h-6 bg-gray-200 rounded w-1/3" />
                         <div className="h-4 bg-gray-200 rounded w-1/4" />
@@ -404,12 +415,12 @@ export default function GaragesPage() {
 
                       {/* Actions */}
                       <div className="flex items-center gap-3 mt-auto">
-                        <Link
-                          href={`/book?garage=${garage._id}`}
+                        <button
+                          onClick={() => handleBookNow(garage._id)}
                           className="flex-1 text-center px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium text-sm"
                         >
                           {t("bookNow")}
-                        </Link>
+                        </button>
                         <Link
                           href={`/garages/${garage._id}`}
                           className="flex-1 text-center px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm"

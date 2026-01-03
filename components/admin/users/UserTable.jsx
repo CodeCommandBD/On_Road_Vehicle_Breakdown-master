@@ -8,7 +8,7 @@ import {
   Trash2,
   Eye,
   Award,
-  Loader2,
+  Wrench,
   FileText,
   X,
 } from "lucide-react";
@@ -576,7 +576,7 @@ export default function UserTable() {
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
                 >
                   {isSaving ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Wrench className="w-4 h-4 animate-spin" />
                   ) : (
                     "Save Contract"
                   )}
