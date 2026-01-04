@@ -1,12 +1,79 @@
 "use client";
 
-import { useSelector } from "react-redux";
-import { selectUser } from "@/store/slices/authSlice";
-import ProfileForm from "@/components/dashboard/ProfileForm";
-import { User, Shield } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { selectUser, updateUser } from "@/store/slices/authSlice";
+import { User, Shield, Phone, Mail, Save, Loader2 } from "lucide-react";
+import { toast } from "react-toastify";
 
 export default function AdminProfilePage() {
   const user = useSelector(selectUser);
+  const dispatch = useDispatch();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+  });
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const res = await fetch("/api/profile");
+      const data = await res.json();
+      if (data.success) {
+        setFormData({
+          name: data.user.name || "",
+          email: data.user.email || "",
+          phone: data.user.phone || "",
+        });
+      }
+    } catch (error) {
+      toast.error("Failed to load profile");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const res = await fetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Profile updated successfully");
+        dispatch(updateUser(data.user));
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error("An error occurred");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-[#FF532D]" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -35,7 +102,77 @@ export default function AdminProfilePage() {
       </div>
 
       {/* Profile Form */}
-      <ProfileForm user={user} />
+      <section className="bg-[#161616] p-6 rounded-2xl shadow-sm border border-white/10">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-[#FF532D]/10 rounded-lg text-[#FF532D]">
+            <User className="w-5 h-5" />
+          </div>
+          <h2 className="text-xl font-bold text-white">Personal Information</h2>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-white/80">
+                Full Name
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className="w-full p-2.5 bg-black/40 border border-white/10 text-white rounded-xl focus:ring-2 focus:ring-[#FF532D]/20 transition-all outline-none"
+                placeholder="Ex: John Doe"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-white/80">
+                Email Address
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className="w-full p-2.5 bg-black/40 border border-white/10 text-white rounded-xl focus:ring-2 focus:ring-[#FF532D]/20 transition-all outline-none"
+                placeholder="admin@example.com"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-white/80">
+              Phone Number
+            </label>
+            <input
+              type="text"
+              name="phone"
+              value={formData.phone}
+              onChange={handleInputChange}
+              className="w-full p-2.5 bg-black/40 border border-white/10 text-white rounded-xl focus:ring-2 focus:ring-[#FF532D]/20 transition-all outline-none"
+              placeholder="Ex: 017xxxxxxxx"
+              required
+            />
+          </div>
+
+          <div className="flex justify-end pt-4 border-t border-white/10">
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-6 py-2.5 bg-[#FF532D] text-white rounded-xl font-bold hover:bg-[#FF532D]/90 transition-all disabled:opacity-50 flex items-center gap-2"
+            >
+              {saving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              Save Profile Changes
+            </button>
+          </div>
+        </form>
+      </section>
     </div>
   );
 }
