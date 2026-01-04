@@ -100,6 +100,7 @@ function BookingForm() {
   const [estimatedCost, setEstimatedCost] = useState(null);
   const [isEstimating, setIsEstimating] = useState(false);
   const [coordinates, setCoordinates] = useState(null); // [long, lat]
+  const [csrfToken, setCsrfToken] = useState(null);
 
   // Data Fetching State
   const [services, setServices] = useState([]);
@@ -129,6 +130,14 @@ function BookingForm() {
     const fetchInitialData = async () => {
       setIsLoadingServices(true);
       try {
+        // Fetch CSRF token
+        const csrfRes = await axios.get("/api/csrf-token");
+        if (csrfRes.data.success) {
+          setCsrfToken(csrfRes.data.csrfToken);
+        } else {
+          // Optionally log an error if CSRF token fetching fails, but not critical for user experience
+        }
+
         const res = await axios.get("/api/services?isActive=true");
         if (res.data.success) {
           setServices(res.data.data.services);
@@ -330,6 +339,12 @@ function BookingForm() {
       return;
     }
 
+    // Check if CSRF token is loaded
+    if (!csrfToken) {
+      toast.error("Security token not loaded. Please refresh the page.");
+      return;
+    }
+
     // Require garage selection or use fallback if logic allows (currently requiring selection if available)
     // If no garages found, we might need a "Global Admin" fallback logic, but for now let's enforce selection if list > 0
     if (nearbyGarages.length > 0 && !selectedGarage) {
@@ -375,7 +390,11 @@ function BookingForm() {
           : null,
       };
 
-      const response = await axios.post("/api/bookings", payload);
+      const response = await axios.post("/api/bookings", payload, {
+        headers: {
+          "x-csrf-token": csrfToken,
+        },
+      });
 
       if (response.data.success) {
         toast.success(t("toasts.success"));
