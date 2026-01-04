@@ -201,36 +201,40 @@ export default function ProfileForm() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Personal Information */}
-      <section className="bg-white p-6 rounded-2xl shadow-sm border">
+      <section className="bg-[#161616] p-6 rounded-2xl shadow-sm border border-white/10">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-orange-100 rounded-lg text-primary">
+          <div className="p-2 bg-[#FF532D]/10 rounded-lg text-[#FF532D]">
             <User className="w-5 h-5" />
           </div>
-          <h2 className="text-xl font-bold">Personal Information</h2>
+          <h2 className="text-xl font-bold text-white">Personal Information</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Full Name</label>
+              <label className="text-sm font-medium text-white/80">
+                Full Name
+              </label>
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                className="w-full p-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                className="w-full p-2.5 bg-black/40 border border-white/10 text-white rounded-xl focus:ring-2 focus:ring-[#FF532D]/20 transition-all outline-none"
                 placeholder="Ex: John Doe"
                 required
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Phone Number</label>
+              <label className="text-sm font-medium text-white/80">
+                Phone Number
+              </label>
               <input
                 type="text"
                 name="phone"
                 value={formData.phone}
                 onChange={handleInputChange}
-                className="w-full p-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                className="w-full p-2.5 bg-black/40 border border-white/10 text-white rounded-xl focus:ring-2 focus:ring-[#FF532D]/20 transition-all outline-none"
                 placeholder="Ex: 017xxxxxxxx"
                 required
               />
@@ -239,12 +243,12 @@ export default function ProfileForm() {
 
           <div className="grid lg:grid-cols-2 gap-8 border-t pt-6">
             <div className="space-y-4">
-              <h3 className="font-bold text-gray-700 flex items-center gap-2">
+              <h3 className="font-bold text-white flex items-center gap-2">
                 <MapPin size={16} /> Address Details
               </h3>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-500 uppercase">
+                <label className="text-xs font-bold text-white/60 uppercase">
                   Street Address
                 </label>
                 <input
@@ -252,14 +256,14 @@ export default function ProfileForm() {
                   name="address.street"
                   value={formData.address.street}
                   onChange={handleInputChange}
-                  className="w-full p-2.5 bg-gray-50 border rounded-xl text-sm"
+                  className="w-full p-2.5 bg-black/40 border border-white/10 text-white rounded-xl text-sm"
                   placeholder="Street"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase">
+                  <label className="text-xs font-bold text-white/60 uppercase">
                     City
                   </label>
                   <input
@@ -267,12 +271,12 @@ export default function ProfileForm() {
                     name="address.city"
                     value={formData.address.city}
                     onChange={handleInputChange}
-                    className="w-full p-2.5 bg-gray-50 border rounded-xl text-sm"
+                    className="w-full p-2.5 bg-black/40 border border-white/10 text-white rounded-xl text-sm"
                     placeholder="City"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase">
+                  <label className="text-xs font-bold text-white/60 uppercase">
                     District
                   </label>
                   <input
@@ -280,14 +284,14 @@ export default function ProfileForm() {
                     name="address.district"
                     value={formData.address.district}
                     onChange={handleInputChange}
-                    className="w-full p-2.5 bg-gray-50 border rounded-xl text-sm"
+                    className="w-full p-2.5 bg-black/40 border border-white/10 text-white rounded-xl text-sm"
                     placeholder="District"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-500 uppercase">
+                <label className="text-xs font-bold text-white/60 uppercase">
                   Postal Code
                 </label>
                 <input
@@ -295,7 +299,7 @@ export default function ProfileForm() {
                   name="address.postalCode"
                   value={formData.address.postalCode}
                   onChange={handleInputChange}
-                  className="w-full p-2.5 bg-gray-50 border rounded-xl text-sm"
+                  className="w-full p-2.5 bg-black/40 border border-white/10 text-white rounded-xl text-sm"
                   placeholder="1200"
                 />
               </div>
@@ -313,7 +317,7 @@ export default function ProfileForm() {
                 )}
                 Find on Map
               </button>
-              <p className="text-[10px] text-gray-400 italic">
+              <p className="text-[10px] text-white/40 italic">
                 * After clicking, we will pinpoint your address on the map. You
                 can also drag the map or click manually to refine.
               </p>
@@ -321,7 +325,7 @@ export default function ProfileForm() {
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <label className="block text-gray-700 text-sm font-bold">
+                <label className="block text-white text-sm font-bold">
                   Map Picker
                 </label>
                 <button
@@ -378,24 +382,32 @@ export default function ProfileForm() {
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-4 text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
+              <div className="flex items-center gap-4 text-xs text-white/60 bg-black/20 p-3 rounded-lg border border-white/10">
                 <div className="flex-1">
-                  <span className="block font-bold">Longitude</span>
-                  <code>{formData.location.coordinates[0].toFixed(6)}</code>
+                  <span className="block font-bold text-white/80">
+                    Longitude
+                  </span>
+                  <code className="text-white">
+                    {formData.location.coordinates[0].toFixed(6)}
+                  </code>
                 </div>
                 <div className="flex-1">
-                  <span className="block font-bold">Latitude</span>
-                  <code>{formData.location.coordinates[1].toFixed(6)}</code>
+                  <span className="block font-bold text-white/80">
+                    Latitude
+                  </span>
+                  <code className="text-white">
+                    {formData.location.coordinates[1].toFixed(6)}
+                  </code>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="flex justify-end pt-4 border-t">
+          <div className="flex justify-end pt-4 border-t border-white/10">
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-2.5 bg-primary text-white rounded-xl font-bold hover:bg-orange-600 transition-all disabled:opacity-50 flex items-center gap-2"
+              className="px-6 py-2.5 bg-[#FF532D] text-white rounded-xl font-bold hover:bg-[#FF532D]/90 transition-all disabled:opacity-50 flex items-center gap-2"
             >
               {saving ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -409,12 +421,12 @@ export default function ProfileForm() {
       </section>
 
       {/* Vehicle Management */}
-      <section className="bg-white p-6 rounded-2xl shadow-sm border">
+      <section className="bg-[#161616] p-6 rounded-2xl shadow-sm border border-white/10">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
+          <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400">
             <Car className="w-5 h-5" />
           </div>
-          <h2 className="text-xl font-bold">My Vehicles</h2>
+          <h2 className="text-xl font-bold text-white">My Vehicles</h2>
         </div>
 
         {/* Vehicle List */}
@@ -422,14 +434,14 @@ export default function ProfileForm() {
           {formData.vehicles.map((v, index) => (
             <div
               key={index}
-              className="p-4 bg-gray-50 rounded-xl border flex justify-between items-center group"
+              className="p-4 bg-black/20 rounded-xl border border-white/10 flex justify-between items-center group"
             >
               <div>
-                <p className="font-bold text-gray-900">
+                <p className="font-bold text-white">
                   {v.make} {v.model}
                 </p>
-                <div className="flex gap-2 text-xs text-gray-500 mt-1">
-                  <span className="bg-gray-200 px-2 py-0.5 rounded uppercase font-semibold">
+                <div className="flex gap-2 text-xs text-white/60 mt-1">
+                  <span className="bg-white/10 px-2 py-0.5 rounded uppercase font-semibold text-white/80">
                     {v.licensePlate}
                   </span>
                   <span>{v.year}</span>
@@ -438,7 +450,7 @@ export default function ProfileForm() {
               </div>
               <button
                 onClick={() => handleRemoveVehicle(index)}
-                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
               >
                 <Trash2 className="w-5 h-5" />
               </button>
@@ -447,8 +459,8 @@ export default function ProfileForm() {
         </div>
 
         {/* Add New Vehicle Form */}
-        <div className="bg-gray-50 p-4 rounded-xl border-2 border-dashed">
-          <p className="text-sm font-bold mb-3 text-gray-600">
+        <div className="bg-black/20 p-4 rounded-xl border-2 border-dashed border-white/10">
+          <p className="text-sm font-bold mb-3 text-white/80">
             Add New Vehicle
           </p>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -459,7 +471,7 @@ export default function ProfileForm() {
               onChange={(e) =>
                 setNewVehicle({ ...newVehicle, make: e.target.value })
               }
-              className="p-2.5 bg-white border rounded-lg text-sm"
+              className="p-2.5 bg-black/40 border border-white/10 text-white rounded-lg text-sm placeholder:text-white/40"
             />
             <input
               type="text"
@@ -468,7 +480,7 @@ export default function ProfileForm() {
               onChange={(e) =>
                 setNewVehicle({ ...newVehicle, model: e.target.value })
               }
-              className="p-2.5 bg-white border rounded-lg text-sm"
+              className="p-2.5 bg-black/40 border border-white/10 text-white rounded-lg text-sm placeholder:text-white/40"
             />
             <input
               type="text"
@@ -477,14 +489,14 @@ export default function ProfileForm() {
               onChange={(e) =>
                 setNewVehicle({ ...newVehicle, licensePlate: e.target.value })
               }
-              className="p-2.5 bg-white border rounded-lg text-sm"
+              className="p-2.5 bg-black/40 border border-white/10 text-white rounded-lg text-sm placeholder:text-white/40"
             />
             <select
               value={newVehicle.vehicleType}
               onChange={(e) =>
                 setNewVehicle({ ...newVehicle, vehicleType: e.target.value })
               }
-              className="p-2.5 bg-white border rounded-lg text-sm"
+              className="p-2.5 bg-black/40 border border-white/10 text-white rounded-lg text-sm"
             >
               <option value="Car">Car</option>
               <option value="Motorcycle">Motorcycle</option>
@@ -494,7 +506,7 @@ export default function ProfileForm() {
           </div>
           <button
             onClick={handleAddVehicle}
-            className="mt-3 w-full py-2 bg-gray-800 text-white rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-black transition-all"
+            className="mt-3 w-full py-2 bg-[#FF532D] text-white rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-[#FF532D]/90 transition-all"
           >
             <Plus className="w-4 h-4" />
             Add Vehicle to List
