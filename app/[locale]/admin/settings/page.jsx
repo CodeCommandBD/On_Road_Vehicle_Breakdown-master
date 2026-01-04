@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Save, Plus, Trash2, Edit2, Loader2, Globe, Award } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
+import ImageUpload from "@/components/common/ImageUpload";
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState("footer");
@@ -27,6 +28,7 @@ export default function AdminSettingsPage() {
   const [brandingLoading, setBrandingLoading] = useState(false);
   const [newPartner, setNewPartner] = useState({
     name: "",
+    logoUrl: "",
     icon: "wrench",
     order: 0,
   });
@@ -145,7 +147,7 @@ export default function AdminSettingsPage() {
         },
       ],
     });
-    setNewPartner({ name: "", icon: "wrench", order: 0 });
+    setNewPartner({ name: "", logoUrl: "", icon: "wrench", order: 0 });
   };
 
   const handleRemovePartner = (index) => {
@@ -394,11 +396,34 @@ export default function AdminSettingsPage() {
                   className="flex items-center justify-between p-3 bg-black/20 rounded-xl border border-white/5"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-white/60 text-sm">#{item.order}</span>
-                    <span className="text-white font-medium">{item.name}</span>
-                    <span className="text-xs text-white/40 bg-white/5 px-2 py-1 rounded">
-                      {item.icon}
-                    </span>
+                    {item.logoUrl ? (
+                      <img
+                        src={item.logoUrl}
+                        alt={item.name}
+                        className="w-10 h-10 object-contain rounded bg-white/5 p-1"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 flex items-center justify-center bg-white/5 rounded">
+                        <span className="text-xs text-white/60">
+                          {item.icon}
+                        </span>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-white font-medium">
+                        {item.name}
+                      </span>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-white/40">
+                          #{item.order}
+                        </span>
+                        {item.logoUrl && (
+                          <span className="text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded">
+                            Has Logo
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                   <button
                     onClick={() => handleRemovePartner(index)}
@@ -415,7 +440,8 @@ export default function AdminSettingsPage() {
               <p className="text-sm font-bold text-white/80 mb-3">
                 Add New Partner
               </p>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-4">
+                {/* Partner Name */}
                 <input
                   type="text"
                   placeholder="Partner Name"
@@ -423,27 +449,47 @@ export default function AdminSettingsPage() {
                   onChange={(e) =>
                     setNewPartner({ ...newPartner, name: e.target.value })
                   }
-                  className="bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500"
+                  className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500 placeholder:text-white/40"
                 />
-                <select
-                  value={newPartner.icon}
-                  onChange={(e) =>
-                    setNewPartner({ ...newPartner, icon: e.target.value })
+
+                {/* Logo Upload */}
+                <ImageUpload
+                  label="Partner Logo (Optional)"
+                  value={newPartner.logoUrl}
+                  onChange={(url) =>
+                    setNewPartner({ ...newPartner, logoUrl: url })
                   }
-                  className="bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500"
-                >
-                  {iconOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={handleAddPartner}
-                  className="bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg flex items-center justify-center gap-2 transition-all"
-                >
-                  <Plus className="w-4 h-4" /> Add
-                </button>
+                  placeholder="Upload logo or paste URL"
+                  accept="image/*"
+                  showPreview={true}
+                />
+
+                {/* Icon and Add Button */}
+                <div className="grid grid-cols-2 gap-3">
+                  <select
+                    value={newPartner.icon}
+                    onChange={(e) =>
+                      setNewPartner({ ...newPartner, icon: e.target.value })
+                    }
+                    className="bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500"
+                  >
+                    {iconOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={handleAddPartner}
+                    className="bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg flex items-center justify-center gap-2 transition-all"
+                  >
+                    <Plus className="w-4 h-4" /> Add
+                  </button>
+                </div>
+                <p className="text-xs text-white/40 italic">
+                  * Logo will be displayed if uploaded, otherwise the selected
+                  icon will be shown
+                </p>
               </div>
             </div>
           </div>

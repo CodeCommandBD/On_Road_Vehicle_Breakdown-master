@@ -193,7 +193,15 @@ export default function TrustedBy() {
                 key={index}
                 className="flex flex-col sm:flex-row items-center justify-center gap-3 group cursor-pointer"
               >
-                <IconComponent className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 group-hover:text-orange-500 transition-colors duration-300" />
+                {partner.logoUrl ? (
+                  <img
+                    src={partner.logoUrl}
+                    alt={partner.name}
+                    className="w-16 h-16 sm:w-20 sm:h-20 object-contain group-hover:scale-110 transition-transform duration-300"
+                  />
+                ) : (
+                  <IconComponent className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 group-hover:text-orange-500 transition-colors duration-300" />
+                )}
                 <span className="text-base sm:text-xl font-bold text-gray-400 group-hover:text-white transition-colors duration-300">
                   {partner.name}
                 </span>
