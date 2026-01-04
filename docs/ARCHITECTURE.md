@@ -246,41 +246,41 @@ erDiagram
 ```mermaid
 graph TB
     subgraph "Client Layer"
-        WebApp[Web Application<br/>Next.js 15 SSR]
-        MobileWeb[Mobile Web<br/>PWA]
+        WebApp["Web Application<br/>Next.js 15 SSR"]
+        MobileWeb["Mobile Web<br/>PWA"]
     end
 
     subgraph "API Layer - Next.js App Router"
-        AuthAPI[/api/auth/*<br/>Authentication]
-        UserAPI[/api/user/*<br/>User Services]
-        GarageAPI[/api/garage/*<br/>Garage Services]
-        BookingAPI[/api/bookings/*<br/>Booking Management]
-        PaymentAPI[/api/payments/*<br/>Payment Processing]
-        AdminAPI[/api/admin/*<br/>Admin Operations]
-        SOSAPI[/api/sos/*<br/>Emergency Services]
+        AuthAPI["/api/auth/*<br/>Authentication"]
+        UserAPI["/api/user/*<br/>User Services"]
+        GarageAPI["/api/garage/*<br/>Garage Services"]
+        BookingAPI["/api/bookings/*<br/>Booking Management"]
+        PaymentAPI["/api/payments/*<br/>Payment Processing"]
+        AdminAPI["/api/admin/*<br/>Admin Operations"]
+        SOSAPI["/api/sos/*<br/>Emergency Services"]
     end
 
     subgraph "Business Logic Layer"
-        AuthService[Authentication<br/>JWT + bcrypt]
-        BookingService[Booking Engine]
-        PaymentService[Payment Gateway]
-        NotificationService[Notification Hub]
-        AnalyticsService[Analytics Engine]
-        AIService[AI Diagnosis<br/>Google Gemini]
+        AuthService["Authentication<br/>JWT + bcrypt"]
+        BookingService["Booking Engine"]
+        PaymentService["Payment Gateway"]
+        NotificationService["Notification Hub"]
+        AnalyticsService["Analytics Engine"]
+        AIService["AI Diagnosis<br/>Google Gemini"]
     end
 
     subgraph "Data Layer"
-        MongoDB[(MongoDB Atlas<br/>Primary Database)]
-        Redis[(Redis Cache<br/>Session & Rate Limit)]
+        MongoDB[("MongoDB Atlas<br/>Primary Database")]
+        Redis[("Redis Cache<br/>Session & Rate Limit")]
     end
 
     subgraph "External Services"
-        Pusher[Pusher<br/>Real-time Events]
-        Cloudinary[Cloudinary<br/>Media Storage]
-        SSLCommerz[SSLCommerz<br/>Payment Gateway]
-        Nodemailer[SMTP<br/>Email Service]
-        Twilio[Twilio/BulkSMS<br/>SMS Service]
-        Sentry[Sentry<br/>Error Tracking]
+        Pusher["Pusher<br/>Real-time Events"]
+        Cloudinary["Cloudinary<br/>Media Storage"]
+        SSLCommerz["SSLCommerz<br/>Payment Gateway"]
+        Nodemailer["SMTP<br/>Email Service"]
+        Twilio["Twilio/BulkSMS<br/>SMS Service"]
+        Sentry["Sentry<br/>Error Tracking"]
     end
 
     WebApp --> AuthAPI
