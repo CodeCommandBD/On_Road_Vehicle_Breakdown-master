@@ -1,21 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  LayoutDashboard,
-  Save,
-  Plus,
-  Trash2,
-  Edit2,
-  Loader2,
-  Globe,
-} from "lucide-react";
+import { Save, Plus, Trash2, Edit2, Loader2, Globe, Award } from "lucide-react";
 import { toast } from "react-toastify";
 import axios from "axios";
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState("footer");
   const [loading, setLoading] = useState(false);
+
+  // Footer Links State
   const [links, setLinks] = useState([]);
   const [editingLink, setEditingLink] = useState(null);
   const [formData, setFormData] = useState({
@@ -25,10 +19,24 @@ export default function AdminSettingsPage() {
     order: 0,
   });
 
+  // Branding State
+  const [branding, setBranding] = useState({
+    sectionTitle: "",
+    items: [],
+  });
+  const [brandingLoading, setBrandingLoading] = useState(false);
+  const [newPartner, setNewPartner] = useState({
+    name: "",
+    icon: "wrench",
+    order: 0,
+  });
+
   useEffect(() => {
     fetchLinks();
+    fetchBranding();
   }, []);
 
+  // Footer Links Functions
   const fetchLinks = async () => {
     try {
       setLoading(true);
@@ -87,6 +95,77 @@ export default function AdminSettingsPage() {
     setFormData({ label: "", href: "", column: "company", order: 0 });
   };
 
+  // Branding Functions
+  const fetchBranding = async () => {
+    try {
+      setBrandingLoading(true);
+      const res = await axios.get("/api/admin/branding");
+      if (res.data.success) {
+        setBranding(res.data.data);
+      }
+    } catch (error) {
+      toast.error("Failed to fetch branding content");
+    } finally {
+      setBrandingLoading(false);
+    }
+  };
+
+  const handleBrandingSave = async () => {
+    try {
+      setBrandingLoading(true);
+      await axios.put("/api/admin/branding", branding);
+      toast.success("Branding updated successfully");
+      fetchBranding();
+    } catch (error) {
+      toast.error("Failed to update branding");
+    } finally {
+      setBrandingLoading(false);
+    }
+  };
+
+  const handleAddPartner = () => {
+    if (!newPartner.name.trim()) {
+      toast.warning("Please enter partner name");
+      return;
+    }
+
+    const maxOrder =
+      branding.items.length > 0
+        ? Math.max(...branding.items.map((item) => item.order))
+        : 0;
+
+    setBranding({
+      ...branding,
+      items: [
+        ...branding.items,
+        {
+          ...newPartner,
+          order: maxOrder + 1,
+          isActive: true,
+        },
+      ],
+    });
+    setNewPartner({ name: "", icon: "wrench", order: 0 });
+  };
+
+  const handleRemovePartner = (index) => {
+    setBranding({
+      ...branding,
+      items: branding.items.filter((_, i) => i !== index),
+    });
+  };
+
+  const iconOptions = [
+    { value: "wrench", label: "Wrench" },
+    { value: "users", label: "Users" },
+    { value: "tag", label: "Tag" },
+    { value: "award", label: "Award" },
+    { value: "shield", label: "Shield" },
+    { value: "car", label: "Car" },
+    { value: "tool", label: "Tool" },
+    { value: "star", label: "Star" },
+  ];
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8">
       {/* Header */}
@@ -112,10 +191,19 @@ export default function AdminSettingsPage() {
         >
           Footer Content
         </button>
-        {/* Add more tabs here later */}
+        <button
+          onClick={() => setActiveTab("branding")}
+          className={`pb-4 px-2 text-sm font-medium transition-all ${
+            activeTab === "branding"
+              ? "text-orange-500 border-b-2 border-orange-500"
+              : "text-white/60 hover:text-white"
+          }`}
+        >
+          Branding Content
+        </button>
       </div>
 
-      {/* Content */}
+      {/* Footer Content Tab */}
       {activeTab === "footer" && (
         <div className="grid lg:grid-cols-[400px_1fr] gap-8">
           {/* Form */}
@@ -270,6 +358,115 @@ export default function AdminSettingsPage() {
                 <p>No footer links found. Add one to get started.</p>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Branding Content Tab */}
+      {activeTab === "branding" && (
+        <div className="space-y-6">
+          {/* Section Title */}
+          <div className="bg-slate-900/50 border border-white/10 rounded-2xl p-6">
+            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <Award className="w-5 h-5 text-orange-500" />
+              Section Title
+            </h3>
+            <input
+              type="text"
+              value={branding.sectionTitle}
+              onChange={(e) =>
+                setBranding({ ...branding, sectionTitle: e.target.value })
+              }
+              className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500"
+              placeholder="e.g. Trusted by top automotive partners"
+            />
+          </div>
+
+          {/* Partner Items */}
+          <div className="bg-slate-900/50 border border-white/10 rounded-2xl p-6">
+            <h3 className="text-lg font-bold text-white mb-4">Partner Items</h3>
+
+            {/* Current Partners */}
+            <div className="space-y-3 mb-6">
+              {branding.items.map((item, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 bg-black/20 rounded-xl border border-white/5"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-white/60 text-sm">#{item.order}</span>
+                    <span className="text-white font-medium">{item.name}</span>
+                    <span className="text-xs text-white/40 bg-white/5 px-2 py-1 rounded">
+                      {item.icon}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleRemovePartner(index)}
+                    className="p-2 hover:bg-red-500/10 text-red-400 rounded-lg transition-all"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Add New Partner */}
+            <div className="border-t border-white/10 pt-6">
+              <p className="text-sm font-bold text-white/80 mb-3">
+                Add New Partner
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                <input
+                  type="text"
+                  placeholder="Partner Name"
+                  value={newPartner.name}
+                  onChange={(e) =>
+                    setNewPartner({ ...newPartner, name: e.target.value })
+                  }
+                  className="bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500"
+                />
+                <select
+                  value={newPartner.icon}
+                  onChange={(e) =>
+                    setNewPartner({ ...newPartner, icon: e.target.value })
+                  }
+                  className="bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-orange-500"
+                >
+                  {iconOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleAddPartner}
+                  className="bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg flex items-center justify-center gap-2 transition-all"
+                >
+                  <Plus className="w-4 h-4" /> Add
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Save Button */}
+          <div className="flex justify-end">
+            <button
+              onClick={handleBrandingSave}
+              disabled={brandingLoading}
+              className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-bold flex items-center gap-2 transition-all disabled:opacity-50"
+            >
+              {brandingLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  Save Branding Changes
+                </>
+              )}
+            </button>
           </div>
         </div>
       )}
