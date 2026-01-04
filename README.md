@@ -10,7 +10,7 @@
 
 # 🚗 On-Road Vehicle Breakdown Service
 
-### 24/7 Emergency Assistance Platform | ২৪/৭ জরুরি যানবাহন সহায়তা প্ল্যাটফর্ম
+### 24/7 Emergency Assistance Platform
 
 <div align="center">
   <a href="https://on-road-vehicle-breakdown.vercel.app/en">
@@ -23,8 +23,6 @@
 
 <p align="center">
   A comprehensive full-stack platform connecting stranded drivers with nearby garages and certified mechanics instantly.
-  <br>
-  ড্রাইভারদের এবং গ্যারেজ/মেকানিকদের সাথে তাৎক্ষণিকভাবে সংযোগকারী একটি পূর্ণাঙ্গ ফুল-স্ট্যাক প্ল্যাটফর্ম।
 </p>
 
 </div>
@@ -509,14 +507,7 @@ Technology choices with detailed rationale.
 
 ---
 
-### 📖 Additional Documentation
 
-- **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Deployment instructions
-- **[PERFORMANCE_GUIDE.md](./PERFORMANCE_GUIDE.md)** - Performance optimization
-- **[SENTRY_SETUP.md](./SENTRY_SETUP.md)** - Error tracking setup
-- **[BACKUP_SETUP.md](./BACKUP_SETUP.md)** - Backup automation
-
----
 
 ## 🤝 Contributing
 
