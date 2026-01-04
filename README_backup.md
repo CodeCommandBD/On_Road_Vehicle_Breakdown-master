@@ -22,9 +22,9 @@
 </div>
 
 <p align="center">
-  A comprehensive full-stack platform connecting stranded drivers with nearby garages and certified mechanics instantly.
+  A comprehensive solution connecting stranded drivers with nearby garages and certified mechanics instantly.
   <br>
-  ড্রাইভারদের এবং গ্যারেজ/মেকানিকদের সাথে তাৎক্ষণিকভাবে সংযোগকারী একটি পূর্ণাঙ্গ ফুল-স্ট্যাক প্ল্যাটফর্ম।
+  ড্রাইভারদের এবং গ্যারেজ/মেকানিকদের সাথে তাৎক্ষণিকভাবে সংযোগকারী একটি পূর্ণাঙ্গ সমাধান।
 </p>
 
 </div>
@@ -34,88 +34,28 @@
 ## 📋 Table of Contents
 
 - [📖 Introduction](#-introduction)
-- [✨ Key Features](#-key-features)
-- [🎯 Feature Showcase](#-feature-showcase)
+- [✨ Key Features Showcase](#-key-features-showcase)
 - [📊 System Architecture](#-system-architecture)
+  - [ER Diagram](#entity-relationship-diagram)
+  - [Data Flow](#data-flow-diagram)
 - [⚙️ Tech Stack](#️-tech-stack)
-- [📁 Project Structure](#-project-structure)
 - [🚀 Getting Started](#-getting-started)
-- [🔐 Environment Configuration](#-environment-configuration)
-- [📚 Detailed Documentation](#-detailed-documentation)
-- [🤝 Contributing](#-contributing)
-- [📄 License](#-license)
-- [📞 Contact](#-contact)
+- [🔐 Environment Setup](#-environment-configuration)
+- [📁 Project Structure](#-project-structure)
 
 ---
 
 ## 📖 Introduction
 
-**On-Road Vehicle Breakdown** is a modern, production-ready full-stack platform designed to revolutionize roadside assistance in Bangladesh. Built with **Next.js 15** and powered by cutting-edge technologies, it offers:
+**On-Road Vehicle Breakdown** is a modern, full-stack platform designed to revolutionize roadside assistance in Bangladesh. Built with **Next.js 15**, it offers real-time tracking, secure payments, and AI-powered diagnostics.
 
-- 🚨 **Real-time Emergency SOS** with GPS tracking
-- 🤖 **AI-Powered Diagnostics** using Google Gemini
-- 💳 **Secure Payments** via SSLCommerz (bKash, Nagad, Cards)
-- 🗺️ **Live Location Tracking** of mechanics
-- 🌐 **Bilingual Support** (English & Bengali)
-- 📱 **Progressive Web App** for mobile experience
-- 🎯 **Gamified Rewards** system
-- 👥 **Enterprise Fleet Management**
-
-**অন-রোড ভেহিকেল ব্রেকডাউন** একটি আধুনিক, প্রোডাকশন-রেডি ফুল-স্ট্যাক প্ল্যাটফর্ম যা বাংলাদেশের রোডসাইড অ্যাসিস্ট্যান্স সেবায় বিপ্লব ঘটাতে তৈরি করা হয়েছে। **Next.js 15** দিয়ে তৈরি এবং অত্যাধুনিক প্রযুক্তি দ্বারা চালিত, এটি অফার করে:
-
-- 🚨 **রিয়েল-টাইম জরুরি এসওএস** GPS ট্র্যাকিং সহ
-- 🤖 **এআই-চালিত ডায়াগনস্টিক্স** Google Gemini ব্যবহার করে
-- 💳 **নিরাপদ পেমেন্ট** SSLCommerz এর মাধ্যমে (বিকাশ, নগদ, কার্ড)
-- 🗺️ **লাইভ লোকেশন ট্র্যাকিং** মেকানিকদের
-- 🌐 **দ্বিভাষিক সাপোর্ট** (ইংরেজি এবং বাংলা)
-- 📱 **প্রগ্রেসিভ ওয়েব অ্যাপ** মোবাইল অভিজ্ঞতার জন্য
-- 🎯 **গেমিফাইড রিওয়ার্ড** সিস্টেম
-- 👥 **এন্টারপ্রাইজ ফ্লিট ম্যানেজমেন্ট**
+**অন-রোড ভেহিকেল ব্রেকডাউন** একটি আধুনিক ফুল-স্ট্যাক প্ল্যাটফর্ম যা বাংলাদেশের রোডসাইড অ্যাসিস্ট্যান্স সেবায় বিপ্লব ঘটাতে তৈরি করা হয়েছে। **Next.js 15** দিয়ে তৈরি, এতে রয়েছে রিয়েল-টাইম ট্র্যাকিং, নিরাপদ পেমেন্ট এবং এআই-চালিত ডায়াগনস্টিক সুবিধা।
 
 ---
 
-## ✨ Key Features
-
-### For Users (Drivers)
-
-- 🔍 **Smart Garage Search** - Find nearby garages with filters (rating, distance, services)
-- 📅 **Easy Booking** - Book services instantly or schedule for later
-- 🆘 **Emergency SOS** - One-tap emergency alert to nearby garages
-- 🤖 **AI Mechanic** - Get instant diagnosis using Google Gemini AI
-- 💰 **Flexible Payments** - Pay via bKash, Nagad, Cards, or Cash
-- 🎁 **Rewards Program** - Earn points and unlock benefits
-- 📱 **Real-time Tracking** - Track mechanic location live on map
-- 🚗 **Vehicle Management** - Save multiple vehicles
-- 👥 **Team Management** - Enterprise users can manage fleet
-
-### For Garages
-
-- 📊 **Business Dashboard** - Revenue analytics, booking stats, performance metrics
-- 🗺️ **Mission Control** - Real-time map of all active jobs and SOS alerts
-- 🔧 **Service Management** - Add, edit, price services
-- ⭐ **Review Portal** - Manage customer reviews and feedback
-- 👨‍🔧 **Mechanic Management** - Add team members, assign jobs
-- 📍 **Service Area** - Define operational zones
-- ✅ **Verification** - Upload documents for verified badge
-- 💳 **Subscription Plans** - Choose from Basic, Professional tiers
-
-### For Admins
-
-- 🎛️ **Super Dashboard** - Complete system oversight
-- 👤 **User Management** - Manage all users, roles, subscriptions
-- 🏪 **Garage Verification** - Approve/reject garage registrations
-- 💸 **Payment Management** - Track all transactions, process refunds
-- 📈 **Advanced Analytics** - Revenue, conversion funnels, user behavior
-- ⚙️ **System Settings** - Branding, footer links, backups
-- 🎨 **Dynamic Content** - Manage homepage content, partner logos
-- 📧 **Support System** - Handle inquiries and support tickets
-
----
-
-## 🎯 Feature Showcase
+## ✨ Key Features Showcase
 
 We have carefully designed the interface to be responsive and intuitive. Below are the key features with previews.
-
 আমরা ইন্টারফেসটি রেসপন্সিভ এবং সহজবোধ্য করার জন্য যত্নসহকারে ডিজাইন করেছি। নিচে প্রিভিউ সহ মূল ফিচারগুলো দেওয়া হলো।
 
 ### 🏠 Home & Landing Page
@@ -163,48 +103,69 @@ We have carefully designed the interface to be responsive and intuitive. Below a
 | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | <div align="center"><img src="./public/webp-desktop/desktop-checkout.webp" width="65%" /><br><br><img src="./public/webp-mobile/mobile-checkout.webp" width="25%" /></div> | **Seamless Checkout**<br><br>🇬🇧 Secure checkout process integrated with SSLCommerz for local payment methods (Bkash, Nagad, Cards).<br><br>🇧🇩 স্থানীয় পেমেন্ট মেথড (বিকাশ, নগদ, কার্ড) এর জন্য SSLCommerz-এর সাথে ইন্টিগ্রেটেড নিরাপদ চেকআউট প্রক্রিয়া। |
 
-### 📱 About Page
-
-|                                                                  User Interface (Desktop & Mobile)                                                                   | Feature Details                                                                                                                                                                         |
-| :------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <div align="center"><img src="./public/webp-desktop/desktop-about.webp" width="65%" /><br><br><img src="./public/webp-mobile/mobile-about.webp" width="25%" /></div> | **About Platform**<br><br>🇬🇧 Comprehensive about page explaining the platform's mission, vision, and team.<br><br>🇧🇩 প্ল্যাটফর্মের মিশন, ভিশন এবং টিম ব্যাখ্যা করে ব্যাপক সম্পর্কে পেজ। |
-
 ---
 
 ## 📊 System Architecture
 
-Our platform is built on a modern, scalable architecture designed for performance and reliability.
+### Entity Relationship Diagram
 
-### High-Level Overview
+The platform manages complex relationships between Users, Garages, Services, and Bookings.
 
 ```mermaid
-graph TB
-    Client[Client Layer<br/>Next.js SSR + PWA]
-    API[API Layer<br/>Next.js API Routes]
-    Services[Business Logic<br/>Services & Controllers]
-    DB[(MongoDB<br/>Primary Database)]
-    Cache[(Redis<br/>Cache & Sessions)]
+erDiagram
+    User ||--o{ Booking : creates
+    User ||--o{ Review : writes
+    User ||--o{ Vehicle : owns
+    Garage ||--o{ Service : offers
+    Garage ||--o{ Mechanic : employs
+    Garage ||--o{ Booking : receives
+    Booking ||--|| Payment : has
+    Booking ||--o{ JobCard : generates
+    SOS ||--o{ Garage : notifies
+    User ||--o{ SOS : triggers
 
-    Client --> API
-    API --> Services
-    Services --> DB
-    Services --> Cache
-
-    External[External Services<br/>Pusher, Cloudinary, SSLCommerz, Gemini AI]
-    Services --> External
+    User {
+        string name
+        string email
+        string role "user/admin"
+    }
+    Garage {
+        string businessName
+        string status "verified/pending"
+        geopoint location
+    }
+    Booking {
+        string status
+        date scheduledTime
+        float totalAmount
+    }
 ```
 
-### Key Architectural Decisions
+### Data Flow Diagram
 
-- **Serverless Architecture**: Deployed on Vercel for automatic scaling
-- **Microservices Pattern**: Modular API routes for each domain
-- **Event-Driven**: Real-time updates via Pusher
-- **Caching Strategy**: Redis for frequently accessed data
-- **CDN**: Cloudinary for global image delivery
+How data moves through our Next.js App Router architecture.
 
-**📖 For detailed architecture documentation including complete ER diagrams, data flow, and sequence diagrams:**
+```mermaid
+graph TD
+    Client[🖥️ Client / Mobile] <--> |JSON API| NextAPI[Next.js API Routes]
+    NextAPI <--> |Mongoose| MongoDB[(MongoDB Atlas)]
+    NextAPI <--> |Cache| Redis[(Redis Cache)]
+    NextAPI --> |Events| Pusher[Pusher Realtime]
+    NextAPI --> |Uploads| Cloudinary[Cloudinary CDN]
+    NextAPI --> |Payments| SSLCommerz[Payment Gateway]
+    NextAPI --> |Email| SMTP[Nodemailer]
 
-👉 **[View Complete Architecture Documentation →](./docs/ARCHITECTURE.md)**
+    subgraph "Backend Services"
+        MongoDB
+        Redis
+    end
+
+    subgraph "External Providers"
+        Pusher
+        Cloudinary
+        SSLCommerz
+    end
+```
 
 ---
 
@@ -213,128 +174,25 @@ graph TB
 ### Core Framework
 
 - **Frontend**: Next.js 15 (App Router), React 19
-- **Styling**: Tailwind CSS 4, Framer Motion, GSAP
+- **Styling**: Tailwind CSS 4, Classic CSS, Framer Motion
 - **Language**: JavaScript
 
-### Backend & Data
+### Backpack & Data
 
-- **Database**: MongoDB (Mongoose ODM) - 38 Models
+- **Database**: MongoDB (Mongoose ODM)
 - **Caching**: Redis (Upstash)
-- **State Management**: Redux Toolkit, TanStack Query
-- **Authentication**: JWT (Jose), bcrypt
+- **State Management**: Redux Toolkit, Redux Persist
 
-### Third-Party Services
+### Services & Integrations
 
+- **Authentication**: JWT (Jose), Bcrypt
 - **Real-time**: Pusher
-- **Maps**: React Leaflet (OpenStreetMap)
-- **Payment**: SSLCommerz (bKash, Nagad, Cards)
+- **Maps**: Leaflet (OpenStreetMap)
+- **Payment**: SSLCommerz
 - **Media**: Cloudinary
 - **AI**: Google Generative AI (Gemini)
 - **Email**: Nodemailer
-- **SMS**: Twilio / Bulk SMS
 - **Monitoring**: Sentry
-
-### UI Components
-
-- **Component Library**: Radix UI
-- **Icons**: Lucide React, React Icons
-- **Forms**: React Hook Form, Zod validation
-- **Charts**: Recharts
-- **PDF**: jsPDF, @react-pdf/renderer
-
-**📖 For detailed tech stack rationale and why we chose each technology:**
-
-👉 **[View Complete Tech Stack Documentation →](./docs/TECH_STACK.md)**
-
----
-
-## 📁 Project Structure
-
-```bash
-├── app/                          # Next.js App Router
-│   ├── [locale]/                 # Internationalized routes
-│   │   ├── (auth)/               # Authentication pages
-│   │   │   ├── login/
-│   │   │   ├── signup/
-│   │   │   └── forgot-password/
-│   │   ├── (main)/               # Public pages
-│   │   │   ├── page.jsx          # Homepage
-│   │   │   ├── about/
-│   │   │   ├── garages/
-│   │   │   └── services/
-│   │   ├── admin/                # Admin dashboard
-│   │   │   ├── dashboard/
-│   │   │   ├── users/
-│   │   │   ├── garages/
-│   │   │   ├── bookings/
-│   │   │   ├── payments/
-│   │   │   ├── analytics/
-│   │   │   └── settings/
-│   │   ├── garage/               # Garage dashboard
-│   │   │   ├── dashboard/
-│   │   │   ├── bookings/
-│   │   │   ├── services/
-│   │   │   └── profile/
-│   │   └── user/                 # User dashboard
-│   │       ├── dashboard/
-│   │       ├── bookings/
-│   │       ├── sos/
-│   │       └── profile/
-│   ├── api/                      # Backend API Routes
-│   │   ├── auth/                 # Authentication
-│   │   ├── user/                 # User operations
-│   │   ├── garage/               # Garage operations
-│   │   ├── bookings/             # Booking management
-│   │   ├── payments/             # Payment processing
-│   │   ├── sos/                  # Emergency SOS
-│   │   ├── admin/                # Admin operations
-│   │   └── ai/                   # AI Mechanic
-│   ├── robots.js                 # SEO robots
-│   └── sitemap.js                # SEO sitemap
-│
-├── components/                   # React Components
-│   ├── admin/                    # Admin components
-│   ├── garage/                   # Garage components
-│   ├── dashboard/                # Dashboard components
-│   ├── home/                     # Homepage components
-│   ├── common/                   # Shared components
-│   └── ui/                       # UI primitives
-│
-├── lib/                          # Core Logic
-│   ├── db/                       # Database
-│   │   ├── connection.js         # MongoDB connection
-│   │   └── models/               # 38 Mongoose models
-│   ├── utils/                    # Utilities
-│   │   ├── auth.js               # JWT helpers
-│   │   ├── email.js              # Email service
-│   │   ├── sms.js                # SMS service
-│   │   └── cloudinary.js         # Image upload
-│   ├── services/                 # Business logic
-│   └── validations/              # Zod schemas
-│
-├── hooks/                        # Custom React hooks
-├── store/                        # Redux store
-├── providers/                    # Context providers
-├── messages/                     # i18n translations
-│   ├── en.json                   # English
-│   └── bn.json                   # Bengali
-│
-├── public/                       # Static assets
-│   ├── webp-desktop/             # Desktop screenshots
-│   ├── webp-mobile/              # Mobile screenshots
-│   └── images/                   # Other images
-│
-├── docs/                         # Documentation
-│   ├── ARCHITECTURE.md           # System architecture
-│   ├── FEATURES.md               # Feature documentation
-│   └── TECH_STACK.md             # Tech stack details
-│
-└── Configuration Files
-    ├── next.config.mjs           # Next.js config
-    ├── tailwind.config.js        # Tailwind config
-    ├── middleware.js             # Auth middleware
-    └── ENV_VARIABLES.md          # Environment variables
-```
 
 ---
 
@@ -342,11 +200,10 @@ graph TB
 
 ### Prerequisites
 
-- **Node.js**: 18.x or higher
-- **MongoDB**: Atlas account or local instance
-- **Cloudinary**: Account for image uploads
-- **Pusher**: Account for real-time features
-- **SSLCommerz**: Sandbox account for payments
+- Node.js 18+
+- MongoDB Database
+- Cloudinary Account
+- Pusher Account (for realtime)
 
 ### Installation
 
@@ -365,156 +222,55 @@ graph TB
    yarn install
    ```
 
-3. **Configure Environment Variables**
-
-   Copy `.env.example` to `.env.local` and fill in your credentials:
+3. **Configure Environment**
+   Duplicate `.env.example` to `.env.local` and fill in the details.
 
    ```bash
    cp .env.example .env.local
    ```
 
-   See [Environment Configuration](#-environment-configuration) for details.
-
 4. **Run Development Server**
-
    ```bash
    npm run dev
    ```
-
    Visit `http://localhost:3000`
-
-5. **Build for Production**
-
-   ```bash
-   npm run build
-   npm start
-   ```
 
 ---
 
 ## 🔐 Environment Configuration
 
-### Required Variables
+See [ENV_VARIABLES.md](./ENV_VARIABLES.md) for a complete guide.
+
+Critical variables needed:
 
 ```env
-# Database
 MONGODB_URI=mongodb+srv://...
-
-# Authentication
-JWT_SECRET=your-super-secret-key
-
-# SSLCommerz Payment Gateway
-SSLCOMMERZ_STORE_ID=your-store-id
-SSLCOMMERZ_STORE_PASSWORD=your-store-password
-SSLCOMMERZ_MODE=sandbox # or 'live'
-
-# Pusher Real-time
-PUSHER_APP_ID=your-app-id
-NEXT_PUBLIC_PUSHER_KEY=your-key
-PUSHER_SECRET=your-secret
-NEXT_PUBLIC_PUSHER_CLUSTER=ap2
-
-# App URL
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+JWT_SECRET=...
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=...
+PUSHER_APP_ID=...
 ```
 
-### Optional but Recommended
+---
 
-```env
-# Cloudinary
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
+## 📁 Project Structure
 
-# Email
-EMAIL_USER=your-email@gmail.com
-EMAIL_PASS=your-app-password
-
-# Redis Cache
-UPSTASH_REDIS_REST_URL=your-redis-url
-UPSTASH_REDIS_REST_TOKEN=your-redis-token
-
-# Google AI
-GOOGLE_API_KEY=your-gemini-api-key
-
-# Sentry
-NEXT_PUBLIC_SENTRY_DSN=your-sentry-dsn
-
-# SMS
-TWILIO_ACCOUNT_SID=your-twilio-sid
-TWILIO_AUTH_TOKEN=your-twilio-token
-TWILIO_PHONE_NUMBER=your-twilio-number
+```bash
+├── app/                  # Next.js App Router Pages
+│   ├── (auth)/           # Authentication Routes
+│   ├── (main)/           # Public Pages (Home, Search)
+│   ├── admin/            # Admin Dashboard
+│   ├── garage/           # Garage Dashboard
+│   └── api/              # Backend API Routes
+├── components/           # React Components
+│   ├── admin/            # Admin Components
+│   ├── garage/           # Garage Components
+│   └── home/             # Landing Page Components
+├── lib/                  # Utilities & Helpers
+│   ├── db/               # Database Connection & Models
+│   └── utils/            # Helper Functions
+├── messages/             # i18n Translations (en.json, bn.json)
+└── public/               # Static Assets & Images
 ```
-
-**📖 For complete environment variable documentation:**
-
-👉 **[View ENV_VARIABLES.md →](./ENV_VARIABLES.md)**
-
----
-
-## 📚 Detailed Documentation
-
-We have comprehensive documentation covering every aspect of the platform:
-
-### 🏗️ Architecture Documentation
-
-Complete system architecture with ER diagrams, data flow, and sequence diagrams.
-
-👉 **[View ARCHITECTURE.md →](./docs/ARCHITECTURE.md)**
-
-**Includes:**
-
-- Complete ER Diagram (all 38 database models)
-- Data Flow Architecture
-- Sequence Diagrams (Booking, SOS, Payment flows)
-- Admin Dashboard Flow
-- Security Architecture
-- Caching Strategy
-- Real-time Architecture
-
----
-
-### 🎯 Features Documentation
-
-Detailed bilingual feature descriptions for all dashboards.
-
-👉 **[View FEATURES.md →](./docs/FEATURES.md)**
-
-**Includes:**
-
-- User Dashboard Features (8+ features)
-- Garage Dashboard Features (5+ features)
-- Admin Dashboard Features (8+ features)
-- Core Platform Features (4+ features)
-- Technical Implementation Details
-- English & Bengali Descriptions
-
----
-
-### 🛠️ Tech Stack Documentation
-
-Technology choices with detailed rationale.
-
-👉 **[View TECH_STACK.md →](./docs/TECH_STACK.md)**
-
-**Includes:**
-
-- Frontend Technologies (Next.js, React, Tailwind)
-- Backend Technologies (API Routes, Mongoose, JWT)
-- Database & Caching (MongoDB, Redis)
-- Third-Party Integrations (Pusher, Cloudinary, SSLCommerz, Gemini AI)
-- Why We Chose Each Technology
-- Technology Comparisons
-- Future Considerations
-
----
-
-### 📖 Additional Documentation
-
-- **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Deployment instructions
-- **[PERFORMANCE_GUIDE.md](./PERFORMANCE_GUIDE.md)** - Performance optimization
-- **[SENTRY_SETUP.md](./SENTRY_SETUP.md)** - Error tracking setup
-- **[BACKUP_SETUP.md](./BACKUP_SETUP.md)** - Backup automation
 
 ---
 
@@ -542,14 +298,12 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 - **Email**: your.email@example.com
 - **LinkedIn**: [linkedin.com/in/your-profile](https://linkedin.com/in/your-profile)
-- **Project Link**: [https://github.com/CodeCommandBD/On_Road_Vehicle_Breakdown-master](https://github.com/CodeCommandBD/On_Road_Vehicle_Breakdown-master)
+- **Project Link**: [https://github.com/your-username/on-road-vehicle-breakdown](https://github.com/your-username/on-road-vehicle-breakdown)
 
 ---
 
 <div align="center">
 
 **Made with ❤️ in Bangladesh**
-
-[Live Demo](https://on-road-vehicle-breakdown.vercel.app/en) • [Documentation](./docs/) • [Report Bug](https://github.com/CodeCommandBD/On_Road_Vehicle_Breakdown-master/issues)
 
 </div>
