@@ -169,8 +169,16 @@ export default function TrustedBy() {
     return (
       <section className="py-12 border-b border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="h-20 flex items-center justify-center">
-            <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-center text-sm font-semibold text-gray-500 uppercase tracking-widest mb-8">
+            {branding.sectionTitle}
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:flex lg:flex-wrap justify-center items-center gap-x-8 gap-y-12 lg:gap-16">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center gap-3 animate-pulse">
+                <div className="w-10 h-10 bg-white/10 rounded" />
+                <div className="h-6 bg-white/10 rounded w-24" />
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -191,7 +199,11 @@ export default function TrustedBy() {
             return (
               <div
                 key={index}
-                className="flex flex-col sm:flex-row items-center justify-center gap-3 group cursor-pointer"
+                className="flex flex-col sm:flex-row items-center justify-center gap-3 group cursor-pointer animate-fadeIn"
+                style={{
+                  animationDelay: `${index * 80}ms`,
+                  animationFillMode: "both",
+                }}
               >
                 {partner.logoUrl ? (
                   <img
