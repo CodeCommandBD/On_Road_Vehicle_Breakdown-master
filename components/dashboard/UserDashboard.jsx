@@ -80,6 +80,8 @@ export default function UserDashboard({ user }) {
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
+
+      // Fetch bookings (CRITICAL - must succeed)
       try {
         const response = await axios.get(
           `/api/bookings?userId=${user._id}&role=user`
@@ -88,7 +90,7 @@ export default function UserDashboard({ user }) {
           const fetchedBookings = response.data.bookings;
           setBookings(fetchedBookings);
 
-          // Calculate Stats
+          // Calculate Stats from bookings
           const totalBookings = fetchedBookings.length;
           const activeRequests = fetchedBookings.filter(
             (b) =>
@@ -101,32 +103,39 @@ export default function UserDashboard({ user }) {
             0
           );
 
-          // Fetch Points separately for accuracy
-          let realPoints = 0;
-          try {
-            const pointsRes = await axios.get("/api/user/points");
-            if (pointsRes.data.success) {
-              realPoints = pointsRes.data.rewardPoints;
-              // Points syncing is handled by DashboardHeader to prevent update loops
-            }
-          } catch (pErr) {
-            console.warn("Points fetch failed, using fallback:", pErr);
-            realPoints = Math.floor(totalSpent / 100);
-          }
-
+          // Set initial stats with fallback points calculation
           setStats({
             totalBookings,
             totalSpent,
-            points: realPoints,
+            points: Math.floor(totalSpent / 100), // Fallback calculation
             activeRequests,
           });
         }
       } catch (error) {
-        console.error("Dashboard Error:", error);
+        console.error("Critical Error - Failed to load bookings:", error);
         toast.error("Failed to load dashboard data");
-      } finally {
         setIsLoading(false);
+        return; // Stop execution if critical data fails
       }
+
+      // Fetch Points (NON-CRITICAL - use fallback if fails)
+      try {
+        const pointsRes = await axios.get("/api/user/points");
+        if (pointsRes.data.success) {
+          setStats((prev) => ({
+            ...prev,
+            points: pointsRes.data.rewardPoints,
+          }));
+        }
+      } catch (pErr) {
+        console.warn(
+          "Non-critical: Points fetch failed, using fallback calculation:",
+          pErr.message
+        );
+        // Fallback already set from bookings calculation above
+      }
+
+      setIsLoading(false);
     };
 
     fetchData();
@@ -152,7 +161,8 @@ export default function UserDashboard({ user }) {
         });
       }
     } catch (error) {
-      console.error("Failed to fetch favorites:", error);
+      console.warn("Non-critical: Failed to fetch favorites:", error.message);
+      // Don't show error toast, just fail silently
     } finally {
       setIsLoadingFavorites(false);
     }
@@ -179,7 +189,9 @@ export default function UserDashboard({ user }) {
         setActiveSOS(null);
       }
     } catch (sosError) {
-      console.error("SOS Fetch error:", sosError);
+      console.warn("Non-critical: SOS fetch failed:", sosError.message);
+      // Don't show error to user, just log it
+      setActiveSOS(null);
     }
   };
 
