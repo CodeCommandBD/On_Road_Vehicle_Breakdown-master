@@ -507,14 +507,7 @@ Technology choices with detailed rationale.
 
 ---
 
-### 📖 Additional Documentation
 
-- **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Deployment instructions
-- **[PERFORMANCE_GUIDE.md](./PERFORMANCE_GUIDE.md)** - Performance optimization
-- **[SENTRY_SETUP.md](./SENTRY_SETUP.md)** - Error tracking setup
-- **[BACKUP_SETUP.md](./BACKUP_SETUP.md)** - Backup automation
-
----
 
 ## 🤝 Contributing
 
