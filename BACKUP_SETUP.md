@@ -10,8 +10,8 @@
 {
   "crons": [
     {
-      "path": "/api/admin/backup",
-      "schedule": "0 2 * * *"
+      "path": "",
+      "schedule": ""
     }
   ]
 }
@@ -31,9 +31,9 @@ CRON_SECRET=your-random-secret-key-here
 
 2. Create new cron job:
 
-   - URL: `https://yourdomain.com/api/admin/backup`
-   - Schedule: `0 2 * * *` (2 AM daily)
-   - Add header: `Authorization: Bearer YOUR_CRON_SECRET`
+   - URL: ``
+   - Schedule: `
+   - Add header: `Authorization: `
 
 3. Add to `.env`:
 
@@ -51,7 +51,7 @@ Access: `https://yourdomain.com/api/admin/backup`
 
 ## Backup Location
 
-Backups are stored in: `project-root/backups/`
+Backups are stored in: ``
 
 ## Backup Retention
 
@@ -65,7 +65,7 @@ Backups are stored in: `project-root/backups/`
 cd backups/backup-2024-01-01-02-00-00
 
 # Restore using mongorestore
-mongorestore --uri="your-mongodb-uri" --gzip
+mongorestore --uri="
 ```
 
 ## Requirements
