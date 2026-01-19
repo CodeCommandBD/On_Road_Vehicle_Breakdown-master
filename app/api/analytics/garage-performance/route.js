@@ -27,7 +27,7 @@ export async function GET(request) {
     if (!decoded) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -44,32 +44,23 @@ export async function GET(request) {
     ) {
       return NextResponse.json(
         { success: false, message: "Access denied" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // If specific garage requested
     if (garageId) {
       // CACHE CHECK
+      const { getCached, setCached } = await import("@/lib/utils/cache");
       const cacheKey = `analytics:garage:${garageId}:${period}`;
-      let redis = null;
+      const cached = await getCached(cacheKey);
 
-      try {
-        const redisModule = await import("@/lib/cache/redis");
-        redis = redisModule.default;
-        if (redis) {
-          let cached = await redis.get(cacheKey);
-          if (typeof cached === "string") cached = JSON.parse(cached);
-          if (cached) {
-            return NextResponse.json({
-              success: true,
-              cached: true,
-              performance: cached,
-            });
-          }
-        }
-      } catch (e) {
-        console.warn("Cache error", e);
+      if (cached) {
+        return NextResponse.json({
+          success: true,
+          cached: true,
+          performance: cached,
+        });
       }
 
       const performance = await GaragePerformance.findOne({
@@ -89,16 +80,8 @@ export async function GET(request) {
         });
       }
 
-      // CACHE SET
-      if (redis) {
-        try {
-          const isUpstash = process.env.UPSTASH_REDIS_REST_URL;
-          if (isUpstash)
-            await redis.set(cacheKey, performance, { ex: 1800 }); // 30 min
-          else
-            await redis.set(cacheKey, JSON.stringify(performance), "EX", 1800);
-        } catch (e) {}
-      }
+      // CACHE SET (30 min)
+      await setCached(cacheKey, performance, 1800);
 
       return NextResponse.json({
         success: true,
@@ -110,44 +93,31 @@ export async function GET(request) {
     if (decoded.role !== "admin") {
       return NextResponse.json(
         { success: false, message: "Access denied" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // CACHE CHECK (Top Performers)
+    const { getCached, setCached } = await import("@/lib/utils/cache");
     const cacheKey = `analytics:garages:top:${limit}:${period}`;
-    try {
-      const redisModule = await import("@/lib/cache/redis");
-      const redis = redisModule.default;
-      if (redis) {
-        let cached = await redis.get(cacheKey);
-        if (typeof cached === "string") cached = JSON.parse(cached);
-        if (cached)
-          return NextResponse.json({
-            success: true,
-            cached: true,
-            topPerformers: cached,
-            count: cached.length,
-          });
-      }
-    } catch (e) {}
+    const cached = await getCached(cacheKey);
+
+    if (cached) {
+      return NextResponse.json({
+        success: true,
+        cached: true,
+        topPerformers: cached,
+        count: cached.length,
+      });
+    }
 
     const topPerformers = await GaragePerformance.find({ period })
       .sort({ "performanceScore.overall": -1, date: -1 })
       .limit(limit)
       .populate("garage", "name address");
 
-    // CACHE SET (Top Performers)
-    try {
-      const redisModule = await import("@/lib/cache/redis");
-      const redis = redisModule.default;
-      if (redis) {
-        const isUpstash = process.env.UPSTASH_REDIS_REST_URL;
-        if (isUpstash) await redis.set(cacheKey, topPerformers, { ex: 3600 });
-        else
-          await redis.set(cacheKey, JSON.stringify(topPerformers), "EX", 3600);
-      }
-    } catch (e) {}
+    // CACHE SET (1 hour)
+    await setCached(cacheKey, topPerformers, 3600);
 
     return NextResponse.json({
       success: true,
@@ -158,7 +128,7 @@ export async function GET(request) {
     console.error("Garage performance error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -177,7 +147,7 @@ export async function POST(request) {
     if (!decoded || decoded.role !== "admin") {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -193,7 +163,7 @@ export async function POST(request) {
       await GaragePerformance.findOneAndUpdate(
         { garage: garageId, date: today, period },
         performance,
-        { upsert: true, new: true }
+        { upsert: true, new: true },
       );
 
       return NextResponse.json({
@@ -211,7 +181,7 @@ export async function POST(request) {
       try {
         const performance = await calculateGaragePerformance(
           garage._id.toString(),
-          period
+          period,
         );
 
         const today = new Date();
@@ -220,7 +190,7 @@ export async function POST(request) {
         await GaragePerformance.findOneAndUpdate(
           { garage: garage._id, date: today, period },
           performance,
-          { upsert: true, new: true }
+          { upsert: true, new: true },
         );
 
         results.push({ garageId: garage._id, success: true });
@@ -245,7 +215,7 @@ export async function POST(request) {
     console.error("Calculate garage performance error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -283,10 +253,10 @@ async function calculateGaragePerformance(garageId, period = "monthly") {
 
   const totalBookings = bookings.length;
   const completedBookings = bookings.filter(
-    (b) => b.status === "completed"
+    (b) => b.status === "completed",
   ).length;
   const cancelledBookings = bookings.filter(
-    (b) => b.status === "cancelled"
+    (b) => b.status === "cancelled",
   ).length;
   const pendingBookings = bookings.filter((b) => b.status === "pending").length;
 
@@ -342,8 +312,8 @@ async function calculateGaragePerformance(garageId, period = "monthly") {
     prevTotalBookings > 0
       ? ((totalBookings - prevTotalBookings) / prevTotalBookings) * 100
       : totalBookings > 0
-      ? 100
-      : 0;
+        ? 100
+        : 0;
 
   // Get Previous Period Revenue
   const prevRevenue = prevBookings
@@ -355,8 +325,8 @@ async function calculateGaragePerformance(garageId, period = "monthly") {
     prevRevenue > 0
       ? ((totalRevenue - prevRevenue) / prevRevenue) * 100
       : totalRevenue > 0
-      ? 100
-      : 0;
+        ? 100
+        : 0;
 
   // Get reviews
   const reviews = await Review.find({
@@ -376,7 +346,7 @@ async function calculateGaragePerformance(garageId, period = "monthly") {
   const efficiencyScore = Math.min((completionRate / 100) * 20, 20); // 20% weight
 
   const overallScore = Math.round(
-    bookingScore + revenueScore + satisfactionScore + efficiencyScore
+    bookingScore + revenueScore + satisfactionScore + efficiencyScore,
   );
 
   // Get all garages for ranking
@@ -434,7 +404,7 @@ async function calculateGaragePerformance(garageId, period = "monthly") {
       inCategory: await calculateCategoryRanking(
         garageId,
         period,
-        overallScore
+        overallScore,
       ), // ✅ Implemented: Ranking within same category
       totalGarages: allGarages.length,
     },
@@ -455,8 +425,8 @@ async function calculateGaragePerformance(garageId, period = "monthly") {
         overallScore >= 80
           ? "leader"
           : overallScore >= 70
-          ? "above_average"
-          : "average",
+            ? "above_average"
+            : "average",
     },
     calculatedAt: new Date(),
   };
@@ -498,10 +468,10 @@ async function calculateResponseTime(garageId, startDate) {
 
       // Find first customer message and first garage response
       const customerMsg = messages.find(
-        (m) => m.sender.toString() !== garage.owner.toString()
+        (m) => m.sender.toString() !== garage.owner.toString(),
       );
       const garageMsg = messages.find(
-        (m) => m.sender.toString() === garage.owner.toString()
+        (m) => m.sender.toString() === garage.owner.toString(),
       );
 
       if (
@@ -606,7 +576,7 @@ async function calculateAvgServiceTime(bookings) {
       (b) =>
         b.status === "completed" &&
         b.startOTP?.verifiedAt &&
-        b.completionOTP?.verifiedAt
+        b.completionOTP?.verifiedAt,
     );
 
     if (completedWithOTP.length === 0) return 0;
@@ -707,7 +677,7 @@ async function calculateUtilizationRate(garageId, bookings) {
       (b) =>
         b.status === "completed" &&
         b.startOTP?.verifiedAt &&
-        b.completionOTP?.verifiedAt
+        b.completionOTP?.verifiedAt,
     );
 
     if (completedWithOTP.length === 0) return 0;
@@ -764,7 +734,7 @@ async function calculateCityRanking(garageId, period, overallScore) {
 
     // Find this garage's position
     const position = cityPerformances.findIndex(
-      (p) => p.garage.toString() === garageId
+      (p) => p.garage.toString() === garageId,
     );
 
     return position >= 0 ? position + 1 : 0;
@@ -813,7 +783,7 @@ async function calculateCategoryRanking(garageId, period, overallScore) {
 
     // Find this garage's position
     const position = categoryPerformances.findIndex(
-      (p) => p.garage.toString() === garageId
+      (p) => p.garage.toString() === garageId,
     );
 
     return position >= 0 ? position + 1 : 0;

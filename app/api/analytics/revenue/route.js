@@ -26,7 +26,7 @@ export async function GET(request) {
     if (!decoded || decoded.role !== "admin") {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -35,23 +35,9 @@ export async function GET(request) {
     const months = parseInt(searchParams.get("months") || "6");
 
     // CACHE CHECK
+    const { getCached, setCached } = await import("@/lib/utils/cache");
     const cacheKey = `analytics:revenue:${period}:${months}`;
-    let cachedData = null;
-    let redis = null;
-
-    try {
-      const redisModule = await import("@/lib/cache/redis");
-      redis = redisModule.default;
-      if (redis) {
-        cachedData = await redis.get(cacheKey);
-        // Handle Upstash returning object vs IORedis returning string
-        if (typeof cachedData === "string") {
-          cachedData = JSON.parse(cachedData);
-        }
-      }
-    } catch (err) {
-      console.warn("Redis cache error:", err);
-    }
+    const cachedData = await getCached(cacheKey);
 
     if (cachedData) {
       return NextResponse.json({
@@ -106,20 +92,8 @@ export async function GET(request) {
       })),
     };
 
-    // CACHE SET
-    if (redis) {
-      try {
-        // Support both Upstash (options obj) and IORedis (args)
-        const isUpstash = process.env.UPSTASH_REDIS_REST_URL;
-        if (isUpstash) {
-          await redis.set(cacheKey, responseData, { ex: 3600 });
-        } else {
-          await redis.set(cacheKey, JSON.stringify(responseData), "EX", 3600);
-        }
-      } catch (err) {
-        console.error("Failed to set cache:", err);
-      }
-    }
+    // CACHE SET (1 hour)
+    await setCached(cacheKey, responseData, 3600);
 
     return NextResponse.json({
       success: true,
@@ -129,7 +103,7 @@ export async function GET(request) {
     console.error("Revenue analytics error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -148,7 +122,7 @@ export async function POST(request) {
     if (!decoded || decoded.role !== "admin") {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -161,7 +135,7 @@ export async function POST(request) {
     await RevenueMetrics.findOneAndUpdate(
       { date: today, period: "monthly" },
       metrics,
-      { upsert: true, new: true }
+      { upsert: true, new: true },
     );
 
     return NextResponse.json({
@@ -173,7 +147,7 @@ export async function POST(request) {
     console.error("Calculate revenue error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -235,7 +209,7 @@ async function calculateCurrentMetrics() {
   const arpuByPlan = {};
   for (const [plan, revenue] of Object.entries(revenueByPlan)) {
     const planUsers = activeSubscriptions.filter(
-      (s) => s.planId?.tier?.toLowerCase() === plan
+      (s) => s.planId?.tier?.toLowerCase() === plan,
     ).length;
     arpuByPlan[plan] = planUsers > 0 ? revenue / planUsers : 0;
   }
@@ -308,7 +282,7 @@ async function calculateCurrentMetrics() {
     // Check if there's a plan change this month
     const recentChanges = sub.planHistory.filter(
       (change) =>
-        change.changedAt >= firstDayOfMonth && change.changeType === "upgrade"
+        change.changedAt >= firstDayOfMonth && change.changeType === "upgrade",
     );
 
     if (recentChanges.length > 0) {
@@ -327,7 +301,8 @@ async function calculateCurrentMetrics() {
     // Check for downgrades this month
     const recentDowngrades = sub.planHistory.filter(
       (change) =>
-        change.changedAt >= firstDayOfMonth && change.changeType === "downgrade"
+        change.changedAt >= firstDayOfMonth &&
+        change.changeType === "downgrade",
     );
 
     if (recentDowngrades.length > 0) {
