@@ -31,7 +31,7 @@ export default function GarageTable() {
   const { data: garagesData, isLoading } = useQuery({
     queryKey: ["adminGarages"],
     queryFn: async () => {
-      const response = await axiosInstance.get("/api/admin/garages");
+      const response = await axiosInstance.get("/admin/garages");
       return response.data.garages || [];
     },
   });
@@ -41,7 +41,7 @@ export default function GarageTable() {
   // Mutation for actions
   const actionMutation = useMutation({
     mutationFn: async (payload) => {
-      const response = await axiosInstance.put("/api/admin/garages", payload);
+      const response = await axiosInstance.put("/admin/garages", payload);
       return response.data;
     },
     onSuccess: (data, variables) => {

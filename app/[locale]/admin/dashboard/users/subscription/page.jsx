@@ -15,7 +15,7 @@ import {
   Calendar,
   Loader2,
 } from "lucide-react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import { toast } from "react-toastify";
 import Link from "next/link";
 
@@ -55,7 +55,9 @@ export default function UsersSubscriptionPage() {
         ...(filters.status !== "all" && { status: filters.status }),
       });
 
-      const res = await axios.get(`/api/admin/users/subscription?${params}`);
+      const res = await axiosInstance.get(
+        `/admin/users/subscription?${params}`,
+      );
       if (res.data.success) {
         setUsers(res.data.data.users);
         setPagination(res.data.data.pagination);
@@ -87,7 +89,7 @@ export default function UsersSubscriptionPage() {
 
     setProcessing(true);
     try {
-      const res = await axios.patch("/api/admin/users/subscription", {
+      const res = await axiosInstance.patch("/admin/users/subscription", {
         userId: selectedUser._id,
         action: modalAction,
         ...modalData,
@@ -100,7 +102,8 @@ export default function UsersSubscriptionPage() {
       }
     } catch (error) {
       toast.error(
-        error.response?.data?.message || `Failed to ${modalAction} subscription`
+        error.response?.data?.message ||
+          `Failed to ${modalAction} subscription`,
       );
     } finally {
       setProcessing(false);

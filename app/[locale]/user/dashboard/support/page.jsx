@@ -2,7 +2,6 @@
 
 import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "@/lib/axios";
-import axios from "axios";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import Sidebar from "@/components/layout/Sidebar";
 import SupportForm from "@/components/dashboard/SupportForm";

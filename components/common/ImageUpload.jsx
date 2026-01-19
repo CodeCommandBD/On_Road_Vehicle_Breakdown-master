@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import { Upload, X, ExternalLink, Wrench } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -55,7 +55,7 @@ export default function ImageUpload({
     const oldUrl = value;
 
     try {
-      const res = await axios.post("/api/upload", formData, {
+      const res = await axiosInstance.post("/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       if (res.data.success) {
@@ -66,10 +66,10 @@ export default function ImageUpload({
         if (oldUrl) {
           const publicId = getPublicIdFromUrl(oldUrl);
           if (publicId) {
-            axios
-              .delete("/api/upload", { data: { public_id: publicId } })
+            axiosInstance
+              .delete("/upload", { data: { public_id: publicId } })
               .catch((err) =>
-                console.error("Failed to auto-delete old image:", err)
+                console.error("Failed to auto-delete old image:", err),
               );
           }
         }
@@ -93,7 +93,7 @@ export default function ImageUpload({
     if (publicId) {
       setDeleting(true);
       try {
-        const res = await axios.delete("/api/upload", {
+        const res = await axiosInstance.delete("/upload", {
           data: { public_id: publicId },
         });
 
@@ -102,7 +102,7 @@ export default function ImageUpload({
         } else {
           // Show error to user so they know it didn't strictly work
           toast.warning(
-            `Cloud delete failed: ${res.data.message || "Unknown error"}`
+            `Cloud delete failed: ${res.data.message || "Unknown error"}`,
           );
         }
       } catch (error) {

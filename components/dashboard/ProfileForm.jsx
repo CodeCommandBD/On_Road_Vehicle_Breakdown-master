@@ -54,7 +54,7 @@ export default function ProfileForm() {
   const { isLoading } = useQuery({
     queryKey: ["userProfile"],
     queryFn: async () => {
-      const response = await axiosInstance.get("/api/profile");
+      const response = await axiosInstance.get("/profile");
       const data = response.data;
       if (data.success) {
         // Only set form data if it's currently empty or just initialized

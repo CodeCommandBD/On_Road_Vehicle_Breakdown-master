@@ -11,7 +11,7 @@ import {
 import Sidebar from "@/components/layout/Sidebar";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { Loader2 } from "lucide-react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 
 export default function DashboardLayout({ children }) {
   const router = useRouterWithLoading(); // Regular routing
@@ -23,7 +23,7 @@ export default function DashboardLayout({ children }) {
   useEffect(() => {
     const syncProfile = async () => {
       try {
-        const res = await axios.get("/api/profile");
+        const res = await axiosInstance.get("/profile");
         if (res.data.success) {
           dispatch(updateUser(res.data.user));
         }

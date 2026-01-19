@@ -19,7 +19,7 @@ export default function BookingsPage() {
     queryKey: ["garageBookings", user?._id],
     queryFn: async () => {
       const response = await axiosInstance.get(
-        `/api/bookings?userId=${user._id}&role=garage`,
+        `/bookings?userId=${user._id}&role=garage`,
       );
       return response.data.bookings || [];
     },
@@ -38,7 +38,7 @@ export default function BookingsPage() {
   const statusMutation = useMutation({
     mutationFn: async ({ bookingId, newStatus }) => {
       const response = await axiosInstance.patch(
-        `/api/bookings/${bookingId}/status`,
+        `/bookings/${bookingId}/status`,
         {
           status: newStatus,
         },

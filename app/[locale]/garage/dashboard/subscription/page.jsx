@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "@/lib/axios";
-import axios from "axios";
 import { toast } from "react-toastify";
 import Link from "next/link";
 import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";

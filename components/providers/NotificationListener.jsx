@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import { useSelector, useDispatch } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
 import { setUnreadNotificationsCount } from "@/store/slices/uiSlice";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 
 export default function NotificationListener() {
   const user = useSelector(selectUser);
@@ -31,7 +31,7 @@ export default function NotificationListener() {
 
       // Update unread count dynamically
       try {
-        const res = await axios.get("/api/notifications");
+        const res = await axiosInstance.get("/notifications");
         if (res.data.success) {
           dispatch(setUnreadNotificationsCount(res.data.unreadCount));
         }

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import { toast } from "react-toastify";
 import {
   Phone,
@@ -43,13 +43,13 @@ export default function SOSNavigationPage() {
     try {
       setLoading(true);
       // 1. Fetch Garage Profile for location
-      const garageRes = await axios.get("/api/garages/profile");
+      const garageRes = await axiosInstance.get("/garages/profile");
       if (garageRes.data.success) {
         setGarage(garageRes.data.garage);
       }
 
       // 2. Fetch SOS alert details
-      const sosRes = await axios.get(`/api/sos?id=${params.id}`);
+      const sosRes = await axiosInstance.get(`/sos?id=${params.id}`);
       if (sosRes.data.success) {
         // Find the specific SOS in the array
         const foundSos = sosRes.data.data.find((s) => s._id === params.id);
@@ -75,7 +75,7 @@ export default function SOSNavigationPage() {
   const handleResolve = async () => {
     try {
       setIsUpdating(true);
-      const res = await axios.patch("/api/sos", {
+      const res = await axiosInstance.patch("/sos", {
         sosId: sos._id,
         status: "resolved",
       });

@@ -28,7 +28,7 @@ import {
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import BookingChat from "@/components/dashboard/BookingChat";
 
 export default function GarageBookingDetailsPage() {
@@ -71,7 +71,7 @@ export default function GarageBookingDetailsPage() {
 
   const fetchMechanics = async () => {
     try {
-      const res = await axios.get("/api/garage/team");
+      const res = await axiosInstance.get("/garage/team");
       if (res.data.success) {
         setMechanics(res.data.teamMembers?.filter((m) => m.isActive) || []);
       }
@@ -84,7 +84,7 @@ export default function GarageBookingDetailsPage() {
     if (!assignedMechanicId) return;
     setAssigning(true);
     try {
-      const res = await axios.patch(`/api/bookings/${id}`, {
+      const res = await axiosInstance.patch(`/bookings/${id}`, {
         assignedMechanic: assignedMechanicId,
       });
       if (res.data.success) {
@@ -101,7 +101,7 @@ export default function GarageBookingDetailsPage() {
 
   const fetchCurrentUser = async () => {
     try {
-      const res = await axios.get("/api/profile");
+      const res = await axiosInstance.get("/profile");
       if (res.data.success) {
         setCurrentUser(res.data.user);
       }
@@ -112,7 +112,7 @@ export default function GarageBookingDetailsPage() {
 
   const fetchBookingDetails = async () => {
     try {
-      const res = await axios.get(`/api/bookings/${id}`);
+      const res = await axiosInstance.get(`/bookings/${id}`);
       if (res.data.success) {
         setBooking(res.data.booking);
         setBillItems(res.data.booking.billItems || []);
@@ -136,7 +136,7 @@ export default function GarageBookingDetailsPage() {
 
     setIsUpdating(true);
     try {
-      const res = await axios.patch(`/api/bookings/${id}`, {
+      const res = await axiosInstance.patch(`/bookings/${id}`, {
         status: newStatus,
       });
       if (res.data.success) {
@@ -170,7 +170,7 @@ export default function GarageBookingDetailsPage() {
 
       const updatedBillItems = [...(booking.billItems || []), newBillItem];
 
-      const res = await axios.patch(`/api/bookings/${id}`, {
+      const res = await axiosInstance.patch(`/bookings/${id}`, {
         status: "in_progress",
         actualCost: (booking.towingCost || 0) + cost, // Total
         startedAt: new Date(),
@@ -193,7 +193,7 @@ export default function GarageBookingDetailsPage() {
     setDeclining(true);
     try {
       const visitingFee = 100;
-      const res = await axios.patch(`/api/bookings/${id}`, {
+      const res = await axiosInstance.patch(`/bookings/${id}`, {
         status: "cancelled",
         actualCost: (booking.towingCost || 0) + visitingFee,
         cancellationReason: "Customer declined service price",
@@ -223,13 +223,13 @@ export default function GarageBookingDetailsPage() {
     if (!booking.paymentInfo?._id) return;
     setVerifyingPayment(true);
     try {
-      const res = await axios.patch(`/api/bookings/${id}/pay`, {
+      const res = await axiosInstance.patch(`/bookings/${id}/pay`, {
         paymentId: booking.paymentInfo._id,
         status: status, // 'success' or 'failed'
       });
       if (res.data.success) {
         toast.success(
-          status === "success" ? "Payment Confirmed!" : "Payment Rejected"
+          status === "success" ? "Payment Confirmed!" : "Payment Rejected",
         );
         fetchBookingDetails();
       }
@@ -247,7 +247,7 @@ export default function GarageBookingDetailsPage() {
     setVerifyingPayment(true);
     try {
       // Create payment record
-      await axios.post(`/api/bookings/${id}/pay`, {
+      await axiosInstance.post(`/bookings/${id}/pay`, {
         paymentMethod: "cash",
         transactionId: `CASH-MANUAL-${Date.now()}`,
         amount: booking.actualCost || booking.estimatedCost,
@@ -267,14 +267,14 @@ export default function GarageBookingDetailsPage() {
     setCompleting(true);
     try {
       if (isPaid) {
-        await axios.post(`/api/bookings/${id}/pay`, {
+        await axiosInstance.post(`/bookings/${id}/pay`, {
           paymentMethod: "cash",
           transactionId: `CASH-${Date.now()}`,
           amount: booking.actualCost || booking.estimatedCost,
         });
       }
 
-      const res = await axios.patch(`/api/bookings/${id}`, {
+      const res = await axiosInstance.patch(`/bookings/${id}`, {
         status: "completed",
       });
 
@@ -307,7 +307,7 @@ export default function GarageBookingDetailsPage() {
   const submitTowingRequest = async (cost) => {
     setIsUpdating(true);
     try {
-      const res = await axios.patch(`/api/bookings/${id}`, {
+      const res = await axiosInstance.patch(`/bookings/${id}`, {
         towingRequested: true,
         towingCost: cost,
         actualCost: (booking.actualCost || booking.estimatedCost) + cost,
@@ -347,12 +347,12 @@ export default function GarageBookingDetailsPage() {
     try {
       const totalLaborPart = billItems.reduce(
         (acc, item) => acc + item.amount,
-        0
+        0,
       );
       const towingCost = booking.towingCost || 0;
       const totalActualCost = totalLaborPart + towingCost;
 
-      const res = await axios.patch(`/api/bookings/${id}`, {
+      const res = await axiosInstance.patch(`/bookings/${id}`, {
         billItems: billItems,
         actualCost: totalActualCost,
       });
@@ -433,8 +433,8 @@ export default function GarageBookingDetailsPage() {
                   booking.status === "pending"
                     ? "confirmed"
                     : booking.status === "confirmed"
-                    ? "in_progress"
-                    : "completed"
+                      ? "in_progress"
+                      : "completed",
                 )
               }
               className="p-6 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-2xl font-bold flex flex-col items-center justify-center gap-3 transition-all"

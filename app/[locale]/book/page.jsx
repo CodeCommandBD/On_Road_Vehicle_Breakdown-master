@@ -7,7 +7,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import {
   Car,
   MapPin,
@@ -131,28 +131,28 @@ function BookingForm() {
       setIsLoadingServices(true);
       try {
         // Fetch CSRF token
-        const csrfRes = await axios.get("/api/csrf-token");
+        const csrfRes = await axiosInstance.get("/csrf-token");
         if (csrfRes.data.success) {
           setCsrfToken(csrfRes.data.csrfToken);
         } else {
           // Optionally log an error if CSRF token fetching fails, but not critical for user experience
         }
 
-        const res = await axios.get("/api/services?isActive=true");
+        const res = await axiosInstance.get("/services?isActive=true");
         if (res.data.success) {
           setServices(res.data.data.services);
         }
 
         // If re-booking, fetch past booking details
         if (rebookId) {
-          const bookingRes = await axios.get(`/api/bookings/${rebookId}`);
+          const bookingRes = await axiosInstance.get(`/bookings/${rebookId}`);
           if (bookingRes.data.success) {
             const pastBooking = bookingRes.data.booking;
             // Pre-fill form
             setValue("vehicleType", pastBooking.vehicleType);
             setValue(
               "serviceId",
-              pastBooking.service?._id || pastBooking.service
+              pastBooking.service?._id || pastBooking.service,
             );
             setValue("brand", pastBooking.vehicleInfo?.brand);
             setValue("model", pastBooking.vehicleInfo?.model);
@@ -160,14 +160,14 @@ function BookingForm() {
             setValue("address", pastBooking.location?.address);
             setValue(
               "description",
-              `Re-booking for: ${pastBooking.description}`
+              `Re-booking for: ${pastBooking.description}`,
             );
 
             if (pastBooking.location?.coordinates) {
               setCoordinates(pastBooking.location.coordinates);
               fetchNearbyGarages(
                 pastBooking.location.coordinates[0],
-                pastBooking.location.coordinates[1]
+                pastBooking.location.coordinates[1],
               );
             }
 
@@ -179,7 +179,9 @@ function BookingForm() {
 
         // Fetch selected garage if in URL
         if (garageIdFromUrl) {
-          const garageRes = await axios.get(`/api/garages/${garageIdFromUrl}`);
+          const garageRes = await axiosInstance.get(
+            `/garages/${garageIdFromUrl}`,
+          );
           if (garageRes.data.success) {
             setSelectedGarage(garageRes.data.data);
           }
@@ -195,7 +197,7 @@ function BookingForm() {
     const fetchUserVehicles = async () => {
       setIsLoadingVehicles(true);
       try {
-        const res = await axios.get("/api/user/vehicles");
+        const res = await axiosInstance.get("/user/vehicles");
         if (res.data.success) {
           setUserVehicles(res.data.vehicles);
         }
@@ -219,7 +221,7 @@ function BookingForm() {
   useEffect(() => {
     if (vehicleId && userVehicles.length > 0) {
       const vehicle = userVehicles.find(
-        (v) => v._id === vehicleId || v.id === vehicleId
+        (v) => v._id === vehicleId || v.id === vehicleId,
       );
       if (vehicle) {
         setValue("brand", vehicle.make);
@@ -258,8 +260,8 @@ function BookingForm() {
     setIsLoadingGarages(true);
     try {
       // Use correct parameter names: latitude and longitude
-      const response = await axios.get(
-        `/api/garages/nearby?longitude=${lng}&latitude=${lat}`
+      const response = await axiosInstance.get(
+        `/garages/nearby?longitude=${lng}&latitude=${lat}`,
       );
 
       console.log("Nearby garages API response:", response.data);
@@ -296,7 +298,7 @@ function BookingForm() {
         toast.info(t("noGarages"));
       } else {
         toast.error(
-          error.response?.data?.message || "Could not load nearby garages"
+          error.response?.data?.message || "Could not load nearby garages",
         );
       }
     } finally {
@@ -390,7 +392,7 @@ function BookingForm() {
           : null,
       };
 
-      const response = await axios.post("/api/bookings", payload, {
+      const response = await axiosInstance.post("/bookings", payload, {
         headers: {
           "x-csrf-token": csrfToken,
         },
@@ -418,8 +420,8 @@ function BookingForm() {
           setValue(
             "address",
             `Detected Location (Lat: ${latitude.toFixed(
-              4
-            )}, Long: ${longitude.toFixed(4)})`
+              4,
+            )}, Long: ${longitude.toFixed(4)})`,
           );
           toast.success(t("toasts.detected"));
           // Fetch garages immediately
@@ -428,7 +430,7 @@ function BookingForm() {
         (error) => {
           console.error(error);
           toast.error(t("toasts.detectError"));
-        }
+        },
       );
     } else {
       toast.error(t("toasts.geoUnsupported"));
@@ -506,7 +508,7 @@ function BookingForm() {
                       type="button"
                       onClick={() => {
                         const diagnosisService = services.find((s) =>
-                          s.name.toLowerCase().includes("diagnosis")
+                          s.name.toLowerCase().includes("diagnosis"),
                         );
                         if (diagnosisService) {
                           setValue("serviceId", diagnosisService._id);

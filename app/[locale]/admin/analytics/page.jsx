@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import { toast } from "react-toastify";
 import {
   TrendingUp,
@@ -63,11 +63,11 @@ export default function AdminAnalyticsPage() {
       setLoading(true);
 
       const [revenueRes, conversionRes, garageRes] = await Promise.all([
-        axios.get(`/api/analytics/revenue?months=6`),
-        axios.get(
-          `/api/analytics/conversion?funnelType=booking&days=${dateRange}`
+        axiosInstance.get(`/analytics/revenue?months=6`),
+        axiosInstance.get(
+          `/analytics/conversion?funnelType=booking&days=${dateRange}`,
         ),
-        axios.get(`/api/analytics/garage-performance?limit=10`),
+        axiosInstance.get(`/analytics/garage-performance?limit=10`),
       ]);
 
       setRevenueData(revenueRes.data);

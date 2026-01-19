@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Trophy, Medal, Star, User, Loader2, Award } from "lucide-react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import { useTranslations } from "next-intl";
 
 export default function LeaderboardWidget({ role = "user" }) {
@@ -14,12 +14,12 @@ export default function LeaderboardWidget({ role = "user" }) {
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
-        const res = await axios.get("/api/user/leaderboard");
+        const res = await axiosInstance.get("/user/leaderboard");
         if (res.data.success) {
           setData(
             role === "garage"
               ? res.data.leaderboards.garages
-              : res.data.leaderboards.users
+              : res.data.leaderboards.users,
           );
         }
       } catch (err) {

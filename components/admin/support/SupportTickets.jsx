@@ -26,7 +26,7 @@ export default function SupportTickets() {
       if (search) params.append("search", search);
       if (filter !== "All" && filter !== "SOS") params.append("status", filter);
       const response = await axiosInstance.get(
-        `/api/admin/support?${params.toString()}`,
+        `/admin/support?${params.toString()}`,
       );
       return response.data.tickets || [];
     },

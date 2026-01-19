@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Loader2 } from "lucide-react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 
 export default function RevenueChart() {
   const [data, setData] = useState([]);
@@ -25,8 +25,8 @@ export default function RevenueChart() {
   const fetchRevenueData = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(
-        `/api/admin/analytics/revenue?period=${period}`
+      const res = await axiosInstance.get(
+        `/admin/analytics/revenue?period=${period}`,
       );
       if (res.data.success) {
         // Transform API data for chart

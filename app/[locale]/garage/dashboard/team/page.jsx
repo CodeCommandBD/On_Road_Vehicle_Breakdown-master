@@ -100,7 +100,7 @@ export default function TeamManagementPage() {
   const updateMutation = useMutation({
     mutationFn: async (memberData) => {
       const res = await axiosInstance.patch(
-        `/api/garage/team/${memberData._id}`,
+        `/garage/team/${memberData._id}`,
         memberData,
       );
       return res.data;

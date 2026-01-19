@@ -50,7 +50,7 @@ export default function UserTable() {
   // Mutations
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      const res = await axiosInstance.delete(`/api/admin/users?userId=${id}`);
+      const res = await axiosInstance.delete(`/admin/users?userId=${id}`);
       return res.data;
     },
     onSuccess: () => {
@@ -64,7 +64,7 @@ export default function UserTable() {
 
   const adjustPointsMutation = useMutation({
     mutationFn: async ({ userId, rewardPoints }) => {
-      const res = await axiosInstance.put("/api/admin/users", {
+      const res = await axiosInstance.put("/admin/users", {
         userId,
         rewardPoints,
       });
@@ -82,7 +82,7 @@ export default function UserTable() {
   const saveContractMutation = useMutation({
     mutationFn: async (contractData) => {
       const res = await axiosInstance.post(
-        "/api/admin/users/contract",
+        "/admin/users/contract",
         contractData,
       );
       return res.data;

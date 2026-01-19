@@ -16,7 +16,6 @@ import {
   setUnreadNotificationsCount,
 } from "@/store/slices/uiSlice";
 import { Bell, Menu, X } from "lucide-react";
-import axios from "axios";
 import { useTranslations } from "next-intl";
 import SettingsModal from "@/components/common/SettingsModal";
 
@@ -138,7 +137,7 @@ export default function Navbar() {
 
   const markNotifyRead = async () => {
     try {
-      await axios.patch("/api/notifications", { markAllAsRead: true });
+      await axiosInstance.patch("/notifications", { markAllAsRead: true });
       dispatch(setUnreadNotificationsCount(0));
     } catch (err) {
       console.error("Failed to mark notifications read:", err);

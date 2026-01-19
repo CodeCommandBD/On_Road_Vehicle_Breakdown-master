@@ -36,7 +36,7 @@ export default function AdminProfilePage() {
 
   const updateMutation = useMutation({
     mutationFn: async (updatedData) => {
-      const res = await axiosInstance.put("/api/profile", updatedData);
+      const res = await axiosInstance.put("/profile", updatedData);
       return res.data;
     },
     onSuccess: (data) => {

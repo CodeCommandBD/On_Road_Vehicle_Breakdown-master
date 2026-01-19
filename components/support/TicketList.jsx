@@ -28,7 +28,7 @@ export default function TicketList({ userRole = "user" }) {
   const { data: ticketsData, isLoading } = useQuery({
     queryKey: ["supportTickets", userRole, filter],
     queryFn: async () => {
-      let url = "/api/support/tickets";
+      let url = "/support/tickets";
       if (filter !== "all") {
         url += `?status=${filter}`;
       }

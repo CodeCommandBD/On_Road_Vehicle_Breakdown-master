@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import axiosInstance from "@/lib/axios";
 import {
   Tag,
   Plus,
@@ -15,7 +16,6 @@ import {
   Users,
   TrendingUp,
 } from "lucide-react";
-import axios from "axios";
 import { toast } from "react-toastify";
 
 export default function CouponManagementPage() {
@@ -48,7 +48,7 @@ export default function CouponManagementPage() {
   const fetchCoupons = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("/api/admin/coupons");
+      const res = await axiosInstance.get("/admin/coupons");
       if (res.data.success) {
         setCoupons(res.data.data.coupons);
       }
@@ -102,7 +102,7 @@ export default function CouponManagementPage() {
     try {
       if (editingCoupon) {
         // Update
-        const res = await axios.patch("/api/admin/coupons", {
+        const res = await axiosInstance.patch("/admin/coupons", {
           couponId: editingCoupon._id,
           ...formData,
         });
@@ -111,7 +111,7 @@ export default function CouponManagementPage() {
         }
       } else {
         // Create
-        const res = await axios.post("/api/admin/coupons", formData);
+        const res = await axiosInstance.post("/admin/coupons", formData);
         if (res.data.success) {
           toast.success("Coupon created successfully");
         }
@@ -130,7 +130,7 @@ export default function CouponManagementPage() {
     if (!confirm("Are you sure you want to delete this coupon?")) return;
 
     try {
-      const res = await axios.delete(`/api/admin/coupons?id=${couponId}`);
+      const res = await axiosInstance.delete(`/admin/coupons?id=${couponId}`);
       if (res.data.success) {
         toast.success("Coupon deleted successfully");
         fetchCoupons();
@@ -142,13 +142,13 @@ export default function CouponManagementPage() {
 
   const handleToggleActive = async (coupon) => {
     try {
-      const res = await axios.patch("/api/admin/coupons", {
+      const res = await axiosInstance.patch("/admin/coupons", {
         couponId: coupon._id,
         isActive: !coupon.isActive,
       });
       if (res.data.success) {
         toast.success(
-          `Coupon ${!coupon.isActive ? "activated" : "deactivated"}`
+          `Coupon ${!coupon.isActive ? "activated" : "deactivated"}`,
         );
         fetchCoupons();
       }

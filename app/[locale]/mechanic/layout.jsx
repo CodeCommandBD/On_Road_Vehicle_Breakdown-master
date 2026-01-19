@@ -12,7 +12,6 @@ import {
 } from "@/store/slices/authSlice";
 import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "@/lib/axios";
-import axios from "axios";
 import {
   Home,
   MessageSquare,

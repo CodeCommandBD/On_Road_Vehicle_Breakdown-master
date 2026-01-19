@@ -1,8 +1,8 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useSelector } from "react-redux";
+import { selectUser } from "@/store/slices/authSlice";
 import axiosInstance from "@/lib/axios";
-import axios from "axios";
 import { Star, ThumbsUp, MessageSquare, Loader2, Filter } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -14,9 +14,7 @@ export default function GarageReviewsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["garageReviews", user?._id],
     queryFn: async () => {
-      const response = await axiosInstance.get(
-        `/api/reviews?garageId=${user._id}`,
-      );
+      const response = await axiosInstance.get(`/reviews?garageId=${user._id}`);
       const reviews = response.data.reviews || [];
 
       const total = reviews.length;

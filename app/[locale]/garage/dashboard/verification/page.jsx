@@ -20,7 +20,6 @@ import { toast } from "react-toastify";
 import { useTranslations } from "next-intl";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/lib/axios";
-import axios from "axios";
 import ImageUpload from "@/components/common/ImageUpload";
 
 const EQUIPMENT_SUGGESTIONS = [

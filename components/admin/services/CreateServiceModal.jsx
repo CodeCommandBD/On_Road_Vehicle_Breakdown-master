@@ -27,7 +27,7 @@ export default function CreateServiceModal({ isOpen, onClose, onSave }) {
     data.append("file", file);
 
     try {
-      const response = await axiosInstance.post("/api/upload", data);
+      const response = await axiosInstance.post("/upload", data);
       if (response.data.success) {
         setFormData((prev) => ({ ...prev, image: response.data.url }));
       }

@@ -24,7 +24,7 @@ export default function InvoiceHistory() {
   const emailMutation = useMutation({
     mutationFn: async (id) => {
       setSendingId(id);
-      const response = await axiosInstance.post(`/api/invoices/${id}/send`);
+      const response = await axiosInstance.post(`/invoices/${id}/send`);
       return response.data;
     },
     onSuccess: () => {

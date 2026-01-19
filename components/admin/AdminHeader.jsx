@@ -5,7 +5,7 @@ import Breadcrumb from "@/components/dashboard/Breadcrumb";
 import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import {
   selectUnreadNotificationsCount,
   setUnreadNotificationsCount,
@@ -32,7 +32,7 @@ export default function AdminHeader({ onMenuClick }) {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const res = await axios.get("/api/notifications");
+        const res = await axiosInstance.get("/notifications");
         if (res.data.success) {
           setNotifications(res.data.notifications);
           dispatch(setUnreadNotificationsCount(res.data.unreadCount));
@@ -61,7 +61,7 @@ export default function AdminHeader({ onMenuClick }) {
 
   const handleLogout = async () => {
     try {
-      await axios.post("/api/auth/logout");
+      await axiosInstance.post("/auth/logout");
       dispatch(logout());
       router.push("/login");
     } catch (err) {
@@ -71,7 +71,7 @@ export default function AdminHeader({ onMenuClick }) {
 
   const markNotifyRead = async () => {
     try {
-      await axios.patch("/api/notifications", { markAllAsRead: true });
+      await axiosInstance.patch("/notifications", { markAllAsRead: true });
       dispatch(setUnreadNotificationsCount(0));
     } catch (err) {
       console.error("Failed to mark admin notifications read:", err);

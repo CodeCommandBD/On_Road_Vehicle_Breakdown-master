@@ -12,7 +12,7 @@ import {
   Search,
   Download,
 } from "lucide-react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 
 export default function AdminInquiriesPage() {
   const [inquiries, setInquiries] = useState([]);
@@ -34,7 +34,7 @@ export default function AdminInquiriesPage() {
     if (!search && statusFilter === "all") {
       const markAsViewed = async () => {
         try {
-          await axios.patch("/api/admin/inquiries/mark-viewed");
+          await axiosInstance.patch("/admin/inquiries/mark-viewed");
         } catch (error) {
           console.error("Failed to mark as viewed:", error);
         }
@@ -50,8 +50,8 @@ export default function AdminInquiriesPage() {
       if (search) params.append("search", search);
       if (statusFilter !== "all") params.append("status", statusFilter);
 
-      const response = await axios.get(
-        `/api/admin/inquiries?${params.toString()}`
+      const response = await axiosInstance.get(
+        `/admin/inquiries?${params.toString()}`,
       );
       if (response.data.success) {
         setInquiries(response.data.inquiries);
@@ -65,7 +65,7 @@ export default function AdminInquiriesPage() {
 
   const updateStatus = async (id, status) => {
     try {
-      await axios.patch("/api/admin/inquiries", { inquiryId: id, status });
+      await axiosInstance.patch("/admin/inquiries", { inquiryId: id, status });
       fetchInquiries(); // Refresh
     } catch (error) {
       console.error("Failed to update status:", error);
@@ -96,7 +96,7 @@ export default function AdminInquiriesPage() {
           `"${i.phone || ""}"`,
           i.status,
           `"${i.message?.replace(/"/g, '""') || ""}"`,
-        ].join(",")
+        ].join(","),
       ),
     ].join("\n");
 
@@ -106,7 +106,7 @@ export default function AdminInquiriesPage() {
     link.href = url;
     link.setAttribute(
       "download",
-      `inquiries_export_${new Date().toISOString().split("T")[0]}.csv`
+      `inquiries_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     document.body.appendChild(link);
     link.click();
@@ -431,8 +431,8 @@ export default function AdminInquiriesPage() {
                   onClick={async () => {
                     try {
                       // Check if user exists with this email
-                      const userCheck = await axios.get(
-                        `/api/admin/users/find-by-email?email=${selectedInquiry.email}`
+                      const userCheck = await axiosInstance.get(
+                        `/admin/users/find-by-email?email=${selectedInquiry.email}`,
                       );
 
                       if (userCheck.data.success && userCheck.data.user) {

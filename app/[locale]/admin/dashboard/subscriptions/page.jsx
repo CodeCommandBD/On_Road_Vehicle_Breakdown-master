@@ -18,7 +18,7 @@ import {
   MoreVertical,
   Download,
 } from "lucide-react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import { toast } from "react-toastify";
 import Link from "next/link";
 
@@ -67,13 +67,13 @@ export default function SubscriptionsPage() {
 
       const endpoint =
         activeTab === "users"
-          ? `/api/admin/users/subscription?${params}`
-          : `/api/admin/garages/subscription?${params}`;
+          ? `/admin/users/subscription?${params}`
+          : `/admin/garages/subscription?${params}`;
 
-      const res = await axios.get(endpoint);
+      const res = await axiosInstance.get(endpoint);
       if (res.data.success) {
         setData(
-          activeTab === "users" ? res.data.data.users : res.data.data.garages
+          activeTab === "users" ? res.data.data.users : res.data.data.garages,
         );
         setPagination(res.data.data.pagination);
       }
@@ -106,28 +106,29 @@ export default function SubscriptionsPage() {
     try {
       const endpoint =
         activeTab === "users"
-          ? "/api/admin/users/subscription"
-          : "/api/admin/garages/subscription";
+          ? "/admin/users/subscription"
+          : "/admin/garages/subscription";
 
       const payload =
         activeTab === "users"
           ? { userId: selectedItem._id, action: modalAction, ...modalData }
           : { garageId: selectedItem._id, action: modalAction, ...modalData };
 
-      const res = await axios.patch(endpoint, payload);
+      const res = await axiosInstance.patch(endpoint, payload);
 
       if (res.data.success) {
         toast.success(
           `${
             activeTab === "users" ? "User" : "Garage"
-          } subscription ${modalAction}d successfully`
+          } subscription ${modalAction}d successfully`,
         );
         setShowModal(false);
         fetchData();
       }
     } catch (error) {
       toast.error(
-        error.response?.data?.message || `Failed to ${modalAction} subscription`
+        error.response?.data?.message ||
+          `Failed to ${modalAction} subscription`,
       );
     } finally {
       setProcessing(false);
@@ -153,9 +154,9 @@ export default function SubscriptionsPage() {
           item.membershipTier === "free"
             ? "Free"
             : item.membershipExpiry &&
-              new Date(item.membershipExpiry) < new Date()
-            ? "Expired"
-            : "Active";
+                new Date(item.membershipExpiry) < new Date()
+              ? "Expired"
+              : "Active";
 
         return [
           `"${item.name || "N/A"}"`,
@@ -176,7 +177,7 @@ export default function SubscriptionsPage() {
     link.href = url;
     link.setAttribute(
       "download",
-      `${activeTab}_subscriptions_${new Date().toISOString().split("T")[0]}.csv`
+      `${activeTab}_subscriptions_${new Date().toISOString().split("T")[0]}.csv`,
     );
     document.body.appendChild(link);
     link.click();
@@ -471,7 +472,7 @@ export default function SubscriptionsPage() {
                                     id: item._id,
                                     x: rect.right - 160,
                                     y: rect.bottom + 5,
-                                  }
+                                  },
                             );
                           }}
                           className="p-2 hover:bg-white/10 rounded-lg transition-colors"

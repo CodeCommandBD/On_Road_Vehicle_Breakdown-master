@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import axiosInstance from "@/lib/axios";
+import { Lock, X, Eye, EyeOff, Loader2 } from "lucide-react";
+import { toast } from "react-toastify";
 
 export default function PasswordChangeModal({ isOpen, onClose }) {
   const [showPasswords, setShowPasswords] = useState({

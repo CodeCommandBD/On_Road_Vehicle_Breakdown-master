@@ -1,9 +1,10 @@
+```javascript
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import GarageTable from "@/components/admin/garages/GarageTable";
 import { Download } from "lucide-react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import { toast } from "react-toastify";
 
 export default function GaragesPage() {
@@ -12,7 +13,7 @@ export default function GaragesPage() {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const response = await axios.get("/api/admin/garages");
+      const response = await axiosInstance.get("/admin/garages");
       if (response.data.success) {
         const garages = response.data.garages;
 

@@ -21,7 +21,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import axios from "axios";
 import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import { Download } from "lucide-react";
 import DiagnosisDocument from "@/components/pdf/DiagnosisDocument";

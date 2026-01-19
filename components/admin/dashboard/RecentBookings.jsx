@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { MoreVertical, Wrench } from "lucide-react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import Link from "next/link";
 
 export default function RecentBookings() {
@@ -21,8 +21,8 @@ export default function RecentBookings() {
   const fetchBookings = async () => {
     try {
       // For admin, pass userId and role=admin
-      const res = await axios.get(
-        `/api/bookings?userId=${user._id}&role=admin`
+      const res = await axiosInstance.get(
+        `/bookings?userId=${user._id}&role=admin`,
       );
       if (res.data.success) {
         // Get only latest 5
@@ -119,7 +119,7 @@ export default function RecentBookings() {
                   <td className="py-4">
                     <span
                       className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${getStatusColor(
-                        booking.status
+                        booking.status,
                       )}`}
                     >
                       {getStatusLabel(booking.status)}

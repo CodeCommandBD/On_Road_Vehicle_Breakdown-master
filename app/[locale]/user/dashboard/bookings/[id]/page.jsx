@@ -101,7 +101,7 @@ export default function BookingDetailsPage() {
 
   const estimateMutation = useMutation({
     mutationFn: async (action) => {
-      const res = await axiosInstance.post("/api/user/estimate/respond", {
+      const res = await axiosInstance.post("/user/estimate/respond", {
         bookingId: id,
         action,
       });
@@ -122,13 +122,13 @@ export default function BookingDetailsPage() {
   const paymentMutation = useMutation({
     mutationFn: async (paymentData) => {
       if (paymentMethod === "sslcommerz") {
-        const res = await axiosInstance.post("/api/bookings/payment/init", {
+        const res = await axiosInstance.post("/bookings/payment/init", {
           bookingId: id,
         });
         return res.data;
       } else {
         const res = await axiosInstance.post(
-          `/api/bookings/${id}/pay`,
+          `/bookings/${id}/pay`,
           paymentData,
         );
         return res.data;

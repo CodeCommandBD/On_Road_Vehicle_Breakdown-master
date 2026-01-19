@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, FileText, Calendar, DollarSign, Shield } from "lucide-react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 
 export default function CreateContractModal({ isOpen, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
@@ -52,7 +52,7 @@ export default function CreateContractModal({ isOpen, onClose, onSuccess }) {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get("/api/admin/users");
+      const response = await axiosInstance.get("/admin/users");
       if (response.data.success) {
         setUsers(response.data.users); // Fixed: API returns users directly
       }
@@ -63,7 +63,9 @@ export default function CreateContractModal({ isOpen, onClose, onSuccess }) {
 
   const fetchPlans = async () => {
     try {
-      const response = await axios.get("/api/packages?type=user&isActive=true");
+      const response = await axiosInstance.get(
+        "/packages?type=user&isActive=true",
+      );
       if (response.data.success) {
         setPlans(response.data.data.packages);
       }
@@ -113,7 +115,7 @@ export default function CreateContractModal({ isOpen, onClose, onSuccess }) {
         },
       };
 
-      const response = await axios.post("/api/contracts", payload);
+      const response = await axiosInstance.post("/contracts", payload);
 
       if (response.data.success) {
         onSuccess?.();

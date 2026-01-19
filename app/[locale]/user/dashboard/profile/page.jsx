@@ -22,7 +22,6 @@ import {
 import { toast } from "react-toastify";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/lib/axios";
-import axios from "axios";
 import PasswordChangeModal from "@/components/profile/PasswordChangeModal";
 import ImageUpload from "@/components/common/ImageUpload";
 import { useTranslations } from "next-intl";

@@ -6,7 +6,6 @@ import { selectUser, updateUser } from "@/store/slices/authSlice";
 import { useTranslations } from "next-intl";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/lib/axios";
-import axios from "axios";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Link from "next/link";

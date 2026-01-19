@@ -12,7 +12,7 @@ import {
   CreditCard,
   AlertCircle,
 } from "lucide-react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import { toast } from "react-toastify";
 
 const PLANS = {
@@ -103,7 +103,7 @@ export default function CheckoutPage() {
 
     try {
       // First, get the plan ID from the database by tier
-      const planResponse = await axios.get(`/api/plans?tier=${planType}`);
+      const planResponse = await axiosInstance.get(`/plans?tier=${planType}`);
 
       if (!planResponse.data.success || !planResponse.data.plans?.[0]) {
         toast.error("Plan not found");
@@ -114,7 +114,7 @@ export default function CheckoutPage() {
       const plan = planResponse.data.plans[0];
 
       // Initialize payment with SSLCommerz using correct field names
-      const response = await axios.post("/api/payments/init", {
+      const response = await axiosInstance.post("/payments/init", {
         planId: plan._id,
         billingCycle: cycle,
         billingInfo: {
@@ -135,7 +135,7 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error("Checkout error:", error);
       toast.error(
-        error.response?.data?.message || "Payment failed. Please try again."
+        error.response?.data?.message || "Payment failed. Please try again.",
       );
       setIsProcessing(false);
     }

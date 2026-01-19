@@ -9,10 +9,10 @@ import {
   selectUser,
   updateUser,
 } from "@/store/slices/authSlice";
-import AdminSidebar from "@/components/admin/AdminSidebar";
+import Sidebar from "@/components/admin/Sidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { Loader2 } from "lucide-react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 
 // Prevent hydration mismatch by using client component for state
 export default function AdminLayout({ children }) {
@@ -27,7 +27,7 @@ export default function AdminLayout({ children }) {
   useEffect(() => {
     const syncProfile = async () => {
       try {
-        const res = await axios.get("/api/profile");
+        const res = await axiosInstance.get("/profile");
         if (res.data.success) {
           dispatch(updateUser(res.data.user));
         }

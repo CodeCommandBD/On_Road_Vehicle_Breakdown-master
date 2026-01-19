@@ -5,7 +5,7 @@ import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { logout } from "@/store/slices/authSlice";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import { useTranslations } from "next-intl";
 import {
   LayoutDashboard,
@@ -88,7 +88,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
   useEffect(() => {
     const fetchCounts = async () => {
       try {
-        const response = await axios.get("/api/admin/counts");
+        const response = await axiosInstance.get("/admin/counts");
         if (response.data.success) {
           // Extract counts from new API structure
           const data = response.data.data;
@@ -129,7 +129,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
 
   const handleLogout = async () => {
     try {
-      await axios.post("/api/auth/logout");
+      await axiosInstance.post("/auth/logout");
       dispatch(logout());
       router.push("/");
     } catch (error) {
@@ -187,7 +187,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
             // by prioritizing the longest matching href
             const activeItem = menuItems
               .filter(
-                (i) => pathname === i.href || pathname.startsWith(`${i.href}/`)
+                (i) => pathname === i.href || pathname.startsWith(`${i.href}/`),
               )
               .sort((a, b) => b.href.length - a.href.length)[0];
 

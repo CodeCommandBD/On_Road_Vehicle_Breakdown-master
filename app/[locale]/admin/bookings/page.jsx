@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import BookingTable from "@/components/admin/bookings/BookingTable";
 import { Download } from "lucide-react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import { toast } from "react-toastify";
 
 export default function BookingsPage() {
@@ -12,7 +12,7 @@ export default function BookingsPage() {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const response = await axios.get("/api/admin/bookings");
+      const response = await axiosInstance.get("/admin/bookings");
       if (response.data.success) {
         const bookings = response.data.bookings;
 
@@ -49,7 +49,7 @@ export default function BookingsPage() {
         link.setAttribute("href", url);
         link.setAttribute(
           "download",
-          `bookings-export-${new Date().toISOString().split("T")[0]}.csv`
+          `bookings-export-${new Date().toISOString().split("T")[0]}.csv`,
         );
         link.style.visibility = "hidden";
         document.body.appendChild(link);

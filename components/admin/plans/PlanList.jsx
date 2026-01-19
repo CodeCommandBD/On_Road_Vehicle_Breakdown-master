@@ -30,7 +30,7 @@ export default function PlanList() {
     queryKey: ["adminPlans", activeTab],
     queryFn: async () => {
       const response = await axiosInstance.get(
-        `/api/packages?sort=order&type=${activeTab}`,
+        `/packages?sort=order&type=${activeTab}`,
       );
       return response.data.data.packages || [];
     },
@@ -41,7 +41,7 @@ export default function PlanList() {
   // Mutations
   const createMutation = useMutation({
     mutationFn: async (newPlan) => {
-      const response = await axiosInstance.post("/api/packages", newPlan);
+      const response = await axiosInstance.post("/packages", newPlan);
       return response.data;
     },
     onSuccess: () => {
@@ -55,7 +55,7 @@ export default function PlanList() {
 
   const editMutation = useMutation({
     mutationFn: async (updatedData) => {
-      const response = await axiosInstance.put("/api/packages", updatedData);
+      const response = await axiosInstance.put("/packages", updatedData);
       return response.data;
     },
     onSuccess: () => {
@@ -69,7 +69,7 @@ export default function PlanList() {
 
   const deleteMutation = useMutation({
     mutationFn: async (planId) => {
-      const response = await axiosInstance.delete(`/api/packages?id=${planId}`);
+      const response = await axiosInstance.delete(`/packages?id=${planId}`);
       return response.data;
     },
     onSuccess: () => {
@@ -84,7 +84,7 @@ export default function PlanList() {
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ planId, currentStatus }) => {
       const response = await axiosInstance.patch(
-        `/api/packages?id=${planId}&action=toggle-active`,
+        `/packages?id=${planId}&action=toggle-active`,
       );
       return { response: response.data, currentStatus };
     },
@@ -102,7 +102,7 @@ export default function PlanList() {
   const toggleFeaturedMutation = useMutation({
     mutationFn: async ({ planId, isFeatured }) => {
       const response = await axiosInstance.patch(
-        `/api/packages?id=${planId}&action=toggle-featured`,
+        `/packages?id=${planId}&action=toggle-featured`,
       );
       return { response: response.data, isFeatured };
     },

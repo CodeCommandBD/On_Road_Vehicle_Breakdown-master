@@ -607,12 +607,9 @@ function GarageBookingActions({ booking, onStatusUpdate, team, t }) {
 
   const assignMutation = useMutation({
     mutationFn: async (mechanicId) => {
-      const response = await axiosInstance.patch(
-        `/api/bookings/${booking._id}`,
-        {
-          assignedMechanic: mechanicId,
-        },
-      );
+      const response = await axiosInstance.patch(`/bookings/${booking._id}`, {
+        assignedMechanic: mechanicId,
+      });
       return response.data;
     },
     onSuccess: (data) => {

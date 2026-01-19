@@ -11,7 +11,7 @@ import {
   XCircle,
   Loader2,
 } from "lucide-react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import { toast } from "react-toastify";
 
 export default function GaragesSubscriptionPage() {
@@ -50,7 +50,9 @@ export default function GaragesSubscriptionPage() {
         ...(filters.status !== "all" && { status: filters.status }),
       });
 
-      const res = await axios.get(`/api/admin/garages/subscription?${params}`);
+      const res = await axiosInstance.get(
+        `/admin/garages/subscription?${params}`,
+      );
       if (res.data.success) {
         setGarages(res.data.data.garages);
         setPagination(res.data.data.pagination);
@@ -82,7 +84,7 @@ export default function GaragesSubscriptionPage() {
 
     setProcessing(true);
     try {
-      const res = await axios.patch("/api/admin/garages/subscription", {
+      const res = await axiosInstance.patch("/admin/garages/subscription", {
         garageId: selectedGarage._id,
         action: modalAction,
         ...modalData,
@@ -95,7 +97,8 @@ export default function GaragesSubscriptionPage() {
       }
     } catch (error) {
       toast.error(
-        error.response?.data?.message || `Failed to ${modalAction} subscription`
+        error.response?.data?.message ||
+          `Failed to ${modalAction} subscription`,
       );
     } finally {
       setProcessing(false);
@@ -283,7 +286,7 @@ export default function GaragesSubscriptionPage() {
                       <p className="text-white/80 text-sm">
                         {garage.membershipExpiry
                           ? new Date(
-                              garage.membershipExpiry
+                              garage.membershipExpiry,
                             ).toLocaleDateString()
                           : "N/A"}
                       </p>

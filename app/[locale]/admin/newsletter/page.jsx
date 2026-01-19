@@ -29,9 +29,7 @@ export default function NewsletterPage() {
   const { data: subscriberData, isLoading: loading } = useQuery({
     queryKey: ["newsletterSubscribers"],
     queryFn: async () => {
-      const response = await axiosInstance.get(
-        "/api/admin/newsletter/subscribers",
-      );
+      const response = await axiosInstance.get("/admin/newsletter/subscribers");
       return response.data.data;
     },
     initialData: {
@@ -46,7 +44,7 @@ export default function NewsletterPage() {
   const testMutation = useMutation({
     mutationFn: async (payload) => {
       const response = await axiosInstance.post(
-        "/api/admin/newsletter/send-test",
+        "/admin/newsletter/send-test",
         payload,
       );
       return response.data;
@@ -62,7 +60,7 @@ export default function NewsletterPage() {
   const bulkMutation = useMutation({
     mutationFn: async (payload) => {
       const response = await axiosInstance.post(
-        "/api/admin/newsletter/send-bulk",
+        "/admin/newsletter/send-bulk",
         payload,
       );
       return response.data;

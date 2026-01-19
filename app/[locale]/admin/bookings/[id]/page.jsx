@@ -22,7 +22,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import Link from "next/link";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import { toast } from "react-toastify";
 import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 
@@ -38,7 +38,7 @@ export default function AdminBookingDetailPage({ params }) {
 
   const fetchBookingDetail = async () => {
     try {
-      const res = await axios.get(`/api/admin/bookings?bookingId=${id}`);
+      const res = await axiosInstance.get(`/admin/bookings?bookingId=${id}`);
       if (res.data.success) {
         setBooking(res.data.booking);
         setAdminNotes(res.data.booking.dispute?.adminNotes || "");
@@ -66,7 +66,7 @@ export default function AdminBookingDetailPage({ params }) {
         newActualCost = Math.max(0, newActualCost - adjustmentAmount);
       }
 
-      const res = await axios.put("/api/admin/bookings", {
+      const res = await axiosInstance.put("/admin/bookings", {
         bookingId: id,
         dispute: {
           adminNotes,
@@ -80,7 +80,7 @@ export default function AdminBookingDetailPage({ params }) {
 
       if (res.data.success) {
         toast.success(
-          `Dispute ${status === "resolved" ? "resolved" : "dismissed"}`
+          `Dispute ${status === "resolved" ? "resolved" : "dismissed"}`,
         );
         fetchBookingDetail();
       }
@@ -136,8 +136,8 @@ export default function AdminBookingDetailPage({ params }) {
               booking.status === "completed"
                 ? "bg-green-500/10 text-green-400 border-green-500/20"
                 : booking.status === "disputed"
-                ? "bg-red-500/10 text-red-400 border-red-500/20 animate-pulse"
-                : "bg-white/5 text-white/40 border-white/10"
+                  ? "bg-red-500/10 text-red-400 border-red-500/20 animate-pulse"
+                  : "bg-white/5 text-white/40 border-white/10"
             }`}
           >
             {booking.status}
@@ -201,7 +201,7 @@ export default function AdminBookingDetailPage({ params }) {
                             value={adjustmentAmount}
                             onChange={(e) =>
                               setAdjustmentAmount(
-                                parseFloat(e.target.value) || 0
+                                parseFloat(e.target.value) || 0,
                               )
                             }
                             className="w-full bg-black/20 border border-white/5 rounded-xl py-3 pl-10 pr-4 text-white outline-none focus:border-orange-500/50"
@@ -258,7 +258,7 @@ export default function AdminBookingDetailPage({ params }) {
                         <p className="text-xs opacity-80">
                           Resolution: {booking.dispute?.resolutionType} | Date:{" "}
                           {new Date(
-                            booking.dispute?.resolvedAt
+                            booking.dispute?.resolvedAt,
                           ).toLocaleDateString()}
                         </p>
                       </div>

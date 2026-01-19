@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/lib/axios";
-import axios from "axios";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
 import { Webhook, Save, CheckCircle, AlertCircle, Lock } from "lucide-react";

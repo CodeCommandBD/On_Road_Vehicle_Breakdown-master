@@ -11,7 +11,7 @@ import {
   Loader2,
 } from "lucide-react";
 import Link from "next/link";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 
 export default function DashboardStats() {
   const [stats, setStats] = useState(null);
@@ -23,7 +23,7 @@ export default function DashboardStats() {
 
   const fetchStats = async () => {
     try {
-      const res = await axios.get("/api/admin/counts");
+      const res = await axiosInstance.get("/admin/counts");
       if (res.data.success) {
         setStats(res.data.data);
       }

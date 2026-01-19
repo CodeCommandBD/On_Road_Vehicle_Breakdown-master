@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import { useMutation } from "@tanstack/react-query";
 import axiosInstance from "@/lib/axios";
-import axios from "axios";
 import { ArrowLeft, CheckCircle, XCircle } from "lucide-react";
 
 export default function CreateOrganizationPage() {
@@ -22,7 +21,7 @@ export default function CreateOrganizationPage() {
 
   const createOrgMutation = useMutation({
     mutationFn: async (payload) => {
-      const res = await axiosInstance.post("/users/team/invite", data);
+      const res = await axiosInstance.post("/organizations", payload);
       return res.data;
     },
     onSuccess: () => {

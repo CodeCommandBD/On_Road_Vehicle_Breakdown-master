@@ -2,7 +2,6 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/lib/axios";
-import axios from "axios";
 import { motion } from "framer-motion";
 import RewardsCatalog from "@/components/rewards/RewardsCatalog";
 import PointsHistory from "@/components/rewards/PointsHistory";

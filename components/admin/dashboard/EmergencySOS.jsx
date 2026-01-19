@@ -10,7 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import dynamic from "next/dynamic";
 import { toast } from "react-toastify";
 import { formatDistanceToNow } from "date-fns";
@@ -35,7 +35,7 @@ export default function EmergencySOS() {
   const fetchAlerts = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("/api/sos?status=pending,assigned");
+      const response = await axiosInstance.get("/sos?status=pending,assigned");
       if (response.data.success) {
         setAlerts(response.data.data);
         if (response.data.data.length > 0) {
@@ -64,8 +64,8 @@ export default function EmergencySOS() {
     try {
       const lat = sos.location.coordinates[1];
       const lng = sos.location.coordinates[0];
-      const res = await axios.get(
-        `/api/garages/nearby?lat=${lat}&lng=${lng}&maxDistance=20000`
+      const res = await axiosInstance.get(
+        `/garages/nearby?lat=${lat}&lng=${lng}&maxDistance=20000`,
       );
       if (res.data.success) {
         setNearbyGarages(res.data.data);
@@ -80,7 +80,7 @@ export default function EmergencySOS() {
     if (!selectedSOS) return;
     setIsActionLoading(true);
     try {
-      const res = await axios.patch("/api/sos", {
+      const res = await axiosInstance.patch("/sos", {
         sosId: selectedSOS._id,
         garageId: garageId,
       });
@@ -107,7 +107,7 @@ export default function EmergencySOS() {
     if (!selectedSOS) return;
     setIsActionLoading(true);
     try {
-      const res = await axios.patch("/api/sos", {
+      const res = await axiosInstance.patch("/sos", {
         sosId: selectedSOS._id,
         status: "resolved",
       });

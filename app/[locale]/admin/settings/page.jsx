@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { Save, Plus, Trash2, Edit2, Loader2, Globe, Award } from "lucide-react";
 import { toast } from "react-toastify";
-import axios from "axios";
+import Link from "next/link";
+import axiosInstance from "@/lib/axios";
 import ImageUpload from "@/components/common/ImageUpload";
 
 export default function AdminSettingsPage() {
@@ -42,7 +43,7 @@ export default function AdminSettingsPage() {
   const fetchLinks = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("/api/admin/footer-links");
+      const res = await axiosInstance.get("/admin/footer-links");
       if (res.data.success) {
         setLinks(res.data.data);
       }
@@ -57,10 +58,13 @@ export default function AdminSettingsPage() {
     e.preventDefault();
     try {
       if (editingLink) {
-        await axios.put(`/api/admin/footer-links/${editingLink._id}`, formData);
+        await axiosInstance.put(
+          `/admin/footer-links/${editingLink._id}`,
+          formData,
+        );
         toast.success("Link updated successfully");
       } else {
-        await axios.post("/api/admin/footer-links", formData);
+        await axiosInstance.post("/admin/footer-links", formData);
         toast.success("Link created successfully");
       }
       setFormData({ label: "", href: "", column: "company", order: 0 });
@@ -84,7 +88,7 @@ export default function AdminSettingsPage() {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this link?")) return;
     try {
-      await axios.delete(`/api/admin/footer-links/${id}`);
+      await axiosInstance.delete(`/admin/footer-links/${id}`);
       toast.success("Link deleted successfully");
       fetchLinks();
     } catch (error) {
@@ -101,7 +105,7 @@ export default function AdminSettingsPage() {
   const fetchBranding = async () => {
     try {
       setBrandingLoading(true);
-      const res = await axios.get("/api/admin/branding");
+      const res = await axiosInstance.get("/admin/branding");
       if (res.data.success) {
         setBranding(res.data.data);
       }
@@ -115,7 +119,7 @@ export default function AdminSettingsPage() {
   const handleBrandingSave = async () => {
     try {
       setBrandingLoading(true);
-      await axios.put("/api/admin/branding", branding);
+      await axiosInstance.put("/admin/branding", branding);
       toast.success("Branding updated successfully");
       fetchBranding();
     } catch (error) {

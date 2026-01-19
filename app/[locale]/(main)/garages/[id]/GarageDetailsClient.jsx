@@ -5,7 +5,7 @@ import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import { toast } from "react-toastify";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -45,12 +45,12 @@ export default function GarageDetailsClient({ garage, id }) {
     }
 
     try {
-      const res = await axios.post("/api/user/favorites", { garageId: id });
+      const res = await axiosInstance.post("/user/favorites", { garageId: id });
       if (res.data.success) {
         const payload = isFavorite ? id : garage;
         dispatch(toggleFavoriteSuccess(payload));
         toast.success(
-          isFavorite ? "Removed from favorites" : "Added to favorites"
+          isFavorite ? "Removed from favorites" : "Added to favorites",
         );
       }
     } catch (err) {

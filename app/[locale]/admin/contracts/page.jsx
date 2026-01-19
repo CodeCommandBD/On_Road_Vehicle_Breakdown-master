@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { FileText, Plus, Download, Eye, Search } from "lucide-react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import CreateContractModal from "@/components/admin/contracts/CreateContractModal";
 
 export default function AdminContractsPage() {
@@ -23,7 +23,9 @@ export default function AdminContractsPage() {
       const params = new URLSearchParams();
       if (search) params.append("search", search);
 
-      const response = await axios.get(`/api/contracts?${params.toString()}`);
+      const response = await axiosInstance.get(
+        `/contracts?${params.toString()}`,
+      );
       if (response.data.success) {
         setContracts(response.data.data.contracts);
       }
@@ -65,7 +67,7 @@ export default function AdminContractsPage() {
           new Date(c.startDate).toLocaleDateString(),
           new Date(c.endDate).toLocaleDateString(),
           c.status,
-        ].join(",")
+        ].join(","),
       ),
     ].join("\n");
 
@@ -75,7 +77,7 @@ export default function AdminContractsPage() {
     link.href = url;
     link.setAttribute(
       "download",
-      `contracts_export_${new Date().toISOString().split("T")[0]}.csv`
+      `contracts_export_${new Date().toISOString().split("T")[0]}.csv`,
     );
     document.body.appendChild(link);
     link.click();
@@ -199,7 +201,7 @@ export default function AdminContractsPage() {
             {
               contracts.filter(
                 (c) =>
-                  new Date(c.createdAt).getMonth() === new Date().getMonth()
+                  new Date(c.createdAt).getMonth() === new Date().getMonth(),
               ).length
             }
           </div>
@@ -286,7 +288,7 @@ export default function AdminContractsPage() {
                           onClick={() =>
                             handleDownloadPDF(
                               contract._id,
-                              contract.contractNumber
+                              contract.contractNumber,
                             )
                           }
                           className="p-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-lg transition-colors"

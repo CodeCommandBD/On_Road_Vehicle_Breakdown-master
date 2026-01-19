@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import { toast } from "react-toastify";
 import {
   TrendingUp,
@@ -35,8 +35,8 @@ export default function GarageAnalyticsPage() {
   const fetchPerformance = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(
-        `/api/analytics/garage-performance?garageId=${user.garageId}&period=monthly`
+      const res = await axiosInstance.get(
+        `/analytics/garage-performance?garageId=${user.garageId}&period=monthly`,
       );
       setPerformance(res.data.performance);
     } catch (error) {
@@ -349,8 +349,8 @@ export default function GarageAnalyticsPage() {
                     item.priority === "high"
                       ? "bg-red-500/20 text-red-500"
                       : item.priority === "medium"
-                      ? "bg-orange-500/20 text-orange-500"
-                      : "bg-gray-500/20 text-gray-500"
+                        ? "bg-orange-500/20 text-orange-500"
+                        : "bg-gray-500/20 text-gray-500"
                   }`}
                 >
                   {item.priority}

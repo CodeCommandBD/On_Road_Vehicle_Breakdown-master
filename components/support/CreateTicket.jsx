@@ -15,10 +15,7 @@ export default function CreateTicket({ onTicketCreated }) {
 
   const createMutation = useMutation({
     mutationFn: async (ticketData) => {
-      const response = await axiosInstance.post(
-        "/api/support/tickets",
-        ticketData,
-      );
+      const response = await axiosInstance.post("/support/tickets", ticketData);
       return response.data;
     },
     onSuccess: (data) => {

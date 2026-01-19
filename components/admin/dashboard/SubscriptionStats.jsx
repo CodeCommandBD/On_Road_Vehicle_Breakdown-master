@@ -11,7 +11,7 @@ import {
   Crown,
   Clock,
 } from "lucide-react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 
 export default function SubscriptionStats() {
   const [stats, setStats] = useState(null);
@@ -23,7 +23,7 @@ export default function SubscriptionStats() {
 
   const fetchStats = async () => {
     try {
-      const res = await axios.get("/api/admin/subscriptions/stats");
+      const res = await axiosInstance.get("/admin/subscriptions/stats");
       if (res.data.success) {
         setStats(res.data.data);
       }

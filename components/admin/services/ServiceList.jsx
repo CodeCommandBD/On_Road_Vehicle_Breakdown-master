@@ -30,7 +30,7 @@ export default function ServiceList() {
   const { data: servicesData, isLoading: loading } = useQuery({
     queryKey: ["adminServices"],
     queryFn: async () => {
-      const response = await axiosInstance.get("/api/admin/services");
+      const response = await axiosInstance.get("/admin/services");
       return response.data.data.services || [];
     },
   });
@@ -40,10 +40,7 @@ export default function ServiceList() {
   // Create Mutation
   const createMutation = useMutation({
     mutationFn: async (newService) => {
-      const response = await axiosInstance.post(
-        "/api/admin/services",
-        newService,
-      );
+      const response = await axiosInstance.post("/admin/services", newService);
       return response.data;
     },
     onSuccess: () => {
@@ -58,10 +55,7 @@ export default function ServiceList() {
   // Edit Mutation
   const editMutation = useMutation({
     mutationFn: async (updatedData) => {
-      const response = await axiosInstance.put(
-        "/api/admin/services",
-        updatedData,
-      );
+      const response = await axiosInstance.put("/admin/services", updatedData);
       return response.data;
     },
     onSuccess: () => {
@@ -77,7 +71,7 @@ export default function ServiceList() {
   const deleteMutation = useMutation({
     mutationFn: async (serviceId) => {
       const response = await axiosInstance.delete(
-        `/api/admin/services?id=${serviceId}`,
+        `/admin/services?id=${serviceId}`,
       );
       return response.data;
     },
@@ -94,7 +88,7 @@ export default function ServiceList() {
   const toggleMutation = useMutation({
     mutationFn: async ({ serviceId, currentStatus }) => {
       const response = await axiosInstance.patch(
-        `/api/admin/services?id=${serviceId}`,
+        `/admin/services?id=${serviceId}`,
       );
       return { response: response.data, currentStatus };
     },
@@ -113,7 +107,7 @@ export default function ServiceList() {
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids) => {
       await Promise.all(
-        ids.map((id) => axiosInstance.delete(`/api/admin/services?id=${id}`)),
+        ids.map((id) => axiosInstance.delete(`/admin/services?id=${id}`)),
       );
     },
     onSuccess: () => {

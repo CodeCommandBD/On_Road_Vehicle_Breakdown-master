@@ -21,7 +21,7 @@ import {
 import { selectUser, logout, updateUser } from "@/store/slices/authSlice";
 import BreadcrumbNav from "./Breadcrumb";
 import { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import Link from "next/link";
 import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import { useTranslations } from "next-intl";
@@ -50,7 +50,7 @@ export default function DashboardHeader() {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const res = await axios.get("/api/notifications");
+        const res = await axiosInstance.get("/notifications");
         if (res.data.success) {
           setNotifications(res.data.notifications);
           dispatch(setUnreadNotificationsCount(res.data.unreadCount));
@@ -65,13 +65,13 @@ export default function DashboardHeader() {
 
     const fetchPoints = async () => {
       try {
-        const res = await axios.get("/api/user/points");
+        const res = await axiosInstance.get("/user/points");
         if (res.data.success) {
           dispatch(
             updateUser({
               rewardPoints: res.data.rewardPoints,
               level: res.data.level,
-            })
+            }),
           );
         }
       } catch (err) {
@@ -81,7 +81,7 @@ export default function DashboardHeader() {
 
     const fetchSubscription = async () => {
       try {
-        const res = await axios.get("/api/subscriptions");
+        const res = await axiosInstance.get("/subscriptions");
         if (res.data.success && res.data.data.current) {
           const tier = res.data.data.current.planId?.tier;
           // Store active plan tier in user state or local state
@@ -121,7 +121,7 @@ export default function DashboardHeader() {
 
   const handleLogout = async () => {
     try {
-      await axios.post("/api/auth/logout");
+      await axiosInstance.post("/auth/logout");
       dispatch(logout());
       // Use window.location for hard redirect to ensure clean logout
       window.location.href = "/login";
@@ -132,7 +132,7 @@ export default function DashboardHeader() {
 
   const markNotifyRead = async () => {
     try {
-      await axios.patch("/api/notifications", { markAllAsRead: true });
+      await axiosInstance.patch("/notifications", { markAllAsRead: true });
       dispatch(setUnreadNotificationsCount(0));
     } catch (err) {
       console.error("Failed to mark notifications read:", err);

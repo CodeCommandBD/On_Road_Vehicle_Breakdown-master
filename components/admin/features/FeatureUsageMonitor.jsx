@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import {
   TrendingUp,
   Users,
@@ -37,7 +37,7 @@ export default function FeatureUsageMonitor() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("/api/admin/features/usage");
+      const response = await axiosInstance.get("/admin/features/usage");
       if (response.data.success) {
         setData(response.data.data);
       }
@@ -131,7 +131,7 @@ export default function FeatureUsageMonitor() {
     ([key, value]) => ({
       name: key.replace(/([A-Z])/g, " $1").trim(),
       rate: value,
-    })
+    }),
   );
 
   return (
@@ -214,7 +214,7 @@ export default function FeatureUsageMonitor() {
           <p className="text-3xl font-bold text-white">
             {Math.round(
               Object.values(data.adoptionRates).reduce((a, b) => a + b, 0) /
-                Object.keys(data.adoptionRates).length
+                Object.keys(data.adoptionRates).length,
             ) || 0}
             %
           </p>
@@ -334,8 +334,8 @@ export default function FeatureUsageMonitor() {
                         data.adoptionRates[feature] >= 50
                           ? "bg-green-500/20 text-green-400"
                           : data.adoptionRates[feature] >= 25
-                          ? "bg-yellow-500/20 text-yellow-400"
-                          : "bg-red-500/20 text-red-400"
+                            ? "bg-yellow-500/20 text-yellow-400"
+                            : "bg-red-500/20 text-red-400"
                       }`}
                     >
                       {data.adoptionRates[feature] || 0}%
