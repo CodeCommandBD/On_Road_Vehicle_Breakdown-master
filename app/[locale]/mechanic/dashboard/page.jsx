@@ -19,13 +19,13 @@ import {
   Search,
   ClipboardList,
   Plus,
+  Loader2,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import ConfirmationModal from "@/components/common/ConfirmationModal";
 import axiosInstance from "@/lib/axios";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-export default function MechanicDashboard() {
 export default function MechanicDashboard() {
   const queryClient = useQueryClient();
 
@@ -39,18 +39,21 @@ export default function MechanicDashboard() {
     refetchInterval: 10000, // Poll every 10s
   });
 
-  const { stats, attendance, activeJobs, openJobs, mechanic } = dashboardData || {
-    stats: {},
-    attendance: {},
-    activeJobs: [],
-    openJobs: [],
-  };
+  const { stats, attendance, activeJobs, openJobs, mechanic } =
+    dashboardData || {
+      stats: {},
+      attendance: {},
+      activeJobs: [],
+      openJobs: [],
+    };
   const isOnDuty = attendance?.clockIn && !attendance?.clockOut;
 
   // Mutations
   const attendanceMutation = useMutation({
     mutationFn: async (action) => {
-      const res = await axiosInstance.post("/api/mechanic/attendance", { action });
+      const res = await axiosInstance.post("/api/mechanic/attendance", {
+        action,
+      });
       return res.data;
     },
     onSuccess: (data) => {
@@ -66,7 +69,10 @@ export default function MechanicDashboard() {
       return res.data;
     },
     onSuccess: () => {
-      toast.error("SOS ALERT SENT! HELP IS ON THE WAY!", { autoClose: false, theme: "dark" });
+      toast.error("SOS ALERT SENT! HELP IS ON THE WAY!", {
+        autoClose: false,
+        theme: "dark",
+      });
     },
     onError: () => toast.error("Failed to send SOS"),
   });
@@ -80,7 +86,8 @@ export default function MechanicDashboard() {
       toast.success(data.message || "Action successful");
       queryClient.invalidateQueries({ queryKey: ["mechanicDashboard"] });
     },
-    onError: (error) => toast.error(error.response?.data?.message || "Action failed"),
+    onError: (error) =>
+      toast.error(error.response?.data?.message || "Action failed"),
   });
 
   // State
@@ -92,7 +99,9 @@ export default function MechanicDashboard() {
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [diagnosisModalOpen, setDiagnosisModalOpen] = useState(false);
   const [shiftReminderShown, setShiftReminderShown] = useState(false);
-  const [estimateItems, setEstimateItems] = useState([{ description: "", amount: "", category: "part" }]);
+  const [estimateItems, setEstimateItems] = useState([
+    { description: "", amount: "", category: "part" },
+  ]);
   const [finalBillAmount, setFinalBillAmount] = useState("");
   const [jobCardData, setJobCardData] = useState({
     vehicleDetails: { odometer: "", fuelLevel: "" },
@@ -113,10 +122,12 @@ export default function MechanicDashboard() {
       navigator.geolocation.getCurrentPosition(async (pos) => {
         const { latitude, longitude } = pos.coords;
         for (const job of activeJobs) {
-          axiosInstance.post("/api/mechanic/location/update", {
-            bookingId: job._id,
-            location: { lat: latitude, lng: longitude },
-          }).catch(console.error);
+          axiosInstance
+            .post("/api/mechanic/location/update", {
+              bookingId: job._id,
+              location: { lat: latitude, lng: longitude },
+            })
+            .catch(console.error);
         }
       });
     };
@@ -134,40 +145,51 @@ export default function MechanicDashboard() {
   };
 
   const handleSubmitEstimate = () => {
-    const totalCost = estimateItems.reduce((sum, item) => sum + Number(item.amount), 0);
-    jobActionMutation.mutate({
-      url: "/api/mechanic/estimate/create",
-      body: {
-        bookingId: activeJobForAction._id,
-        items: estimateItems,
-        totalCost,
+    const totalCost = estimateItems.reduce(
+      (sum, item) => sum + Number(item.amount),
+      0,
+    );
+    jobActionMutation.mutate(
+      {
+        url: "/api/mechanic/estimate/create",
+        body: {
+          bookingId: activeJobForAction._id,
+          items: estimateItems,
+          totalCost,
+        },
       },
-    }, {
-      onSuccess: () => setEstimateModalOpen(false)
-    });
+      {
+        onSuccess: () => setEstimateModalOpen(false),
+      },
+    );
   };
 
   const handleSubmitBill = () => {
-    jobActionMutation.mutate({
-      url: "/api/mechanic/bill/update",
-      body: {
-        bookingId: activeJobForAction._id,
-        totalCost: Number(finalBillAmount) || 0,
+    jobActionMutation.mutate(
+      {
+        url: "/api/mechanic/bill/update",
+        body: {
+          bookingId: activeJobForAction._id,
+          totalCost: Number(finalBillAmount) || 0,
+        },
       },
-    }, {
-      onSuccess: () => {
-        setBillModalOpen(false);
-        setModalType(null);
-        setIsModalOpen(false);
-      }
-    });
+      {
+        onSuccess: () => {
+          setBillModalOpen(false);
+          setModalType(null);
+          setIsModalOpen(false);
+        },
+      },
+    );
   };
 
   const handleConfirmPayment = async (method) => {
     let paymentId = activeJobForAction?.paymentInfo?.paymentId;
     if (!paymentId) {
       try {
-        const paymentRes = await axiosInstance.get(`/api/payments/by-booking/${activeJobForAction._id}`);
+        const paymentRes = await axiosInstance.get(
+          `/api/payments/by-booking/${activeJobForAction._id}`,
+        );
         if (paymentRes.data.success && paymentRes.data.payment) {
           paymentId = paymentRes.data.payment._id;
         }
@@ -181,37 +203,43 @@ export default function MechanicDashboard() {
       return;
     }
 
-    jobActionMutation.mutate({
-      url: `/api/bookings/${activeJobForAction._id}/pay`,
-      method: "PATCH",
-      body: { status: "success", paymentId },
-    }, {
-      onSuccess: () => setPaymentModalOpen(false)
-    });
+    jobActionMutation.mutate(
+      {
+        url: `/api/bookings/${activeJobForAction._id}/pay`,
+        method: "PATCH",
+        body: { status: "success", paymentId },
+      },
+      {
+        onSuccess: () => setPaymentModalOpen(false),
+      },
+    );
   };
 
   // Diagnosis Report Handler
   const handleSaveDiagnosis = () => {
     if (!activeJobForAction) return;
-    jobActionMutation.mutate({
-      url: "/api/mechanic/job-card",
-      body: { bookingId: activeJobForAction._id, ...jobCardData },
-    }, {
-      onSuccess: () => {
-        toast.success("Diagnosis Report Saved 📋");
-        setDiagnosisModalOpen(false);
-        setJobCardData({
-          vehicleDetails: { odometer: "", fuelLevel: "" },
-          checklist: [
-            { category: "Engine", item: "Engine Oil Level", status: "ok" },
-            { category: "Engine", item: "Coolant Level", status: "ok" },
-            { category: "Brakes", item: "Brake Fluid", status: "ok" },
-            { category: "Tires", item: "Tire Pressure", status: "ok" },
-          ],
-          notes: "",
-        });
-      }
-    });
+    jobActionMutation.mutate(
+      {
+        url: "/api/mechanic/job-card",
+        body: { bookingId: activeJobForAction._id, ...jobCardData },
+      },
+      {
+        onSuccess: () => {
+          toast.success("Diagnosis Report Saved 📋");
+          setDiagnosisModalOpen(false);
+          setJobCardData({
+            vehicleDetails: { odometer: "", fuelLevel: "" },
+            checklist: [
+              { category: "Engine", item: "Engine Oil Level", status: "ok" },
+              { category: "Engine", item: "Coolant Level", status: "ok" },
+              { category: "Brakes", item: "Brake Fluid", status: "ok" },
+              { category: "Tires", item: "Tire Pressure", status: "ok" },
+            ],
+            notes: "",
+          });
+        },
+      },
+    );
   };
 
   // Add Bill Item Handler
@@ -227,39 +255,47 @@ export default function MechanicDashboard() {
       ...(activeJobForAction.billItems || []),
       { description, amount, category },
     ];
-    const newTotal = updatedItems.reduce((sum, item) => sum + item.amount, 0) + (activeJobForAction.estimatedCost || 0);
+    const newTotal =
+      updatedItems.reduce((sum, item) => sum + item.amount, 0) +
+      (activeJobForAction.estimatedCost || 0);
 
-    jobActionMutation.mutate({
-      url: `/api/bookings/${activeJobForAction._id}`,
-      method: "PATCH",
-      body: { billItems: updatedItems, actualCost: newTotal },
-    }, {
-      onSuccess: () => {
-        toast.success("Bill item added 💰");
-        setBillModalOpen(false);
-        e.target.reset();
-      }
-    });
+    jobActionMutation.mutate(
+      {
+        url: `/api/bookings/${activeJobForAction._id}`,
+        method: "PATCH",
+        body: { billItems: updatedItems, actualCost: newTotal },
+      },
+      {
+        onSuccess: () => {
+          toast.success("Bill item added 💰");
+          setBillModalOpen(false);
+          e.target.reset();
+        },
+      },
+    );
   };
 
   const handleAttendance = () => {
     const action = isOnDuty ? "out" : "in";
     attendanceMutation.mutate(action, {
-      onSuccess: () => setIsModalOpen(false)
+      onSuccess: () => setIsModalOpen(false),
     });
   };
 
   const handleSOS = () => {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        sosMutation.mutate({ lat: pos.coords.latitude, lng: pos.coords.longitude }, {
-          onSuccess: () => setIsModalOpen(false)
-        });
+        sosMutation.mutate(
+          { lat: pos.coords.latitude, lng: pos.coords.longitude },
+          {
+            onSuccess: () => setIsModalOpen(false),
+          },
+        );
       },
       () => {
         toast.error("Could not get location. SOS alert failed.");
         setIsModalOpen(false);
-      }
+      },
     );
   };
 
@@ -329,7 +365,7 @@ export default function MechanicDashboard() {
       } else if (location.address) {
         // Fallback: Open map centered on address (search)
         url = `https://www.openstreetmap.org/search?query=${encodeURIComponent(
-          location.address
+          location.address,
         )}`;
       } else {
         mapWindow.close();
@@ -350,12 +386,14 @@ export default function MechanicDashboard() {
           // Force immediate update to backend so User Tracking matches Navigation Origin
           if (activeJobs && activeJobs.length > 0) {
             activeJobs.forEach((job) => {
-              axiosInstance.post("/api/mechanic/location/update", {
-                bookingId: job._id,
-                location: { lat: latitude, lng: longitude },
-              }).catch((err) =>
-                console.error("Force location update failed", err)
-              );
+              axiosInstance
+                .post("/api/mechanic/location/update", {
+                  bookingId: job._id,
+                  location: { lat: latitude, lng: longitude },
+                })
+                .catch((err) =>
+                  console.error("Force location update failed", err),
+                );
             });
           }
 
@@ -363,10 +401,10 @@ export default function MechanicDashboard() {
         },
         (error) => {
           console.warn(
-            "Location access denied or failed, using default map behavior"
+            "Location access denied or failed, using default map behavior",
           );
           openMap(null, null); // Fallback to maps auto-detect
-        }
+        },
       );
     } else {
       openMap(null, null);
@@ -417,7 +455,7 @@ export default function MechanicDashboard() {
               <p className="text-slate-400 font-medium">
                 {isOnDuty
                   ? `Shift duration: ${new Date(
-                      attendance.clockIn
+                      attendance.clockIn,
                     ).toLocaleTimeString([], {
                       hour: "2-digit",
                       minute: "2-digit",
@@ -635,7 +673,7 @@ export default function MechanicDashboard() {
                               const currentTotal =
                                 (job.billItems || []).reduce(
                                   (sum, i) => sum + i.amount,
-                                  0
+                                  0,
                                 ) + 1000; // Add fixed service fee
                               setFinalBillAmount(currentTotal);
                               setModalType("final_bill");
@@ -766,21 +804,25 @@ export default function MechanicDashboard() {
                       </p>
                       <button
                         onClick={() => handleAcceptJob(job._id)}
-                      <button
-                        onClick={() => handleAcceptJob(job._id)}
                         disabled={
-                          jobActionMutation.isPending && jobActionMutation.variables?.body?.bookingId === job._id ||
+                          (jobActionMutation.isPending &&
+                            jobActionMutation.variables?.body?.bookingId ===
+                              job._id) ||
                           (activeJobs && activeJobs.length > 0)
                         }
                         className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${
-                          jobActionMutation.isPending && jobActionMutation.variables?.body?.bookingId === job._id
+                          jobActionMutation.isPending &&
+                          jobActionMutation.variables?.body?.bookingId ===
+                            job._id
                             ? "bg-slate-700 text-slate-400"
                             : activeJobs && activeJobs.length > 0
-                            ? "bg-slate-800/50 text-slate-600 cursor-not-allowed border border-white/5"
-                            : "bg-indigo-500 text-white hover:bg-indigo-400 shadow-lg shadow-indigo-900/20"
+                              ? "bg-slate-800/50 text-slate-600 cursor-not-allowed border border-white/5"
+                              : "bg-indigo-500 text-white hover:bg-indigo-400 shadow-lg shadow-indigo-900/20"
                         }`}
                       >
-                        {jobActionMutation.isPending && jobActionMutation.variables?.body?.bookingId === job._id ? (
+                        {jobActionMutation.isPending &&
+                        jobActionMutation.variables?.body?.bookingId ===
+                          job._id ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
                           "Deploy Now"
@@ -837,31 +879,33 @@ export default function MechanicDashboard() {
           modalType === "sos"
             ? "CRITICAL SOS ALERT"
             : modalType === "attendance_in"
-            ? "Initialize Duty"
-            : modalType === "shift_reminder"
-            ? "Shift Limit Reached"
-            : "Terminate Shift"
+              ? "Initialize Duty"
+              : modalType === "shift_reminder"
+                ? "Shift Limit Reached"
+                : "Terminate Shift"
         }
         message={
           modalType === "sos"
             ? "This will transmit your live coordinates to HQ and the local response team. Use only in extreme emergency."
             : modalType === "attendance_in"
-            ? "You are about to go online. New missions will be visible in your local sector."
-            : modalType === "shift_reminder"
-            ? "You have been online for over 9 hours. Standard safety protocols recommend terminating your shift to prevent fatigue."
-            : "Confirm shift termination. You will no longer be visible for priority mission deployments."
+              ? "You are about to go online. New missions will be visible in your local sector."
+              : modalType === "shift_reminder"
+                ? "You have been online for over 9 hours. Standard safety protocols recommend terminating your shift to prevent fatigue."
+                : "Confirm shift termination. You will no longer be visible for priority mission deployments."
         }
         confirmText={
           modalType === "sos"
             ? "TRANSMIT SOS"
             : modalType === "attendance_in"
-            ? "Go Online"
-            : "Go Offline"
+              ? "Go Online"
+              : "Go Offline"
         }
         type={modalType === "sos" ? "warning" : "info"}
         onConfirm={modalType === "sos" ? handleSOS : handleAttendance}
         onCancel={() =>
-          !attendanceMutation.isPending && !sosMutation.isPending && setIsModalOpen(false)
+          !attendanceMutation.isPending &&
+          !sosMutation.isPending &&
+          setIsModalOpen(false)
         }
       />
 
@@ -915,7 +959,7 @@ export default function MechanicDashboard() {
                   <button
                     onClick={() => {
                       const newItems = estimateItems.filter(
-                        (_, i) => i !== index
+                        (_, i) => i !== index,
                       );
                       setEstimateItems(newItems);
                     }}
@@ -942,7 +986,7 @@ export default function MechanicDashboard() {
                   ৳{" "}
                   {estimateItems.reduce(
                     (sum, item) => sum + Number(item.amount),
-                    0
+                    0,
                   )}
                 </span>
               </div>
@@ -1169,7 +1213,7 @@ export default function MechanicDashboard() {
                   ৳
                   {(activeJobForAction.billItems || []).reduce(
                     (sum, i) => sum + i.amount,
-                    0
+                    0,
                   )}
                 </span>
               </div>
@@ -1373,12 +1417,6 @@ export default function MechanicDashboard() {
                   <Loader2 className="w-6 h-6 animate-spin mx-auto" />
                 ) : (
                   "Finalize Diagnosis"
-                )}
-              </button>
-                {loading ? (
-                  <Loader2 className="animate-spin mx-auto w-6 h-6" />
-                ) : (
-                  "Save Report"
                 )}
               </button>
             </div>
