@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import {
   User,
   Phone,
@@ -16,7 +16,9 @@ import { toast } from "react-toastify";
 import { useDispatch } from "react-redux";
 import { updateUser } from "@/store/slices/authSlice";
 import dynamic from "next/dynamic";
-import axios from "axios";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
+import axios from "axios"; // Still needed for Nominatim (external)
 
 // Dynamically import MapComponent
 const MapComponent = dynamic(() => import("@/components/maps/MapComponent"), {
@@ -28,10 +30,11 @@ const MapComponent = dynamic(() => import("@/components/maps/MapComponent"), {
 
 export default function ProfileForm() {
   const dispatch = useDispatch();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const queryClient = useQueryClient();
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [isLocationLocked, setIsLocationLocked] = useState(true);
+
+  // Local form state - initialized from query data
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -48,23 +51,14 @@ export default function ProfileForm() {
     vehicles: [],
   });
 
-  const [newVehicle, setNewVehicle] = useState({
-    make: "",
-    model: "",
-    year: new Date().getFullYear(),
-    licensePlate: "",
-    vehicleType: "Car",
-  });
-
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
-    try {
-      const res = await fetch("/api/profile");
-      const data = await res.json();
+  const { isLoading } = useQuery({
+    queryKey: ["userProfile"],
+    queryFn: async () => {
+      const response = await axiosInstance.get("/api/profile");
+      const data = response.data;
       if (data.success) {
+        // Only set form data if it's currently empty or just initialized
+        // This is a common pattern for forms: sync once on load
         setFormData({
           name: data.user.name || "",
           phone: data.user.phone || "",
@@ -81,12 +75,27 @@ export default function ProfileForm() {
           vehicles: data.user.vehicles || [],
         });
       }
-    } catch (error) {
-      toast.error("Failed to load profile");
-    } finally {
-      setLoading(false);
-    }
-  };
+      return data.user;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (updatedData) => {
+      const response = await axiosInstance.put("/api/profile", updatedData);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success("Profile updated successfully");
+      dispatch(updateUser(data.user));
+      queryClient.setQueryData(["userProfile"], data.user);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "An error occurred");
+    },
+  });
+
+  const saving = updateMutation.isPending;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -109,8 +118,8 @@ export default function ProfileForm() {
     try {
       const response = await axios.get(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          query
-        )}`
+          query,
+        )}`,
       );
       if (response.data && response.data.length > 0) {
         const { lat, lon } = response.data[0];
@@ -169,28 +178,18 @@ export default function ProfileForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSaving(true);
-    try {
-      const res = await fetch("/api/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success("Profile updated successfully");
-        dispatch(updateUser(data.user));
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error("An error occurred");
-    } finally {
-      setSaving(false);
-    }
+    updateMutation.mutate(formData);
   };
 
-  if (loading) {
+  const [newVehicle, setNewVehicle] = useState({
+    make: "",
+    model: "",
+    year: new Date().getFullYear(),
+    licensePlate: "",
+    vehicleType: "Car",
+  });
+
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />

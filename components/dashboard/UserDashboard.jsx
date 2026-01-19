@@ -7,7 +7,7 @@ import BookingTimeline from "@/components/dashboard/BookingTimeline";
 import dynamic from "next/dynamic";
 const LiveGarageTracker = dynamic(
   () => import("@/components/dashboard/LiveGarageTracker"),
-  { ssr: false }
+  { ssr: false },
 );
 import UserRewardsCard from "@/components/dashboard/UserRewardsCard";
 import LeaderboardWidget from "@/components/dashboard/LeaderboardWidget";
@@ -24,7 +24,8 @@ import {
   Star,
   ArrowRight,
 } from "lucide-react";
-import axios from "axios";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import { toast } from "react-toastify";
 import {
   updateUser,
@@ -63,160 +64,130 @@ export default function UserDashboard({ user }) {
   const t = useTranslations("SOS");
   const dashT = useTranslations("Dashboard");
   const dispatch = useDispatch();
-  const [bookings, setBookings] = useState([]);
-  const [activeSOS, setActiveSOS] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isCancelling, setIsCancelling] = useState(false);
+  const queryClient = useQueryClient();
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [stats, setStats] = useState({
-    totalBookings: 0,
-    totalSpent: 0,
-    points: 0,
-    activeRequests: 0,
-  });
   const favorites = useSelector(selectFavorites);
-  const [isLoadingFavorites, setIsLoadingFavorites] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!user) return;
+  // 1. Fetch Bookings & Stats
+  const { data: dashboardData, isLoading: isBookingsLoading } = useQuery({
+    queryKey: ["userDashboardData", user?._id],
+    queryFn: async () => {
+      const response = await axiosInstance.get(
+        `/api/bookings?userId=${user._id}&role=user`,
+      );
+      const fetchedBookings = response.data.bookings || [];
 
-      // Fetch bookings (CRITICAL - must succeed)
-      try {
-        const response = await axios.get(
-          `/api/bookings?userId=${user._id}&role=user`
-        );
-        if (response.data.success) {
-          const fetchedBookings = response.data.bookings;
-          setBookings(fetchedBookings);
+      const totalBookings = fetchedBookings.length;
+      const activeRequests = fetchedBookings.filter((b) =>
+        ["pending", "confirmed", "in_progress"].includes(b.status),
+      ).length;
+      const totalSpent = fetchedBookings.reduce(
+        (acc, curr) => acc + (curr.estimatedCost || 0),
+        0,
+      );
 
-          // Calculate Stats from bookings
-          const totalBookings = fetchedBookings.length;
-          const activeRequests = fetchedBookings.filter(
-            (b) =>
-              b.status === "pending" ||
-              b.status === "confirmed" ||
-              b.status === "in_progress"
-          ).length;
-          const totalSpent = fetchedBookings.reduce(
-            (acc, curr) => acc + (curr.estimatedCost || 0),
-            0
-          );
+      return {
+        bookings: fetchedBookings,
+        stats: {
+          totalBookings,
+          totalSpent,
+          points: Math.floor(totalSpent / 100), // Base fallback
+          activeRequests,
+        },
+      };
+    },
+    enabled: !!user?._id,
+  });
 
-          // Set initial stats with fallback points calculation
-          setStats({
-            totalBookings,
-            totalSpent,
-            points: Math.floor(totalSpent / 100), // Fallback calculation
-            activeRequests,
-          });
-        }
-      } catch (error) {
-        console.error("Critical Error - Failed to load bookings:", error);
-        toast.error("Failed to load dashboard data");
-        setIsLoading(false);
-        return; // Stop execution if critical data fails
-      }
+  // 2. Fetch Points
+  const { data: pointsData } = useQuery({
+    queryKey: ["userPoints", user?._id],
+    queryFn: async () => {
+      const response = await axiosInstance.get("/api/user/points");
+      return response.data.rewardPoints;
+    },
+    enabled: !!user?._id,
+  });
 
-      // Fetch Points (NON-CRITICAL - use fallback if fails)
-      try {
-        const pointsRes = await axios.get("/api/user/points");
-        if (pointsRes.data.success) {
-          setStats((prev) => ({
-            ...prev,
-            points: pointsRes.data.rewardPoints,
-          }));
-        }
-      } catch (pErr) {
-        console.warn(
-          "Non-critical: Points fetch failed, using fallback calculation:",
-          pErr.message
-        );
-        // Fallback already set from bookings calculation above
-      }
+  // 3. Fetch SOS
+  const { data: activeSOS } = useQuery({
+    queryKey: ["activeSOS"],
+    queryFn: async () => {
+      const response = await axiosInstance.get(
+        "/api/sos?status=pending,assigned",
+      );
+      return response.data.data?.[0] || null;
+    },
+    refetchInterval: 10000, // Sync emergency status every 10s
+  });
 
-      setIsLoading(false);
-    };
-
-    fetchData();
-    fetchSOS();
-  }, [user?._id]);
-
-  useEffect(() => {
-    // Hydrate favorites if they are only IDs
-    const hasOnlyIds = favorites.some((fav) => typeof fav === "string");
-    if (hasOnlyIds && !isLoadingFavorites) {
-      fetchFullFavorites();
-    }
-  }, [favorites]);
-
-  const fetchFullFavorites = async () => {
-    setIsLoadingFavorites(true);
-    try {
-      const res = await axios.get("/api/user/favorites");
+  // 4. Fetch Full Favorites (if needed)
+  const { isLoading: isLoadingFavorites } = useQuery({
+    queryKey: ["userFavorites"],
+    queryFn: async () => {
+      const res = await axiosInstance.get("/api/user/favorites");
       if (res.data.success) {
         dispatch({
           type: "auth/updateUser",
           payload: { favoriteGarages: res.data.favorites },
         });
       }
-    } catch (error) {
-      console.warn("Non-critical: Failed to fetch favorites:", error.message);
-      // Don't show error toast, just fail silently
-    } finally {
-      setIsLoadingFavorites(false);
-    }
-  };
+      return res.data.favorites;
+    },
+    enabled: !!user?._id && favorites.some((fav) => typeof fav === "string"),
+  });
 
-  const removeFavorite = async (garageId) => {
-    try {
-      const res = await axios.post("/api/user/favorites", { garageId });
-      if (res.data.success) {
-        dispatch(toggleFavoriteSuccess(garageId));
-        toast.success("Removed from favorites");
-      }
-    } catch (error) {
-      toast.error("Failed to remove favorite");
-    }
-  };
+  // Mutations
+  const removeFavoriteMutation = useMutation({
+    mutationFn: async (garageId) => {
+      await axiosInstance.post("/api/user/favorites", { garageId });
+      return garageId;
+    },
+    onSuccess: (garageId) => {
+      dispatch(toggleFavoriteSuccess(garageId));
+      toast.success("Removed from favorites");
+      queryClient.invalidateQueries({ queryKey: ["userFavorites"] });
+    },
+  });
 
-  const fetchSOS = async () => {
-    try {
-      const sosRes = await axios.get("/api/sos?status=pending,assigned");
-      if (sosRes.data.success && sosRes.data.data.length > 0) {
-        setActiveSOS(sosRes.data.data[0]);
-      } else {
-        setActiveSOS(null);
-      }
-    } catch (sosError) {
-      console.warn("Non-critical: SOS fetch failed:", sosError.message);
-      // Don't show error to user, just log it
-      setActiveSOS(null);
-    }
+  const cancelSOSMutation = useMutation({
+    mutationFn: async (sosId) => {
+      const res = await axiosInstance.patch("/api/sos", {
+        sosId,
+        status: "cancelled",
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success("SOS Alert Cancelled");
+      setShowCancelModal(false);
+      queryClient.invalidateQueries({ queryKey: ["activeSOS"] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to cancel SOS");
+    },
+  });
+
+  // Derived state
+  const bookings = dashboardData?.bookings || [];
+  const stats = {
+    ...(dashboardData?.stats || {}),
+    points: pointsData ?? (dashboardData?.stats?.points || 0),
+  };
+  const isLoading = isBookingsLoading;
+  const isCancelling = cancelSOSMutation.isPending;
+
+  const removeFavorite = (garageId) => {
+    removeFavoriteMutation.mutate(garageId);
   };
 
   const handleCancelSOS = () => {
     setShowCancelModal(true);
   };
 
-  const executeCancelSOS = async () => {
-    if (!activeSOS) return;
-
-    setIsCancelling(true);
-    try {
-      const res = await axios.patch("/api/sos", {
-        sosId: activeSOS._id,
-        status: "cancelled",
-      });
-      if (res.data.success) {
-        toast.success("SOS Alert Cancelled");
-        setActiveSOS(null);
-        setShowCancelModal(false);
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to cancel SOS");
-    } finally {
-      setIsCancelling(false);
+  const executeCancelSOS = () => {
+    if (activeSOS) {
+      cancelSOSMutation.mutate(activeSOS._id);
     }
   };
 
@@ -359,7 +330,11 @@ export default function UserDashboard({ user }) {
       )}
 
       {/* Quick Actions */}
-      <QuickActions onSOSSent={fetchSOS} />
+      <QuickActions
+        onSOSSent={() =>
+          queryClient.invalidateQueries({ queryKey: ["activeSOS"] })
+        }
+      />
 
       {/* Enhanced Stats Cards */}
       <EnhancedStatsCards stats={stats} />

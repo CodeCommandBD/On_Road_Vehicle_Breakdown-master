@@ -22,45 +22,78 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import ConfirmationModal from "@/components/common/ConfirmationModal";
+import axiosInstance from "@/lib/axios";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function MechanicDashboard() {
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState(null);
-  const [processingAttendance, setProcessingAttendance] = useState(false);
-  const [sosLoading, setSosLoading] = useState(false);
-  const [acceptingJob, setAcceptingJob] = useState(null);
+export default function MechanicDashboard() {
+  const queryClient = useQueryClient();
 
-  // Destructure data first so it's available for effects
-  const { stats, attendance, activeJobs, openJobs, mechanic } = data || {};
-  const isOnDuty = attendance?.clockIn && !attendance?.clockOut;
-
-  // Debug log to check attendance state
-  console.log("🔍 Attendance Debug:", {
-    hasAttendance: !!attendance,
-    clockIn: attendance?.clockIn,
-    clockOut: attendance?.clockOut,
-    isOnDuty,
-    buttonShouldShow: isOnDuty ? "Clock Out" : "Clock In",
+  // 1. Fetch Dashboard Data
+  const { data: dashboardData, isLoading: loading } = useQuery({
+    queryKey: ["mechanicDashboard"],
+    queryFn: async () => {
+      const res = await axiosInstance.get("/api/mechanic/dashboard");
+      return res.data.data;
+    },
+    refetchInterval: 10000, // Poll every 10s
   });
 
-  // Modal States
-  const [modalType, setModalType] = useState(null); // 'attendance_in', 'attendance_out', 'sos'
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { stats, attendance, activeJobs, openJobs, mechanic } = dashboardData || {
+    stats: {},
+    attendance: {},
+    activeJobs: [],
+    openJobs: [],
+  };
+  const isOnDuty = attendance?.clockIn && !attendance?.clockOut;
 
-  // Workflow Modal States
+  // Mutations
+  const attendanceMutation = useMutation({
+    mutationFn: async (action) => {
+      const res = await axiosInstance.post("/api/mechanic/attendance", { action });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: ["mechanicDashboard"] });
+    },
+    onError: () => toast.error("Failed to update attendance"),
+  });
+
+  const sosMutation = useMutation({
+    mutationFn: async (location) => {
+      const res = await axiosInstance.post("/api/mechanic/sos", { location });
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.error("SOS ALERT SENT! HELP IS ON THE WAY!", { autoClose: false, theme: "dark" });
+    },
+    onError: () => toast.error("Failed to send SOS"),
+  });
+
+  const jobActionMutation = useMutation({
+    mutationFn: async ({ url, method = "POST", body }) => {
+      const res = await axiosInstance({ url, method, data: body });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Action successful");
+      queryClient.invalidateQueries({ queryKey: ["mechanicDashboard"] });
+    },
+    onError: (error) => toast.error(error.response?.data?.message || "Action failed"),
+  });
+
+  // State
   const [activeJobForAction, setActiveJobForAction] = useState(null);
+  const [modalType, setModalType] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [estimateModalOpen, setEstimateModalOpen] = useState(false);
   const [billModalOpen, setBillModalOpen] = useState(false);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [diagnosisModalOpen, setDiagnosisModalOpen] = useState(false);
   const [shiftReminderShown, setShiftReminderShown] = useState(false);
-
-  const [estimateItems, setEstimateItems] = useState([
-    { description: "", amount: "", category: "part" },
-  ]);
+  const [estimateItems, setEstimateItems] = useState([{ description: "", amount: "", category: "part" }]);
   const [finalBillAmount, setFinalBillAmount] = useState("");
-
-  // Job Card / Diagnosis Data
   const [jobCardData, setJobCardData] = useState({
     vehicleDetails: { odometer: "", fuelLevel: "" },
     checklist: [
@@ -72,223 +105,101 @@ export default function MechanicDashboard() {
     notes: "",
   });
 
+  // Keep location tracking as is since it's a side effect polling
   useEffect(() => {
-    console.log("MechanicDashboard Mounted - v2.0 (Tracking Fix Applied)");
-    fetchDashboardData();
-    // Poll for updates every 10 seconds (Dashboard Data + Unread Notifications)
-    const interval = setInterval(() => {
-      fetchDashboardData();
-      // Add fail-safe notification check if listener fails
-      // In a real app, we'd dispatch(fetchNotifications())
-
-      checkShiftDuration();
-    }, 10000);
-    return () => clearInterval(interval);
-  }, [data, shiftReminderShown]); // Add dependencies for accurate state access
-
-  const checkShiftDuration = () => {
-    if (
-      data?.attendance?.clockIn &&
-      !data?.attendance?.clockOut &&
-      !shiftReminderShown
-    ) {
-      const clockInTime = new Date(data.attendance.clockIn).getTime();
-      const now = Date.now();
-      const hoursOnline = (now - clockInTime) / (1000 * 60 * 60);
-
-      const SHIFT_LIMIT_HOURS = 9; // Configurable limit
-
-      if (hoursOnline >= SHIFT_LIMIT_HOURS) {
-        setModalType("shift_reminder");
-        setIsModalOpen(true);
-        setShiftReminderShown(true); // Prevent repeated popups for this session
-      }
-    }
-  };
-
-  const fetchDashboardData = async () => {
-    try {
-      const res = await fetch("/api/mechanic/dashboard");
-      const json = await res.json();
-      if (json.success) {
-        setData(json.data);
-        // Update activeJobForAction if it exists to prevent stale state
-        if (activeJobForAction) {
-          const updatedJob = json.data.activeJobs.find(
-            (job) => job._id === activeJobForAction._id
-          );
-          if (updatedJob) {
-            setActiveJobForAction(updatedJob);
-          }
+    if (!activeJobs || activeJobs.length === 0) return;
+    const updatePosition = () => {
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        for (const job of activeJobs) {
+          axiosInstance.post("/api/mechanic/location/update", {
+            bookingId: job._id,
+            location: { lat: latitude, lng: longitude },
+          }).catch(console.error);
         }
-      } else {
-        toast.error(json.message);
-      }
-    } catch (error) {
-      console.error("Dashboard fetch error", error);
-      toast.error("Failed to load dashboard data");
-    } finally {
-      setLoading(false);
-    }
-  };
+      });
+    };
+    updatePosition();
+    const interval = setInterval(updatePosition, 10000);
+    return () => clearInterval(interval);
+  }, [activeJobs]);
 
   // --- Workflow Handlers ---
-  const handleStatusUpdate = async (bookingId, status) => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/mechanic/status/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId, status }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        toast.success(result.message);
-        fetchDashboardData();
-      } else {
-        toast.error(result.message);
-        if (res.status === 404 || result.message.includes("not found")) {
-          console.warn("Ghost job detected, refreshing...");
-          fetchDashboardData();
-        }
-      }
-    } catch (error) {
-      toast.error("Status update failed");
-    } finally {
-      setLoading(false);
-    }
+  const handleStatusUpdate = (bookingId, status) => {
+    jobActionMutation.mutate({
+      url: "/api/mechanic/status/update",
+      body: { bookingId, status },
+    });
   };
 
-  const handleSubmitEstimate = async () => {
-    try {
-      setLoading(true);
-      const totalCost = estimateItems.reduce(
-        (sum, item) => sum + Number(item.amount),
-        0
-      );
-      const res = await fetch("/api/mechanic/estimate/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bookingId: activeJobForAction._id,
-          items: estimateItems,
-          totalCost,
-        }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        toast.success("Estimate sent!");
-        setEstimateModalOpen(false);
-        fetchDashboardData();
-      } else {
-        toast.error(result.message);
-      }
-    } catch (error) {
-      toast.error("Failed to send estimate");
-    } finally {
-      setLoading(false);
-    }
+  const handleSubmitEstimate = () => {
+    const totalCost = estimateItems.reduce((sum, item) => sum + Number(item.amount), 0);
+    jobActionMutation.mutate({
+      url: "/api/mechanic/estimate/create",
+      body: {
+        bookingId: activeJobForAction._id,
+        items: estimateItems,
+        totalCost,
+      },
+    }, {
+      onSuccess: () => setEstimateModalOpen(false)
+    });
   };
 
-  const handleSubmitBill = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/mechanic/bill/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bookingId: activeJobForAction._id,
-          totalCost: Number(finalBillAmount) || 0,
-        }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        toast.success("Bill finalized!");
-        setBillModalOpen(false); // Legacy
-        setModalType(null); // New generic
+  const handleSubmitBill = () => {
+    jobActionMutation.mutate({
+      url: "/api/mechanic/bill/update",
+      body: {
+        bookingId: activeJobForAction._id,
+        totalCost: Number(finalBillAmount) || 0,
+      },
+    }, {
+      onSuccess: () => {
+        setBillModalOpen(false);
+        setModalType(null);
         setIsModalOpen(false);
-        fetchDashboardData();
-      } else {
-        toast.error(result.message);
       }
-    } catch (error) {
-      toast.error("Failed to update bill");
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   const handleConfirmPayment = async (method) => {
-    try {
-      setLoading(true);
-
-      // Get paymentId - either from booking or fetch from Payment collection
-      let paymentId = activeJobForAction?.paymentInfo?.paymentId;
-
-      if (!paymentId) {
-        // For existing bookings without paymentId, find Payment by bookingId
-        try {
-          const paymentRes = await fetch(
-            `/api/payments/by-booking/${activeJobForAction._id}`
-          );
-          const paymentData = await paymentRes.json();
-
-          if (paymentData.success && paymentData.payment) {
-            paymentId = paymentData.payment._id;
-          }
-        } catch (err) {
-          console.error("Failed to fetch payment record:", err);
+    let paymentId = activeJobForAction?.paymentInfo?.paymentId;
+    if (!paymentId) {
+      try {
+        const paymentRes = await axiosInstance.get(`/api/payments/by-booking/${activeJobForAction._id}`);
+        if (paymentRes.data.success && paymentRes.data.payment) {
+          paymentId = paymentRes.data.payment._id;
         }
+      } catch (err) {
+        console.error("Failed to fetch payment record:", err);
       }
-
-      if (!paymentId) {
-        toast.error("Payment record not found");
-        return;
-      }
-
-      const res = await fetch(`/api/bookings/${activeJobForAction._id}/pay`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          status: "success",
-          paymentId: paymentId,
-        }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        toast.success("Payment confirmed!");
-        setPaymentModalOpen(false);
-        fetchDashboardData();
-      } else {
-        toast.error(result.message);
-      }
-    } catch (error) {
-      console.error("Payment confirmation error:", error);
-      toast.error("Payment confirmation failed");
-    } finally {
-      setLoading(false);
     }
+
+    if (!paymentId) {
+      toast.error("Payment record not found");
+      return;
+    }
+
+    jobActionMutation.mutate({
+      url: `/api/bookings/${activeJobForAction._id}/pay`,
+      method: "PATCH",
+      body: { status: "success", paymentId },
+    }, {
+      onSuccess: () => setPaymentModalOpen(false)
+    });
   };
 
   // Diagnosis Report Handler
-  const handleSaveDiagnosis = async () => {
+  const handleSaveDiagnosis = () => {
     if (!activeJobForAction) return;
-
-    setLoading(true);
-    try {
-      const res = await fetch("/api/mechanic/job-card", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bookingId: activeJobForAction._id,
-          ...jobCardData,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
+    jobActionMutation.mutate({
+      url: "/api/mechanic/job-card",
+      body: { bookingId: activeJobForAction._id, ...jobCardData },
+    }, {
+      onSuccess: () => {
         toast.success("Diagnosis Report Saved 📋");
         setDiagnosisModalOpen(false);
-        // Reset job card data
         setJobCardData({
           vehicleDetails: { odometer: "", fuelLevel: "" },
           checklist: [
@@ -299,19 +210,12 @@ export default function MechanicDashboard() {
           ],
           notes: "",
         });
-        fetchDashboardData();
-      } else {
-        toast.error(data.message);
       }
-    } catch (err) {
-      toast.error("Failed to save diagnosis report");
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   // Add Bill Item Handler
-  const handleAddBillItem = async (e) => {
+  const handleAddBillItem = (e) => {
     e.preventDefault();
     if (!activeJobForAction) return;
 
@@ -319,195 +223,64 @@ export default function MechanicDashboard() {
     const amount = Number(e.target.amount.value);
     const category = e.target.category.value;
 
-    setLoading(true);
-    try {
-      const updatedItems = [
-        ...(activeJobForAction.billItems || []),
-        { description, amount, category },
-      ];
+    const updatedItems = [
+      ...(activeJobForAction.billItems || []),
+      { description, amount, category },
+    ];
+    const newTotal = updatedItems.reduce((sum, item) => sum + item.amount, 0) + (activeJobForAction.estimatedCost || 0);
 
-      const newTotal =
-        updatedItems.reduce((sum, item) => sum + item.amount, 0) +
-        (activeJobForAction.estimatedCost || 0);
-
-      const res = await fetch(`/api/bookings/${activeJobForAction._id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          billItems: updatedItems,
-          actualCost: newTotal,
-        }),
-      });
-
-      if (res.ok) {
+    jobActionMutation.mutate({
+      url: `/api/bookings/${activeJobForAction._id}`,
+      method: "PATCH",
+      body: { billItems: updatedItems, actualCost: newTotal },
+    }, {
+      onSuccess: () => {
         toast.success("Bill item added 💰");
         setBillModalOpen(false);
         e.target.reset();
-        fetchDashboardData();
-      } else {
-        toast.error("Failed to add bill item");
       }
-    } catch (error) {
-      toast.error("Failed to add bill item");
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
-  // Update Checklist Helper
+  const handleAttendance = () => {
+    const action = isOnDuty ? "out" : "in";
+    attendanceMutation.mutate(action, {
+      onSuccess: () => setIsModalOpen(false)
+    });
+  };
+
+  const handleSOS = () => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        sosMutation.mutate({ lat: pos.coords.latitude, lng: pos.coords.longitude }, {
+          onSuccess: () => setIsModalOpen(false)
+        });
+      },
+      () => {
+        toast.error("Could not get location. SOS alert failed.");
+        setIsModalOpen(false);
+      }
+    );
+  };
+
+  const handleAcceptJob = (bookingId) => {
+    jobActionMutation.mutate({
+      url: "/api/mechanic/jobs",
+      body: { bookingId },
+    });
+  };
+
+  // Tracking Feedback State
+  const trackingStatus = {}; // Derived or managed via mutation status if needed
+
+  // location tracking effect is now in the main block
+
+  // Add the missing updateChecklist helper
   const updateChecklist = (index, status) => {
     const newChecklist = [...jobCardData.checklist];
     newChecklist[index].status = status;
     setJobCardData({ ...jobCardData, checklist: newChecklist });
   };
-
-  const handleAttendance = async () => {
-    const action =
-      data?.attendance?.clockIn && !data?.attendance?.clockOut ? "out" : "in";
-    setProcessingAttendance(true);
-    try {
-      const res = await fetch("/api/mechanic/attendance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        toast.success(result.message);
-        // Immediately refresh dashboard data to sync UI
-        await fetchDashboardData();
-      } else {
-        toast.error(result.message);
-      }
-    } catch (err) {
-      toast.error("Failed to update attendance");
-    } finally {
-      setProcessingAttendance(false);
-      setIsModalOpen(false);
-    }
-  };
-
-  const handleSOS = async () => {
-    setSosLoading(true);
-    try {
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          const { latitude, longitude } = pos.coords;
-          const res = await fetch("/api/mechanic/sos", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              location: { lat: latitude, lng: longitude },
-            }),
-          });
-          const result = await res.json();
-          if (result.success) {
-            toast.error("SOS ALERT SENT! HELP IS ON THE WAY!", {
-              autoClose: false,
-              theme: "dark",
-            });
-          }
-          setSosLoading(false);
-          setIsModalOpen(false);
-        },
-        (err) => {
-          toast.error("Could not get location. SOS alert failed.");
-          setSosLoading(false);
-          setIsModalOpen(false);
-        }
-      );
-    } catch (err) {
-      toast.error("Failed to send SOS");
-      setSosLoading(false);
-      setIsModalOpen(false);
-    }
-  };
-
-  const handleAcceptJob = async (bookingId) => {
-    setAcceptingJob(bookingId);
-    try {
-      const res = await fetch("/api/mechanic/jobs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        toast.success("Job accepted! Head to the location.");
-        fetchDashboardData();
-      } else {
-        toast.error(result.message);
-      }
-    } catch (err) {
-      toast.error("Failed to accept job");
-    } finally {
-      setAcceptingJob(null);
-    }
-  };
-
-  // Tracking Feedback State
-  const [trackingStatus, setTrackingStatus] = useState({});
-
-  // Location Tracking Effect (Polling)
-  useEffect(() => {
-    // Only track if there are active jobs
-    if (!activeJobs || activeJobs.length === 0) return;
-
-    const sendLocation = async (lat, lng) => {
-      // Send updates for ALL active jobs
-      for (const job of activeJobs) {
-        try {
-          setTrackingStatus((prev) => ({ ...prev, [job._id]: "Sending..." }));
-
-          await fetch("/api/mechanic/location/update", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              bookingId: job._id,
-              location: { lat, lng },
-            }),
-          });
-          console.log(`📍 Sent location for job ${job._id}`);
-          setTrackingStatus((prev) => ({ ...prev, [job._id]: "Live 🟢" }));
-        } catch (err) {
-          console.error("Location update failed", err);
-          setTrackingStatus((prev) => ({ ...prev, [job._id]: "Error 🔴" }));
-        }
-      }
-    };
-
-    const updatePosition = () => {
-      if (!navigator.geolocation) {
-        setTrackingStatus((prev) => ({
-          ...prev,
-          global: "No Geo ❌",
-        }));
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          sendLocation(pos.coords.latitude, pos.coords.longitude);
-        },
-        (err) => {
-          console.warn("Location check failed:", err.message);
-          setTrackingStatus((prev) => ({
-            ...prev,
-            global: "Loc Error ⚠️",
-          }));
-        },
-        { enableHighAccuracy: true, timeout: 5000 }
-      );
-    };
-
-    // Initial call
-    updatePosition();
-
-    // Poll every 10 seconds
-    const interval = setInterval(updatePosition, 10000);
-
-    return () => clearInterval(interval);
-  }, [activeJobs]);
 
   const triggerModal = (type) => {
     setModalType(type);
@@ -577,13 +350,9 @@ export default function MechanicDashboard() {
           // Force immediate update to backend so User Tracking matches Navigation Origin
           if (activeJobs && activeJobs.length > 0) {
             activeJobs.forEach((job) => {
-              fetch("/api/mechanic/location/update", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  bookingId: job._id,
-                  location: { lat: latitude, lng: longitude },
-                }),
+              axiosInstance.post("/api/mechanic/location/update", {
+                bookingId: job._id,
+                location: { lat: latitude, lng: longitude },
               }).catch((err) =>
                 console.error("Force location update failed", err)
               );
@@ -661,14 +430,14 @@ export default function MechanicDashboard() {
               onClick={() =>
                 triggerModal(isOnDuty ? "attendance_out" : "attendance_in")
               }
-              disabled={processingAttendance}
+              disabled={attendanceMutation.isPending}
               className={`group flex items-center gap-3 px-8 py-5 rounded-[2rem] font-bold text-lg transition-all transform active:scale-95 shadow-2xl ${
                 isOnDuty
                   ? "bg-white text-slate-950 hover:bg-slate-200"
                   : "bg-indigo-500 text-white hover:bg-indigo-400 shadow-indigo-900/40"
               }`}
             >
-              {processingAttendance ? (
+              {attendanceMutation.isPending ? (
                 <Wrench className="w-6 h-6 animate-spin" />
               ) : (
                 <Power className="w-6 h-6" />
@@ -997,19 +766,21 @@ export default function MechanicDashboard() {
                       </p>
                       <button
                         onClick={() => handleAcceptJob(job._id)}
+                      <button
+                        onClick={() => handleAcceptJob(job._id)}
                         disabled={
-                          acceptingJob === job._id ||
+                          jobActionMutation.isPending && jobActionMutation.variables?.body?.bookingId === job._id ||
                           (activeJobs && activeJobs.length > 0)
                         }
                         className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${
-                          acceptingJob === job._id
+                          jobActionMutation.isPending && jobActionMutation.variables?.body?.bookingId === job._id
                             ? "bg-slate-700 text-slate-400"
                             : activeJobs && activeJobs.length > 0
                             ? "bg-slate-800/50 text-slate-600 cursor-not-allowed border border-white/5"
                             : "bg-indigo-500 text-white hover:bg-indigo-400 shadow-lg shadow-indigo-900/20"
                         }`}
                       >
-                        {acceptingJob === job._id ? (
+                        {jobActionMutation.isPending && jobActionMutation.variables?.body?.bookingId === job._id ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
                           "Deploy Now"
@@ -1047,11 +818,11 @@ export default function MechanicDashboard() {
       {/* Floating SOS */}
       <button
         onClick={() => triggerModal("sos")}
-        disabled={sosLoading}
+        disabled={sosMutation.isPending}
         className="fixed bottom-28 sm:bottom-8 right-8 z-[60] w-20 h-20 rounded-[2rem] bg-red-600 text-white shadow-[0_0_50px_-12px_rgba(220,38,38,0.5)] flex items-center justify-center animate-pulse hover:bg-red-500 active:scale-95 transition-all border-4 border-white/10 group overflow-hidden"
       >
         <div className="absolute inset-0 bg-gradient-to-tr from-black/40 to-transparent"></div>
-        {sosLoading ? (
+        {sosMutation.isPending ? (
           <Loader2 className="w-10 h-10 animate-spin relative z-10" />
         ) : (
           <AlertTriangle className="w-10 h-10 relative z-10" />
@@ -1061,7 +832,7 @@ export default function MechanicDashboard() {
       {/* Confirmation Modal */}
       <ConfirmationModal
         isOpen={isModalOpen && modalType !== "final_bill"}
-        isLoading={processingAttendance || sosLoading}
+        isLoading={attendanceMutation.isPending || sosMutation.isPending}
         title={
           modalType === "sos"
             ? "CRITICAL SOS ALERT"
@@ -1090,7 +861,7 @@ export default function MechanicDashboard() {
         type={modalType === "sos" ? "warning" : "info"}
         onConfirm={modalType === "sos" ? handleSOS : handleAttendance}
         onCancel={() =>
-          !processingAttendance && !sosLoading && setIsModalOpen(false)
+          !attendanceMutation.isPending && !sosMutation.isPending && setIsModalOpen(false)
         }
       />
 
@@ -1595,9 +1366,15 @@ export default function MechanicDashboard() {
 
               <button
                 onClick={handleSaveDiagnosis}
-                disabled={loading}
+                disabled={jobActionMutation.isPending}
                 className="w-full py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 active:scale-95 transition-all"
               >
+                {jobActionMutation.isPending ? (
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto" />
+                ) : (
+                  "Finalize Diagnosis"
+                )}
+              </button>
                 {loading ? (
                   <Loader2 className="animate-spin mx-auto w-6 h-6" />
                 ) : (

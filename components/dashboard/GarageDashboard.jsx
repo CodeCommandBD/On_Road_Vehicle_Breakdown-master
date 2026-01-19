@@ -24,111 +24,101 @@ import UserRewardsCard from "@/components/dashboard/UserRewardsCard";
 import { useDispatch } from "react-redux";
 import { updateUser } from "@/store/slices/authSlice";
 import { useTranslations } from "next-intl";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 
 export default function GarageDashboard({ user }) {
   const t = useTranslations("Dashboard");
   const garageT = useTranslations("Garage");
   const bookingT = useTranslations("Bookings");
   const dispatch = useDispatch();
-  const [bookings, setBookings] = useState([]);
-  const [garageProfile, setGarageProfile] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalBookings: 0,
-    monthlyRevenue: 0,
-    rating: 0,
-    activeRequests: 0,
-    completedToday: 0,
-    successRate: 0,
+  const queryClient = useQueryClient();
+
+  // 1. Fetch Garage Profile
+  const { data: garageProfile, isLoading: isProfileLoading } = useQuery({
+    queryKey: ["garageProfile"],
+    queryFn: async () => {
+      const res = await axiosInstance.get("/api/garages/profile");
+      return res.data.garage;
+    },
+    enabled: !!user?._id,
   });
 
-  // Mechanic Status State
-  const [mechanics, setMechanics] = useState([]);
+  // 2. Fetch Team/Mechanics
+  const { data: mechanics = [], isLoading: isTeamLoading } = useQuery({
+    queryKey: ["garageTeam"],
+    queryFn: async () => {
+      const res = await axiosInstance.get("/api/garage/team");
+      return res.data.teamMembers || [];
+    },
+    enabled: !!user?._id,
+  });
 
-  const fetchData = async (showToast = false) => {
-    if (!user) return;
-    try {
-      // Fetch garage profile, bookings, and team in parallel
-      const [garageRes, bookingsRes, teamRes] = await Promise.all([
-        axios.get("/api/garages/profile"),
-        axios.get(`/api/bookings?userId=${user._id}&role=garage`),
-        axios.get("/api/garage/team"),
-      ]);
+  // 3. Fetch Bookings & Calculate Stats
+  const { data: bookingsData, isLoading: isBookingsLoading } = useQuery({
+    queryKey: ["garageBookings", user?._id],
+    queryFn: async () => {
+      const res = await axiosInstance.get(
+        `/api/bookings?userId=${user._id}&role=garage`,
+      );
+      const fetchedBookings = res.data.bookings || [];
 
-      if (teamRes.data.success) {
-        setMechanics(teamRes.data.teamMembers || []);
-      }
+      // Calculate Stats
+      const totalBookings = fetchedBookings.length;
+      const activeRequests = fetchedBookings.filter((b) =>
+        ["pending", "accepted", "in_progress"].includes(b.status),
+      ).length;
 
-      if (garageRes.data.success) {
-        setGarageProfile(garageRes.data.garage);
-        // Points syncing is handled by DashboardHeader to prevent update loops
-      }
+      // Monthly revenue (current month)
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      const monthlyRevenue = fetchedBookings
+        .filter((b) => {
+          const bookingDate = new Date(b.createdAt);
+          return (
+            b.status === "completed" &&
+            bookingDate.getMonth() === currentMonth &&
+            bookingDate.getFullYear() === currentYear
+          );
+        })
+        .reduce((sum, b) => sum + (b.estimatedCost || 0), 0);
 
-      if (bookingsRes.data.success) {
-        const fetchedBookings = bookingsRes.data.bookings;
-        setBookings(fetchedBookings);
+      // Completed today
+      const today = new Date().setHours(0, 0, 0, 0);
+      const completedToday = fetchedBookings.filter((b) => {
+        const completedDate = new Date(b.updatedAt).setHours(0, 0, 0, 0);
+        return b.status === "completed" && completedDate === today;
+      }).length;
 
-        // Calculate Stats
-        const totalBookings = fetchedBookings.length;
-        const activeRequests = fetchedBookings.filter(
-          (b) =>
-            b.status === "pending" ||
-            b.status === "accepted" ||
-            b.status === "in_progress"
-        ).length;
+      // Success rate
+      const completedBookings = fetchedBookings.filter(
+        (b) => b.status === "completed",
+      ).length;
+      const successRate =
+        totalBookings > 0 ? (completedBookings / totalBookings) * 100 : 0;
 
-        // Monthly revenue (current month)
-        const now = new Date();
-        const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
-        const monthlyRevenue = fetchedBookings
-          .filter((b) => {
-            const bookingDate = new Date(b.createdAt);
-            return (
-              b.status === "completed" &&
-              bookingDate.getMonth() === currentMonth &&
-              bookingDate.getFullYear() === currentYear
-            );
-          })
-          .reduce((sum, b) => sum + (b.estimatedCost || 0), 0);
-
-        // Completed today
-        const today = new Date().setHours(0, 0, 0, 0);
-        const completedToday = fetchedBookings.filter((b) => {
-          const completedDate = new Date(b.updatedAt).setHours(0, 0, 0, 0);
-          return b.status === "completed" && completedDate === today;
-        }).length;
-
-        // Success rate
-        const completedBookings = fetchedBookings.filter(
-          (b) => b.status === "completed"
-        ).length;
-        const successRate =
-          totalBookings > 0 ? (completedBookings / totalBookings) * 100 : 0;
-
-        setStats({
+      return {
+        bookings: fetchedBookings,
+        stats: {
           totalBookings,
           monthlyRevenue,
-          rating: garageRes.data.garage?.rating?.average || 0,
           activeRequests,
           completedToday,
           successRate,
-        });
-      }
-      if (showToast) toast.success("Data refreshed");
-    } catch (error) {
-      console.error("Dashboard Error:", error);
-      if (showToast) toast.error("Failed to refresh data");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        },
+      };
+    },
+    enabled: !!user?._id,
+  });
 
-  useEffect(() => {
-    fetchData();
-    // Removed auto-polling to prevent unnecessary page reloads
-    // Data will refresh on manual page navigation or refresh
-  }, [user?._id]);
+  const isLoading = isProfileLoading || isTeamLoading || isBookingsLoading;
+
+  const bookings = bookingsData?.bookings || [];
+  const stats = {
+    ...(bookingsData?.stats || {}),
+    rating: garageProfile?.rating?.average || 0,
+  };
 
   if (isLoading) {
     return (
@@ -271,8 +261,8 @@ export default function GarageDashboard({ user }) {
                       member.user?.availability?.status === "busy"
                         ? "bg-orange-500"
                         : member.user?.availability?.status === "online"
-                        ? "bg-green-500"
-                        : "bg-red-500"
+                          ? "bg-green-500"
+                          : "bg-red-500"
                     }`}
                   />
                 </div>

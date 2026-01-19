@@ -1,12 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { X, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
-import { toast } from "react-toastify";
-import axios from "axios";
+import { useMutation } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 
 export default function PasswordChangeModal({ isOpen, onClose }) {
-  const [isLoading, setIsLoading] = useState(false);
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
@@ -17,6 +14,27 @@ export default function PasswordChangeModal({ isOpen, onClose }) {
     newPassword: "",
     confirmPassword: "",
   });
+
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data) => {
+      const response = await axiosInstance.put("/api/user/password", data);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Password changed successfully!");
+      setFormData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      onClose();
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to change password");
+    },
+  });
+
+  const isLoading = changePasswordMutation.isPending;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -56,30 +74,10 @@ export default function PasswordChangeModal({ isOpen, onClose }) {
       return;
     }
 
-    setIsLoading(true);
-
-    try {
-      const response = await axios.put("/api/user/password", {
-        currentPassword: formData.currentPassword,
-        newPassword: formData.newPassword,
-      });
-
-      if (response.data.success) {
-        toast.success("Password changed successfully!");
-        // Reset form
-        setFormData({
-          currentPassword: "",
-          newPassword: "",
-          confirmPassword: "",
-        });
-        onClose();
-      }
-    } catch (error) {
-      console.error("Password change error:", error);
-      toast.error(error.response?.data?.message || "Failed to change password");
-    } finally {
-      setIsLoading(false);
-    }
+    changePasswordMutation.mutate({
+      currentPassword: formData.currentPassword,
+      newPassword: formData.newPassword,
+    });
   };
 
   if (!isOpen) return null;
