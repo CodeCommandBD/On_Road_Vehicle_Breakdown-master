@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db/connect";
 import Service from "@/lib/db/models/Service";
-import { getOrSet } from "@/lib/cache/helpers";
+import { getCached, setCached } from "@/lib/utils/cache";
 import { rateLimitMiddleware } from "@/lib/utils/rateLimit";
 
 export async function GET(request) {
@@ -20,58 +20,70 @@ export async function GET(request) {
     const category = searchParams.get("category");
 
     // Generate cache key based on query params
-    const cacheKey = `services:list:${
-      category || "all"
-    }:${limit}:${sort}:${isActive}`;
+    const cacheKey = `services:${searchParams.toString()}`;
 
-    // Use cache with 5-minute TTL
-    const result = await getOrSet(
-      cacheKey,
-      async () => {
-        // Build query
-        const query = {};
-        if (isActive !== undefined) {
-          query.isActive = isActive;
-        }
-        if (category) {
-          query.category = category;
-        }
+    // Try to get from cache first
+    const cached = await getCached(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached, {
+        status: 200,
+        headers: {
+          "X-Cache": "HIT",
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        },
+      });
+    }
 
-        // Build sort object
-        let sortObj = {};
-        if (sort === "popular") {
-          sortObj = { isPopular: -1, order: 1 };
-        } else if (sort === "price-asc") {
-          sortObj = { basePrice: 1 };
-        } else if (sort === "price-desc") {
-          sortObj = { basePrice: -1 };
-        } else if (sort === "name") {
-          sortObj = { name: 1 };
-        } else {
-          sortObj = { order: 1, name: 1 };
-        }
+    // Build query
+    const query = {};
+    if (isActive !== undefined) {
+      query.isActive = isActive;
+    }
+    if (category) {
+      query.category = category;
+    }
 
-        // Fetch  services
-        const services = await Service.find(query)
-          .sort(sortObj)
-          .limit(limit)
-          .lean();
+    // Build sort object
+    let sortObj = {};
+    if (sort === "popular") {
+      sortObj = { isPopular: -1, order: 1 };
+    } else if (sort === "price-asc") {
+      sortObj = { basePrice: 1 };
+    } else if (sort === "price-desc") {
+      sortObj = { basePrice: -1 };
+    } else if (sort === "name") {
+      sortObj = { name: 1 };
+    } else {
+      sortObj = { order: 1, name: 1 };
+    }
 
-        // Get total count
-        const total = await Service.countDocuments(query);
+    // Fetch services
+    const services = await Service.find(query)
+      .sort(sortObj)
+      .limit(limit)
+      .lean();
 
-        return {
-          services,
-          total,
-          limit,
-        };
-      },
-      300 // 5 minutes TTL
-    );
+    // Get total count
+    const total = await Service.countDocuments(query);
 
-    return NextResponse.json({
+    const responseData = {
       success: true,
-      data: result,
+      data: {
+        services,
+        total,
+        limit,
+      },
+    };
+
+    // Cache the response for 5 minutes
+    await setCached(cacheKey, responseData, 300);
+
+    return NextResponse.json(responseData, {
+      status: 200,
+      headers: {
+        "X-Cache": "MISS",
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+      },
     });
   } catch (error) {
     console.error("Error fetching services:", error);
@@ -81,7 +93,7 @@ export async function GET(request) {
         message: "Failed to fetch services",
         error: error.message,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -106,7 +118,7 @@ export async function POST(request) {
         message: "Failed to create service",
         error: error.message,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

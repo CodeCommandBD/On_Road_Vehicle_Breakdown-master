@@ -42,9 +42,10 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: "2mb",
     },
-    optimizeCss: true, // Optimize CSS
-    optimizePackageImports: ["lucide-react", "@radix-ui/react-*"], // Tree-shake heavy packages
+    optimizeCss: true,
+    optimizePackageImports: ["lucide-react", "@radix-ui/react-*"],
   },
+  compress: true, // Enable Gzip/Brotli compression
   outputFileTracingRoot: process.cwd(),
 
   // Security Headers
@@ -153,5 +154,5 @@ export default withSentryConfig(
     // https://docs.sentry.io/product/crons/
     // https://vercel.com/docs/cron-jobs
     automaticVercelMonitors: true,
-  }
+  },
 );

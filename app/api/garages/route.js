@@ -3,6 +3,7 @@ import dbConnect from "@/lib/db/connect";
 import Garage from "@/lib/db/models/Garage";
 import Service from "@/lib/db/models/Service";
 import { rateLimitMiddleware } from "@/lib/utils/rateLimit";
+import { getCached, setCached } from "@/lib/utils/cache";
 
 export async function GET(request) {
   // Rate limiting: 100 requests per minute for public data
@@ -15,9 +16,24 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const lat = parseFloat(searchParams.get("lat"));
     const lng = parseFloat(searchParams.get("lng"));
-    const maxDistance = parseInt(searchParams.get("distance") || "10000"); // 10km default
+    const maxDistance = parseInt(searchParams.get("distance") || "10000");
     const limit = parseInt(searchParams.get("limit") || "20");
     const sort = searchParams.get("sort") || "latest";
+
+    // Generate cache key from query params
+    const cacheKey = `garages:${searchParams.toString()}`;
+
+    // Try to get from cache first
+    const cached = await getCached(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached, {
+        status: 200,
+        headers: {
+          "X-Cache": "HIT",
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        },
+      });
+    }
 
     // Build query
     const query = {};
@@ -160,23 +176,25 @@ export async function GET(request) {
         ? await Garage.countDocuments(query)
         : garages.length;
 
-    return NextResponse.json(
-      {
-        success: true,
-        data: {
-          garages,
-          total,
-          limit,
-        },
+    const responseData = {
+      success: true,
+      data: {
+        garages,
+        total,
+        limit,
       },
-      {
-        status: 200,
-        headers: {
-          // Cache for 5 minutes, serve stale for 10 minutes while revalidating
-          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
-        },
-      }
-    );
+    };
+
+    // Cache the response for 5 minutes
+    await setCached(cacheKey, responseData, 300);
+
+    return NextResponse.json(responseData, {
+      status: 200,
+      headers: {
+        "X-Cache": "MISS",
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+      },
+    });
   } catch (error) {
     console.error("Error fetching garages:", error);
     return NextResponse.json(
@@ -185,7 +203,7 @@ export async function GET(request) {
         message: "Failed to fetch garages",
         error: error.message,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
