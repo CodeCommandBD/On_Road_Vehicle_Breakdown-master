@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import { rateLimitMiddleware } from "@/lib/utils/rateLimit";
+import { csrfProtection } from "@/lib/utils/csrf";
 
 // Configure Cloudinary
 cloudinary.config({
@@ -14,6 +15,15 @@ export async function POST(request) {
   const rateLimitResult = rateLimitMiddleware(request, 20, 60 * 60 * 1000);
   if (rateLimitResult) return rateLimitResult;
 
+  // CSRF Protection
+  const csrfError = csrfProtection(request);
+  if (csrfError) {
+    return NextResponse.json(
+      { success: false, message: csrfError.message },
+      { status: csrfError.status },
+    );
+  }
+
   try {
     const formData = await request.formData();
     const file = formData.get("file");
@@ -21,7 +31,7 @@ export async function POST(request) {
     if (!file) {
       return NextResponse.json(
         { success: false, message: "No file uploaded" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -40,7 +50,7 @@ export async function POST(request) {
           (error, result) => {
             if (error) reject(error);
             else resolve(result);
-          }
+          },
         )
         .end(buffer);
     });
@@ -70,13 +80,20 @@ export async function POST(request) {
           apiKeySet: !!process.env.CLOUDINARY_API_KEY,
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function DELETE(request) {
   try {
+    const csrfError = csrfProtection(request);
+    if (csrfError) {
+      return NextResponse.json(
+        { success: false, message: csrfError.message },
+        { status: csrfError.status },
+      );
+    }
     const { public_id } = await request.json();
 
     console.log("DELETE Request - Public ID:", public_id);
@@ -84,7 +101,7 @@ export async function DELETE(request) {
     if (!public_id) {
       return NextResponse.json(
         { success: false, message: "Public ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -121,7 +138,7 @@ export async function DELETE(request) {
     console.error("Delete Error:", error);
     return NextResponse.json(
       { success: false, message: "Delete failed", error: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

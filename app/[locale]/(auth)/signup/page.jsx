@@ -15,9 +15,5 @@ export const metadata = {
 };
 
 export default function SignupPage() {
-  return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center p-4">
-      <SignupForm />
-    </div>
-  );
+  return <SignupForm />;
 }

@@ -50,7 +50,7 @@ export async function POST(request) {
           message:
             "Unauthorized. Please login again or provide a valid API Key.",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -60,7 +60,7 @@ export async function POST(request) {
     if (!latitude || !longitude || !phone) {
       return NextResponse.json(
         { success: false, message: "Location and phone are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -115,7 +115,7 @@ export async function POST(request) {
               success: false,
               message: "No service plans available. Please contact support.",
             },
-            { status: 500 }
+            { status: 500 },
           );
         }
       } catch (autoSubError) {
@@ -125,7 +125,7 @@ export async function POST(request) {
             message:
               "Unable to process request. Please try again or contact support.",
           },
-          { status: 500 }
+          { status: 500 },
         );
       }
     } else {
@@ -171,7 +171,7 @@ export async function POST(request) {
                 success: false,
                 message: "Service configuration error. Please contact support.",
               },
-              { status: 500 }
+              { status: 500 },
             );
           }
         } catch (fixError) {
@@ -180,7 +180,7 @@ export async function POST(request) {
               success: false,
               message: "Service configuration error. Please try again.",
             },
-            { status: 500 }
+            { status: 500 },
           );
         }
       }
@@ -193,7 +193,7 @@ export async function POST(request) {
           success: false,
           message: "Service configuration error. Please try again.",
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -209,7 +209,7 @@ export async function POST(request) {
           message: `You have reached your limit of ${limit} requests. Upgrade for unlimited access!`,
           action: "/pricing",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
     // ----------------------------------
@@ -292,8 +292,8 @@ export async function POST(request) {
         triggerOrganizationWebhook(
           m.organization,
           "sos.created",
-          webhookPayload
-        )
+          webhookPayload,
+        ),
       );
       await Promise.all(orgWebhookPromises);
     } catch (orgWebhookErr) {}
@@ -354,7 +354,7 @@ export async function POST(request) {
             priority === "critical" ? "VIP" : "User"
           }) needs help! Deadline: ${responseTimeLimit}m.`,
           link: `/garage/sos-navigation/${sosAlert._id}`,
-        })
+        }),
       );
 
       // Also notify all admins
@@ -368,7 +368,7 @@ export async function POST(request) {
             address || "GPS Location"
           }`,
           link: `/admin/dashboard`, // Admin sees all SOS in dashboard
-        })
+        }),
       );
 
       await Promise.all([
@@ -390,7 +390,7 @@ export async function POST(request) {
         message: error.message || "Internal server error",
         error: process.env.NODE_ENV === "development" ? error.stack : undefined,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -407,7 +407,7 @@ export async function GET(request) {
     if (!decoded) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -424,7 +424,7 @@ export async function GET(request) {
       if (!garage) {
         return NextResponse.json(
           { success: false, message: "Garage not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -434,7 +434,7 @@ export async function GET(request) {
 
         // Common status like 'pending' (anyone in role can see)
         const generalStatuses = statuses.filter(
-          (s) => s !== "assigned" && s !== "resolved"
+          (s) => s !== "assigned" && s !== "resolved",
         );
         if (generalStatuses.length > 0) {
           orConditions.push({ status: { $in: generalStatuses } });
@@ -467,7 +467,8 @@ export async function GET(request) {
     const alerts = await SOS.find(query)
       .populate("user", "name phone email")
       .populate("assignedGarage", "name phone location")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     return NextResponse.json({
       success: true,
@@ -481,13 +482,21 @@ export async function GET(request) {
         message: error.message || "Internal server error",
         error: process.env.NODE_ENV === "development" ? error.stack : undefined,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function PATCH(request) {
   try {
+    const csrfError = csrfProtection(request);
+    if (csrfError) {
+      return NextResponse.json(
+        { success: false, message: csrfError.message },
+        { status: csrfError.status },
+      );
+    }
+
     await connectDB();
     const token = request.cookies.get("token")?.value;
     const decoded = await verifyToken(token);
@@ -495,7 +504,7 @@ export async function PATCH(request) {
     if (!decoded) {
       return NextResponse.json(
         { success: false, message: "Unauthorized. Please login again." },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -504,7 +513,7 @@ export async function PATCH(request) {
     if (!sosId) {
       return NextResponse.json(
         { success: false, message: "SOS ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -512,7 +521,7 @@ export async function PATCH(request) {
     if (!sos) {
       return NextResponse.json(
         { success: false, message: "SOS alert not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -598,7 +607,7 @@ export async function PATCH(request) {
       if (!garage) {
         return NextResponse.json(
           { success: false, message: "Garage profile not found" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -606,7 +615,7 @@ export async function PATCH(request) {
         if (sos.status !== "pending") {
           return NextResponse.json(
             { success: false, message: "This alert has already been taken" },
-            { status: 400 }
+            { status: 400 },
           );
         }
         sos.assignedGarage = garage._id;
@@ -619,7 +628,7 @@ export async function PATCH(request) {
         ) {
           return NextResponse.json(
             { success: false, message: "You are not assigned to this alert" },
-            { status: 403 }
+            { status: 403 },
           );
         }
         sos.status = "resolved";
@@ -669,7 +678,7 @@ export async function PATCH(request) {
       } else {
         return NextResponse.json(
           { success: false, message: "Forbidden transition for garage role" },
-          { status: 403 }
+          { status: 403 },
         );
       }
     } else {
@@ -678,14 +687,14 @@ export async function PATCH(request) {
         if (sos.user.toString() !== decoded.userId) {
           return NextResponse.json(
             { success: false, message: "Unauthorized to cancel" },
-            { status: 403 }
+            { status: 403 },
           );
         }
         sos.status = "cancelled";
       } else {
         return NextResponse.json(
           { success: false, message: "Unauthorized action" },
-          { status: 403 }
+          { status: 403 },
         );
       }
     }
@@ -723,7 +732,7 @@ export async function PATCH(request) {
           null,
           "sos.updated",
           webhookPayload,
-          sos.assignedGarage
+          sos.assignedGarage,
         );
       }
 
@@ -744,7 +753,7 @@ export async function PATCH(request) {
     console.error("SOS PATCH error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

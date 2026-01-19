@@ -338,6 +338,15 @@ export default function LoginForm() {
                 {t("signup")}
               </Link>
             </p>
+            <div className="mt-4">
+              <Link
+                href="/"
+                className="text-gray-500 hover:text-white transition-colors text-xs font-semibold flex items-center justify-center gap-2"
+              >
+                <Home className="w-3 h-3" />
+                RETURN TO WEBSITE
+              </Link>
+            </div>
           </div>
         </form>
       </Tabs.Root>

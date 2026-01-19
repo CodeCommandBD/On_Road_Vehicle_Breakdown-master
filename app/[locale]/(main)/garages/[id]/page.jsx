@@ -9,7 +9,7 @@ async function getGarage(id) {
     await dbConnect();
     const garage = await Garage.findById(id).lean();
     if (!garage) return null;
-    
+
     // Convert _id and dates to string for serialization
     return JSON.parse(JSON.stringify(garage));
   } catch (error) {
@@ -31,8 +31,8 @@ export async function generateMetadata({ params }) {
 
   const title = `${garage.name} - Expert Mechanic in ${garage.address?.city}`;
   const description = `${garage.name} offers reliable ${garage.services?.[0]?.name || "vehicle repair"} services in ${garage.address?.city}. Rated ${garage.rating?.average || 5}/5. Open ${garage.is24Hours ? "24/7" : "standard hours"}.`;
-  
-  const imageUrl = garage.images?.[0]?.url 
+
+  const imageUrl = garage.images?.[0]?.url
     ? garage.images[0].url
     : "https://on-road-vehicle-breakdown.vercel.app/og-image.jpg"; // Fallback image
 
@@ -52,7 +52,7 @@ export async function generateMetadata({ params }) {
           alt: garage.name,
         },
       ],
-      type: "website", 
+      type: "website",
     },
     twitter: {
       card: "summary_large_image",
@@ -71,5 +71,45 @@ export default async function Page({ params }) {
     notFound();
   }
 
-  return <GarageDetailsClient garage={garage} id={id} />;
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "AutoRepair",
+            name: garage.name,
+            image: garage.images?.[0]?.url,
+            description: garage.description,
+            address: {
+              "@type": "PostalAddress",
+              streetAddress: garage.address?.street,
+              addressLocality: garage.address?.city,
+              addressRegion: garage.address?.district,
+              postalCode: garage.address?.postalCode,
+              addressCountry: "BD",
+            },
+            geo: garage.location?.coordinates
+              ? {
+                  "@type": "GeoCoordinates",
+                  latitude: garage.location.coordinates[1],
+                  longitude: garage.location.coordinates[0],
+                }
+              : undefined,
+            telephone: garage.phone,
+            priceRange: "৳৳",
+            aggregateRating: garage.rating
+              ? {
+                  "@type": "AggregateRating",
+                  ratingValue: garage.rating.average,
+                  reviewCount: garage.rating.count,
+                }
+              : undefined,
+          }),
+        }}
+      />
+      <GarageDetailsClient garage={garage} id={id} />
+    </>
+  );
 }

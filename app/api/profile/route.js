@@ -3,6 +3,7 @@ import connectDB from "@/lib/db/connect";
 import User from "@/lib/db/models/User";
 import Garage from "@/lib/db/models/Garage";
 import { verifyToken } from "@/lib/utils/auth";
+import { csrfProtection } from "@/lib/utils/csrf";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export async function GET(request) {
     if (!decoded) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -24,7 +25,7 @@ export async function GET(request) {
     if (!user) {
       return NextResponse.json(
         { success: false, message: "User not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -107,7 +108,7 @@ export async function GET(request) {
       profileData.mechanicProfile = user.mechanicProfile;
       if (user.garageId) {
         const garage = await Garage.findById(user.garageId).select(
-          "name address phone"
+          "name address phone",
         );
         profileData.assignedGarage = garage;
       }
@@ -116,12 +117,12 @@ export async function GET(request) {
     // Check for Enterprise Role (Member/Admin/Viewer)
     if (user.enterpriseTeam?.parentAccount) {
       const parentUser = await User.findById(
-        user.enterpriseTeam.parentAccount
+        user.enterpriseTeam.parentAccount,
       ).select("enterpriseTeam.members");
 
       if (parentUser) {
         const memberRecord = parentUser.enterpriseTeam.members.find(
-          (m) => m.userId.toString() === user._id.toString()
+          (m) => m.userId.toString() === user._id.toString(),
         );
         if (memberRecord) {
           profileData.enterpriseRole = memberRecord.role; // "admin", "member", or "viewer"
@@ -137,13 +138,20 @@ export async function GET(request) {
     console.error("Profile GET error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function PUT(request) {
   try {
+    const csrfError = csrfProtection(request);
+    if (csrfError) {
+      return NextResponse.json(
+        { success: false, message: csrfError.message },
+        { status: csrfError.status },
+      );
+    }
     await connectDB();
 
     const token = request.cookies.get("token")?.value;
@@ -152,7 +160,7 @@ export async function PUT(request) {
     if (!decoded) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -160,7 +168,7 @@ export async function PUT(request) {
     if (!user) {
       return NextResponse.json(
         { success: false, message: "User not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -236,7 +244,7 @@ export async function PUT(request) {
         await Garage.findOneAndUpdate(
           { owner: user._id },
           { $set: garageUpdate },
-          { new: true, upsert: true }
+          { new: true, upsert: true },
         );
       }
     }
@@ -254,7 +262,7 @@ export async function PUT(request) {
         message: "Internal server error",
         error: error.message,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

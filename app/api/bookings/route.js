@@ -17,7 +17,7 @@ export async function POST(req) {
   if (csrfError) {
     return NextResponse.json(
       { success: false, message: csrfError.message },
-      { status: csrfError.status }
+      { status: csrfError.status },
     );
   }
 
@@ -38,7 +38,7 @@ export async function POST(req) {
       const nearbyGarages = await Garage.findNearby(
         lng,
         lat,
-        BUSINESS.SEARCH_RADIUS_METERS
+        BUSINESS.SEARCH_RADIUS_METERS,
       ); // Use constant instead of hardcoded value
 
       if (nearbyGarages && nearbyGarages.length > 0) {
@@ -60,7 +60,7 @@ export async function POST(req) {
       const decoded = await verifyToken(token);
       if (decoded) {
         const currentUser = await User.findById(decoded.userId).select(
-          "name enterpriseTeam"
+          "name enterpriseTeam",
         );
 
         if (currentUser) {
@@ -119,9 +119,8 @@ export async function POST(req) {
 
     // --- TRIGGER WEBHOOK (booking.created) ---
     try {
-      const { dispatchWebhook } = await import(
-        "@/lib/services/webhook.service"
-      );
+      const { dispatchWebhook } =
+        await import("@/lib/services/webhook.service");
       const webhookPayload = {
         bookingId: booking._id,
         user: body.user,
@@ -149,13 +148,13 @@ export async function POST(req) {
 
     return NextResponse.json(
       { success: true, message: "Booking created successfully", booking },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Booking Creation Error:", error);
     return NextResponse.json(
       { success: false, message: error.message || "Failed to create booking" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -170,7 +169,7 @@ export async function GET(req) {
     if (!userId) {
       return NextResponse.json(
         { success: false, message: "User ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -182,7 +181,7 @@ export async function GET(req) {
       if (!garage) {
         return NextResponse.json(
           { success: false, message: "Garage not found for this user" },
-          { status: 404 }
+          { status: 404 },
         );
       }
       query = { garage: garage._id };
@@ -198,19 +197,20 @@ export async function GET(req) {
       .populate("user", "name email phone")
       .populate("garage", "name address phone")
       .populate("service", "name")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     console.log(`[API] Bookings fetched: ${bookings.length}`);
 
     return NextResponse.json(
       { success: true, count: bookings.length, bookings },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Error fetching bookings:", error);
     return NextResponse.json(
       { success: false, message: "Failed to fetch bookings: " + error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

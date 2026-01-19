@@ -7,6 +7,8 @@ import Garage from "@/lib/db/models/Garage";
 import { verifyToken } from "@/lib/utils/auth";
 import { pusherServer } from "@/lib/pusher";
 
+import { csrfProtection } from "@/lib/utils/csrf";
+
 // Helper to trigger real-time notification
 const notifyUser = async (userId, notification) => {
   try {
@@ -27,7 +29,7 @@ export async function GET(req) {
     if (!token) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -38,14 +40,14 @@ export async function GET(req) {
       console.error("Token verification failed:", verifyError);
       return NextResponse.json(
         { success: false, message: "Invalid or expired token" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     if (!decoded || !decoded.userId) {
       return NextResponse.json(
         { success: false, message: "Invalid or expired token" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -71,7 +73,8 @@ export async function GET(req) {
           $or: sosQueries,
         })
           .sort({ createdAt: -1 })
-          .limit(10);
+          .limit(10)
+          .lean();
 
         relevantSos.forEach((sos) => {
           const isAssignedToMe = sos.status === "assigned";
@@ -100,7 +103,8 @@ export async function GET(req) {
       recipient: decoded.userId,
     })
       .sort({ createdAt: -1 })
-      .limit(20);
+      .limit(20)
+      .lean();
 
     const dbUnreadCount = await Notification.countDocuments({
       recipient: decoded.userId,
@@ -131,7 +135,7 @@ export async function GET(req) {
 
     // Finalize and sort notifications
     finalNotifications = [...finalNotifications, ...dbNotifications].sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
     );
 
     console.log("SENDING NOTIFICATIONS:", {
@@ -150,18 +154,25 @@ export async function GET(req) {
     console.error("Notifications Fetch Error:", error);
     return NextResponse.json(
       { success: false, message: "Server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function PATCH(req) {
   try {
+    const csrfError = csrfProtection(req);
+    if (csrfError) {
+      return NextResponse.json(
+        { success: false, message: csrfError.message },
+        { status: csrfError.status },
+      );
+    }
     const token = req.cookies.get("token")?.value;
     if (!token) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -169,7 +180,7 @@ export async function PATCH(req) {
     if (!decoded || !decoded.userId)
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
 
     await connectDB();
@@ -179,12 +190,12 @@ export async function PATCH(req) {
     if (markAllAsRead) {
       await Notification.updateMany(
         { recipient: decoded.userId, isRead: false },
-        { isRead: true }
+        { isRead: true },
       );
     } else if (id) {
       await Notification.findOneAndUpdate(
         { _id: id, recipient: decoded.userId },
-        { isRead: true }
+        { isRead: true },
       );
     }
 
@@ -196,7 +207,7 @@ export async function PATCH(req) {
     console.error("Notifications Update Error:", error);
     return NextResponse.json(
       { success: false, message: "Server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
