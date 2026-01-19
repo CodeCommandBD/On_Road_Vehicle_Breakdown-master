@@ -11,11 +11,11 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
+import { useMutation } from "@tanstack/react-query";
 
 export default function ContactSalesPage() {
   const t = useTranslations();
-  const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -27,36 +27,36 @@ export default function ContactSalesPage() {
     message: "",
   });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setErrorMessage(""); // Clear previous errors
-
-    try {
-      const response = await axios.post("/api/contact-sales", formData);
-
-      if (response.data.success) {
-        setSubmitted(true);
-        setFormData({
-          name: "",
-          email: "",
-          phone: "",
-          company: "",
-          message: "",
-        });
-      } else {
-        setErrorMessage(response.data.message || "Failed to send message");
-      }
-    } catch (error) {
-      console.error("Failed to submit:", error);
+  const contactMutation = useMutation({
+    mutationFn: async (data) => {
+      const response = await axiosInstance.post("/api/contact-sales", data);
+      return response.data;
+    },
+    onSuccess: () => {
+      setSubmitted(true);
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        company: "",
+        message: "",
+      });
+    },
+    onError: (error) => {
       setErrorMessage(
         error.response?.data?.message ||
-          "Failed to send message. Please try again or contact us directly."
+          "Failed to send message. Please try again or contact us directly.",
       );
-    } finally {
-      setLoading(false);
-    }
+    },
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setErrorMessage("");
+    contactMutation.mutate(formData);
   };
+
+  const loading = contactMutation.isPending;
 
   return (
     <div className="min-h-screen bg-black text-white py-20">

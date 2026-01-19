@@ -9,36 +9,27 @@ import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
 import { toast } from "react-toastify";
 import { SkeletonCard } from "@/components/common/SkeletonLoader";
+import axiosInstance from "@/lib/axios";
+import { useQuery } from "@tanstack/react-query";
 
 export default function TopGarages() {
   const t = useTranslations("Home.topGarages");
-  const [garages, setGarages] = useState([]);
-  const [loading, setLoading] = useState(true);
   const router = useRouterWithLoading();
   const user = useSelector(selectUser);
 
   // Scroll animations
   const headerAnimation = useScrollAnimation({ threshold: 0.2 });
 
-  useEffect(() => {
-    fetchTopGarages();
-  }, []);
-
-  const fetchTopGarages = async () => {
-    try {
-      const response = await fetch(
-        "/api/garages?limit=3&sort=rating&isActive=true&isVerified=true"
+  const { data: garages = [], isLoading: loading } = useQuery({
+    queryKey: ["topGarages"],
+    queryFn: async () => {
+      const response = await axiosInstance.get(
+        "/api/garages?limit=3&sort=rating&isActive=true&isVerified=true",
       );
-      const data = await response.json();
-      if (data.success) {
-        setGarages(data.data.garages || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch garages:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      return response.data.garages || [];
+    },
+    staleTime: 30 * 60 * 1000, // 30 minutes
+  });
 
   const handleBookNow = (e, garageId) => {
     e.preventDefault();

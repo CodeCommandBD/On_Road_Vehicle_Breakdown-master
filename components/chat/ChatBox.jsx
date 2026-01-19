@@ -2,36 +2,54 @@
 import { useState, useEffect, useRef } from "react";
 import { pusherClient } from "@/lib/pusher";
 import { formatDistanceToNow } from "date-fns";
+import axiosInstance from "@/lib/axios";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function ChatBox({ conversationId, recipientId, currentUser }) {
-  const [messages, setMessages] = useState([]);
+  const queryClient = useQueryClient();
   const [newMessage, setNewMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [recipientTyping, setRecipientTyping] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
-  // Fetch initial messages
-  useEffect(() => {
-    if (!conversationId) return;
+  // 1. Fetch History
+  const { data: messages = [], isLoading } = useQuery({
+    queryKey: ["chatMessages", conversationId],
+    queryFn: async () => {
+      const res = await axiosInstance.get(`/api/messages/${conversationId}`);
+      return res.data.messages || [];
+    },
+    enabled: !!conversationId,
+  });
 
-    const fetchMessages = async () => {
-      try {
-        const response = await fetch(`/api/messages/${conversationId}`);
-        const data = await response.json();
-        if (data.success) {
-          setMessages(data.messages || []);
-        }
-      } catch (error) {
-        console.error("Failed to fetch messages:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // 2. Mutations
+  const sendMessageMutation = useMutation({
+    mutationFn: async (text) => {
+      const res = await axiosInstance.post("/api/messages", {
+        recipientId,
+        text,
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      setNewMessage("");
+      setIsTyping(false);
+      queryClient.invalidateQueries({
+        queryKey: ["chatMessages", conversationId],
+      });
+    },
+    onError: () => toast.error("Failed to send message"),
+  });
 
-    fetchMessages();
-  }, [conversationId]);
+  const typingMutation = useMutation({
+    mutationFn: async (isTyping) => {
+      await axiosInstance.post("/api/messages/typing", {
+        conversationId,
+        isTyping,
+      });
+    },
+  });
 
   // Real-time: Subscribe to conversation channel
   useEffect(() => {
@@ -41,12 +59,11 @@ export default function ChatBox({ conversationId, recipientId, currentUser }) {
 
     // Listen for new messages
     channel.bind("new-message", (data) => {
-      setMessages((prev) => {
-        // Avoid duplicates
-        if (prev.some((msg) => msg._id === data.message._id)) {
-          return prev;
-        }
-        return [...prev, data.message];
+      // Manual cache update for real-time smoothness
+      queryClient.setQueryData(["chatMessages", conversationId], (old) => {
+        if (!old) return [data.message];
+        if (old.some((m) => m._id === data.message._id)) return old;
+        return [...old, data.message];
       });
       scrollToBottom();
     });
@@ -81,62 +98,22 @@ export default function ChatBox({ conversationId, recipientId, currentUser }) {
   const handleTyping = () => {
     if (!isTyping) {
       setIsTyping(true);
-      fetch("/api/messages/typing", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          conversationId,
-          isTyping: true,
-        }),
-      });
+      typingMutation.mutate(true);
     }
 
-    // Clear previous timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 
-    // Stop typing after 3 seconds of inactivity
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
-      fetch("/api/messages/typing", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          conversationId,
-          isTyping: false,
-        }),
-      });
+      typingMutation.mutate(false);
     }, 3000);
   };
 
   // Send message
-  const sendMessage = async (e) => {
+  const sendMessage = (e) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
-
-    const messageText = newMessage;
-    setNewMessage("");
-    setIsTyping(false);
-
-    try {
-      const response = await fetch("/api/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          recipientId,
-          text: messageText,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to send message");
-      }
-    } catch (error) {
-      console.error("Send message error:", error);
-      alert("Failed to send message. Please try again.");
-      setNewMessage(messageText); // Restore message
-    }
+    if (!newMessage.trim() || sendMessageMutation.isPending) return;
+    sendMessageMutation.mutate(newMessage);
   };
 
   if (isLoading) {

@@ -17,14 +17,14 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import axiosInstance from "@/lib/axios";
+import { useQuery } from "@tanstack/react-query";
 
 export default function PricingPage() {
   const t = useTranslations("Pricing");
   const router = useRouterWithLoading(); // Regular routing
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const user = useSelector(selectUser);
-  const [plans, setPlans] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [billingCycle, setBillingCycle] = useState("monthly"); // monthly or yearly
   const [planType, setPlanType] = useState("user");
   const [now, setNow] = useState(new Date().getTime());
@@ -39,7 +39,7 @@ export default function PricingPage() {
     const updateBangladeshTime = () => {
       // Get current time in Bangladesh (UTC+6)
       const bdTime = new Date(
-        new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" })
+        new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" }),
       );
       setNow(bdTime.getTime());
     };
@@ -49,30 +49,20 @@ export default function PricingPage() {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    const fetchPlans = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch(
-          `/api/packages?type=${planType}&isActive=true`
-        );
-        const data = await response.json();
-        if (data.success) {
-          // Map Package model fields to match what PricingPage expects
-          const mappedPackages = data.data.packages.map((pkg) => ({
-            ...pkg,
-            features: pkg.benefits || [],
-          }));
-          setPlans(mappedPackages);
-        }
-      } catch (error) {
-        console.error("Failed to fetch plans:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPlans();
-  }, [planType]);
+  const { data: plans = [], isLoading: loading } = useQuery({
+    queryKey: ["packages", planType],
+    queryFn: async () => {
+      const response = await axiosInstance.get(
+        `/api/packages?type=${planType}&isActive=true`,
+      );
+      // Map Package model fields to match what PricingPage expects
+      return (response.data.packages || []).map((pkg) => ({
+        ...pkg,
+        features: pkg.benefits || [],
+      }));
+    },
+    staleTime: 60 * 60 * 1000,
+  });
 
   const handleSelectPlan = (planId, tier) => {
     if (!isAuthenticated) {
@@ -267,7 +257,7 @@ export default function PricingPage() {
               // Calculate H, M, S
               const hours = Math.floor(distance / (1000 * 60 * 60));
               const minutes = Math.floor(
-                (distance % (1000 * 60 * 60)) / (1000 * 60)
+                (distance % (1000 * 60 * 60)) / (1000 * 60),
               );
               const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
@@ -287,8 +277,8 @@ export default function PricingPage() {
                 plan.isFeatured
                   ? "bg-[#1a1a1a] border-2 border-yellow-500/60 shadow-[0_0_40px_rgba(234,179,8,0.25)] scale-105"
                   : isStandard
-                  ? "bg-[#1a1a1a] border-2 border-[#f97316] shadow-[0_0_30px_rgba(249,115,22,0.15)]"
-                  : "bg-[#1a1a1a] border border-[#333] hover:border-[#444]"
+                    ? "bg-[#1a1a1a] border-2 border-[#f97316] shadow-[0_0_30px_rgba(249,115,22,0.15)]"
+                    : "bg-[#1a1a1a] border border-[#333] hover:border-[#444]"
               } ${
                 isExpired
                   ? "opacity-60 saturate-0 pointer-events-none"
@@ -322,7 +312,7 @@ export default function PricingPage() {
               <div className="mb-6 relative">
                 <div
                   className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${getPlanColor(
-                    plan.tier
+                    plan.tier,
                   )} flex items-center justify-center mb-8 text-white shadow-2xl group-hover:scale-110 transition-transform`}
                 >
                   {getPlanIcon(plan.tier)}
@@ -388,10 +378,10 @@ export default function PricingPage() {
                 {isExpired
                   ? t("offerExpired")
                   : isTrial
-                  ? t("startTrial")
-                  : isFree
-                  ? t("currentPlan")
-                  : t("upgradNow")}
+                    ? t("startTrial")
+                    : isFree
+                      ? t("currentPlan")
+                      : t("upgradNow")}
               </button>
             </div>
           );

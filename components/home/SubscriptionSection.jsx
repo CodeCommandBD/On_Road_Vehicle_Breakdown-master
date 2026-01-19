@@ -7,6 +7,8 @@ import { Check, Settings } from "lucide-react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useTranslations } from "next-intl";
+import axiosInstance from "@/lib/axios";
+import { useQuery } from "@tanstack/react-query";
 
 // Register GSAP plugin
 if (typeof window !== "undefined") {
@@ -15,8 +17,6 @@ if (typeof window !== "undefined") {
 
 export default function SubscriptionSection() {
   const t = useTranslations("Home.premium");
-  const [packageData, setPackageData] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState("");
   const [isExpired, setIsExpired] = useState(false);
 
@@ -25,106 +25,19 @@ export default function SubscriptionSection() {
   const leftContentRef = useRef(null);
   const rightContentRef = useRef(null);
 
-  useEffect(() => {
-    fetchPremiumPackage();
-  }, []);
-
-  // Timer Logic
-  useEffect(() => {
-    if (!packageData?.promoEndsAt) return;
-
-    const interval = setInterval(() => {
-      // Get current time in Bangladesh (UTC+6)
-      const bdTime = new Date(
-        new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" })
-      );
-      const now = bdTime.getTime();
-
-      const promoDate = new Date(packageData.promoEndsAt).getTime();
-      const distance = promoDate - now;
-
-      if (distance <= 0) {
-        clearInterval(interval);
-        setIsExpired(true);
-        setTimeLeft("00:00:00");
-      } else {
-        setIsExpired(false);
-        const hours = Math.floor(distance / (1000 * 60 * 60));
-        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-        // Format: HH:MM:SS
-        const formatted = [
-          hours.toString().padStart(2, "0"),
-          minutes.toString().padStart(2, "0"),
-          seconds.toString().padStart(2, "0"),
-        ].join(":");
-
-        setTimeLeft(formatted);
+  const { data: packageData, isLoading: loading } = useQuery({
+    queryKey: ["premiumPackage"],
+    queryFn: async () => {
+      try {
+        const response = await axiosInstance.get("/api/packages?tier=premium");
+        if (response.data.packages?.length > 0) {
+          return response.data.packages[0];
+        }
+      } catch (error) {
+        console.error("Failed to fetch package:", error);
       }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [packageData]);
-
-  // GSAP ScrollTrigger animations
-  useEffect(() => {
-    if (loading) return;
-
-    const ctx = gsap.context(() => {
-      // Left content slides from left - smooth and immediate
-      gsap.from(leftContentRef.current, {
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top 90%", // Starts as soon as section appears
-          toggleActions: "play none none reverse",
-        },
-        x: -120,
-        duration: 1.2,
-        ease: "power2.out", // Smoother easing
-      });
-
-      // Right content (car) slides from right - smooth and immediate
-      gsap.from(rightContentRef.current, {
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top 90%", // Starts as soon as section appears
-          toggleActions: "play none none reverse",
-        },
-        x: 120,
-        duration: 1.2,
-        ease: "power2.out", // Smoother easing
-      });
-    }, sectionRef);
-
-    return () => ctx.revert();
-  }, [loading]);
-
-  const fetchPremiumPackage = async () => {
-    try {
-      const response = await fetch("/api/packages?tier=premium");
-      const data = await response.json();
-      if (data.success && data.data.packages?.length > 0) {
-        setPackageData(data.data.packages[0]);
-      } else {
-        // Fallback data
-        setPackageData({
-          name: "Premium Membership",
-          discount: 34,
-          price: { monthly: 499 },
-          benefits: [
-            "Latest technology",
-            "24/7 service & quick car",
-            "Always repairable vehicles",
-            "Emergency priority support",
-            "Technician 24/7 day & car",
-          ],
-        });
-      }
-    } catch (error) {
-      console.error("Failed to fetch package:", error);
-      // Use fallback data
-      setPackageData({
+      // Fallback data
+      return {
         name: "Premium Membership",
         discount: 34,
         price: { monthly: 499 },
@@ -135,11 +48,10 @@ export default function SubscriptionSection() {
           "Emergency priority support",
           "Technician 24/7 day & car",
         ],
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+      };
+    },
+    staleTime: 60 * 60 * 1000, // 1 hour
+  });
 
   if (loading) {
     return (

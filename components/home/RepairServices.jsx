@@ -5,36 +5,25 @@ import Image from "next/image";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import ServiceCard from "./ServiceCard";
 import { Wrench } from "lucide-react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 
 export default function RepairServices() {
   const t = useTranslations("Home.services");
   const [activeTab, setActiveTab] = useState("cars");
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation();
-  const [services, setServices] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchServices = async () => {
-      try {
-        // Fetch specific car services or just all active ones
-        // Since we seeded general ones, we'll just fetch all active, filtered by limit
-        const response = await axios.get(
-          "/api/services?isActive=true&limit=12&sort=order"
-        );
-        if (response.data.success) {
-          setServices(response.data.data.services);
-        }
-      } catch (error) {
-        console.error("Failed to fetch homepage services:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchServices();
-  }, []);
+  const { data: services = [], isLoading: loading } = useQuery({
+    queryKey: ["homepageServices"],
+    queryFn: async () => {
+      const response = await axiosInstance.get(
+        "/api/services?isActive=true&limit=12&sort=order",
+      );
+      return response.data.services || [];
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
 
   // For now, mapping same services to both or just cars as requested.
   // User said "only for cars". We can leave bikes empty or static for now,

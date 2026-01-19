@@ -57,8 +57,8 @@ export default function GaragesPage() {
   const router = useRouterWithLoading(); // Regular routing
   const pathname = usePathname();
 
-  const [garages, setGarages] = useState([]);
-  const [total, setTotal] = useState(0);
+  // const [garages, setGarages] = useState([]); // Removed redundant state
+  // const [total, setTotal] = useState(0); // Removed redundant state
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Advanced Filter states
@@ -126,19 +126,14 @@ export default function GaragesPage() {
     return response.data;
   };
 
-  const { data: garagesData, isLoading: garagesLoading } = useQuery({
+  const { data: garagesData, isLoading: loading } = useQuery({
     queryKey: ["garages", filters, coordinates],
     queryFn: fetchGaragesQuery,
+    keepPreviousData: true,
   });
 
-  useEffect(() => {
-    if (garagesData?.success) {
-      setGarages(garagesData.data.garages);
-      setTotal(garagesData.data.total);
-    }
-  }, [garagesData]);
-
-  const loading = garagesLoading;
+  const garages = garagesData?.data?.garages || [];
+  const total = garagesData?.data?.total || 0;
 
   const handleNearMe = () => {
     if (!navigator.geolocation) {
@@ -168,7 +163,9 @@ export default function GaragesPage() {
     }
 
     try {
-      const response = await axios.post("/api/user/favorites", { garageId });
+      const response = await axiosInstance.post("/api/user/favorites", {
+        garageId,
+      });
       if (response.data.success) {
         const garageObj = garages.find((g) => g._id === garageId);
         dispatch(toggleFavoriteSuccess(garageObj || garageId));
