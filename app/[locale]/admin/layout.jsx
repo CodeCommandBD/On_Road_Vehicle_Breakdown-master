@@ -9,7 +9,7 @@ import {
   selectUser,
   updateUser,
 } from "@/store/slices/authSlice";
-import Sidebar from "@/components/admin/Sidebar";
+import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { Loader2 } from "lucide-react";
 import axiosInstance from "@/lib/axios";

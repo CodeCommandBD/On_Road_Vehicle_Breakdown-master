@@ -1,4 +1,3 @@
-```javascript
 "use client";
 
 import { useState, useEffect } from "react";
@@ -48,7 +47,7 @@ export default function GaragesPage() {
         link.setAttribute("href", url);
         link.setAttribute(
           "download",
-          `garage-list-${new Date().toISOString().split("T")[0]}.csv`
+          `garage-list-${new Date().toISOString().split("T")[0]}.csv`,
         );
         link.style.visibility = "hidden";
         document.body.appendChild(link);
