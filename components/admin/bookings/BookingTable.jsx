@@ -31,7 +31,7 @@ export default function BookingTable() {
   const { data: bookingsData, isLoading } = useQuery({
     queryKey: ["adminBookings"],
     queryFn: async () => {
-      const response = await axiosInstance.get("/api/admin/bookings");
+      const response = await axiosInstance.get("/admin/bookings");
       return response.data.bookings || [];
     },
   });
@@ -43,11 +43,11 @@ export default function BookingTable() {
     mutationFn: async (payload) => {
       if (payload.type === "delete") {
         const resp = await axiosInstance.delete(
-          `/api/admin/bookings?bookingId=${payload.bookingId}`,
+          `/admin/bookings?bookingId=${payload.bookingId}`,
         );
         return resp.data;
       }
-      const response = await axiosInstance.put("/api/admin/bookings", payload);
+      const response = await axiosInstance.put("/admin/bookings", payload);
       return response.data;
     },
     onSuccess: (data, variables) => {

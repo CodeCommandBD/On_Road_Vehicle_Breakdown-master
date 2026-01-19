@@ -1,141 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import {
   MapPin,
   Navigation,
   Phone,
   MessageSquare,
-  Play,
-  CheckCircle,
-  AlertTriangle,
-  Plus,
-  CreditCard,
   Loader2,
   ArrowLeft,
-  ClipboardList,
   User,
 } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "@/lib/axios";
-import { toast } from "react-toastify";
 import Link from "next/link";
-import ReviewForm from "@/components/dashboard/ReviewForm";
-import ConfirmationModal from "@/components/common/ConfirmationModal";
 
 export default function MechanicJobDetails() {
-  const queryClient = useQueryClient();
   const { id } = useParams();
-  const router = useRouterWithLoading(); // Regular routing
-  const [showBillModal, setShowBillModal] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [showJobCardModal, setShowJobCardModal] = useState(false);
 
-  // Job Card State
-  const [jobCardData, setJobCardData] = useState({
-    vehicleDetails: { odometer: "", fuelLevel: "" },
-    checklist: [
-      { category: "Engine", item: "Engine Oil Level", status: "ok" },
-      { category: "Engine", item: "Coolant Level", status: "ok" },
-      { category: "Brakes", item: "Brake Fluid", status: "ok" },
-      { category: "Tires", item: "Tire Pressure", status: "ok" },
-    ],
-    notes: "",
-  });
-
-  // States for Bill Addition
-  const [newItem, setNewItem] = useState({
-    description: "",
-    amount: "",
-    category: "part",
-  });
-
-  // States for Payment
-  const [collectionAmount, setCollectionAmount] = useState("");
-
+  // 1. Fetch Booking Details
+  const { data: booking, isLoading: loading } = useQuery({
+    queryKey: ["mechanicBooking", id],
+    queryFn: async () => {
       const res = await axiosInstance.get(`/bookings/${id}`);
       return res.data.booking;
     },
     enabled: !!id,
   });
-
-  const updateMutation = useMutation({
-    mutationFn: async ({ url, method = "PATCH", body }) => {
-      const res = await axiosInstance({ url, method, data: body });
-      return res.data;
-    },
-    onSuccess: (data, variables) => {
-      if (variables.successMessage) toast.success(variables.successMessage);
-      queryClient.invalidateQueries({ queryKey: ["mechanicBooking", id] });
-      if (variables.closeModal) variables.closeModal();
-    },
-    onError: (error) => {
-      toast.error(error.response?.data?.message || "Action failed");
-    },
-  });
-
-  const handleUpdateStatus = (newStatus) => {
-    updateMutation.mutate({
-      url: `/bookings/${id}`,
-      body: { status: newStatus },
-      successMessage: `Status updated to ${newStatus}`,
-    });
-  };
-
-  const handleAddBillItem = (e) => {
-    e.preventDefault();
-    const updatedItems = [
-      ...(booking.billItems || []),
-      { ...newItem, amount: Number(newItem.amount) },
-    ];
-    const newTotal =
-      updatedItems.reduce((sum, item) => sum + item.amount, 0) +
-      (booking.estimatedCost || 0);
-
-    updateMutation.mutate({
-      url: `/bookings/${id}`,
-      body: { billItems: updatedItems, actualCost: newTotal },
-      successMessage: "Bill item added",
-      closeModal: () => {
-        setShowBillModal(false);
-        setNewItem({ description: "", amount: "", category: "part" });
-      },
-    });
-  };
-
-  const handleCollectPayment = () => {
-    updateMutation.mutate({
-      url: `/bookings/${id}/pay`,
-      method: "POST",
-      body: {
-        amount: booking.actualCost || booking.estimatedCost,
-        paymentMethod: "cash",
-        transactionId: `CASH-${Date.now()}`,
-      },
-      successMessage: "Payment Recorded! 💰",
-      closeModal: () => setShowPaymentModal(false),
-    });
-  };
-
-  const handleSaveJobCard = () => {
-    updateMutation.mutate({
-      url: "/mechanic/job-card",
-      method: "POST",
-      body: { bookingId: id, ...jobCardData },
-      successMessage: "Diagnosis Report Saved 📋",
-      closeModal: () => setShowJobCardModal(false),
-    });
-  };
-
-  const updating = updateMutation.isPending;
-
-  const updateChecklist = (index, status) => {
-    const newChecklist = [...jobCardData.checklist];
-    newChecklist[index].status = status;
-    setJobCardData({ ...jobCardData, checklist: newChecklist });
-  };
 
   if (loading)
     return (
@@ -148,8 +38,6 @@ export default function MechanicJobDetails() {
     );
   if (!booking)
     return <div className="text-center py-20">Booking not found</div>;
-
-  const totalBill = booking.actualCost || booking.estimatedCost || 0;
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 pb-20">

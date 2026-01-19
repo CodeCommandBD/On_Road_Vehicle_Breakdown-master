@@ -44,7 +44,7 @@ export default function ChatBox({ conversationId, recipientId, currentUser }) {
 
   const typingMutation = useMutation({
     mutationFn: async (isTyping) => {
-      await axiosInstance.post("/api/messages/typing", {
+      await axiosInstance.post("/messages/typing", {
         conversationId,
         isTyping,
       });

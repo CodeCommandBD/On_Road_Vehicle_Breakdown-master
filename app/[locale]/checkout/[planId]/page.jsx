@@ -40,7 +40,7 @@ export default function CheckoutPage() {
   const { data: plan = null, isLoading: loading } = useQuery({
     queryKey: ["packagePlan", planId],
     queryFn: async () => {
-      const res = await axiosInstance.get(`/api/packages/${planId}`);
+      const res = await axiosInstance.get(`/packages/${planId}`);
       return res.data.data.plan;
     },
     enabled: !!planId && isAuthenticated,
@@ -52,7 +52,7 @@ export default function CheckoutPage() {
 
   const checkoutMutation = useMutation({
     mutationFn: async (checkoutData) => {
-      const res = await axiosInstance.post("/api/payments/init", checkoutData);
+      const res = await axiosInstance.post("/payments/init", checkoutData);
       return res.data;
     },
     onSuccess: (data) => {

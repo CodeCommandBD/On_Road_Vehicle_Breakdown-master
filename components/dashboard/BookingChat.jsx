@@ -10,6 +10,7 @@ import {
   CheckCheck,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/lib/axios";
 
@@ -28,7 +29,7 @@ export default function BookingChat({
   const { data: conversationId, isLoading: isInitLoading } = useQuery({
     queryKey: ["conversation", bookingId, recipientId],
     queryFn: async () => {
-      const res = await axiosInstance.post("/api/messages", {
+      const res = await axiosInstance.post("/messages", {
         recipientId,
         text: "---CHAT_INIT---",
         bookingId,
@@ -62,7 +63,7 @@ export default function BookingChat({
 
   const sendMutation = useMutation({
     mutationFn: async (text) => {
-      const res = await axiosInstance.post("/api/messages", {
+      const res = await axiosInstance.post("/messages", {
         recipientId,
         text,
         bookingId,

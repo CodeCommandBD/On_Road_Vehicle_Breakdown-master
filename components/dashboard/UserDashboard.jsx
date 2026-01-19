@@ -73,7 +73,7 @@ export default function UserDashboard({ user }) {
     queryKey: ["userDashboardData", user?._id],
     queryFn: async () => {
       const response = await axiosInstance.get(
-        `/api/bookings?userId=${user._id}&role=user`,
+        `/bookings?userId=${user._id}&role=user`,
       );
       const fetchedBookings = response.data.bookings || [];
 
@@ -103,7 +103,7 @@ export default function UserDashboard({ user }) {
   const { data: pointsData } = useQuery({
     queryKey: ["userPoints", user?._id],
     queryFn: async () => {
-      const response = await axiosInstance.get("/api/user/points");
+      const response = await axiosInstance.get("/user/points");
       return response.data.rewardPoints;
     },
     enabled: !!user?._id,
@@ -113,9 +113,7 @@ export default function UserDashboard({ user }) {
   const { data: activeSOS } = useQuery({
     queryKey: ["activeSOS"],
     queryFn: async () => {
-      const response = await axiosInstance.get(
-        "/api/sos?status=pending,assigned",
-      );
+      const response = await axiosInstance.get("/sos?status=pending,assigned");
       return response.data.data?.[0] || null;
     },
     refetchInterval: 10000, // Sync emergency status every 10s
@@ -140,7 +138,7 @@ export default function UserDashboard({ user }) {
   // Mutations
   const removeFavoriteMutation = useMutation({
     mutationFn: async (garageId) => {
-      await axiosInstance.post("/api/user/favorites", { garageId });
+      await axiosInstance.post("/user/favorites", { garageId });
       return garageId;
     },
     onSuccess: (garageId) => {
@@ -152,7 +150,7 @@ export default function UserDashboard({ user }) {
 
   const cancelSOSMutation = useMutation({
     mutationFn: async (sosId) => {
-      const res = await axiosInstance.patch("/api/sos", {
+      const res = await axiosInstance.patch("/sos", {
         sosId,
         status: "cancelled",
       });

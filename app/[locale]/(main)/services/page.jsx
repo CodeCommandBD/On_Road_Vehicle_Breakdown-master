@@ -32,7 +32,7 @@ export default function ServicesPage() {
   const { data: services = [], isLoading } = useQuery({
     queryKey: ["allServices"],
     queryFn: async () => {
-      const res = await axiosInstance.get("/api/services?isActive=true");
+      const res = await axiosInstance.get("/services?isActive=true");
       return res.data.services || [];
     },
     staleTime: 5 * 60 * 1000,

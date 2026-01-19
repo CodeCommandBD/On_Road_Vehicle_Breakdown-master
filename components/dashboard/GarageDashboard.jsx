@@ -17,7 +17,7 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import Link from "next/link";
-import axios from "axios";
+
 import { toast } from "react-toastify";
 import LeaderboardWidget from "@/components/dashboard/LeaderboardWidget";
 import UserRewardsCard from "@/components/dashboard/UserRewardsCard";
@@ -38,7 +38,7 @@ export default function GarageDashboard({ user }) {
   const { data: garageProfile, isLoading: isProfileLoading } = useQuery({
     queryKey: ["garageProfile"],
     queryFn: async () => {
-      const res = await axiosInstance.get("/api/garages/profile");
+      const res = await axiosInstance.get("/garages/profile");
       return res.data.garage;
     },
     enabled: !!user?._id,
@@ -59,7 +59,7 @@ export default function GarageDashboard({ user }) {
     queryKey: ["garageBookings", user?._id],
     queryFn: async () => {
       const res = await axiosInstance.get(
-        `/api/bookings?userId=${user._id}&role=garage`,
+        `/bookings?userId=${user._id}&role=garage`,
       );
       const fetchedBookings = res.data.bookings || [];
 

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { useRouter, Link } from "@/i18n/routing";
+import { Link } from "@/i18n/routing";
 import { usePathname } from "@/i18n/routing";
 import {
   selectIsAuthenticated,
@@ -15,14 +15,10 @@ import axiosInstance from "@/lib/axios";
 import {
   Home,
   MessageSquare,
-  User,
-  MapPin,
-  LogOut,
-  Menu,
-  X,
   Bell,
   Settings,
   Loader2,
+  MapPin,
 } from "lucide-react";
 import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import {
@@ -35,12 +31,13 @@ export default function MechanicLayout({ children }) {
   const dispatch = useDispatch();
   const router = useRouterWithLoading(true); // i18n routing
   const unreadCount = useSelector(selectUnreadNotificationsCount);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNotifyOpen, setIsNotifyOpen] = useState(false);
   const notifyRef = useRef(null);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const isLoading = useSelector(selectAuthLoading);
   const user = useSelector(selectUser);
+
+  const isActive = (path) => pathname === path;
 
   // Sync profile data and notifications using TanStack Query
   const { data: profileData } = useQuery({

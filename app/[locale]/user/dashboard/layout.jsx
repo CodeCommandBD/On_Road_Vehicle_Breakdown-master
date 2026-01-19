@@ -12,7 +12,7 @@ import {
 import Sidebar from "@/components/layout/Sidebar";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { Wrench, Loader2 } from "lucide-react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 
 export default function UserDashboardLayout({ children }) {
   const router = useRouterWithLoading(true); // i18n routing
