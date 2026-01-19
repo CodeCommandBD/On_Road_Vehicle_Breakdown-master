@@ -11,7 +11,7 @@ export default function UsersPage() {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const res = await axiosInstance.get("/api/admin/users");
+      const res = await axiosInstance.get("/admin/users");
       const data = res.data;
 
       if (data.success) {

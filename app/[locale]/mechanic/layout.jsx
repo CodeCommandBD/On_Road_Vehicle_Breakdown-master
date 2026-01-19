@@ -47,7 +47,7 @@ export default function MechanicLayout({ children }) {
   const { data: profileData } = useQuery({
     queryKey: ["mechanicProfile"],
     queryFn: async () => {
-      const res = await axiosInstance.get("/api/profile");
+      const res = await axiosInstance.get("/profile");
       if (res.data.success) {
         dispatch(updateUser(res.data.user));
       }
@@ -59,7 +59,7 @@ export default function MechanicLayout({ children }) {
   const { data: notificationData } = useQuery({
     queryKey: ["mechanicNotifications"],
     queryFn: async () => {
-      const res = await axiosInstance.get("/api/notifications");
+      const res = await axiosInstance.get("/notifications");
       if (res.data.success) {
         dispatch(setUnreadNotificationsCount(res.data.unreadCount));
       }
@@ -84,7 +84,7 @@ export default function MechanicLayout({ children }) {
 
   const markNotifyRead = async () => {
     try {
-      await axiosInstance.patch("/api/notifications", { markAllAsRead: true });
+      await axiosInstance.patch("/notifications", { markAllAsRead: true });
       dispatch(setUnreadNotificationsCount(0));
     } catch (err) {
       console.error("Failed to mark notifications read:", err);

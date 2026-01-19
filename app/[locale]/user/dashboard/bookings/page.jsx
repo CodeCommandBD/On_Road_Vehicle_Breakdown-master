@@ -29,7 +29,7 @@ export default function MyBookingsPage() {
     queryKey: ["userBookings", user?._id],
     queryFn: async () => {
       const res = await axiosInstance.get(
-        `/api/bookings?userId=${user._id}&role=user`,
+        `/bookings?userId=${user._id}&role=user`,
       );
       return res.data.bookings || [];
     },
@@ -39,7 +39,7 @@ export default function MyBookingsPage() {
 
   const statusMutation = useMutation({
     mutationFn: async ({ bookingId, newStatus }) => {
-      const res = await axiosInstance.patch(`/api/bookings/${bookingId}`, {
+      const res = await axiosInstance.patch(`/bookings/${bookingId}`, {
         status: newStatus,
       });
       return res.data;
@@ -65,28 +65,6 @@ export default function MyBookingsPage() {
       b.bookingNumber?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesStatus && matchesSearch;
   });
-
-  const handleStatusUpdate = async (bookingId, newStatus) => {
-    try {
-      const res = await fetch(`/api/bookings/${bookingId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success(`Booking ${newStatus} successfully`);
-        fetchBookings(); // Refresh list
-      } else {
-        toast.error(data.message || "Failed to update status");
-      }
-    } catch (error) {
-      console.error("Update status error:", error);
-      toast.error("An error occurred");
-    }
-  };
 
   return (
     <div className="space-y-6 pb-20">

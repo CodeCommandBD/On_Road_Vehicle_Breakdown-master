@@ -27,7 +27,9 @@ export default function SubscriptionCard() {
   const { data: subscription = null, isLoading: loading } = useQuery({
     queryKey: ["userSubscription"],
     queryFn: async () => {
-      const response = await axiosInstance.get("/api/subscriptions");
+      const res = await axiosInstance.post("/subscriptions/checkout", {
+        planId,
+      });
       return response.data.data.current || null;
     },
     staleTime: 5 * 60 * 1000,

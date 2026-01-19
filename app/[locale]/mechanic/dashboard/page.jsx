@@ -33,7 +33,7 @@ export default function MechanicDashboard() {
   const { data: dashboardData, isLoading: loading } = useQuery({
     queryKey: ["mechanicDashboard"],
     queryFn: async () => {
-      const res = await axiosInstance.get("/api/mechanic/dashboard");
+      const res = await axiosInstance.get("/mechanic/dashboard");
       return res.data.data;
     },
     refetchInterval: 10000, // Poll every 10s
@@ -51,7 +51,7 @@ export default function MechanicDashboard() {
   // Mutations
   const attendanceMutation = useMutation({
     mutationFn: async (action) => {
-      const res = await axiosInstance.post("/api/mechanic/attendance", {
+      const res = await axiosInstance.post("/mechanic/attendance", {
         action,
       });
       return res.data;
@@ -65,7 +65,7 @@ export default function MechanicDashboard() {
 
   const sosMutation = useMutation({
     mutationFn: async (location) => {
-      const res = await axiosInstance.post("/api/mechanic/sos", { location });
+      const res = await axiosInstance.post("/mechanic/sos", { location });
       return res.data;
     },
     onSuccess: () => {
@@ -123,7 +123,7 @@ export default function MechanicDashboard() {
         const { latitude, longitude } = pos.coords;
         for (const job of activeJobs) {
           axiosInstance
-            .post("/api/mechanic/location/update", {
+            .post("/mechanic/location/update", {
               bookingId: job._id,
               location: { lat: latitude, lng: longitude },
             })
@@ -139,7 +139,7 @@ export default function MechanicDashboard() {
   // --- Workflow Handlers ---
   const handleStatusUpdate = (bookingId, status) => {
     jobActionMutation.mutate({
-      url: "/api/mechanic/status/update",
+      url: "/mechanic/status/update",
       body: { bookingId, status },
     });
   };
@@ -151,7 +151,7 @@ export default function MechanicDashboard() {
     );
     jobActionMutation.mutate(
       {
-        url: "/api/mechanic/estimate/create",
+        url: "/mechanic/estimate/create",
         body: {
           bookingId: activeJobForAction._id,
           items: estimateItems,
@@ -167,7 +167,7 @@ export default function MechanicDashboard() {
   const handleSubmitBill = () => {
     jobActionMutation.mutate(
       {
-        url: "/api/mechanic/bill/update",
+        url: "/mechanic/bill/update",
         body: {
           bookingId: activeJobForAction._id,
           totalCost: Number(finalBillAmount) || 0,
@@ -188,7 +188,7 @@ export default function MechanicDashboard() {
     if (!paymentId) {
       try {
         const paymentRes = await axiosInstance.get(
-          `/api/payments/by-booking/${activeJobForAction._id}`,
+          `/payments/by-booking/${activeJobForAction._id}`,
         );
         if (paymentRes.data.success && paymentRes.data.payment) {
           paymentId = paymentRes.data.payment._id;
@@ -205,7 +205,7 @@ export default function MechanicDashboard() {
 
     jobActionMutation.mutate(
       {
-        url: `/api/bookings/${activeJobForAction._id}/pay`,
+        url: `/bookings/${activeJobForAction._id}/pay`,
         method: "PATCH",
         body: { status: "success", paymentId },
       },
@@ -220,7 +220,7 @@ export default function MechanicDashboard() {
     if (!activeJobForAction) return;
     jobActionMutation.mutate(
       {
-        url: "/api/mechanic/job-card",
+        url: "/mechanic/job-card",
         body: { bookingId: activeJobForAction._id, ...jobCardData },
       },
       {
@@ -261,7 +261,7 @@ export default function MechanicDashboard() {
 
     jobActionMutation.mutate(
       {
-        url: `/api/bookings/${activeJobForAction._id}`,
+        url: `/bookings/${activeJobForAction._id}`,
         method: "PATCH",
         body: { billItems: updatedItems, actualCost: newTotal },
       },
@@ -301,7 +301,7 @@ export default function MechanicDashboard() {
 
   const handleAcceptJob = (bookingId) => {
     jobActionMutation.mutate({
-      url: "/api/mechanic/jobs",
+      url: "/mechanic/jobs",
       body: { bookingId },
     });
   };
@@ -387,7 +387,7 @@ export default function MechanicDashboard() {
           if (activeJobs && activeJobs.length > 0) {
             activeJobs.forEach((job) => {
               axiosInstance
-                .post("/api/mechanic/location/update", {
+                .post("/mechanic/location/update", {
                   bookingId: job._id,
                   location: { lat: latitude, lng: longitude },
                 })

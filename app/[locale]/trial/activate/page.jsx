@@ -12,6 +12,7 @@ import {
   CreditCard,
   ShieldCheck,
 } from "lucide-react";
+import axiosInstance from "@/lib/axios";
 
 export default function TrialActivatePage() {
   const router = useRouterWithLoading(); // Regular routing
@@ -24,11 +25,8 @@ export default function TrialActivatePage() {
     setError("");
 
     try {
-      const response = await fetch("/api/trial/activate", {
-        method: "POST",
-      });
-
-      const data = await response.json();
+      const response = await axiosInstance.post("/trial/activate");
+      const data = response.data;
 
       if (data.success) {
         // Redirect to success page

@@ -15,7 +15,7 @@ export default function InvoiceHistory() {
   const { data: invoices = [], isLoading: loading } = useQuery({
     queryKey: ["userInvoices"],
     queryFn: async () => {
-      const response = await axiosInstance.get("/api/user/invoices");
+      const response = await axiosInstance.get("/billing/invoices");
       return response.data.invoices || [];
     },
     staleTime: 5 * 60 * 1000,

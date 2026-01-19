@@ -22,7 +22,7 @@ export default function TrustedBy() {
     queryKey: ["branding"],
     queryFn: async () => {
       try {
-        const res = await axiosInstance.get("/api/admin/branding");
+        const res = await axiosInstance.get("/admin/branding");
         if (res.data.success && res.data.data.items.length > 0) {
           return res.data.data;
         }

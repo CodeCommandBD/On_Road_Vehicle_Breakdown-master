@@ -29,8 +29,8 @@ export default function ContactSalesPage() {
 
   const contactMutation = useMutation({
     mutationFn: async (data) => {
-      const response = await axiosInstance.post("/api/contact-sales", data);
-      return response.data;
+      const res = await axiosInstance.post("/sales/contact", data);
+      return res.data;
     },
     onSuccess: () => {
       setSubmitted(true);

@@ -80,15 +80,6 @@ export default function GaragesPage() {
   const user = useSelector(selectUser);
   const favorites = useSelector(selectFavorites);
 
-  // Debounce search and filter updates
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchGarages();
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [filters, coordinates]);
-
   const handleSearch = (query) => {
     setFilters((prev) => ({ ...prev, search: query }));
   };
@@ -163,7 +154,7 @@ export default function GaragesPage() {
     }
 
     try {
-      const response = await axiosInstance.post("/api/user/favorites", {
+      const response = await axiosInstance.post("/user/favorites", {
         garageId,
       });
       if (response.data.success) {

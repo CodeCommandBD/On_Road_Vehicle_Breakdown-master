@@ -32,7 +32,7 @@ export default function PaymentsPage() {
         ...(filters.endDate && { endDate: filters.endDate }),
       });
 
-      const res = await axiosInstance.get(`/api/admin/payments?${queryParams}`);
+      const res = await axiosInstance.get(`/admin/payments?${queryParams}`);
       return res.data.data;
     },
     initialData: {

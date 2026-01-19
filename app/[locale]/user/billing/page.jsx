@@ -22,7 +22,7 @@ import {
   Clock,
   ArrowLeft,
 } from "lucide-react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import InvoiceDocument from "@/components/pdf/InvoiceDocument";
 
 export default function BillingPage() {
@@ -35,7 +35,7 @@ export default function BillingPage() {
   useEffect(() => {
     const syncProfile = async () => {
       try {
-        const res = await axios.get("/api/profile");
+        const res = await axiosInstance.get("/profile");
         if (res.data.success) {
           dispatch(updateUser(res.data.user));
         }
@@ -67,13 +67,13 @@ export default function BillingPage() {
       setLoading(true);
 
       // Fetch subscription details
-      const subResponse = await axios.get("/api/user/subscription");
+      const subResponse = await axiosInstance.get("/user/subscription");
       if (subResponse.data.success) {
         setSubscription(subResponse.data.data);
       }
 
       // Fetch payment history
-      const paymentResponse = await axios.get("/api/user/payments");
+      const paymentResponse = await axiosInstance.get("/user/payments");
       if (paymentResponse.data.success) {
         setPayments(paymentResponse.data.data.payments || []);
       }
@@ -123,7 +123,7 @@ export default function BillingPage() {
     try {
       const { pdf } = await import("@react-pdf/renderer");
       const blob = await pdf(
-        <InvoiceDocument payment={payment} user={user} />
+        <InvoiceDocument payment={payment} user={user} />,
       ).toBlob();
       return blob;
     } catch (error) {
@@ -167,12 +167,12 @@ export default function BillingPage() {
     user?.role === "admin"
       ? "/admin/dashboard"
       : user?.role === "garage" ||
-        user?.membershipTier === "garage_pro" ||
-        user?.membershipTier === "garage_basic"
-      ? "/garage/dashboard"
-      : user?.role === "mechanic"
-      ? "/mechanic/dashboard"
-      : "/user/dashboard";
+          user?.membershipTier === "garage_pro" ||
+          user?.membershipTier === "garage_basic"
+        ? "/garage/dashboard"
+        : user?.role === "mechanic"
+          ? "/mechanic/dashboard"
+          : "/user/dashboard";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-black py-8 px-4 sm:px-6 lg:px-8">
@@ -328,7 +328,7 @@ export default function BillingPage() {
                           {getStatusIcon(payment.status)}
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
-                              payment.status
+                              payment.status,
                             )}`}
                           >
                             {payment.status.charAt(0).toUpperCase() +

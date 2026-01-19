@@ -52,7 +52,7 @@ export default function TeamManagementPage() {
   const { data: team = [], isLoading: loading } = useQuery({
     queryKey: ["garageTeamData"],
     queryFn: async () => {
-      const res = await axiosInstance.get("/api/garage/team");
+      const res = await axiosInstance.get("/garages/team");
       return res.data.teamMembers || [];
     },
     enabled: !!isPremium,
@@ -61,7 +61,7 @@ export default function TeamManagementPage() {
 
   const addMutation = useMutation({
     mutationFn: async (mechanicData) => {
-      const res = await axiosInstance.post("/api/garage/team", mechanicData);
+      const res = await axiosInstance.post("/garages/team", mechanicData);
       return res.data;
     },
     onSuccess: () => {
@@ -83,7 +83,7 @@ export default function TeamManagementPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      const res = await axiosInstance.delete(`/api/garage/team/${id}`);
+      const res = await axiosInstance.delete(`/garages/team/${id}`);
       return res.data;
     },
     onSuccess: () => {

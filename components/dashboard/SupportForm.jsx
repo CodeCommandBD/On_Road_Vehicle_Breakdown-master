@@ -19,7 +19,7 @@ export default function SupportForm() {
 
   const supportMutation = useMutation({
     mutationFn: async (ticketData) => {
-      const response = await axiosInstance.post("/api/support", ticketData);
+      const response = await axiosInstance.post("/support", ticketData);
       return response.data;
     },
     onSuccess: () => {

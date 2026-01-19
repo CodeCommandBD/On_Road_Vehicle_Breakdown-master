@@ -17,8 +17,8 @@ export default function PasswordChangeModal({ isOpen, onClose }) {
 
   const changePasswordMutation = useMutation({
     mutationFn: async (data) => {
-      const response = await axiosInstance.put("/api/user/password", data);
-      return response.data;
+      const res = await axiosInstance.put("/user/settings/password", data);
+      return res.data;
     },
     onSuccess: () => {
       toast.success("Password changed successfully!");

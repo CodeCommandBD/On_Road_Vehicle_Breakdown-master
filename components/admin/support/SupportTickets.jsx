@@ -36,7 +36,7 @@ export default function SupportTickets() {
 
   const resolveMutation = useMutation({
     mutationFn: async (id) => {
-      const response = await axiosInstance.patch("/api/admin/support", {
+      const response = await axiosInstance.patch("/admin/support", {
         ticketId: id,
         status: "resolved",
       });

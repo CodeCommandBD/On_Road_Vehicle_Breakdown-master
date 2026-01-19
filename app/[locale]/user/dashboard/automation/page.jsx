@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
 import {
@@ -54,12 +54,12 @@ export default function AutomationPage() {
       user.membershipTier === "enterprise" || user.planTier === "enterprise";
 
     if (isEnterprise) {
-      axios
-        .get("/api/organizations")
+      axiosInstance
+        .get("/organizations")
         .then((res) => {
           const orgs = res.data.data || [];
           const hasAuthRole = orgs.some(
-            (o) => o.role === "admin" || o.role === "owner"
+            (o) => o.role === "admin" || o.role === "owner",
           );
           setIsAuthorized(hasAuthRole);
         })
@@ -98,7 +98,7 @@ export default function AutomationPage() {
 
   const fetchIntegration = async () => {
     try {
-      const res = await axios.get("/api/automation");
+      const res = await axiosInstance.get("/automation");
       if (res.data.success && res.data.data) {
         setIntegration(res.data.data);
         setWebhookUrl(res.data.data.webhookUrl || "");
@@ -119,7 +119,7 @@ export default function AutomationPage() {
     setMessage(null);
 
     try {
-      const res = await axios.post("/api/automation", {
+      const res = await axiosInstance.post("/automation", {
         webhookUrl,
         events: selectedEvents,
         isActive,
@@ -144,7 +144,7 @@ export default function AutomationPage() {
     setSelectedEvents((prev) =>
       prev.includes(eventId)
         ? prev.filter((id) => id !== eventId)
-        : [...prev, eventId]
+        : [...prev, eventId],
     );
   };
 
@@ -154,7 +154,7 @@ export default function AutomationPage() {
     setMessage(null);
 
     try {
-      const res = await axios.post("/api/automation/test");
+      const res = await axiosInstance.post("/automation/test");
       if (res.data.success) {
         setMessage({ type: "success", text: "Test webhook delivered!" });
         fetchIntegration(); // Refresh to see the new log
@@ -186,7 +186,7 @@ export default function AutomationPage() {
 
     setRotating(true);
     try {
-      const res = await axios.patch("/api/automation");
+      const res = await axiosInstance.patch("/automation");
       if (res.data.success) {
         setIntegration(res.data.data);
         setMessage({ type: "success", text: "Secret rotated successfully!" });
@@ -208,7 +208,7 @@ export default function AutomationPage() {
       return;
 
     try {
-      const res = await axios.delete("/api/automation");
+      const res = await axiosInstance.delete("/automation");
       if (res.data.success) {
         setWebhookUrl("");
         setIsActive(false);

@@ -29,7 +29,7 @@ export default function BookingsPage() {
   const { data: team = [] } = useQuery({
     queryKey: ["garageTeam"],
     queryFn: async () => {
-      const res = await axiosInstance.get("/api/garage/team");
+      const res = await axiosInstance.get("/garage/team");
       return res.data.teamMembers || [];
     },
     enabled: !!user?._id,

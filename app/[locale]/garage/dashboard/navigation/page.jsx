@@ -35,9 +35,9 @@ export default function MissionControlPage() {
     queryKey: ["missionControlData"],
     queryFn: async () => {
       const [garageRes, bookingsRes, sosRes] = await Promise.all([
-        axiosInstance.get("/api/garages/profile"),
-        axiosInstance.get(`/api/bookings?userId=${user._id}&role=garage`),
-        axiosInstance.get("/api/sos?status=pending,assigned"),
+        axiosInstance.get("/garages/profile"),
+        axiosInstance.get(`/bookings?userId=${user._id}&role=garage`),
+        axiosInstance.get("/sos?status=pending,assigned"),
       ]);
 
       const allSos = sosRes.data.data || [];
@@ -79,7 +79,7 @@ export default function MissionControlPage() {
 
   const sosMutation = useMutation({
     mutationFn: async ({ sosId, status }) => {
-      const res = await axiosInstance.patch("/api/sos", { sosId, status });
+      const res = await axiosInstance.patch("/sos", { sosId, status });
       return res.data;
     },
     onSuccess: (data, variables) => {

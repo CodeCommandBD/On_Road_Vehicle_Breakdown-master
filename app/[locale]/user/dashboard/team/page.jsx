@@ -53,8 +53,6 @@ export default function TeamManagementPage() {
   const [inviteError, setInviteError] = useState("");
   const [selectedMember, setSelectedMember] = useState(null);
 
-  const router = useRouterWithLoading(); // Regular routing
-
   // ... (keep existing helper functions)
 
   // 1. Fetch Profile & Organizations
@@ -62,8 +60,8 @@ export default function TeamManagementPage() {
     queryKey: ["authAndOrganizations"],
     queryFn: async () => {
       const [profileRes, orgsRes] = await Promise.all([
-        axiosInstance.get("/api/profile"),
-        axiosInstance.get("/api/organizations"),
+        axiosInstance.get("/profile"),
+        axiosInstance.get("/organizations"),
       ]);
       return {
         user: profileRes.data.user,
@@ -80,10 +78,10 @@ export default function TeamManagementPage() {
     queryKey: ["orgAccess", selectedOrg?.id],
     queryFn: async () => {
       const [membersRes, invitesRes, activityRes] = await Promise.all([
-        axiosInstance.get(`/api/organizations/${selectedOrg.id}/members`),
-        axiosInstance.get(`/api/organizations/${selectedOrg.id}/invitations`),
+        axiosInstance.get(`/organizations/${selectedOrg.id}/members`),
+        axiosInstance.get(`/organizations/${selectedOrg.id}/invitations`),
         axiosInstance.get(
-          `/api/organizations/${selectedOrg.id}/activities?limit=20`,
+          `/organizations/${selectedOrg.id}/activities?limit=20`,
         ),
       ]);
       return {
@@ -132,7 +130,7 @@ export default function TeamManagementPage() {
   const inviteMutation = useMutation({
     mutationFn: async (payload) => {
       const res = await axiosInstance.post(
-        `/api/organizations/${selectedOrg.id}/members`,
+        `/organizations/${selectedOrg.id}/members`,
         payload,
       );
       return res.data;
@@ -155,7 +153,7 @@ export default function TeamManagementPage() {
   const removeMemberMutation = useMutation({
     mutationFn: async (userId) => {
       await axiosInstance.delete(
-        `/api/organizations/${selectedOrg.id}/members?userId=${userId}`,
+        `/organizations/${selectedOrg.id}/members?userId=${userId}`,
       );
     },
     onSuccess: () => {
@@ -171,10 +169,10 @@ export default function TeamManagementPage() {
 
   const updateRoleMutation = useMutation({
     mutationFn: async ({ userId, role }) => {
-      await axiosInstance.patch(
-        `/api/organizations/${selectedOrg.id}/members`,
-        { userId, role },
-      );
+      await axiosInstance.patch(`/organizations/${selectedOrg.id}/members`, {
+        userId,
+        role,
+      });
     },
     onSuccess: () => {
       toast.success("Member role updated");
@@ -190,7 +188,7 @@ export default function TeamManagementPage() {
   const resendInviteMutation = useMutation({
     mutationFn: async (invitationId) => {
       await axiosInstance.patch(
-        `/api/organizations/${selectedOrg.id}/invitations`,
+        `/organizations/${selectedOrg.id}/invitations`,
         { invitationId },
       );
     },
@@ -207,7 +205,7 @@ export default function TeamManagementPage() {
   const brandingMutation = useMutation({
     mutationFn: async (data) => {
       const res = await axiosInstance.patch(
-        `/api/organizations/${selectedOrg.id}`,
+        `/organizations/${selectedOrg.id}`,
         data,
       );
       return res.data;

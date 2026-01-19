@@ -8,7 +8,7 @@ import {
   DollarSign,
   CheckCircle,
 } from "lucide-react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 
 export default function UserContractsPage() {
   const [contracts, setContracts] = useState([]);
@@ -31,7 +31,7 @@ export default function UserContractsPage() {
 
   const fetchContracts = async () => {
     try {
-      const response = await axios.get("/api/contracts");
+      const response = await axiosInstance.get("/contracts");
       if (response.data.success) {
         setContracts(response.data.data.contracts);
       }
@@ -93,7 +93,7 @@ export default function UserContractsPage() {
 
     setSigning(true);
     try {
-      const response = await axios.patch("/api/contracts", {
+      const response = await axiosInstance.patch("/contracts", {
         contractId: signatureModal.contract._id,
         action: "sign",
         signedBy: {

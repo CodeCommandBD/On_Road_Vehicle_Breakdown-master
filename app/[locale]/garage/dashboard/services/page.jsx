@@ -53,8 +53,8 @@ export default function ServicesPage() {
     queryKey: ["garageServicesData"],
     queryFn: async () => {
       const [servicesRes, garageRes] = await Promise.all([
-        axiosInstance.get("/api/services"),
-        axiosInstance.get("/api/garages/profile"),
+        axiosInstance.get("/services"),
+        axiosInstance.get("/garages/profile"),
       ]);
 
       const services =
@@ -76,7 +76,7 @@ export default function ServicesPage() {
 
   const saveMutation = useMutation({
     mutationFn: async (serviceIds) => {
-      const res = await axiosInstance.put("/api/garages/services", {
+      const res = await axiosInstance.put("/garages/services", {
         serviceIds,
       });
       return res.data;

@@ -44,9 +44,9 @@ export default function SubscriptionPage() {
     queryKey: ["subscriptionData", user?._id],
     queryFn: async () => {
       const [plansRes, subRes] = await Promise.all([
-        axiosInstance.get("/api/packages?type=garage&isActive=true"),
+        axiosInstance.get("/packages?type=garage&isActive=true"),
         user
-          ? axiosInstance.get(`/api/subscriptions?userId=${user._id}`)
+          ? axiosInstance.get(`/subscriptions?userId=${user._id}`)
           : Promise.resolve({ data: { success: false } }),
       ]);
 

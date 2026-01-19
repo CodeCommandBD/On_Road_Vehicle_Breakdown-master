@@ -20,7 +20,7 @@ export default function AdminProfilePage() {
   const { isLoading: loading } = useQuery({
     queryKey: ["adminProfile"],
     queryFn: async () => {
-      const res = await axiosInstance.get("/api/profile");
+      const res = await axiosInstance.get("/profile");
       const data = res.data;
       if (data.success) {
         setFormData({

@@ -43,7 +43,7 @@ export default function MechanicSettingsPage() {
 
   const profileMutation = useMutation({
     mutationFn: async (data) => {
-      const res = await axiosInstance.put("/api/profile", data);
+      const res = await axiosInstance.put("/profile", data);
       return res.data;
     },
     onSuccess: (data) => {
@@ -57,7 +57,7 @@ export default function MechanicSettingsPage() {
 
   const passwordMutation = useMutation({
     mutationFn: async (data) => {
-      const res = await axiosInstance.put("/api/user/settings/password", data);
+      const res = await axiosInstance.put("/user/settings/password", data);
       return res.data;
     },
     onSuccess: () => {

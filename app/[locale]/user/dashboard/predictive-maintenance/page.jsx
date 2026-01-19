@@ -47,7 +47,7 @@ export default function PredictiveMaintenancePage() {
 
   const loadOrgRole = async () => {
     try {
-      const res = await axios.get("/api/organizations");
+      const res = await axiosInstance.get("/organizations");
       if (res.data.success && res.data.data.length > 0) {
         // Just take first org role for simplicity in this view
         setOrgRole(res.data.data[0].role);
@@ -60,7 +60,7 @@ export default function PredictiveMaintenancePage() {
   const loadHistory = async () => {
     setIsLoadingHistory(true);
     try {
-      const res = await axios.get("/api/ai/diagnose");
+      const res = await axiosInstance.get("/ai/diagnose");
       if (res.data.success) {
         setHistory(res.data.data);
       }
@@ -94,7 +94,7 @@ export default function PredictiveMaintenancePage() {
           }
         : null;
 
-      const response = await axios.post("/api/ai/diagnose", {
+      const response = await axiosInstance.post("/ai/diagnose", {
         userId: user._id,
         symptoms: symptoms,
         vehicleContext: vehicleContext,
@@ -112,7 +112,7 @@ export default function PredictiveMaintenancePage() {
       console.error("Analysis failed:", error);
       toast.error(
         error.response?.data?.message ||
-          "Failed to analyze symptoms. Please try again."
+          "Failed to analyze symptoms. Please try again.",
       );
     } finally {
       setIsAnalyzing(false);
@@ -156,7 +156,7 @@ export default function PredictiveMaintenancePage() {
       };
 
       const blob = await pdf(
-        <DiagnosisDocument diagnosis={diagnosisData} user={user} />
+        <DiagnosisDocument diagnosis={diagnosisData} user={user} />,
       ).toBlob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -337,7 +337,7 @@ export default function PredictiveMaintenancePage() {
                   </h2>
                   <div
                     className={`px-4 py-2 rounded-xl border flex items-center gap-2 font-bold uppercase text-xs tracking-wider ${getSeverityColor(
-                      result.severity
+                      result.severity,
                     )}`}
                   >
                     <Activity className="w-4 h-4" />
@@ -456,7 +456,7 @@ export default function PredictiveMaintenancePage() {
                   </div>
                   <div
                     className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${getSeverityColor(
-                      item.analysis.severity
+                      item.analysis.severity,
                     )}`}
                   >
                     {item.analysis.severity}

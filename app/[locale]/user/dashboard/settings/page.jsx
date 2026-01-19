@@ -48,7 +48,7 @@ export default function SettingsPage() {
 
   const passwordMutation = useMutation({
     mutationFn: async (data) => {
-      const res = await axiosInstance.put("/api/user/settings/password", data);
+      const res = await axiosInstance.put("/user/settings/password", data);
       return res.data;
     },
     onSuccess: () => {
@@ -67,7 +67,7 @@ export default function SettingsPage() {
   const notificationMutation = useMutation({
     mutationFn: async (updatedPrefs) => {
       const res = await axiosInstance.put(
-        "/api/user/settings/notifications",
+        "/user/settings/notifications",
         updatedPrefs,
       );
       return res.data;

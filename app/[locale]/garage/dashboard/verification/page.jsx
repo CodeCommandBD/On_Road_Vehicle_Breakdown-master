@@ -63,7 +63,7 @@ export default function GarageVerificationPage() {
   const { isLoading } = useQuery({
     queryKey: ["garageProfileForVerification"],
     queryFn: async () => {
-      const response = await axiosInstance.get("/api/garages/profile");
+      const response = await axiosInstance.get("/garages/profile");
       if (response.data.success) {
         const garage = response.data.garage;
         setFormData({
@@ -95,7 +95,7 @@ export default function GarageVerificationPage() {
 
   const verificationMutation = useMutation({
     mutationFn: async (data) => {
-      const res = await axiosInstance.put("/api/garages/profile", data);
+      const res = await axiosInstance.put("/garages/profile", formData);
       return res.data;
     },
     onSuccess: () => {

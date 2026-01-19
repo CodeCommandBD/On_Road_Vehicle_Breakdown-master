@@ -33,7 +33,7 @@ export default function FavoritesPage() {
   const { isLoading: loading } = useQuery({
     queryKey: ["favoritesData"],
     queryFn: async () => {
-      const res = await axiosInstance.get("/api/user/favorites");
+      const res = await axiosInstance.get("/users/favorites");
       if (res.data.success) {
         dispatch({
           type: "auth/updateUser",
@@ -47,13 +47,12 @@ export default function FavoritesPage() {
 
   const removeFavoriteMutation = useMutation({
     mutationFn: async (garageId) => {
-      const res = await axiosInstance.post("/api/user/favorites", { garageId });
+      const res = await axiosInstance.delete(`/users/favorites/${garageId}`);
       return res.data;
     },
     onSuccess: (data, garageId) => {
       dispatch(toggleFavoriteSuccess(garageId));
       toast.success("Removed from favorites");
-      queryClient.invalidateQueries({ queryKey: ["favoritesData"] });
     },
     onError: () => {
       toast.error("Failed to remove favorite");

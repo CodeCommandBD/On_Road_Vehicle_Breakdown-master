@@ -48,7 +48,7 @@ export default function GarageDashboard({ user }) {
   const { data: mechanics = [], isLoading: isTeamLoading } = useQuery({
     queryKey: ["garageTeam"],
     queryFn: async () => {
-      const res = await axiosInstance.get("/api/garage/team");
+      const res = await axiosInstance.get("/garages/stats");
       return res.data.teamMembers || [];
     },
     enabled: !!user?._id,

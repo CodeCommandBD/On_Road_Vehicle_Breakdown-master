@@ -12,7 +12,7 @@ export default function SupportPage() {
   const { data: manager = null, isLoading } = useQuery({
     queryKey: ["supportData"],
     queryFn: async () => {
-      const res = await axiosInstance.get("/api/support");
+      const res = await axiosInstance.get("/support/tickets");
       return res.data.data.accountManager;
     },
   });

@@ -19,7 +19,7 @@ export default function OpenJobsPage() {
   const { data: jobs = [], isLoading: loading } = useQuery({
     queryKey: ["openJobs"],
     queryFn: async () => {
-      const res = await axiosInstance.get("/api/mechanic/jobs");
+      const res = await axiosInstance.get("/mechanic/jobs");
       return res.data.jobs || [];
     },
     refetchInterval: 10000,
@@ -27,7 +27,7 @@ export default function OpenJobsPage() {
 
   const acceptMutation = useMutation({
     mutationFn: async (jobId) => {
-      const res = await axiosInstance.post("/api/mechanic/jobs", {
+      const res = await axiosInstance.post("/mechanic/jobs", {
         bookingId: jobId,
       });
       return res.data;

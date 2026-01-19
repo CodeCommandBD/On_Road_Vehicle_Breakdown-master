@@ -32,7 +32,7 @@ export default function ReviewTable() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      const response = await axiosInstance.delete(`/api/admin/reviews/${id}`);
+      const response = await axiosInstance.delete(`/admin/reviews/${id}`);
       return response.data;
     },
     onSuccess: () => {

@@ -52,7 +52,7 @@ export default function TeamManagement() {
 
   const addMutation = useMutation({
     mutationFn: async (newMember) => {
-      const response = await axiosInstance.post("/api/garage/team", {
+      const response = await axiosInstance.post("/garage/team", {
         garageId: user.garage._id,
         ...newMember,
       });

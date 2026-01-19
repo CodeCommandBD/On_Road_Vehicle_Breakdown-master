@@ -13,7 +13,7 @@ export default function RewardsCatalog({ rewards, userPoints, onRedeem }) {
 
   const redeemMutation = useMutation({
     mutationFn: async (reward) => {
-      const res = await axiosInstance.post("/api/rewards/redeem", {
+      const res = await axiosInstance.post("/rewards/claim", {
         rewardId: reward._id,
       });
       return res.data;

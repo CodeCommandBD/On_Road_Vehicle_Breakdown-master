@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/lib/axios";
 import axios from "axios";
@@ -34,7 +35,7 @@ export default function IntegrationsPage() {
 
     if (isEnterprise) {
       axiosInstance
-        .get("/api/organizations")
+        .get("/organizations")
         .then((res) => {
           const orgs = res.data.data || [];
           const hasAuthRole = orgs.some(
@@ -65,7 +66,7 @@ export default function IntegrationsPage() {
   const { isLoading: configLoading } = useQuery({
     queryKey: ["integrationsConfig"],
     queryFn: async () => {
-      const res = await axiosInstance.get("/api/integrations");
+      const res = await axiosInstance.get("/integrations/webhooks");
       if (res.data.success && res.data.data) {
         setWebhookUrl(res.data.data.webhookUrl || "");
         setIsActive(res.data.data.isActive);
@@ -78,7 +79,7 @@ export default function IntegrationsPage() {
   const { data: apiKeys = [], isLoading: keysLoading } = useQuery({
     queryKey: ["apiKeys"],
     queryFn: async () => {
-      const res = await axiosInstance.get("/api/user/api-keys");
+      const res = await axiosInstance.get("/integrations/api-keys");
       return res.data.data;
     },
     enabled: hasAccess && isEnterprise,
@@ -88,7 +89,7 @@ export default function IntegrationsPage() {
 
   const keyMutation = useMutation({
     mutationFn: async (label) => {
-      const res = await axiosInstance.post("/api/user/api-keys", { label });
+      const res = await axiosInstance.post("/integrations/api-keys", { label });
       return res.data;
     },
     onSuccess: (data) => {
@@ -103,7 +104,7 @@ export default function IntegrationsPage() {
 
   const revokeKeyMutation = useMutation({
     mutationFn: async (keyId) => {
-      const res = await axiosInstance.delete(`/api/user/api-keys?id=${keyId}`);
+      const res = await axiosInstance.delete(`/integrations/api-keys/${keyId}`);
       return res.data;
     },
     onSuccess: () => {
@@ -117,7 +118,7 @@ export default function IntegrationsPage() {
 
   const saveConfigMutation = useMutation({
     mutationFn: async (config) => {
-      const res = await axiosInstance.post("/api/integrations", config);
+      const res = await axiosInstance.post("/integrations/webhooks", config);
       return res.data;
     },
     onSuccess: () => {

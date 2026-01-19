@@ -40,7 +40,7 @@ export default function UserTable() {
   const { data: usersData, isLoading } = useQuery({
     queryKey: ["adminUsers"],
     queryFn: async () => {
-      const response = await axiosInstance.get("/api/admin/users");
+      const response = await axiosInstance.get("/admin/users");
       return response.data.data || [];
     },
   });

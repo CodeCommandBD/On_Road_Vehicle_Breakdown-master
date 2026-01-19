@@ -26,8 +26,8 @@ export default function QuickActions({ onSOSSent }) {
 
   const sosMutation = useMutation({
     mutationFn: async (sosData) => {
-      const response = await axiosInstance.post("/api/sos", sosData);
-      return response.data;
+      const res = await axiosInstance.post("/bookings/quick", sosData);
+      return res.data;
     },
     onSuccess: () => {
       toast.success("EMERGENCY ALERT SENT! Help is on the way.");

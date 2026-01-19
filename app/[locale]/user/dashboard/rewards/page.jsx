@@ -16,9 +16,9 @@ export default function RewardsPage() {
     queryFn: async () => {
       // Parallel fetches using axiosInstance
       const [userRes, historyRes, rewardsRes] = await Promise.all([
-        axiosInstance.get("/api/profile"),
-        axiosInstance.get("/api/user/rewards/history"),
-        axiosInstance.get("/api/rewards"),
+        axiosInstance.get("/profile"),
+        axiosInstance.get("/user/rewards/history"),
+        axiosInstance.get("/rewards"),
       ]);
 
       return {

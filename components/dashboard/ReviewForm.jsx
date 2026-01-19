@@ -14,8 +14,8 @@ export default function ReviewForm({ bookingId, onReviewSubmitted }) {
 
   const reviewMutation = useMutation({
     mutationFn: async (reviewData) => {
-      const response = await axiosInstance.post("/api/reviews", reviewData);
-      return response.data;
+      const res = await axiosInstance.post("/reviews", reviewData);
+      return res.data;
     },
     onSuccess: () => {
       toast.success("Thank you for your review!");

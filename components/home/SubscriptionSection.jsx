@@ -29,9 +29,11 @@ export default function SubscriptionSection() {
     queryKey: ["premiumPackage"],
     queryFn: async () => {
       try {
-        const response = await axiosInstance.get("/api/packages?tier=premium");
-        if (response.data.packages?.length > 0) {
-          return response.data.packages[0];
+        const res = await axiosInstance.get(
+          "/packages?type=user&isActive=true",
+        );
+        if (res.data.packages?.length > 0) {
+          return res.data.packages[0];
         }
       } catch (error) {
         console.error("Failed to fetch package:", error);

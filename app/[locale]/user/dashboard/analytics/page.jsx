@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
 import AnalyticsCharts from "@/components/dashboard/analytics/AnalyticsCharts"; // Ensure this matches path
@@ -28,13 +28,13 @@ export default function AnalyticsPage() {
 
     if (isEnterprise) {
       // For Enterprise: Must be Owner or Admin
-      axios
-        .get("/api/organizations")
+      axiosInstance
+        .get("/organizations")
         .then((res) => {
           const orgs = res.data.data || [];
           // Authorized if they have 'owner' or 'admin' role in ANY active org
           const hasAuthRole = orgs.some(
-            (o) => o.role === "admin" || o.role === "owner"
+            (o) => o.role === "admin" || o.role === "owner",
           );
           setIsAuthorized(hasAuthRole);
         })
@@ -74,7 +74,7 @@ export default function AnalyticsPage() {
 
   const fetchAnalytics = async () => {
     try {
-      const res = await axios.get("/api/analytics");
+      const res = await axiosInstance.get("/analytics");
       if (res.data.success) {
         setData(res.data.data);
       }

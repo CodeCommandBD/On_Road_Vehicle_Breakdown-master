@@ -8,7 +8,7 @@ import Link from "next/link";
 import confetti from "canvas-confetti";
 import { useSelector, useDispatch } from "react-redux";
 import { selectUserRole, updateUser } from "@/store/slices/authSlice";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 
 function PaymentSuccessContent() {
   const router = useRouterWithLoading(); // Regular routing
@@ -25,7 +25,7 @@ function PaymentSuccessContent() {
     // Refresh user profile to sync with Redux
     const refreshProfile = async () => {
       try {
-        const response = await axios.get("/api/profile");
+        const response = await axiosInstance.get("/profile");
         if (response.data.success) {
           dispatch(updateUser(response.data.user));
           console.log("Profile synced with Redux after payment!");

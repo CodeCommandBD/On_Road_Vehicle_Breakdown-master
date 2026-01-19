@@ -5,7 +5,7 @@ import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { updateUser } from "@/store/slices/authSlice";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -36,14 +36,14 @@ function InviteAcceptContent() {
 
   const acceptInvitation = async (token) => {
     try {
-      const res = await axios.post("/api/invite/accept", { token });
+      const res = await axiosInstance.post("/invite/accept", { token });
       setStatus("success");
       setMessage(res.data.message || "Invitation accepted successfully!");
       toast.success("Welcome to the team!");
 
       // Fetch the latest user profile to update Redux (isTeamMember etc.)
       try {
-        const profileRes = await axios.get("/api/profile");
+        const profileRes = await axiosInstance.get("/profile");
         if (profileRes.data.success) {
           dispatch(updateUser(profileRes.data.user));
         }
@@ -60,7 +60,7 @@ function InviteAcceptContent() {
       setStatus("error");
       setMessage(
         error.response?.data?.message ||
-          "Failed to accept invitation. It may be expired or invalid."
+          "Failed to accept invitation. It may be expired or invalid.",
       );
     }
   };

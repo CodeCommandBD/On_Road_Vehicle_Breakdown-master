@@ -125,7 +125,7 @@ export default function UserDashboard({ user }) {
   const { isLoading: isLoadingFavorites } = useQuery({
     queryKey: ["userFavorites"],
     queryFn: async () => {
-      const res = await axiosInstance.get("/api/user/favorites");
+      const res = await axiosInstance.get("/user/favorites");
       if (res.data.success) {
         dispatch({
           type: "auth/updateUser",

@@ -42,7 +42,7 @@ export default function BookingChat({
   const { data: messagesData, isLoading: isMessagesLoading } = useQuery({
     queryKey: ["messages", conversationId],
     queryFn: async () => {
-      const res = await axiosInstance.get(`/api/messages/${conversationId}`);
+      const res = await axiosInstance.get(`/chat/${bookingId}`);
       // Filter out the init token if present
       const filteredMessages = (res.data.messages || []).filter(
         (m) => m.text !== "---CHAT_INIT---",

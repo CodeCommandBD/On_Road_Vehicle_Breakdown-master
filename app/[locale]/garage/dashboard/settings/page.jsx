@@ -55,18 +55,18 @@ export default function GarageSettingsPage() {
   const { isLoading } = useQuery({
     queryKey: ["garageSettings"],
     queryFn: async () => {
-      const response = await axiosInstance.get("/api/garages/settings");
-      if (response.data.success) {
-        setSettings(response.data.settings);
+      const res = await axiosInstance.get("/garages/settings");
+      if (res.data.success) {
+        setSettings(res.data.settings);
       }
-      return response.data.settings;
+      return res.data.settings;
     },
     enabled: !!user,
   });
 
   const saveMutation = useMutation({
     mutationFn: async (payload) => {
-      const res = await axiosInstance.put("/api/garages/settings", payload);
+      const res = await axiosInstance.put("/garages/settings", payload);
       return res.data;
     },
     onSuccess: () => {

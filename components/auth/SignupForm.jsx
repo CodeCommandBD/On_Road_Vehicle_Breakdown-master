@@ -148,14 +148,10 @@ export default function SignupForm() {
       const pathname = window.location.pathname;
       const lang = pathname.startsWith("/bn") ? "bn" : "en";
 
-      const response = await axiosInstance.post("/api/auth/signup", {
-        ...data,
-        role: activeTab,
-        lang,
-      });
+      const res = await axiosInstance.post("/auth/register", data);
 
       toast.success(
-        response.data.message || "Account created successfully! Please login.",
+        res.data.message || "Account created successfully! Please login.",
       );
 
       router.push(`/login?role=${activeTab}`);

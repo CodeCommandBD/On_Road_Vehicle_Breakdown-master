@@ -56,7 +56,7 @@ export default function BookingDetailsPage() {
   const { data: currentUser = null } = useQuery({
     queryKey: ["userProfile"],
     queryFn: async () => {
-      const res = await axiosInstance.get("/api/profile");
+      const res = await axiosInstance.get("/profile");
       return res.data.user;
     },
     staleTime: 5 * 60 * 1000,
@@ -65,7 +65,7 @@ export default function BookingDetailsPage() {
   const { data: booking = null, isLoading: loading } = useQuery({
     queryKey: ["bookingDetails", id],
     queryFn: async () => {
-      const res = await axiosInstance.get(`/api/bookings/${id}`);
+      const res = await axiosInstance.get(`/bookings/${id}`);
       return res.data.booking;
     },
     refetchInterval: (query) => {
@@ -88,7 +88,7 @@ export default function BookingDetailsPage() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ bookingId, status, payload }) => {
-      const res = await axiosInstance.patch(`/api/bookings/${bookingId}`, {
+      const res = await axiosInstance.patch(`/bookings/${bookingId}`, {
         status,
         ...payload,
       });

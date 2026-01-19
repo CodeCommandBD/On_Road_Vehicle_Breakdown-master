@@ -97,16 +97,16 @@ export default function GarageProfilePage() {
   const { data: profileData, isLoading: isFetching } = useQuery({
     queryKey: ["garageProfile"],
     queryFn: async () => {
-      const response = await axiosInstance.get("/api/profile");
-      return response.data.user;
+      const res = await axiosInstance.get("/garages/profile");
+      return res.data.user;
     },
     enabled: !!user?._id,
   });
 
   const updateProfileMutation = useMutation({
     mutationFn: async (payload) => {
-      const response = await axiosInstance.put("/api/profile", payload);
-      return response.data;
+      const res = await axiosInstance.put("/garages/profile", payload);
+      return res.data;
     },
     onSuccess: () => {
       toast.success(t("updateSuccess"));

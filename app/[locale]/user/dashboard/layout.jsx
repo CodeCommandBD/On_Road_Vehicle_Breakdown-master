@@ -25,7 +25,7 @@ export default function UserDashboardLayout({ children }) {
   useEffect(() => {
     const syncProfile = async () => {
       try {
-        const res = await axios.get("/api/profile");
+        const res = await axiosInstance.get("/profile");
         if (res.data.success) {
           dispatch(updateUser(res.data.user));
         }

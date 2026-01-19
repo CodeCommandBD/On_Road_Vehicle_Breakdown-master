@@ -56,10 +56,7 @@ export default function MechanicJobDetails() {
   // States for Payment
   const [collectionAmount, setCollectionAmount] = useState("");
 
-  const { data: booking, isLoading: loading } = useQuery({
-    queryKey: ["mechanicBooking", id],
-    queryFn: async () => {
-      const res = await axiosInstance.get(`/api/bookings/${id}`);
+      const res = await axiosInstance.get(`/bookings/${id}`);
       return res.data.booking;
     },
     enabled: !!id,
@@ -82,7 +79,7 @@ export default function MechanicJobDetails() {
 
   const handleUpdateStatus = (newStatus) => {
     updateMutation.mutate({
-      url: `/api/bookings/${id}`,
+      url: `/bookings/${id}`,
       body: { status: newStatus },
       successMessage: `Status updated to ${newStatus}`,
     });
@@ -99,7 +96,7 @@ export default function MechanicJobDetails() {
       (booking.estimatedCost || 0);
 
     updateMutation.mutate({
-      url: `/api/bookings/${id}`,
+      url: `/bookings/${id}`,
       body: { billItems: updatedItems, actualCost: newTotal },
       successMessage: "Bill item added",
       closeModal: () => {
@@ -111,7 +108,7 @@ export default function MechanicJobDetails() {
 
   const handleCollectPayment = () => {
     updateMutation.mutate({
-      url: `/api/bookings/${id}/pay`,
+      url: `/bookings/${id}/pay`,
       method: "POST",
       body: {
         amount: booking.actualCost || booking.estimatedCost,
@@ -125,7 +122,7 @@ export default function MechanicJobDetails() {
 
   const handleSaveJobCard = () => {
     updateMutation.mutate({
-      url: "/api/mechanic/job-card",
+      url: "/mechanic/job-card",
       method: "POST",
       body: { bookingId: id, ...jobCardData },
       successMessage: "Diagnosis Report Saved 📋",

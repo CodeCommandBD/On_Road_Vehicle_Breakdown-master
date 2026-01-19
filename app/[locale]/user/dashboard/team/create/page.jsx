@@ -22,7 +22,7 @@ export default function CreateOrganizationPage() {
 
   const createOrgMutation = useMutation({
     mutationFn: async (payload) => {
-      const res = await axiosInstance.post("/api/organizations", payload);
+      const res = await axiosInstance.post("/users/team/invite", data);
       return res.data;
     },
     onSuccess: () => {

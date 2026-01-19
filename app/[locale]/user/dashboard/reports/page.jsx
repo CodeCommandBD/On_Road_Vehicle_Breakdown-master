@@ -55,7 +55,7 @@ export default function ReportsPage() {
 
     if (isEnterprise) {
       axiosInstance
-        .get("/api/organizations")
+        .get("/organizations")
         .then((res) => {
           const orgs = res.data.data || [];
           const hasAuthRole = orgs.some(
@@ -101,9 +101,7 @@ export default function ReportsPage() {
   const { data: reportData = null, isLoading: fetchingReports } = useQuery({
     queryKey: ["reportsData", filterDays],
     queryFn: async () => {
-      const res = await axiosInstance.get(
-        `/api/user/reports?days=${filterDays}`,
-      );
+      const res = await axiosInstance.get(`/user/reports?days=${filterDays}`);
       return res.data.data;
     },
     enabled: !!user,
@@ -111,7 +109,7 @@ export default function ReportsPage() {
 
   const brandingMutation = useMutation({
     mutationFn: async (branding) => {
-      const response = await axiosInstance.put("/api/profile", { branding });
+      const response = await axiosInstance.put("/profile", { branding });
       return response.data;
     },
     onSuccess: (data) => {

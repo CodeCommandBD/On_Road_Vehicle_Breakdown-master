@@ -17,7 +17,7 @@ export default function ChatBox({ conversationId, recipientId, currentUser }) {
   const { data: messages = [], isLoading } = useQuery({
     queryKey: ["chatMessages", conversationId],
     queryFn: async () => {
-      const res = await axiosInstance.get(`/api/messages/${conversationId}`);
+      const res = await axiosInstance.get(`/messages/${conversationId}`);
       return res.data.messages || [];
     },
     enabled: !!conversationId,
@@ -26,7 +26,7 @@ export default function ChatBox({ conversationId, recipientId, currentUser }) {
   // 2. Mutations
   const sendMessageMutation = useMutation({
     mutationFn: async (text) => {
-      const res = await axiosInstance.post("/api/messages", {
+      const res = await axiosInstance.post("/messages", {
         recipientId,
         text,
       });

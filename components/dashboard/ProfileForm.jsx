@@ -82,7 +82,7 @@ export default function ProfileForm() {
 
   const updateMutation = useMutation({
     mutationFn: async (updatedData) => {
-      const response = await axiosInstance.put("/api/profile", updatedData);
+      const response = await axiosInstance.put("/profile", updatedData);
       return response.data;
     },
     onSuccess: (data) => {

@@ -76,8 +76,8 @@ export default function ProfilePage() {
   const { data: profile = null, isLoading: isFetching } = useQuery({
     queryKey: ["userProfile"],
     queryFn: async () => {
-      const response = await axiosInstance.get("/api/profile");
-      return response.data.user;
+      const res = await axiosInstance.get("/profile");
+      return res.data.user;
     },
     onSuccess: (data) => {
       dispatch(updateUser(data));
@@ -86,8 +86,8 @@ export default function ProfilePage() {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (payload) => {
-      const response = await axiosInstance.put("/api/profile", payload);
-      return response.data;
+      const res = await axiosInstance.put("/profile", payload);
+      return res.data;
     },
     onSuccess: (data) => {
       const updatedUser = data.user;
@@ -799,7 +799,7 @@ export default function ProfilePage() {
                 onClick={async () => {
                   setIsLoading(true);
                   try {
-                    const response = await axios.put("/api/profile", {
+                    const response = await axiosInstance.put("/profile", {
                       location: profileFormData.location,
                     });
                     if (response.data.success) {
@@ -812,8 +812,6 @@ export default function ProfilePage() {
                       error.response?.data?.message ||
                         "Failed to save location",
                     );
-                  } finally {
-                    setIsLoading(false);
                   }
                 }}
                 disabled={isLoading}

@@ -16,6 +16,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import axiosInstance from "@/lib/axios";
 
 const resetPasswordSchema = z
   .object({
@@ -67,20 +68,12 @@ export default function ResetPasswordPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/auth/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token,
-          newPassword: data.newPassword,
-        }),
+      const response = await axiosInstance.post("/auth/reset-password", {
+        token,
+        newPassword: data.newPassword,
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || "Failed to reset password");
-      }
+      const result = response.data;
 
       setResetSuccess(true);
       toast.success("Password reset successful!");
