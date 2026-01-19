@@ -12,7 +12,7 @@ export async function POST(request) {
           success: false,
           message: "Email, subject, and content are required",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -46,7 +46,7 @@ export async function POST(request) {
           </div>
           <div style="background: #111; padding: 20px; text-align: center;">
             <p style="color: #9ca3af; margin: 0; font-size: 12px;">
-              © ${new Date().getFullYear()} OnRoadHelp. All rights reserved.
+              © ${new Date().getFullYear()} Developer Shanto Kumar. All rights reserved.
             </p>
           </div>
         </div>
@@ -64,7 +64,7 @@ export async function POST(request) {
         success: false,
         message: "Failed to send test email: " + error.message,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

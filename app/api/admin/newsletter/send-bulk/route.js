@@ -16,7 +16,7 @@ export async function POST(request) {
           success: false,
           message: "Subject and content are required",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -29,7 +29,7 @@ export async function POST(request) {
           success: false,
           message: "No active subscribers found",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -67,11 +67,11 @@ export async function POST(request) {
               </div>
               <div style="background: #111; padding: 20px; text-align: center;">
                 <p style="color: #9ca3af; margin: 0 0 10px 0; font-size: 12px;">
-                  © ${new Date().getFullYear()} OnRoadHelp. All rights reserved.
+                  © ${new Date().getFullYear()} Developer Shanto Kumar. All rights reserved.
                 </p>
                 <a href="${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe?email=${
-            subscriber.email
-          }" 
+                  subscriber.email
+                }" 
                    style="color: #f97316; text-decoration: none; font-size: 12px;">
                   Unsubscribe
                 </a>
@@ -102,7 +102,7 @@ export async function POST(request) {
         success: false,
         message: "Failed to send newsletter: " + error.message,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

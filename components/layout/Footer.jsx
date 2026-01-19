@@ -45,7 +45,7 @@ export default function Footer() {
               }
               return acc;
             },
-            { company: [], services: [], discover: [], help: [] }
+            { company: [], services: [], discover: [], help: [] },
           );
           setFooterLinks(grouped);
         }
@@ -240,7 +240,8 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-white/10 pt-8 mt-16 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-gray-500 text-sm text-center md:text-left">
-            © {new Date().getFullYear()} OnRoadHelp. {t("allRightsReserved")}
+            © {new Date().getFullYear()} Developer Shanto Kumar.{" "}
+            {t("allRightsReserved")}
           </p>
           <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-500">
             <div className="flex items-center gap-2">
