@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import {
   Settings,
   Plus,
@@ -17,13 +18,113 @@ import EditServiceModal from "./EditServiceModal";
 import { toast } from "react-toastify";
 
 export default function ServiceList() {
-  const [services, setServices] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [selectedService, setSelectedService] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [selectedServices, setSelectedServices] = useState([]);
+
+  // Fetch Services
+  const { data: servicesData, isLoading: loading } = useQuery({
+    queryKey: ["adminServices"],
+    queryFn: async () => {
+      const response = await axiosInstance.get("/api/admin/services");
+      return response.data.data.services || [];
+    },
+  });
+
+  const services = servicesData || [];
+
+  // Create Mutation
+  const createMutation = useMutation({
+    mutationFn: async (newService) => {
+      const response = await axiosInstance.post(
+        "/api/admin/services",
+        newService,
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Service created successfully");
+      queryClient.invalidateQueries({ queryKey: ["adminServices"] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to create service");
+    },
+  });
+
+  // Edit Mutation
+  const editMutation = useMutation({
+    mutationFn: async (updatedData) => {
+      const response = await axiosInstance.put(
+        "/api/admin/services",
+        updatedData,
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Service updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["adminServices"] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to update service");
+    },
+  });
+
+  // Delete Mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (serviceId) => {
+      const response = await axiosInstance.delete(
+        `/api/admin/services?id=${serviceId}`,
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Service deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["adminServices"] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to delete service");
+    },
+  });
+
+  // Toggle Active Mutation
+  const toggleMutation = useMutation({
+    mutationFn: async ({ serviceId, currentStatus }) => {
+      const response = await axiosInstance.patch(
+        `/api/admin/services?id=${serviceId}`,
+      );
+      return { response: response.data, currentStatus };
+    },
+    onSuccess: ({ currentStatus }) => {
+      toast.success(
+        `Service ${currentStatus ? "deactivated" : "activated"} successfully`,
+      );
+      queryClient.invalidateQueries({ queryKey: ["adminServices"] });
+    },
+    onError: () => {
+      toast.error("Failed to toggle service status");
+    },
+  });
+
+  // Bulk Delete Mutation
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids) => {
+      await Promise.all(
+        ids.map((id) => axiosInstance.delete(`/api/admin/services?id=${id}`)),
+      );
+    },
+    onSuccess: () => {
+      toast.success("Selected services deleted");
+      setSelectedServices([]);
+      queryClient.invalidateQueries({ queryKey: ["adminServices"] });
+    },
+    onError: () => {
+      toast.error("Failed to delete some services");
+    },
+  });
 
   const categories = [
     { value: "all", label: "All Categories" },
@@ -37,25 +138,6 @@ export default function ServiceList() {
     { value: "other", label: "Other" },
   ];
 
-  useEffect(() => {
-    fetchServices();
-  }, []);
-
-  const fetchServices = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get("/api/admin/services");
-      if (response.data.success) {
-        setServices(response.data.data.services);
-      }
-    } catch (error) {
-      console.error("Failed to fetch services:", error);
-      toast.error("Failed to load services");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleCreate = () => {
     setIsCreateModalOpen(true);
   };
@@ -66,80 +148,29 @@ export default function ServiceList() {
   };
 
   const handleSaveCreate = async (newServiceData) => {
-    try {
-      const response = await axios.post("/api/admin/services", newServiceData);
-      if (response.data.success) {
-        toast.success("Service created successfully");
-        fetchServices();
-      }
-    } catch (error) {
-      console.error("Failed to create service:", error);
-      toast.error(error.response?.data?.message || "Failed to create service");
-      throw error;
-    }
+    await createMutation.mutateAsync(newServiceData);
   };
 
   const handleSaveEdit = async (updatedData) => {
-    try {
-      const response = await axios.put("/api/admin/services", updatedData);
-      if (response.data.success) {
-        toast.success("Service updated successfully");
-        fetchServices();
-      }
-    } catch (error) {
-      console.error("Failed to update service:", error);
-      toast.error(error.response?.data?.message || "Failed to update service");
-      throw error;
-    }
+    await editMutation.mutateAsync(updatedData);
   };
 
   const handleDelete = async (serviceId, serviceName) => {
     if (
       !confirm(
-        `Are you sure you want to delete "${serviceName}"? This action cannot be undone.`
+        `Are you sure you want to delete "${serviceName}"? This action cannot be undone.`,
       )
     ) {
       return;
     }
-
-    try {
-      const response = await axios.delete(
-        `/api/admin/services?id=${serviceId}`
-      );
-      if (response.data.success) {
-        toast.success("Service deleted successfully");
-        fetchServices();
-      }
-    } catch (error) {
-      console.error("Failed to delete service:", error);
-      toast.error(error.response?.data?.message || "Failed to delete service");
-    }
+    deleteMutation.mutate(serviceId);
   };
-
-  const handleToggleActive = async (serviceId, currentStatus) => {
-    try {
-      const response = await axios.patch(`/api/admin/services?id=${serviceId}`);
-      if (response.data.success) {
-        toast.success(
-          `Service ${currentStatus ? "deactivated" : "activated"} successfully`
-        );
-        fetchServices();
-      }
-    } catch (error) {
-      console.error("Failed to toggle service:", error);
-      toast.error("Failed to toggle service status");
-    }
-  };
-
-  const [selectedServices, setSelectedServices] = useState([]);
-
-  // ... (existing handlers)
 
   const handleSelect = (serviceId) => {
     setSelectedServices((prev) =>
       prev.includes(serviceId)
         ? prev.filter((id) => id !== serviceId)
-        : [...prev, serviceId]
+        : [...prev, serviceId],
     );
   };
 
@@ -154,28 +185,11 @@ export default function ServiceList() {
   const handleBulkDelete = async () => {
     if (
       !confirm(
-        `Are you sure you want to delete ${selectedServices.length} services?`
+        `Are you sure you want to delete ${selectedServices.length} services?`,
       )
     )
       return;
-
-    try {
-      setLoading(true); // Show global loading
-      // Use client-side loop for now as specific bulk API not requested yet, or can use Promise.all
-      await Promise.all(
-        selectedServices.map((id) =>
-          axios.delete(`/api/admin/services?id=${id}`)
-        )
-      );
-      toast.success("Selected services deleted");
-      setSelectedServices([]);
-      fetchServices();
-    } catch (error) {
-      console.error("Bulk delete failed", error);
-      toast.error("Failed to delete some services");
-    } finally {
-      setLoading(false);
-    }
+    bulkDeleteMutation.mutate(selectedServices);
   };
 
   // Filter services

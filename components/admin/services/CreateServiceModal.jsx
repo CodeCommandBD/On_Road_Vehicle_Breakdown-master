@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X, Loader2 } from "lucide-react";
+import axiosInstance from "@/lib/axios";
 
 export default function CreateServiceModal({ isOpen, onClose, onSave }) {
   const [loading, setLoading] = useState(false);
@@ -26,8 +27,7 @@ export default function CreateServiceModal({ isOpen, onClose, onSave }) {
     data.append("file", file);
 
     try {
-      const importAxios = (await import("axios")).default; // Dynamic import to avoid top-level issues if any
-      const response = await importAxios.post("/api/upload", data);
+      const response = await axiosInstance.post("/api/upload", data);
       if (response.data.success) {
         setFormData((prev) => ({ ...prev, image: response.data.url }));
       }

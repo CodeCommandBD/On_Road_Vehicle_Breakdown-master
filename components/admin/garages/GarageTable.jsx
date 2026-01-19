@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Check,
   X,
@@ -14,12 +14,12 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import GarageDetailModal from "./GarageDetailModal";
-import axios from "axios";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import { toast } from "react-toastify";
 
 export default function GarageTable() {
-  const [garages, setGarages] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState("all");
   const [tierFilter, setTierFilter] = useState("all");
   const [featuredFilter, setFeaturedFilter] = useState("all");
@@ -27,24 +27,32 @@ export default function GarageTable() {
   const [selectedGarage, setSelectedGarage] = useState(null);
   const [openDropdown, setOpenDropdown] = useState(null);
 
-  const fetchGarages = async () => {
-    setIsLoading(true);
-    try {
-      const response = await axios.get("/api/admin/garages");
-      if (response.data.success) {
-        setGarages(response.data.garages);
-      }
-    } catch (error) {
-      console.error("Fetch Error:", error);
-      toast.error("Failed to load garages");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Fetch Garages
+  const { data: garagesData, isLoading } = useQuery({
+    queryKey: ["adminGarages"],
+    queryFn: async () => {
+      const response = await axiosInstance.get("/api/admin/garages");
+      return response.data.garages || [];
+    },
+  });
 
-  useEffect(() => {
-    fetchGarages();
-  }, []);
+  const garages = garagesData || [];
+
+  // Mutation for actions
+  const actionMutation = useMutation({
+    mutationFn: async (payload) => {
+      const response = await axiosInstance.put("/api/admin/garages", payload);
+      return response.data;
+    },
+    onSuccess: (data, variables) => {
+      toast.success(variables.successMsg || "Action completed");
+      setOpenDropdown(null);
+      queryClient.invalidateQueries({ queryKey: ["adminGarages"] });
+    },
+    onError: () => {
+      toast.error("Action failed");
+    },
+  });
 
   const filteredGarages = garages.filter((g) => {
     const matchesStatus =
@@ -55,8 +63,8 @@ export default function GarageTable() {
       featuredFilter === "all"
         ? true
         : featuredFilter === "featured"
-        ? g.isFeatured
-        : !g.isFeatured;
+          ? g.isFeatured
+          : !g.isFeatured;
     const matchesSearch =
       g.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       g.ownerName.toLowerCase().includes(searchQuery.toLowerCase());
@@ -65,44 +73,35 @@ export default function GarageTable() {
   });
 
   const handleAction = async (type, id, value) => {
-    try {
-      let payload = { garageId: id };
-      let successMsg = "";
+    let payload = { garageId: id };
+    let successMsg = "";
 
-      switch (type) {
-        case "approve":
-          payload = { ...payload, isVerified: true, isActive: true };
-          successMsg = "Garage verified successfully";
-          break;
-        case "reject":
-          payload = { ...payload, isVerified: false, isActive: false };
-          successMsg = "Garage deactivated";
-          break;
-        case "toggleFeatured":
-          payload = { ...payload, isFeatured: value };
-          successMsg = value ? "Garage featured" : "Featured status removed";
-          break;
-        case "adjustPoints":
-          const points = window.prompt(
-            "Enter points to add/subtract (e.g. 50 or -50):"
-          );
-          if (points === null) return;
-          payload = { ...payload, rewardPoints: Number(points) };
-          successMsg = `User points adjusted by ${points}`;
-          break;
-        default:
-          return;
-      }
-
-      const response = await axios.put("/api/admin/garages", payload);
-      if (response.data.success) {
-        toast.success(successMsg);
-        fetchGarages();
-        setOpenDropdown(null);
-      }
-    } catch (error) {
-      toast.error("Action failed");
+    switch (type) {
+      case "approve":
+        payload = { ...payload, isVerified: true, isActive: true };
+        successMsg = "Garage verified successfully";
+        break;
+      case "reject":
+        payload = { ...payload, isVerified: false, isActive: false };
+        successMsg = "Garage deactivated";
+        break;
+      case "toggleFeatured":
+        payload = { ...payload, isFeatured: value };
+        successMsg = value ? "Garage featured" : "Featured status removed";
+        break;
+      case "adjustPoints":
+        const points = window.prompt(
+          "Enter points to add/subtract (e.g. 50 or -50):",
+        );
+        if (points === null) return;
+        payload = { ...payload, rewardPoints: Number(points) };
+        successMsg = `User points adjusted by ${points}`;
+        break;
+      default:
+        return;
     }
+
+    actionMutation.mutate({ ...payload, successMsg });
   };
 
   const handleDropdownClick = (e, garageId) => {
@@ -115,7 +114,7 @@ export default function GarageTable() {
             id: garageId,
             x: rect.left - 160,
             y: rect.top + rect.height + 8,
-          }
+          },
     );
   };
 
@@ -276,8 +275,8 @@ export default function GarageTable() {
                           garage.status === "active"
                             ? "bg-green-500/10 text-green-400 border border-green-500/20"
                             : garage.status === "pending"
-                            ? "bg-orange-500/10 text-orange-400 border border-orange-500/20"
-                            : "bg-red-500/10 text-red-400 border border-red-500/20"
+                              ? "bg-orange-500/10 text-orange-400 border border-orange-500/20"
+                              : "bg-red-500/10 text-red-400 border border-red-500/20"
                         }`}
                       >
                         {garage.status}
@@ -371,7 +370,7 @@ export default function GarageTable() {
                 handleAction(
                   "toggleFeatured",
                   openDropdown.id,
-                  !garage?.isFeatured
+                  !garage?.isFeatured,
                 );
               }}
               className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-colors"

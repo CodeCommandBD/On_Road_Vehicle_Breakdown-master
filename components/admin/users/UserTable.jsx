@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import {
   MoreVertical,
   Search,
@@ -14,28 +13,88 @@ import {
 } from "lucide-react";
 import ImageUpload from "@/components/common/ImageUpload";
 import UserDetailsModal from "./UserDetailsModal";
-import axios from "axios";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import { toast } from "react-toastify";
 
 export default function UserTable() {
-  const [users, setUsers] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [openDropdown, setOpenDropdown] = useState(null); // Track which dropdown is open
+  const [openDropdown, setOpenDropdown] = useState(null);
 
   // Contract Modal State
   const [showContractModal, setShowContractModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [contractForm, setContractForm] = useState({
     documentUrl: "",
     startDate: "",
     endDate: "",
     status: "pending",
     customTerms: "",
+  });
+
+  // Fetch Users
+  const { data: usersData, isLoading } = useQuery({
+    queryKey: ["adminUsers"],
+    queryFn: async () => {
+      const response = await axiosInstance.get("/api/admin/users");
+      return response.data.data || [];
+    },
+  });
+
+  const users = usersData || [];
+
+  // Mutations
+  const deleteMutation = useMutation({
+    mutationFn: async (id) => {
+      const res = await axiosInstance.delete(`/api/admin/users?userId=${id}`);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success("User deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["adminUsers"] });
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || "Delete failed");
+    },
+  });
+
+  const adjustPointsMutation = useMutation({
+    mutationFn: async ({ userId, rewardPoints }) => {
+      const res = await axiosInstance.put("/api/admin/users", {
+        userId,
+        rewardPoints,
+      });
+      return res.data;
+    },
+    onSuccess: (data, variables) => {
+      toast.success(`Points updated to ${variables.rewardPoints}`);
+      queryClient.invalidateQueries({ queryKey: ["adminUsers"] });
+    },
+    onError: () => {
+      toast.error("Failed to update points");
+    },
+  });
+
+  const saveContractMutation = useMutation({
+    mutationFn: async (contractData) => {
+      const res = await axiosInstance.post(
+        "/api/admin/users/contract",
+        contractData,
+      );
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success("Contract updated successfully");
+      setShowContractModal(false);
+      queryClient.invalidateQueries({ queryKey: ["adminUsers"] });
+    },
+    onError: () => {
+      toast.error("Failed to save contract");
+    },
   });
 
   const openContractModal = (user) => {
@@ -67,45 +126,13 @@ export default function UserTable() {
   const handleContractSave = async (e) => {
     e.preventDefault();
     if (!selectedUser) return;
-    setIsSaving(true);
-
-    try {
-      const res = await axios.post("/api/admin/users/contract", {
-        userId: selectedUser._id,
-        ...contractForm,
-      });
-
-      if (res.data.success) {
-        toast.success("Contract updated successfully");
-        setShowContractModal(false);
-        fetchUsers(); // Refresh list to show updated data if visualized
-      }
-    } catch (error) {
-      console.error("Contract Save Error:", error);
-      toast.error("Failed to save contract");
-    } finally {
-      setIsSaving(false);
-    }
+    saveContractMutation.mutate({
+      userId: selectedUser._id,
+      ...contractForm,
+    });
   };
 
-  const fetchUsers = async () => {
-    setIsLoading(true);
-    try {
-      const response = await axios.get("/api/admin/users");
-      if (response.data.success) {
-        setUsers(response.data.data || []);
-      }
-    } catch (error) {
-      console.error("Fetch Users Error:", error);
-      toast.error("Failed to load users");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  const isSaving = saveContractMutation.isPending;
 
   const filteredUsers = (users || []).filter((user) => {
     const matchesSearch =
@@ -125,25 +152,17 @@ export default function UserTable() {
   const handleDelete = async (id) => {
     if (
       !confirm(
-        "Are you sure you want to delete this user? This action cannot be undone."
+        "Are you sure you want to delete this user? This action cannot be undone.",
       )
     )
       return;
-    try {
-      const res = await axios.delete(`/api/admin/users?userId=${id}`);
-      if (res.data.success) {
-        toast.success("User deleted successfully");
-        fetchUsers();
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Delete failed");
-    }
+    deleteMutation.mutate(id);
   };
 
   const handleAdjustPoints = async (userId, currentPoints) => {
     const newPointsString = prompt(
       `Enter new point balance for user:`,
-      currentPoints
+      currentPoints,
     );
     if (newPointsString === null) return;
 
@@ -152,19 +171,7 @@ export default function UserTable() {
       toast.error("Please enter a valid number");
       return;
     }
-
-    try {
-      const res = await axios.put("/api/admin/users", {
-        userId,
-        rewardPoints: newPoints,
-      });
-      if (res.data.success) {
-        toast.success(`Points updated to ${newPoints}`);
-        fetchUsers();
-      }
-    } catch (err) {
-      toast.error("Failed to update points");
-    }
+    adjustPointsMutation.mutate({ userId, rewardPoints: newPoints });
   };
 
   const getUserActions = (user) => {
@@ -310,10 +317,10 @@ export default function UserTable() {
                       user.role === "admin"
                         ? "bg-purple-500/10 text-purple-400 border-purple-500/20"
                         : user.role === "garage"
-                        ? "bg-orange-500/10 text-orange-400 border-orange-500/20"
-                        : user.role === "mechanic"
-                        ? "bg-green-500/10 text-green-400 border-green-500/20"
-                        : "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                          ? "bg-orange-500/10 text-orange-400 border-orange-500/20"
+                          : user.role === "mechanic"
+                            ? "bg-green-500/10 text-green-400 border-green-500/20"
+                            : "bg-blue-500/10 text-blue-400 border-blue-500/20"
                     }`}
                   >
                     {user.role}
@@ -337,7 +344,7 @@ export default function UserTable() {
                         <div className="text-yellow-400 flex items-center gap-1">
                           <span className="font-bold">
                             {user.mechanicProfile?.rating?.average?.toFixed(
-                              1
+                              1,
                             ) || "0.0"}
                           </span>
                           <span className="text-white/40 text-xs">
@@ -379,7 +386,7 @@ export default function UserTable() {
                                 id: user._id,
                                 x: rect.right - 180,
                                 y: rect.bottom + 5,
-                              }
+                              },
                         );
                       }}
                       className="p-2 hover:bg-white/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"

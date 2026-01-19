@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import {
   Search,
   Eye,
@@ -16,35 +15,54 @@ import {
   Navigation,
 } from "lucide-react";
 import Link from "next/link";
-import axios from "axios";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import { toast } from "react-toastify";
+import { useState } from "react";
 
 export default function BookingTable() {
-  const [bookings, setBookings] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState("all");
   const [vehicleFilter, setVehicleFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [openDropdown, setOpenDropdown] = useState(null);
 
-  const fetchBookings = async () => {
-    setIsLoading(true);
-    try {
-      const response = await axios.get("/api/admin/bookings");
-      if (response.data.success) {
-        setBookings(response.data.bookings);
-      }
-    } catch (error) {
-      console.error("Fetch Error:", error);
-      toast.error("Failed to load bookings");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Fetch Bookings
+  const { data: bookingsData, isLoading } = useQuery({
+    queryKey: ["adminBookings"],
+    queryFn: async () => {
+      const response = await axiosInstance.get("/api/admin/bookings");
+      return response.data.bookings || [];
+    },
+  });
 
-  useEffect(() => {
-    fetchBookings();
-  }, []);
+  const bookings = bookingsData || [];
+
+  // Mutation for actions
+  const actionMutation = useMutation({
+    mutationFn: async (payload) => {
+      if (payload.type === "delete") {
+        const resp = await axiosInstance.delete(
+          `/api/admin/bookings?bookingId=${payload.bookingId}`,
+        );
+        return resp.data;
+      }
+      const response = await axiosInstance.put("/api/admin/bookings", payload);
+      return response.data;
+    },
+    onSuccess: (data, variables) => {
+      if (variables.type === "delete") {
+        toast.success("Booking deleted");
+      } else {
+        toast.success(`Booking status updated to ${variables.status}`);
+      }
+      setOpenDropdown(null);
+      queryClient.invalidateQueries({ queryKey: ["adminBookings"] });
+    },
+    onError: () => {
+      toast.error("Action failed");
+    },
+  });
 
   const filteredBookings = bookings.filter((booking) => {
     const matchesStatus =
@@ -59,29 +77,12 @@ export default function BookingTable() {
   });
 
   const handleAction = async (type, bookingId, value) => {
-    try {
-      if (type === "delete") {
-        if (!window.confirm("Are you sure you want to delete this booking?"))
-          return;
-        const resp = await axios.delete(
-          `/api/admin/bookings?bookingId=${bookingId}`
-        );
-        if (resp.data.success) {
-          toast.success("Booking deleted");
-          fetchBookings();
-        }
+    if (type === "delete") {
+      if (!window.confirm("Are you sure you want to delete this booking?"))
         return;
-      }
-
-      const payload = { bookingId, status: value };
-      const response = await axios.put("/api/admin/bookings", payload);
-      if (response.data.success) {
-        toast.success(`Booking status updated to ${value}`);
-        fetchBookings();
-        setOpenDropdown(null);
-      }
-    } catch (error) {
-      toast.error("Action failed");
+      actionMutation.mutate({ type: "delete", bookingId });
+    } else {
+      actionMutation.mutate({ type: "update", bookingId, status: value });
     }
   };
 
@@ -112,7 +113,7 @@ export default function BookingTable() {
             id: bookingId,
             x: rect.left - 180,
             y: rect.top + rect.height + 8,
-          }
+          },
     );
   };
 
@@ -292,7 +293,7 @@ export default function BookingTable() {
                     <td className="px-6 py-4">
                       <span
                         className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${getStatusStyle(
-                          booking.status
+                          booking.status,
                         )}`}
                       >
                         {booking.status?.replace("_", " ")}

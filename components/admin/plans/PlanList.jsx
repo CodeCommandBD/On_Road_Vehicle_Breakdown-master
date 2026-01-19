@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import {
   DollarSign,
   Check,
@@ -18,34 +19,101 @@ import CreatePlanModal from "./CreatePlanModal";
 import { toast } from "react-toastify";
 
 export default function PlanList() {
-  const [plans, setPlans] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("user");
 
-  const fetchPlans = async () => {
-    try {
-      setLoading(true);
-      // Fetch all plans (active and inactive) for the selected type
-      const response = await axios.get(
-        `/api/packages?sort=order&type=${activeTab}`
+  // Fetch Plans
+  const { data: plansData, isLoading: loading } = useQuery({
+    queryKey: ["adminPlans", activeTab],
+    queryFn: async () => {
+      const response = await axiosInstance.get(
+        `/api/packages?sort=order&type=${activeTab}`,
       );
-      if (response.data.success) {
-        setPlans(response.data.data.packages);
-      }
-    } catch (error) {
-      console.error("Failed to fetch plans:", error);
-      toast.error("Failed to load plans");
-    } finally {
-      setLoading(false);
-    }
-  };
+      return response.data.data.packages || [];
+    },
+  });
 
-  useEffect(() => {
-    fetchPlans();
-  }, [activeTab]);
+  const plans = plansData || [];
+
+  // Mutations
+  const createMutation = useMutation({
+    mutationFn: async (newPlan) => {
+      const response = await axiosInstance.post("/api/packages", newPlan);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Plan created successfully");
+      queryClient.invalidateQueries({ queryKey: ["adminPlans"] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to create plan");
+    },
+  });
+
+  const editMutation = useMutation({
+    mutationFn: async (updatedData) => {
+      const response = await axiosInstance.put("/api/packages", updatedData);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Plan updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["adminPlans"] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to update plan");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (planId) => {
+      const response = await axiosInstance.delete(`/api/packages?id=${planId}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Plan deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["adminPlans"] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to delete plan");
+    },
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ planId, currentStatus }) => {
+      const response = await axiosInstance.patch(
+        `/api/packages?id=${planId}&action=toggle-active`,
+      );
+      return { response: response.data, currentStatus };
+    },
+    onSuccess: ({ currentStatus }) => {
+      toast.success(
+        `Plan ${currentStatus ? "deactivated" : "activated"} successfully`,
+      );
+      queryClient.invalidateQueries({ queryKey: ["adminPlans"] });
+    },
+    onError: () => {
+      toast.error("Failed to toggle plan status");
+    },
+  });
+
+  const toggleFeaturedMutation = useMutation({
+    mutationFn: async ({ planId, isFeatured }) => {
+      const response = await axiosInstance.patch(
+        `/api/packages?id=${planId}&action=toggle-featured`,
+      );
+      return { response: response.data, isFeatured };
+    },
+    onSuccess: ({ isFeatured }) => {
+      toast.success(`Plan ${isFeatured ? "unmarked" : "marked"} as featured`);
+      queryClient.invalidateQueries({ queryKey: ["adminPlans"] });
+    },
+    onError: () => {
+      toast.error("Failed to toggle featured status");
+    },
+  });
 
   const handleEdit = (plan) => {
     setSelectedPlan(plan);
@@ -57,101 +125,31 @@ export default function PlanList() {
   };
 
   const handleSaveEdit = async (updatedData) => {
-    try {
-      const response = await axios.put("/api/packages", updatedData);
-      if (response.data.success) {
-        toast.success("Plan updated successfully");
-        fetchPlans();
-      }
-    } catch (error) {
-      console.error("Failed to update plan:", error);
-      toast.error(error.response?.data?.message || "Failed to update plan");
-      throw error;
-    }
+    await editMutation.mutateAsync(updatedData);
   };
 
   const handleSaveCreate = async (newPlanData) => {
-    try {
-      const response = await axios.post("/api/packages", newPlanData);
-      if (response.data.success) {
-        toast.success("Plan created successfully");
-        fetchPlans();
-      }
-    } catch (error) {
-      console.error("Failed to create plan:", error);
-      toast.error(error.response?.data?.message || "Failed to create plan");
-      throw error;
-    }
+    await createMutation.mutateAsync(newPlanData);
   };
 
   const handleDelete = async (planId, planName) => {
     if (
       !confirm(
-        `Are you sure you want to delete "${planName}"? This action cannot be undone.`
+        `Are you sure you want to delete "${planName}"? This action cannot be undone.`,
       )
     ) {
       return;
     }
-
-    try {
-      const response = await axios.delete(`/api/packages?id=${planId}`);
-      if (response.data.success) {
-        toast.success("Plan deleted successfully");
-        fetchPlans();
-      }
-    } catch (error) {
-      console.error("Failed to delete plan:", error);
-      toast.error(error.response?.data?.message || "Failed to delete plan");
-    }
+    deleteMutation.mutate(planId);
   };
 
   const handleToggleActive = async (planId, currentStatus) => {
-    try {
-      const response = await axios.patch(
-        `/api/packages?id=${planId}&action=toggle-active`
-      );
-      if (response.data.success) {
-        toast.success(
-          `Plan ${currentStatus ? "deactivated" : "activated"} successfully`
-        );
-        fetchPlans();
-      }
-    } catch (error) {
-      console.error("Failed to toggle plan:", error);
-      toast.error("Failed to toggle plan status");
-    }
+    toggleActiveMutation.mutate({ planId, currentStatus });
   };
 
   const handleToggleFeatured = async (planId, currentStatus) => {
-    try {
-      // Handle undefined - treat as false (not featured)
-      const isFeatured = currentStatus === true;
-      console.log(
-        "Toggling featured for plan:",
-        planId,
-        "Current isFeatured:",
-        isFeatured
-      );
-
-      const response = await axios.patch(
-        `/api/packages?id=${planId}&action=toggle-featured`
-      );
-      console.log("Toggle response:", response.data);
-      console.log(
-        "New isFeatured value:",
-        response.data.data?.package?.isFeatured
-      );
-
-      if (response.data.success) {
-        toast.success(`Plan ${isFeatured ? "unmarked" : "marked"} as featured`);
-        // Force refresh to show changes
-        await fetchPlans();
-        console.log("Plans refreshed after toggle");
-      }
-    } catch (error) {
-      console.error("Failed to toggle featured:", error);
-      toast.error("Failed to toggle featured status");
-    }
+    const isFeatured = currentStatus === true;
+    toggleFeaturedMutation.mutate({ planId, isFeatured });
   };
 
   return (
@@ -234,8 +232,8 @@ export default function PlanList() {
                 plan.isFeatured
                   ? "border-yellow-500/50 shadow-lg shadow-yellow-500/20"
                   : plan.isActive
-                  ? "border-white/10 hover:border-orange-500/50 hover:shadow-orange-500/10"
-                  : "border-red-500/30 opacity-60"
+                    ? "border-white/10 hover:border-orange-500/50 hover:shadow-orange-500/10"
+                    : "border-red-500/30 opacity-60"
               }`}
             >
               {/* Featured Badge */}

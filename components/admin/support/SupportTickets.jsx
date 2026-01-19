@@ -10,59 +10,54 @@ import {
   Download,
   Loader2,
 } from "lucide-react";
-import axios from "axios";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import { toast } from "react-toastify";
 
 export default function SupportTickets() {
-  const [tickets, setTickets] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchTickets();
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [filter, search]);
-
-  const fetchTickets = async () => {
-    try {
+  const { data: ticketsData, isLoading: loading } = useQuery({
+    queryKey: ["adminSupportTickets", filter, search],
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (search) params.append("search", search);
       if (filter !== "All" && filter !== "SOS") params.append("status", filter);
-
-      const response = await axios.get(
-        `/api/admin/support?${params.toString()}`
+      const response = await axiosInstance.get(
+        `/api/admin/support?${params.toString()}`,
       );
-      if (response.data.success) {
-        setTickets(response.data.tickets);
-      }
-    } catch (error) {
-      console.error("Failed to fetch tickets:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      return response.data.tickets || [];
+    },
+  });
+
+  const tickets = ticketsData || [];
+
+  const resolveMutation = useMutation({
+    mutationFn: async (id) => {
+      const response = await axiosInstance.patch("/api/admin/support", {
+        ticketId: id,
+        status: "resolved",
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Ticket resolved");
+      queryClient.invalidateQueries({ queryKey: ["adminSupportTickets"] });
+    },
+    onError: () => {
+      toast.error("Failed to resolve ticket");
+    },
+  });
 
   const filteredTickets = tickets.filter(
-    (t) => filter !== "SOS" || t.priority === "urgent"
+    (t) => filter !== "SOS" || t.priority === "urgent",
   );
 
   const handleResolve = async (id) => {
     if (confirm("Mark this ticket as Resolved?")) {
-      try {
-        const response = await axios.patch("/api/admin/support", {
-          ticketId: id,
-          status: "resolved",
-        });
-        if (response.data.success) {
-          toast.success("Ticket resolved");
-          fetchTickets();
-        }
-      } catch (error) {
-        toast.error("Failed to resolve ticket");
-      }
+      resolveMutation.mutate(id);
     }
   };
 
@@ -92,7 +87,7 @@ export default function SupportTickets() {
           t.status,
           `"${t.message?.replace(/"/g, '""') || ""}"`,
           new Date(t.createdAt).toLocaleDateString(),
-        ].join(",")
+        ].join(","),
       ),
     ].join("\n");
 
@@ -102,7 +97,7 @@ export default function SupportTickets() {
     link.href = url;
     link.setAttribute(
       "download",
-      `support_tickets_${new Date().toISOString().split("T")[0]}.csv`
+      `support_tickets_${new Date().toISOString().split("T")[0]}.csv`,
     );
     document.body.appendChild(link);
     link.click();
@@ -191,8 +186,8 @@ export default function SupportTickets() {
                     ticket.status === "resolved"
                       ? "bg-green-500/10 text-green-500 border-green-500/20"
                       : ticket.status === "pending"
-                      ? "bg-red-500/10 text-red-500 border-red-500/20"
-                      : "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                        ? "bg-red-500/10 text-red-500 border-red-500/20"
+                        : "bg-blue-500/10 text-blue-500 border-blue-500/20"
                   }`}
                 >
                   {ticket.status === "resolved" ? (
