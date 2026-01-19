@@ -7,13 +7,10 @@ import { useSelector, useDispatch } from "react-redux";
 import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import {
-  logout,
-  selectIsAuthenticated,
-  selectUser,
-  selectUserRole,
-  loginSuccess,
-} from "@/store/slices/authSlice";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
+import { logout, loginSuccess } from "@/store/slices/authSlice";
 import {
   selectUnreadNotificationsCount,
   setUnreadNotificationsCount,
@@ -54,62 +51,67 @@ export default function Navbar() {
   // Dynamic Services State
   const [services, setServices] = useState([]);
 
+  const {
+    user,
+    isAuthenticated,
+    logout: authLogout,
+    isLoading: isAuthLoading,
+  } = useAuth();
+
   const dispatch = useDispatch();
-  const router = useRouterWithLoading(); // Regular routing
+  const router = useRouterWithLoading();
   const pathname = usePathname();
 
-  // NextAuth session
-  const { data: session, status } = useSession();
+  // Redirect to home if on admin page and not admin
+  useEffect(() => {
+    if (
+      !isAuthLoading &&
+      isAuthenticated &&
+      user?.role !== "admin" &&
+      pathname.includes("/admin")
+    ) {
+      router.push("/");
+    }
+  }, [isAuthenticated, user, pathname, isAuthLoading, router]);
 
-  // Redux state
-  const isAuthenticatedRedux = useSelector(selectIsAuthenticated);
-  const userRedux = useSelector(selectUser);
-  const userRole = useSelector(selectUserRole);
+  const userRole = user?.role;
   const unreadCount = useSelector(selectUnreadNotificationsCount);
 
-  // Combine NextAuth session with Redux state
-  const isAuthenticated = status === "authenticated" || isAuthenticatedRedux;
-  const user = session?.user || userRedux;
+  // Fetch Services using TanStack Query
+  const { data: servicesData } = useQuery({
+    queryKey: ["services"],
+    queryFn: async () => {
+      const response = await axiosInstance.get(
+        "/services?limit=12&isActive=true&sort=order",
+      );
+      return response.data;
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
 
-  // Fetch Services on Mount
   useEffect(() => {
-    const fetchServices = async () => {
-      try {
-        const response = await fetch(
-          "/api/services?limit=12&isActive=true&sort=order"
-        );
-        const data = await response.json();
-        if (data.success) {
-          setServices(data.data.services || []);
-        }
-      } catch (error) {
-        console.error("Failed to fetch services:", error);
-      }
-    };
-    fetchServices();
-  }, []);
+    if (servicesData?.success) {
+      setServices(servicesData.data?.services || []);
+    }
+  }, [servicesData]);
 
-  // Fetch Notifications
+  // Fetch Notifications using TanStack Query
+  const { data: notificationData } = useQuery({
+    queryKey: ["notifications", user?._id],
+    queryFn: async () => {
+      const res = await axiosInstance.get("/notifications");
+      return res.data;
+    },
+    enabled: !!isAuthenticated && !!user,
+    refetchInterval: 30000,
+  });
+
   useEffect(() => {
-    if (!isAuthenticated) return;
-    const fetchNotifications = async () => {
-      try {
-        const res = await axios.get("/api/notifications");
-        if (res.data.success) {
-          setNotifications(res.data.notifications);
-          dispatch(setUnreadNotificationsCount(res.data.unreadCount));
-        }
-      } catch (err) {
-        // Silently ignore 401 errors (user not authenticated)
-        if (err.response?.status !== 401) {
-          console.error("Failed to fetch notifications in navbar:", err);
-        }
-      }
-    };
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
-  }, [isAuthenticated, dispatch]);
+    if (notificationData?.success) {
+      setNotifications(notificationData.notifications);
+      dispatch(setUnreadNotificationsCount(notificationData.unreadCount));
+    }
+  }, [notificationData, dispatch]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -127,11 +129,7 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      // Sign out from NextAuth (for OAuth users)
-      await signOut({ redirect: false });
-      // Clear Redux store (for credentials users)
-      dispatch(logout());
-      // Redirect to home
+      authLogout();
       router.push("/");
     } catch (error) {
       console.error("Logout failed:", error);
@@ -369,8 +367,8 @@ export default function Navbar() {
                       userRole === "admin"
                         ? "/admin/dashboard"
                         : userRole === "garage"
-                        ? "/garage/dashboard"
-                        : "/user/dashboard"
+                          ? "/garage/dashboard"
+                          : "/user/dashboard"
                     }
                     className="flex gap-[14px] items-center p-[10px_14px] md:p-[12px_16px] text-[#ffffffe6] text-[13px] md:text-[14px] font-medium transition-all duration-300 rounded-[10px] my-[2px] md:my-[4px_0] relative overflow-hidden group/item hover:bg-gradient-to-r hover:from-[#ff480026] hover:to-[#ff48000d] hover:text-[#ff6a3d] hover:translate-x-[4px] hover:pl-[20px]"
                     onClick={() => setIsProfileOpen(false)}
@@ -401,8 +399,8 @@ export default function Navbar() {
                       userRole === "admin"
                         ? "/admin/dashboard"
                         : userRole === "garage"
-                        ? "/garage/dashboard/profile"
-                        : "/user/dashboard/profile"
+                          ? "/garage/dashboard/profile"
+                          : "/user/dashboard/profile"
                     }
                     className="flex gap-[14px] items-center p-[10px_14px] md:p-[12px_16px] text-[#ffffffe6] text-[13px] md:text-[14px] font-medium transition-all duration-300 rounded-[10px] my-[2px] md:my-[4px_0] relative overflow-hidden group/item hover:bg-gradient-to-r hover:from-[#ff480026] hover:to-[#ff48000d] hover:text-[#ff6a3d] hover:translate-x-[4px] hover:pl-[20px]"
                     onClick={() => setIsProfileOpen(false)}
@@ -489,8 +487,8 @@ export default function Navbar() {
                 ? userRole === "admin"
                   ? "/admin/dashboard"
                   : userRole === "garage"
-                  ? "/garage/dashboard"
-                  : "/book"
+                    ? "/garage/dashboard"
+                    : "/book"
                 : "/login"
             }
             className="inline-block text-white px-[15px] py-[8px] text-[12px] md:px-[50px] md:py-[12px] md:text-[16px] bg-[#ff4800] rounded-[7px] font-medium tracking-[0.5px] transition-all duration-300 relative z-10 animate-[pulse-glow_2s_infinite] hover:bg-[#cb2500] hover:animate-none hover:-translate-y-[2px]"
@@ -499,8 +497,8 @@ export default function Navbar() {
               ? userRole === "admin"
                 ? "Admin"
                 : userRole === "garage"
-                ? "Dashboard"
-                : "Book Service"
+                  ? "Dashboard"
+                  : "Book Service"
               : "Login"}
           </Link>
         </div>

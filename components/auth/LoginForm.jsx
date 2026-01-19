@@ -23,12 +23,8 @@ import {
 import { toast } from "react-toastify";
 import * as Tabs from "@radix-ui/react-tabs";
 import * as Checkbox from "@radix-ui/react-checkbox";
-import {
-  loginSuccess,
-  loginFailure,
-  setLoading,
-  selectAuthLoading,
-} from "@/store/slices/authSlice";
+import { useAuth } from "@/hooks/useAuth";
+import { selectAuthLoading } from "@/store/slices/authSlice";
 
 const loginSchema = z.object({
   email: z.string().min(1, "Email or Phone number is required"),
@@ -44,14 +40,13 @@ export default function LoginForm() {
   const [activeTab, setActiveTab] = useState(
     ["user", "garage", "mechanic", "admin"].includes(initialRole)
       ? initialRole
-      : "user"
+      : "user",
   );
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouterWithLoading(true); // true for i18n support
   const redirectParams =
     searchParams.get("redirect") || searchParams.get("callbackUrl");
   const dispatch = useDispatch();
-  const isLoading = useSelector(selectAuthLoading);
 
   const {
     register,
@@ -67,38 +62,22 @@ export default function LoginForm() {
     },
   });
 
+  const { login, isLoggingIn } = useAuth();
+
   const onSubmit = async (data) => {
-    dispatch(setLoading(true));
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
-
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, role: activeTab }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.message || "Login failed");
-      }
+      const result = await login({ ...data, role: activeTab });
 
       // Handle new API response format (data wrapper)
       const userData = result.data || result;
 
-      dispatch(loginSuccess(result));
       toast.success(`Welcome back, ${userData.user?.name || "User"}!`);
 
       // Redirect based on role or return URL
       if (redirectParams) {
         // Strip duplicate locale if present in redirect URL (e.g., /en/en/...)
-        // next-intl router automatically adds the current locale
         const cleanPath = redirectParams.replace(/^\/(en|bn)/, "") || "/";
 
-        // If admin, prioritize admin dashboard unless returning to an admin page
         if (
           userData.user?.role === "admin" &&
           !cleanPath.startsWith("/admin")
@@ -117,11 +96,9 @@ export default function LoginForm() {
         router.push("/"); // Redirect to home page for users
       }
     } catch (error) {
-      dispatch(loginFailure(error.message || "An unexpected error occurred"));
-      toast.error(error.message || "Login failed");
-    } finally {
-      // Ensure loading is false if something weird happens (though dispatch should handle it)
-      // actually dispatch handles it.
+      toast.error(
+        error.response?.data?.message || error.message || "Login failed",
+      );
     }
   };
 
@@ -253,8 +230,8 @@ export default function LoginForm() {
                   activeTab === "user"
                     ? "Email or Phone (e.g. 017...)"
                     : activeTab === "mechanic"
-                    ? "Mechanic Phone/Email"
-                    : "Email or Phone number"
+                      ? "Mechanic Phone/Email"
+                      : "Email or Phone number"
                 }
                 className="bg-transparent text-white w-full outline-none placeholder-gray-600 font-medium text-lg"
                 {...register("email")}
@@ -337,10 +314,10 @@ export default function LoginForm() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoggingIn}
             className="w-full bg-gradient-to-r from-[#ff4800] to-[#ff6a3d] hover:from-[#ff5500] hover:to-[#ff7b52] text-white py-4! text-lg font-bold rounded-2xl shadow-lg shadow-orange-900/30 transform hover:-translate-y-1 hover:shadow-orange-900/50 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none my-5!"
           >
-            {isLoading ? (
+            {isLoggingIn ? (
               <span className="flex items-center justify-center gap-3">
                 <Wrench className="w-6 h-6 animate-spin" />
                 {t("authenticating")}

@@ -2,6 +2,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../globals.css";
 import StoreProvider from "@/store/provider";
+import QueryProvider from "@/providers/QueryProvider";
 import SessionProvider from "@/providers/SessionProvider";
 import NotificationListener from "@/components/providers/NotificationListener";
 import PWAInstallPrompt from "@/components/common/PWAInstallPrompt";
@@ -151,16 +152,18 @@ export default async function RootLayout({ children, params }) {
           <CsrfProvider>
             <SessionProvider>
               <StoreProvider>
-                <LoadingProvider>
-                  <LocaleProvider currentLocale={locale}>
-                    <LinkLoadingInterceptor />
-                    {children}
-                    <NotificationListener />
-                    <PWAInstallPrompt />
-                    <ToastContainer position="bottom-right" theme="colored" />
-                    <LoadingOverlay />
-                  </LocaleProvider>
-                </LoadingProvider>
+                <QueryProvider>
+                  <LoadingProvider>
+                    <LocaleProvider currentLocale={locale}>
+                      <LinkLoadingInterceptor />
+                      {children}
+                      <NotificationListener />
+                      <PWAInstallPrompt />
+                      <ToastContainer position="bottom-right" theme="colored" />
+                      <LoadingOverlay />
+                    </LocaleProvider>
+                  </LoadingProvider>
+                </QueryProvider>
               </StoreProvider>
             </SessionProvider>
           </CsrfProvider>

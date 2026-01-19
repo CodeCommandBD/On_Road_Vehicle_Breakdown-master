@@ -15,7 +15,8 @@ import {
   Heart,
   Filter,
 } from "lucide-react";
-import axios from "axios";
+import { useQuery } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import { toast } from "react-toastify";
 import { useSelector, useDispatch } from "react-redux";
 import {
@@ -57,7 +58,6 @@ export default function GaragesPage() {
   const pathname = usePathname();
 
   const [garages, setGarages] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
@@ -97,45 +97,48 @@ export default function GaragesPage() {
     setFilters(newFilters);
   };
 
-  const fetchGarages = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (filters.search) params.append("search", filters.search);
-      if (filters.is24Hours) params.append("is24Hours", "true");
-      if (filters.isVerified) params.append("isVerified", "true");
-      if (filters.openNow) params.append("openNow", "true");
-      if (filters.service) params.append("service", filters.service);
-      if (filters.minRating > 0)
-        params.append("minRating", filters.minRating.toString());
-      if (filters.priceRange[0] > 0)
-        params.append("minPrice", filters.priceRange[0].toString());
-      if (filters.priceRange[1] < 5000)
-        params.append("maxPrice", filters.priceRange[1].toString());
+  const fetchGaragesQuery = async () => {
+    const params = new URLSearchParams();
+    if (filters.search) params.append("search", filters.search);
+    if (filters.is24Hours) params.append("is24Hours", "true");
+    if (filters.isVerified) params.append("isVerified", "true");
+    if (filters.openNow) params.append("openNow", "true");
+    if (filters.service) params.append("service", filters.service);
+    if (filters.minRating > 0)
+      params.append("minRating", filters.minRating.toString());
+    if (filters.priceRange[0] > 0)
+      params.append("minPrice", filters.priceRange[0].toString());
+    if (filters.priceRange[1] < 5000)
+      params.append("maxPrice", filters.priceRange[1].toString());
 
-      params.append("isActive", "true");
+    params.append("isActive", "true");
 
-      if (coordinates) {
-        params.append("lat", coordinates.lat);
-        params.append("lng", coordinates.lng);
-        params.append("distance", "10000"); // 10km radius default
-      }
-
-      // Update URL without refresh
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-
-      const response = await axios.get(`/api/garages?${params.toString()}`);
-
-      if (response.data.success) {
-        setGarages(response.data.data.garages);
-        setTotal(response.data.data.total);
-      }
-    } catch (error) {
-      console.error("Failed to fetch garages:", error);
-    } finally {
-      setLoading(false);
+    if (coordinates) {
+      params.append("lat", coordinates.lat);
+      params.append("lng", coordinates.lng);
+      params.append("distance", "10000"); // 10km radius default
     }
+
+    // Update URL without refresh
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+
+    const response = await axiosInstance.get(`/garages?${params.toString()}`);
+    return response.data;
   };
+
+  const { data: garagesData, isLoading: garagesLoading } = useQuery({
+    queryKey: ["garages", filters, coordinates],
+    queryFn: fetchGaragesQuery,
+  });
+
+  useEffect(() => {
+    if (garagesData?.success) {
+      setGarages(garagesData.data.garages);
+      setTotal(garagesData.data.total);
+    }
+  }, [garagesData]);
+
+  const loading = garagesLoading;
 
   const handleNearMe = () => {
     if (!navigator.geolocation) {
@@ -143,7 +146,6 @@ export default function GaragesPage() {
       return;
     }
 
-    setLoading(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setCoordinates({
@@ -154,8 +156,7 @@ export default function GaragesPage() {
       (error) => {
         console.error("Error getting location:", error);
         toast.error("Unable to retrieve your location");
-        setLoading(false);
-      }
+      },
     );
   };
 
@@ -174,7 +175,7 @@ export default function GaragesPage() {
         toast.success(
           favorites.some((f) => (f._id || f) === garageId)
             ? "Removed from favorites"
-            : "Added to favorites"
+            : "Added to favorites",
         );
       }
     } catch (error) {
@@ -378,7 +379,7 @@ export default function GaragesPage() {
                                 coordinates.lat,
                                 coordinates.lng,
                                 garage.location.coordinates[1], // Latitude
-                                garage.location.coordinates[0] // Longitude
+                                garage.location.coordinates[0], // Longitude
                               )}{" "}
                               {t("kmAway")}
                             </div>
