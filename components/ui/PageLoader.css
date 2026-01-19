@@ -1,0 +1,254 @@
+/* Page Loader Styles */
+.page-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: linear-gradient(135deg, #020617 0%, #0f172a 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  opacity: 1;
+  transition: opacity 0.5s ease-out;
+  overflow: hidden;
+}
+
+.page-loader.fade-out {
+  opacity: 0;
+}
+
+.loader-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3rem;
+  position: relative;
+}
+
+.wheel-container {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Large Wheel Setup */
+.large-wheel {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  z-index: 10;
+}
+
+.tire {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #1e293b;
+  border: 15px solid #0f172a;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.rim {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  right: 15px;
+  bottom: 15px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  overflow: hidden;
+  animation: spin 0.6s linear infinite;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+  border: 2px solid #94a3b8;
+}
+
+.rim-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.spoke {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 100%;
+  background: #94a3b8;
+  transform-origin: center;
+  border-left: 2px solid #64748b;
+  border-right: 2px solid #e2e8f0;
+}
+
+.spoke.p1 { transform: translate(-50%, -50%) rotate(0deg); }
+.spoke.p2 { transform: translate(-50%, -50%) rotate(45deg); }
+.spoke.p3 { transform: translate(-50%, -50%) rotate(90deg); }
+.spoke.p4 { transform: translate(-50%, -50%) rotate(135deg); }
+
+.center-cap {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  background: #e85d04;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  z-index: 5;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* Brake Caliper - Static behind rim but visually interacting */
+/* Note: In a real car caliper is stationary. To show speed, the wheel spins relative to it. 
+   However, since we are translating the whole rim, we can place the caliper 'behind' or 'over' depending on view.
+   Here we'll put it slightly offset, stationary to the wheel container, but over the rim edge? 
+   Actually, usually inside. Let's simplify: spinning rim is enough for speed. 
+*/
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Speed Lines */
+.speed-lines {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%; /* Cover full width */
+  max-width: 800px;
+  height: 300px; /* Taller area */
+  z-index: 1;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.speed-lines span {
+  position: absolute;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.6); /* Slightly more visible */
+  border-radius: 2px;
+  animation: speedLine 1s linear infinite;
+  opacity: 0;
+  box-shadow: 0 0 5px rgba(255, 255, 255, 0.3); /* Glow effect */
+}
+
+/* Original lines */
+.speed-lines span:nth-child(1) { top: 20%; left: 100%; width: 100px; animation-duration: 0.6s; animation-delay: 0s; }
+.speed-lines span:nth-child(2) { top: 40%; left: 100%; width: 60px; animation-duration: 0.8s; animation-delay: 0.2s; }
+.speed-lines span:nth-child(3) { top: 60%; left: 100%; width: 150px; animation-duration: 0.5s; animation-delay: 0.1s; }
+.speed-lines span:nth-child(4) { top: 80%; left: 100%; width: 80px; animation-duration: 0.7s; animation-delay: 0.3s; }
+.speed-lines span:nth-child(5) { top: 10%; left: 100%; width: 120px; animation-duration: 0.9s; animation-delay: 0.4s; }
+
+/* New lines focused on filling the left side */
+.speed-lines span:nth-child(6) { top: 30%; left: 100%; width: 200px; animation-duration: 0.5s; animation-delay: 0.15s; }
+.speed-lines span:nth-child(7) { top: 50%; left: 100%; width: 140px; animation-duration: 0.7s; animation-delay: 0.45s; }
+.speed-lines span:nth-child(8) { top: 70%; left: 100%; width: 180px; animation-duration: 0.6s; animation-delay: 0.25s; }
+.speed-lines span:nth-child(9) { top: 15%; left: 100%; width: 90px; animation-duration: 0.8s; animation-delay: 0.55s; }
+.speed-lines span:nth-child(10) { top: 85%; left: 100%; width: 160px; animation-duration: 0.9s; animation-delay: 0.05s; }
+
+@keyframes speedLine {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-800px); /* Move much further left */
+    opacity: 0;
+  }
+}
+
+/* Smoke Effect */
+.smoke-container {
+  position: absolute;
+  bottom: 0px;
+  left: -20px;
+  width: 150px;
+  height: 60px;
+  z-index: 5;
+}
+
+.smoke {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: #94a3b8;
+  border-radius: 50%;
+  opacity: 0;
+  animation: smoke 1.5s linear infinite;
+}
+
+.smoke.s1 { width: 30px; height: 30px; animation-delay: 0s; }
+.smoke.s2 { width: 40px; height: 40px; animation-delay: 0.4s; }
+.smoke.s3 { width: 25px; height: 25px; animation-delay: 0.8s; }
+.smoke.s4 { width: 35px; height: 35px; animation-delay: 1.2s; }
+
+@keyframes smoke {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(-100px, -20px) scale(2.5);
+    opacity: 0;
+  }
+}
+
+/* Text */
+.loading-text {
+  font-size: 2rem;
+  letter-spacing: 0.2rem;
+  color: #fff;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-style: italic;
+  display: flex;
+}
+
+.dots span {
+  animation: dotPulse 1.4s infinite;
+  opacity: 0;
+}
+
+.dots span:nth-child(1) { animation-delay: 0s; }
+.dots span:nth-child(2) { animation-delay: 0.2s; }
+.dots span:nth-child(3) { animation-delay: 0.4s; }
+
+/* Mobile Adjustments */
+@media (max-width: 640px) {
+  .large-wheel {
+    width: 150px;
+    height: 150px;
+  }
+  
+  .tire {
+    border-width: 10px;
+  }
+  
+  .rim {
+    top: 10px; left: 10px; right: 10px; bottom: 10px;
+  }
+  
+  .loading-text {
+    font-size: 1.5rem;
+  }
+}

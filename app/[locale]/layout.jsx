@@ -17,6 +17,7 @@ import LocaleProvider from "@/components/providers/LocaleProvider";
 import { LoadingProvider } from "@/components/providers/LoadingProvider";
 import LoadingOverlay from "@/components/ui/LoadingOverlay";
 import { LinkLoadingInterceptor } from "@/components/providers/LinkLoadingInterceptor";
+import PageLoader from "@/components/ui/PageLoader";
 import "@/lib/utils/console-suppressor"; // Suppress console.log in production
 
 // Configure Inter font
@@ -148,6 +149,7 @@ export default async function RootLayout({ children, params }) {
         />
       </head>
       <body className={`font-sans antialiased bg-[#020617]`}>
+        <PageLoader />
         <NextIntlClientProvider messages={messages}>
           <CsrfProvider>
             <SessionProvider>
