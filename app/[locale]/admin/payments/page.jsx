@@ -5,14 +5,10 @@ import PaymentStats from "@/components/admin/payments/PaymentStats";
 import PaymentTable from "@/components/admin/payments/PaymentTable";
 import { Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
+import { useQuery } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 
 export default function PaymentsPage() {
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState({
-    payments: [],
-    pagination: { page: 1, limit: 10, total: 0, pages: 0 },
-    stats: { revenue: 0, payouts: 0, net: 0, count: 0 },
-  });
   const [filters, setFilters] = useState({
     page: 1,
     limit: 10,
@@ -23,9 +19,9 @@ export default function PaymentsPage() {
     endDate: "",
   });
 
-  const fetchPayments = useCallback(async () => {
-    try {
-      setLoading(true);
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ["adminPayments", filters],
+    queryFn: async () => {
       const queryParams = new URLSearchParams({
         page: filters.page,
         limit: filters.limit,
@@ -36,25 +32,15 @@ export default function PaymentsPage() {
         ...(filters.endDate && { endDate: filters.endDate }),
       });
 
-      const res = await fetch(`/api/admin/payments?${queryParams}`);
-      const json = await res.json();
-
-      if (json.success) {
-        setData(json.data);
-      } else {
-        toast.error(json.message || "Failed to fetch payments");
-      }
-    } catch (error) {
-      console.error("Fetch Error:", error);
-      toast.error("Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
-
-  useEffect(() => {
-    fetchPayments();
-  }, [fetchPayments]);
+      const res = await axiosInstance.get(`/api/admin/payments?${queryParams}`);
+      return res.data.data;
+    },
+    initialData: {
+      payments: [],
+      pagination: { page: 1, limit: 10, total: 0, pages: 0 },
+      stats: { revenue: 0, payouts: 0, net: 0, count: 0 },
+    },
+  });
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value, page: 1 })); // Reset to page 1 on filter change

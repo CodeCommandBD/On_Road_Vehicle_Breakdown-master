@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
-import axios from "axios";
+import { useQuery } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import {
   TrendingUp,
   DollarSign,
@@ -33,8 +34,6 @@ import { useTranslations } from "next-intl";
 export default function GarageAnalytics() {
   const t = useTranslations("Subscription");
   const user = useSelector(selectUser);
-  const [analytics, setAnalytics] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState(30);
 
   const isPremium =
@@ -44,29 +43,17 @@ export default function GarageAnalytics() {
     (!user?.garage?.membershipExpiry ||
       new Date(user.garage.membershipExpiry) > new Date());
 
-  useEffect(() => {
-    if (isPremium && user?.garage?._id) {
-      fetchAnalytics();
-    } else {
-      setLoading(false);
-    }
-  }, [timeFilter, user]);
-
-  const fetchAnalytics = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(
-        `/api/garage/analytics?garageId=${user.garage._id}&days=${timeFilter}`
+  const { data: analytics, isLoading: loading } = useQuery({
+    queryKey: ["garageAnalytics", user?.garage?._id, timeFilter],
+    queryFn: async () => {
+      const response = await axiosInstance.get(
+        `/api/garage/analytics?garageId=${user.garage._id}&days=${timeFilter}`,
       );
-      if (response.data.success) {
-        setAnalytics(response.data.data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch analytics:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      return response.data.data;
+    },
+    enabled: !!(isPremium && user?.garage?._id),
+    staleTime: 5 * 60 * 1000,
+  });
 
   const COLORS = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8"];
 

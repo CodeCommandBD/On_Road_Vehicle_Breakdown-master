@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import {
   Crown,
@@ -19,28 +21,17 @@ import { useTranslations } from "next-intl";
 export default function SubscriptionCard() {
   const t = useTranslations("Subscription");
   const commonT = useTranslations("Common");
-  const router = useRouterWithLoading(); // Regular routing
-  const [subscription, setSubscription] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const router = useRouterWithLoading();
   const [showCancelModal, setShowCancelModal] = useState(false);
 
-  useEffect(() => {
-    fetchSubscription();
-  }, []);
-
-  const fetchSubscription = async () => {
-    try {
-      const response = await fetch("/api/subscriptions");
-      const data = await response.json();
-      if (data.success && data.data.current) {
-        setSubscription(data.data.current);
-      }
-    } catch (error) {
-      console.error("Error fetching subscription:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: subscription = null, isLoading: loading } = useQuery({
+    queryKey: ["userSubscription"],
+    queryFn: async () => {
+      const response = await axiosInstance.get("/api/subscriptions");
+      return response.data.data.current || null;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
   const getPlanColor = (tier) => {
     const colors = {
@@ -151,7 +142,7 @@ export default function SubscriptionCard() {
     <>
       <div
         className={`bg-gradient-to-br ${getPlanColor(
-          plan.tier
+          plan.tier,
         )} rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden h-full flex flex-col`}
       >
         {/* Background Pattern */}

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import {
   MapPin,
@@ -11,56 +10,44 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 
 export default function OpenJobsPage() {
-  const router = useRouterWithLoading(); // Regular routing
-  const [loading, setLoading] = useState(true);
-  const [jobs, setJobs] = useState([]);
-  const [acceptingId, setAcceptingId] = useState(null);
+  const router = useRouterWithLoading();
 
-  useEffect(() => {
-    fetchJobs();
-    const interval = setInterval(fetchJobs, 10000);
-    return () => clearInterval(interval);
-  }, []);
+  const { data: jobs = [], isLoading: loading } = useQuery({
+    queryKey: ["openJobs"],
+    queryFn: async () => {
+      const res = await axiosInstance.get("/api/mechanic/jobs");
+      return res.data.jobs || [];
+    },
+    refetchInterval: 10000,
+  });
 
-  const fetchJobs = async () => {
-    try {
-      const res = await fetch("/api/mechanic/jobs");
-      const data = await res.json();
-      if (data.success) {
-        setJobs(data.jobs);
-      }
-    } catch (error) {
-      console.error("Failed to fetch jobs:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAcceptJob = async (jobId) => {
-    setAcceptingId(jobId);
-    try {
-      const res = await fetch("/api/mechanic/jobs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId: jobId }),
+  const acceptMutation = useMutation({
+    mutationFn: async (jobId) => {
+      const res = await axiosInstance.post("/api/mechanic/jobs", {
+        bookingId: jobId,
       });
+      return res.data;
+    },
+    onSuccess: (data, jobId) => {
+      toast.success("Job Accepted! 🚀");
+      router.push(`/mechanic/dashboard/bookings/${jobId}`);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to accept job");
+    },
+  });
 
-      const data = await res.json();
-
-      if (data.success) {
-        toast.success("Job Accepted! 🚀");
-        router.push(`/mechanic/dashboard/bookings/${jobId}`);
-      } else {
-        toast.error(data.message);
-        setAcceptingId(null);
-      }
-    } catch (error) {
-      toast.error("Failed to accept job");
-      setAcceptingId(null);
-    }
+  const handleAcceptJob = (jobId) => {
+    acceptMutation.mutate(jobId);
   };
+
+  const acceptingId = acceptMutation.isPending
+    ? acceptMutation.variables
+    : null;
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 pb-20 p-4 sm:p-8">

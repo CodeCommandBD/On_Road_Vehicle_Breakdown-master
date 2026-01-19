@@ -11,17 +11,37 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import axios from "axios";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import { useTranslations } from "next-intl";
 
 export default function QuickActions({ onSOSSent }) {
+  const queryClient = useQueryClient();
   const t = useTranslations("SOS");
   const commonT = useTranslations("Common");
-  const [loading, setLoading] = useState(false);
   const [showSOSModal, setShowSOSModal] = useState(false);
   const { user } = useSelector((state) => state.auth);
+
+  const sosMutation = useMutation({
+    mutationFn: async (sosData) => {
+      const response = await axiosInstance.post("/api/sos", sosData);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("EMERGENCY ALERT SENT! Help is on the way.");
+      if (onSOSSent) onSOSSent();
+      queryClient.invalidateQueries({ queryKey: ["activeSOS"] });
+    },
+    onError: (error) => {
+      console.error("SOS API error:", error);
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to send SOS alert. Please call emergency services.",
+      );
+    },
+  });
 
   const handleSOS = async () => {
     if (!navigator.geolocation) {
@@ -39,49 +59,29 @@ export default function QuickActions({ onSOSSent }) {
 
   const executeSOS = async () => {
     setShowSOSModal(false);
-    try {
-      setLoading(true);
-      toast.info("Capturing your location...");
+    toast.info("Capturing your location...");
 
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-
-          try {
-            const response = await axios.post("/api/sos", {
-              latitude,
-              longitude,
-              phone: user.phone || "01XXXXXXXXX",
-              vehicleType: user.vehicles?.[0]?.vehicleType || "Other",
-              address: "Automatic Location Capture",
-            });
-
-            if (response.data.success) {
-              toast.success("EMERGENCY ALERT SENT! Help is on the way.");
-              if (onSOSSent) onSOSSent();
-            }
-          } catch (error) {
-            console.error("SOS API error:", error);
-            toast.error(
-              "Failed to send SOS alert. Please call emergency services."
-            );
-          } finally {
-            setLoading(false);
-          }
-        },
-        (error) => {
-          console.error("Geolocation error:", error);
-          toast.error(
-            "Could not capture location. Please ensure GPS is enabled."
-          );
-          setLoading(false);
-        }
-      );
-    } catch (error) {
-      console.error("SOS handle error:", error);
-      setLoading(false);
-    }
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        sosMutation.mutate({
+          latitude,
+          longitude,
+          phone: user.phone || "01XXXXXXXXX",
+          vehicleType: user.vehicles?.[0]?.vehicleType || "Other",
+          address: "Automatic Location Capture",
+        });
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        toast.error(
+          "Could not capture location. Please ensure GPS is enabled.",
+        );
+      },
+    );
   };
+
+  const loading = sosMutation.isPending;
 
   const actions = [
     {

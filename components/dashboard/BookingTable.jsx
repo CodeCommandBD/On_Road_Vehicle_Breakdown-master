@@ -25,6 +25,8 @@ import { selectSearchTerm } from "@/store/slices/uiSlice";
 import { useTranslations } from "next-intl";
 import { createPortal } from "react-dom";
 import { toast } from "react-toastify";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 
 export default function BookingTable({
   type = "user",
@@ -195,7 +197,7 @@ export default function BookingTable({
                           Due:{" "}
                           {new Date(booking.slaDeadline).toLocaleTimeString(
                             [],
-                            { hour: "2-digit", minute: "2-digit" }
+                            { hour: "2-digit", minute: "2-digit" },
                           )}
                         </div>
                       )}
@@ -205,7 +207,7 @@ export default function BookingTable({
                   <span
                     className={cn(
                       "px-3 py-1 rounded-full text-xs font-semibold border",
-                      getStatusConfig(booking.status)
+                      getStatusConfig(booking.status),
                     )}
                   >
                     {getStatusLabel(booking.status)}
@@ -259,7 +261,7 @@ export default function BookingTable({
               <span
                 className={cn(
                   "px-2 py-1 rounded text-[10px] font-bold uppercase border",
-                  getStatusConfig(booking.status)
+                  getStatusConfig(booking.status),
                 )}
               >
                 {getStatusLabel(booking.status)}
@@ -487,7 +489,7 @@ function UserBookingActions({ booking, t, onStatusUpdate }) {
               )}
             </div>
           </>,
-          document.body
+          document.body,
         )}
 
       {/* Cancel Confirmation Modal */}
@@ -521,7 +523,7 @@ function UserBookingActions({ booking, t, onStatusUpdate }) {
               </div>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
 
       {/* Phone Number Modal (For Call Garage) */}
@@ -579,7 +581,7 @@ function UserBookingActions({ booking, t, onStatusUpdate }) {
               )}
             </div>
           </div>,
-          document.body
+          document.body,
         )}
     </div>
   );
@@ -587,6 +589,7 @@ function UserBookingActions({ booking, t, onStatusUpdate }) {
 
 // Garage Booking Actions Dropdown Component
 function GarageBookingActions({ booking, onStatusUpdate, team, t }) {
+  const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [position, setPosition] = useState({ top: 0, right: 0 });
@@ -602,24 +605,33 @@ function GarageBookingActions({ booking, onStatusUpdate, team, t }) {
     setIsOpen(!isOpen);
   };
 
-  const handleAssign = async (mechanicId) => {
-    try {
-      const response = await fetch(`/api/bookings/${booking._id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ assignedMechanic: mechanicId }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        toast.success("Mechanic assigned successfully");
-        setShowAssignModal(false);
-        if (onStatusUpdate) onStatusUpdate(booking._id, "confirmed");
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error("Failed to assign mechanic");
-    }
+  const assignMutation = useMutation({
+    mutationFn: async (mechanicId) => {
+      const response = await axiosInstance.patch(
+        `/api/bookings/${booking._id}`,
+        {
+          assignedMechanic: mechanicId,
+        },
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success("Mechanic assigned successfully");
+      setShowAssignModal(false);
+      // We don't necessarily have a specific query for bookings here since they might be passed from parent,
+      // but onStatusUpdate usually triggers a refetch in the parent.
+      if (onStatusUpdate) onStatusUpdate(booking._id, "confirmed");
+      // Optionally invalidate bookings if we know the key
+      queryClient.invalidateQueries({ queryKey: ["userDashboardData"] });
+      queryClient.invalidateQueries({ queryKey: ["garageDashboardData"] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to assign mechanic");
+    },
+  });
+
+  const handleAssign = (mechanicId) => {
+    assignMutation.mutate(mechanicId);
   };
 
   return (
@@ -712,7 +724,7 @@ function GarageBookingActions({ booking, onStatusUpdate, team, t }) {
                 )}
             </div>
           </>,
-          document.body
+          document.body,
         )}
 
       {/* Mechanic Assignment Modal */}
@@ -783,7 +795,7 @@ function GarageBookingActions({ booking, onStatusUpdate, team, t }) {
               </div>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
     </div>
   );

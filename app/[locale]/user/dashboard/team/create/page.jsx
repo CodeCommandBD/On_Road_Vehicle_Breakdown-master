@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
+import { useMutation } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import axios from "axios";
 import { ArrowLeft, CheckCircle, XCircle } from "lucide-react";
 
 export default function CreateOrganizationPage() {
   const router = useRouterWithLoading(); // Regular routing
-  const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState("success"); // 'success' or 'error'
   const [modalMessage, setModalMessage] = useState("");
@@ -19,58 +20,61 @@ export default function CreateOrganizationPage() {
     contactPhone: "",
   });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  const createOrgMutation = useMutation({
+    mutationFn: async (payload) => {
+      const res = await axiosInstance.post("/api/organizations", payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      setModalType("success");
+      setModalMessage("Organization created successfully!");
+      setShowModal(true);
 
-    try {
-      const payload = {
-        name: formData.name,
-      };
-
-      // Add optional fields if provided
-      if (formData.webhookUrl || formData.contactName) {
-        payload.settings = {};
-        if (formData.webhookUrl) {
-          payload.settings.webhookUrl = formData.webhookUrl;
-        }
-      }
-
-      if (formData.contactName || formData.contactEmail) {
-        payload.billingInfo = {};
-        if (formData.contactName)
-          payload.billingInfo.contactName = formData.contactName;
-        if (formData.contactEmail)
-          payload.billingInfo.contactEmail = formData.contactEmail;
-        if (formData.contactPhone)
-          payload.billingInfo.contactPhone = formData.contactPhone;
-      }
-
-      const res = await axios.post("/api/organizations", payload);
-
-      if (res.data.success) {
-        setModalType("success");
-        setModalMessage("Organization created successfully!");
-        setShowModal(true);
-
-        // Redirect after 1.5 seconds
-        setTimeout(() => {
-          router.push("/user/dashboard/team");
-        }, 1500);
-      }
-    } catch (error) {
-      console.error("Create organization error:", error);
+      // Redirect after 1.5 seconds
+      setTimeout(() => {
+        router.push("/user/dashboard/team");
+      }, 1500);
+    },
+    onError: (error) => {
       setModalType("error");
       setModalMessage(
         error.response?.data?.message ||
           error.message ||
-          "Failed to create organization. Please try again."
+          "Failed to create organization. Please try again.",
       );
       setShowModal(true);
-    } finally {
-      setLoading(false);
+    },
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    const payload = {
+      name: formData.name,
+    };
+
+    // Add optional fields if provided
+    if (formData.webhookUrl || formData.contactName) {
+      payload.settings = {};
+      if (formData.webhookUrl) {
+        payload.settings.webhookUrl = formData.webhookUrl;
+      }
     }
+
+    if (formData.contactName || formData.contactEmail) {
+      payload.billingInfo = {};
+      if (formData.contactName)
+        payload.billingInfo.contactName = formData.contactName;
+      if (formData.contactEmail)
+        payload.billingInfo.contactEmail = formData.contactEmail;
+      if (formData.contactPhone)
+        payload.billingInfo.contactPhone = formData.contactPhone;
+    }
+
+    createOrgMutation.mutate(payload);
   };
+
+  const loading = createOrgMutation.isPending;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6">

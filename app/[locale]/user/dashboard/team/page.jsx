@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
@@ -30,266 +31,235 @@ import {
 import Link from "next/link";
 
 export default function TeamManagementPage() {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [organizations, setOrganizations] = useState([]);
+  const queryClient = useQueryClient();
+  const router = useRouterWithLoading();
+
   const [selectedOrg, setSelectedOrg] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [hasAccess, setHasAccess] = useState(true);
   const [activeTab, setActiveTab] = useState("members");
   const [brandingData, setBrandingData] = useState({
     name: "",
     logo: "",
     primaryColor: "#3B82F6",
   });
-  const [brandingEditing, setBrandingEditing] = useState(false);
 
   // Member management states
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
-  const [members, setMembers] = useState([]);
-  const [invitations, setInvitations] = useState([]);
-  const [activities, setActivities] = useState([]);
 
   // Modal states
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("member");
-  const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState("");
   const [selectedMember, setSelectedMember] = useState(null);
-  const [resendingInvitation, setResendingInvitation] = useState(null);
-  const [updatingRole, setUpdatingRole] = useState(null);
 
   const router = useRouterWithLoading(); // Regular routing
 
   // ... (keep existing helper functions)
 
-  useEffect(() => {
-    checkUserAccess();
-  }, []);
-
-  const checkUserAccess = async () => {
-    try {
+  // 1. Fetch Profile & Organizations
+  const { data: authData, isLoading: authLoading } = useQuery({
+    queryKey: ["authAndOrganizations"],
+    queryFn: async () => {
       const [profileRes, orgsRes] = await Promise.all([
-        axios.get("/api/profile"),
-        axios.get("/api/organizations"),
+        axiosInstance.get("/api/profile"),
+        axiosInstance.get("/api/organizations"),
       ]);
+      return {
+        user: profileRes.data.user,
+        organizations: orgsRes.data.data || [],
+      };
+    },
+  });
 
-      const userData = profileRes.data.user;
-      const orgs = orgsRes.data.data || [];
+  const currentUser = authData?.user;
+  const organizations = authData?.organizations || [];
 
-      setCurrentUser(userData);
-      setOrganizations(orgs);
+  // 2. Fetch Members, Invitations, and Activities (Dependent on selectedOrg)
+  const { data: orgData, isLoading: orgDataLoading } = useQuery({
+    queryKey: ["orgAccess", selectedOrg?.id],
+    queryFn: async () => {
+      const [membersRes, invitesRes, activityRes] = await Promise.all([
+        axiosInstance.get(`/api/organizations/${selectedOrg.id}/members`),
+        axiosInstance.get(`/api/organizations/${selectedOrg.id}/invitations`),
+        axiosInstance.get(
+          `/api/organizations/${selectedOrg.id}/activities?limit=20`,
+        ),
+      ]);
+      return {
+        members: membersRes.data.data,
+        invitations: invitesRes.data.data,
+        activities: activityRes.data.data,
+      };
+    },
+    enabled: !!selectedOrg,
+  });
 
-      // Strict Enterprise & Premium Check
-      const isEligiblePlan =
-        userData.membershipTier === "enterprise" ||
-        userData.membershipTier === "premium" ||
-        userData.planTier === "enterprise" ||
-        userData.planTier === "premium";
+  const members = orgData?.members || [];
+  const invitations = orgData?.invitations || [];
+  const activities = orgData?.activities || [];
 
-      // Use backend-computed flags for robust role checking
-      const isOwner = userData.isEnterpriseOwner;
-      const isTeamMember = userData.isTeamMember;
-
-      // Access Check:
-      // 1. Must have eligible plan (or be admin)
-      // 2. If Team Member, must belong to an org
-
-      // If NOT eligible plan AND NOT a team member AND NOT Global Admin -> Deny
-      if (!isEligiblePlan && !isTeamMember && userData.role !== "admin") {
-        setHasAccess(false);
-        setLoading(false);
-        return;
-      }
-
-      if (isTeamMember && (!orgs || orgs.length === 0)) {
-        setHasAccess(false);
-        setLoading(false);
-        return;
-      }
-
-      setHasAccess(true);
-
-      if (orgs.length > 0) {
-        const firstOrg = orgs[0];
-        setSelectedOrg(firstOrg);
-        setBrandingData({
-          name: firstOrg.name || "",
-          logo: firstOrg.settings?.branding?.logo || "",
-          primaryColor: firstOrg.settings?.branding?.primaryColor || "#3B82F6",
-        });
-      }
-      setLoading(false);
-    } catch (error) {
-      console.error("Failed to check user access:", error);
-      router.push("/user/dashboard");
-    }
-  };
-
-  // Load members and activities when org is selected
+  // Sync selectedOrg and branding when organizations load
   useEffect(() => {
-    if (selectedOrg) {
-      loadMembers();
-      loadInvitations();
-      loadActivities();
-    }
-  }, [selectedOrg]);
-
-  const loadOrganizations = async () => {
-    try {
-      const res = await axios.get("/api/organizations");
-      console.log("Organizations response:", res.data);
-      setOrganizations(res.data.data || []);
-      if (res.data.data && res.data.data.length > 0) {
-        setSelectedOrg(res.data.data[0]);
-      }
-      setLoading(false);
-    } catch (error) {
-      console.error("Failed to load organizations:", error);
-      setOrganizations([]);
-      setLoading(false);
-    }
-  };
-
-  const loadMembers = async () => {
-    try {
-      const res = await axios.get(
-        `/api/organizations/${selectedOrg.id}/members`
-      );
-      setMembers(res.data.data);
-    } catch (error) {
-      console.error("Failed to load members:", error);
-    }
-  };
-
-  const loadInvitations = async () => {
-    try {
-      const res = await axios.get(
-        `/api/organizations/${selectedOrg.id}/invitations`
-      );
-      setInvitations(res.data.data);
-    } catch (error) {
-      console.error("Failed to load invitations:", error);
-    }
-  };
-
-  const loadActivities = async () => {
-    try {
-      const res = await axios.get(
-        `/api/organizations/${selectedOrg.id}/activities?limit=20`
-      );
-      setActivities(res.data.data);
-    } catch (error) {
-      console.error("Failed to load activities:", error);
-    }
-  };
-
-  const handleInviteMember = async (e) => {
-    e.preventDefault();
-    setInviteLoading(true);
-    setInviteError("");
-
-    try {
-      await axios.post(`/api/organizations/${selectedOrg.id}/members`, {
-        email: inviteEmail,
-        role: inviteRole,
+    if (organizations.length > 0 && !selectedOrg) {
+      const firstOrg = organizations[0];
+      setSelectedOrg(firstOrg);
+      setBrandingData({
+        name: firstOrg.name || "",
+        logo: firstOrg.settings?.branding?.logo || "",
+        primaryColor: firstOrg.settings?.branding?.primaryColor || "#3B82F6",
       });
+    }
+  }, [organizations, selectedOrg]);
 
+  // Access check logic remains similar but derived from currentUser
+  const isEligiblePlan =
+    currentUser?.membershipTier === "enterprise" ||
+    currentUser?.membershipTier === "premium" ||
+    currentUser?.planTier === "enterprise" ||
+    currentUser?.planTier === "premium";
+
+  const isTeamMember = currentUser?.isTeamMember;
+  const hasAccess =
+    authLoading || !currentUser
+      ? true // show loading state
+      : (isEligiblePlan || isTeamMember || currentUser?.role === "admin") &&
+        (!isTeamMember || (organizations && organizations.length > 0));
+
+  const loading = authLoading || (selectedOrg && orgDataLoading);
+
+  // Mutations
+  const inviteMutation = useMutation({
+    mutationFn: async (payload) => {
+      const res = await axiosInstance.post(
+        `/api/organizations/${selectedOrg.id}/members`,
+        payload,
+      );
+      return res.data;
+    },
+    onSuccess: () => {
       toast.success("Invitation sent successfully!");
       setInviteEmail("");
-      setInviteRole("member");
       setShowInviteModal(false);
-      loadMembers();
-      loadInvitations();
-      loadActivities();
-    } catch (error) {
-      console.error("Invite Error:", error);
-      const errorMessage =
-        error.response?.data?.message || "Failed to send invitation";
-      setInviteError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setInviteLoading(false);
-    }
-  };
-
-  const handleRemoveMember = async (userId) => {
-    if (!confirm("Are you sure you want to remove this member?")) {
-      return;
-    }
-
-    try {
-      await axios.delete(
-        `/api/organizations/${selectedOrg.id}/members?userId=${userId}`
+      queryClient.invalidateQueries({
+        queryKey: ["orgAccess", selectedOrg.id],
+      });
+    },
+    onError: (error) => {
+      setInviteError(
+        error.response?.data?.message || "Failed to send invitation",
       );
+    },
+  });
+
+  const removeMemberMutation = useMutation({
+    mutationFn: async (userId) => {
+      await axiosInstance.delete(
+        `/api/organizations/${selectedOrg.id}/members?userId=${userId}`,
+      );
+    },
+    onSuccess: () => {
       toast.success("Member removed successfully");
-      loadMembers();
-      loadActivities();
-    } catch (error) {
+      queryClient.invalidateQueries({
+        queryKey: ["orgAccess", selectedOrg.id],
+      });
+    },
+    onError: (error) => {
       toast.error(error.response?.data?.message || "Failed to remove member");
-    }
-  };
+    },
+  });
 
-  const handleUpdateRole = async (userId, newRole) => {
-    setUpdatingRole(userId);
-    try {
-      await axios.patch(`/api/organizations/${selectedOrg.id}/members`, {
-        userId,
-        role: newRole,
-      });
+  const updateRoleMutation = useMutation({
+    mutationFn: async ({ userId, role }) => {
+      await axiosInstance.patch(
+        `/api/organizations/${selectedOrg.id}/members`,
+        { userId, role },
+      );
+    },
+    onSuccess: () => {
       toast.success("Member role updated");
-      loadMembers();
-      loadActivities();
-    } catch (error) {
+      queryClient.invalidateQueries({
+        queryKey: ["orgAccess", selectedOrg.id],
+      });
+    },
+    onError: (error) => {
       toast.error(error.response?.data?.message || "Failed to update role");
-    } finally {
-      setUpdatingRole(null);
-    }
-  };
+    },
+  });
 
-  const handleResendInvitation = async (invitationId) => {
-    setResendingInvitation(invitationId);
-    try {
-      await axios.patch(`/api/organizations/${selectedOrg.id}/invitations`, {
-        invitationId,
-      });
+  const resendInviteMutation = useMutation({
+    mutationFn: async (invitationId) => {
+      await axiosInstance.patch(
+        `/api/organizations/${selectedOrg.id}/invitations`,
+        { invitationId },
+      );
+    },
+    onSuccess: () => {
       toast.success("Invitation resent successfully");
-    } catch (error) {
+    },
+    onError: (error) => {
       toast.error(
-        error.response?.data?.message || "Failed to resend invitation"
+        error.response?.data?.message || "Failed to resend invitation",
       );
-    } finally {
-      setResendingInvitation(null);
+    },
+  });
+
+  const brandingMutation = useMutation({
+    mutationFn: async (data) => {
+      const res = await axiosInstance.patch(
+        `/api/organizations/${selectedOrg.id}`,
+        data,
+      );
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success("Branding settings saved");
+      setSelectedOrg(data.data);
+      queryClient.invalidateQueries({ queryKey: ["authAndOrganizations"] });
+    },
+    onError: () => {
+      toast.error("Failed to save branding");
+    },
+  });
+
+  const handleInviteMember = (e) => {
+    e.preventDefault();
+    setInviteError("");
+    inviteMutation.mutate({ email: inviteEmail, role: inviteRole });
+  };
+
+  const handleRemoveMember = (userId) => {
+    if (confirm("Are you sure you want to remove this member?")) {
+      removeMemberMutation.mutate(userId);
     }
   };
 
-  const handleSaveBranding = async () => {
-    setBrandingEditing(true);
-    try {
-      await axios.patch(`/api/organizations/${selectedOrg.id}`, {
-        name: brandingData.name,
-        settings: {
-          branding: {
-            logo: brandingData.logo,
-            primaryColor: brandingData.primaryColor,
-          },
-        },
-      });
-      toast.success("Branding settings saved");
-      // Refresh org data
-      const res = await axios.get(`/api/organizations/${selectedOrg.id}`);
-      const updatedOrg = res.data.data;
-      setSelectedOrg(updatedOrg);
-      setOrganizations((prev) =>
-        prev.map((o) => (o.id === updatedOrg.id ? updatedOrg : o))
-      );
-    } catch (error) {
-      toast.error("Failed to save branding");
-    } finally {
-      setBrandingEditing(false);
-    }
+  const handleUpdateRole = (userId, newRole) => {
+    updateRoleMutation.mutate({ userId, role: newRole });
   };
+
+  const handleResendInvitation = (invitationId) => {
+    resendInviteMutation.mutate(invitationId);
+  };
+
+  const handleSaveBranding = () => {
+    brandingMutation.mutate({
+      name: brandingData.name,
+      settings: {
+        branding: {
+          logo: brandingData.logo,
+          primaryColor: brandingData.primaryColor,
+        },
+      },
+    });
+  };
+
+  const inviteLoading = inviteMutation.isPending;
+  const updatingRole = updateRoleMutation.isPending;
+  const resendingInvitation = resendInviteMutation.isPending;
+  const brandingEditing = brandingMutation.isPending;
+
+  // Branding mutation handler remains handleSaveBranding
 
   const filteredMembers = members.filter((member) => {
     const matchesSearch =
@@ -718,7 +688,7 @@ export default function TeamManagementPage() {
                   (members.length /
                     getMemberLimit(currentUser?.membershipTier)) *
                     100,
-                  100
+                  100,
                 )}%`,
               }}
             ></div>
@@ -778,7 +748,7 @@ export default function TeamManagementPage() {
                           <span className="text-[10px] text-gray-500 font-bold uppercase">
                             Joined{" "}
                             {new Date(
-                              ownerMember.joinedAt
+                              ownerMember.joinedAt,
                             ).toLocaleDateString()}
                           </span>
                         </div>
@@ -924,7 +894,7 @@ export default function TeamManagementPage() {
                                 onChange={(e) =>
                                   handleUpdateRole(
                                     member.userId,
-                                    e.target.value
+                                    e.target.value,
                                   )
                                 }
                                 className="appearance-none bg-black/40 hover:bg-black/60 text-white text-xs font-bold px-4 py-2 rounded-xl border border-white/10 pr-10 focus:outline-none focus:border-blue-500 transition-all uppercase tracking-wide cursor-pointer shadow-sm"

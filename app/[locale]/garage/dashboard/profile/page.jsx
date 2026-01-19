@@ -24,6 +24,8 @@ import {
 import LockedFeature from "@/components/common/LockedFeature";
 import { toast } from "react-toastify";
 import { useTranslations } from "next-intl";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import axios from "axios";
 
 // Dynamically import MapComponent to avoid SSR issues
@@ -60,8 +62,7 @@ const VEHICLE_TYPES = [
 export default function GarageProfilePage() {
   const t = useTranslations("Profile");
   const user = useSelector(selectUser);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const queryClient = useQueryClient();
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [isLocationLocked, setIsLocationLocked] = useState(true);
   const [formData, setFormData] = useState({
@@ -93,77 +94,85 @@ export default function GarageProfilePage() {
   });
   const [membership, setMembership] = useState(null);
 
-  // Fetch garage profile
+  const { data: profileData, isLoading: isFetching } = useQuery({
+    queryKey: ["garageProfile"],
+    queryFn: async () => {
+      const response = await axiosInstance.get("/api/profile");
+      return response.data.user;
+    },
+    enabled: !!user?._id,
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async (payload) => {
+      const response = await axiosInstance.put("/api/profile", payload);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success(t("updateSuccess"));
+      queryClient.invalidateQueries(["garageProfile"]);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || t("updateFailed"));
+    },
+  });
+
+  const isLoading = isFetching;
+  const isSaving = updateProfileMutation.isPending;
+
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (!user) return;
+    if (profileData) {
+      const garage = profileData.garage;
+      if (!garage) return;
 
-      setIsLoading(true);
-      try {
-        const response = await axios.get("/api/profile");
+      setMembership({
+        tier: garage.membershipTier || "free",
+        expiry: garage.membershipExpiry,
+      });
 
-        if (response.data.success) {
-          const userProfile = response.data.user;
-          const garage = userProfile.garage;
-          setMembership({
-            tier: garage?.membershipTier || "free",
-            expiry: garage?.membershipExpiry,
-          });
+      // Initialize operating hours if not exists
+      const hours = {};
+      DAYS.forEach((day) => {
+        hours[day] = garage.operatingHours?.[day] || {
+          open: "09:00",
+          close: "18:00",
+          isClosed: false,
+        };
+      });
 
-          // Initialize operating hours if not exists
-          const hours = {};
-          DAYS.forEach((day) => {
-            hours[day] = garage.operatingHours?.[day] || {
-              open: "09:00",
-              close: "18:00",
-              isClosed: false,
-            };
-          });
-
-          setFormData({
-            name: garage.name || "",
-            email: garage.email || "",
-            phone: garage.phone || "",
-            description: garage.description || "",
-            address: garage.address || {
-              street: "",
-              city: "",
-              district: "",
-              postalCode: "",
-            },
-            location: garage.location || {
-              type: "Point",
-              coordinates: [90.4125, 23.8103],
-            },
-            operatingHours: hours,
-            is24Hours: garage.is24Hours || false,
-            vehicleTypes: garage.vehicleTypes || [],
-            verification: garage.verification || {
-              tradeLicense: { number: "", imageUrl: "" },
-              nid: { number: "", imageUrl: "" },
-              ownerPhoto: "",
-            },
-            experience: garage.experience || { years: 0, description: "" },
-            specializedEquipments: garage.specializedEquipments || [],
-            garageImages: garage.garageImages || {
-              frontView: "",
-              indoorView: "",
-              additional: [],
-            },
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching profile:", error);
-        toast.error(t("loadFailed"));
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (user?._id) {
-      fetchProfile();
+      setFormData({
+        name: garage.name || "",
+        email: garage.email || "",
+        phone: garage.phone || "",
+        description: garage.description || "",
+        address: garage.address || {
+          street: "",
+          city: "",
+          district: "",
+          postalCode: "",
+        },
+        location: garage.location || {
+          type: "Point",
+          coordinates: [90.4125, 23.8103],
+        },
+        operatingHours: hours,
+        is24Hours: garage.is24Hours || false,
+        vehicleTypes: garage.vehicleTypes || [],
+        verification: garage.verification || {
+          tradeLicense: { number: "", imageUrl: "" },
+          nid: { number: "", imageUrl: "" },
+          ownerPhoto: "",
+        },
+        experience: garage.experience || { years: 0, description: "" },
+        specializedEquipments: garage.specializedEquipments || [],
+        garageImages: garage.garageImages || {
+          frontView: "",
+          indoorView: "",
+          additional: [],
+        },
+      });
     }
-  }, [user?._id]);
+  }, [profileData]);
 
   // Handle geocoding (nominatim)
   const handleGeocode = async () => {
@@ -174,8 +183,8 @@ export default function GarageProfilePage() {
     try {
       const response = await axios.get(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          query
-        )}`
+          query,
+        )}`,
       );
       if (response.data && response.data.length > 0) {
         const { lat, lon } = response.data[0];
@@ -201,7 +210,7 @@ export default function GarageProfilePage() {
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
       toast.error(
-        "Your browser doesn't support geolocation. Please use Edit Map to set location manually."
+        "Your browser doesn't support geolocation. Please use Edit Map to set location manually.",
       );
       return;
     }
@@ -225,9 +234,9 @@ export default function GarageProfilePage() {
         // Show success with save reminder
         toast.success(
           `Location detected: ${latitude.toFixed(4)}, ${longitude.toFixed(
-            4
+            4,
           )}. Don't forget to save!`,
-          { autoClose: 5000 }
+          { autoClose: 5000 },
         );
 
         // Lock map after 1 second to allow map to update
@@ -258,7 +267,7 @@ export default function GarageProfilePage() {
         enableHighAccuracy: false,
         timeout: 10000,
         maximumAge: 0,
-      }
+      },
     );
   };
 
@@ -316,22 +325,9 @@ export default function GarageProfilePage() {
   };
 
   // Handle submit
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setIsSaving(true);
-
-    try {
-      const response = await axios.put("/api/profile", formData);
-
-      if (response.data.success) {
-        toast.success(t("updateSuccess"));
-      }
-    } catch (error) {
-      console.error("Error saving profile:", error);
-      toast.error(error.response?.data?.message || t("updateFailed"));
-    } finally {
-      setIsSaving(false);
-    }
+    updateProfileMutation.mutate(formData);
   };
 
   if (isLoading) {
@@ -378,7 +374,7 @@ export default function GarageProfilePage() {
                     <span className="ml-2 px-2 py-0.5 bg-orange-500/20 text-orange-400 rounded-full font-bold">
                       {Math.ceil(
                         (new Date(membership.expiry) - new Date()) /
-                          (1000 * 60 * 60 * 24)
+                          (1000 * 60 * 60 * 24),
                       )}{" "}
                       days left
                     </span>
@@ -427,7 +423,7 @@ export default function GarageProfilePage() {
                 <p className="text-white/60 text-sm">
                   {membership.expiry
                     ? `Valid until ${new Date(
-                        membership.expiry
+                        membership.expiry,
                       ).toLocaleDateString()}`
                     : "Lifetime Free Access"}
                 </p>
@@ -732,24 +728,9 @@ export default function GarageProfilePage() {
             {/* Save Location Button */}
             <button
               type="button"
-              onClick={async () => {
-                setIsSaving(true);
-                try {
-                  const response = await axios.put("/api/profile", {
-                    location: formData.location,
-                  });
-                  if (response.data.success) {
-                    toast.success("Location saved successfully!");
-                  }
-                } catch (error) {
-                  console.error("Error saving location:", error);
-                  toast.error(
-                    error.response?.data?.message || "Failed to save location"
-                  );
-                } finally {
-                  setIsSaving(false);
-                }
-              }}
+              onClick={() =>
+                updateProfileMutation.mutate({ location: formData.location })
+              }
               disabled={isSaving}
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:shadow-lg hover:shadow-orange-500/30 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >

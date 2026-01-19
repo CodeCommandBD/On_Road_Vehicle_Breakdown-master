@@ -14,6 +14,8 @@ import {
   AlertTriangle,
   Clock,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import axios from "axios";
 import { toast } from "react-toastify";
 import Link from "next/link";
@@ -22,9 +24,6 @@ import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 export default function SubscriptionPage() {
   const user = useSelector(selectUser);
   const router = useRouterWithLoading(); // Regular routing
-  const [isLoading, setIsLoading] = useState(true);
-  const [subscription, setSubscription] = useState(null);
-  const [plans, setPlans] = useState([]);
   const [billingCycle, setBillingCycle] = useState("monthly");
   const [now, setNow] = useState(new Date().getTime());
 
@@ -41,42 +40,36 @@ export default function SubscriptionPage() {
   //   return () => clearInterval(interval);
   // }, []);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        // Fetch garage-specific plans
-        const plansRes = await axios.get(
-          "/api/packages?type=garage&isActive=true"
-        );
-        if (plansRes.data.success) {
-          // Map Package model fields to match component expectations
-          const mappedPlans = plansRes.data.data.packages.map((pkg) => ({
-            ...pkg,
-            features: pkg.benefits || [],
-          }));
-          setPlans(mappedPlans);
-        }
+  const { data, isLoading } = useQuery({
+    queryKey: ["subscriptionData", user?._id],
+    queryFn: async () => {
+      const [plansRes, subRes] = await Promise.all([
+        axiosInstance.get("/api/packages?type=garage&isActive=true"),
+        user
+          ? axiosInstance.get(`/api/subscriptions?userId=${user._id}`)
+          : Promise.resolve({ data: { success: false } }),
+      ]);
 
-        if (user) {
-          // Fetch current subscription
-          const subRes = await axios.get(
-            `/api/subscriptions?userId=${user._id}`
-          );
-          if (subRes.data.success && subRes.data.subscriptions?.length > 0) {
-            setSubscription(subRes.data.subscriptions[0]);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        toast.error("Failed to load subscription data");
-      } finally {
-        setIsLoading(false);
+      let mappedPlans = [];
+      if (plansRes.data.success) {
+        mappedPlans = plansRes.data.data.packages.map((pkg) => ({
+          ...pkg,
+          features: pkg.benefits || [],
+        }));
       }
-    };
 
-    fetchData();
-  }, [user]);
+      let currentSub = null;
+      if (subRes.data.success && subRes.data.subscriptions?.length > 0) {
+        currentSub = subRes.data.subscriptions[0];
+      }
+
+      return { plans: mappedPlans, subscription: currentSub };
+    },
+    enabled: !!user,
+  });
+
+  const plans = data?.plans || [];
+  const subscription = data?.subscription;
 
   const handleSelectPlan = (planId, tier) => {
     if (tier === "trial") {
@@ -280,7 +273,7 @@ export default function SubscriptionPage() {
               } else {
                 const hours = Math.floor(distance / (1000 * 60 * 60));
                 const minutes = Math.floor(
-                  (distance % (1000 * 60 * 60)) / (1000 * 60)
+                  (distance % (1000 * 60 * 60)) / (1000 * 60),
                 );
                 const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
@@ -299,8 +292,8 @@ export default function SubscriptionPage() {
                   plan.isFeatured
                     ? "bg-[#1a1a1a] border-2 border-yellow-500/60 shadow-[0_0_40px_rgba(234,179,8,0.25)] scale-105"
                     : isStandard
-                    ? "bg-[#1a1a1a] border-2 border-[#f97316] shadow-[0_0_30px_rgba(249,115,22,0.15)]"
-                    : "bg-[#1a1a1a] border border-[#333] hover:border-[#444]"
+                      ? "bg-[#1a1a1a] border-2 border-[#f97316] shadow-[0_0_30px_rgba(249,115,22,0.15)]"
+                      : "bg-[#1a1a1a] border border-[#333] hover:border-[#444]"
                 } ${
                   isExpired
                     ? "opacity-60 saturate-0 pointer-events-none"
@@ -346,7 +339,7 @@ export default function SubscriptionPage() {
                 <div className="mb-6">
                   <div
                     className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${getPlanColor(
-                      plan.tier
+                      plan.tier,
                     )} flex items-center justify-center mb-4 shadow-2xl hover:scale-110 transition-transform`}
                   >
                     {getPlanIcon(plan.tier)}
@@ -422,10 +415,10 @@ export default function SubscriptionPage() {
                     {isExpired
                       ? "OFFER EXPIRED"
                       : isTrial
-                      ? "Start Trial"
-                      : isEnterprise
-                      ? "Contact Sales"
-                      : "Upgrade Now"}
+                        ? "Start Trial"
+                        : isEnterprise
+                          ? "Contact Sales"
+                          : "Upgrade Now"}
                   </button>
                 )}
               </div>

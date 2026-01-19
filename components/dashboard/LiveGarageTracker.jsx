@@ -11,7 +11,8 @@ import {
   Crown,
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
-import axios from "axios";
+import { useQuery } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import dynamic from "next/dynamic";
 import { toast } from "react-toastify";
 import L from "leaflet";
@@ -28,28 +29,21 @@ const MapComponent = dynamic(() => import("@/components/maps/MapComponent"), {
 });
 
 export default function LiveGarageTracker({ user }) {
-  const [garages, setGarages] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [userLocation, setUserLocation] = useState(null);
   const [mapCenter, setMapCenter] = useState([23.8103, 90.4125]); // Dhaka default
   const [locationSource, setLocationSource] = useState("loading"); // 'profile', 'detected', 'default'
 
-  const fetchNearbyGarages = useCallback(async (lat, lng) => {
-    try {
-      setLoading(true);
-      const response = await axios.get(
-        `/api/garages?lat=${lat}&lng=${lng}&distance=15000&isActive=true`
+  const { data: garages = [], isLoading: loading } = useQuery({
+    queryKey: ["nearbyGarages", userLocation?.lat, userLocation?.lng],
+    queryFn: async () => {
+      const response = await axiosInstance.get(
+        `/api/garages?lat=${userLocation.lat}&lng=${userLocation.lng}&distance=15000&isActive=true`,
       );
-      if (response.data.success) {
-        setGarages(response.data.data.garages);
-      }
-    } catch (error) {
-      console.error("Error fetching nearby garages:", error);
-      toast.error("Failed to find nearby garages");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return response.data.data.garages || [];
+    },
+    enabled: !!userLocation,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const handleUpdateLocation = useCallback(() => {
     if (!navigator.geolocation) {
@@ -64,7 +58,6 @@ export default function LiveGarageTracker({ user }) {
         setUserLocation({ lat: latitude, lng: longitude });
         setMapCenter([latitude, longitude]);
         setLocationSource("detected");
-        fetchNearbyGarages(latitude, longitude);
         toast.success("Live location detected!");
       },
       (error) => {
@@ -77,10 +70,9 @@ export default function LiveGarageTracker({ user }) {
         setUserLocation({ lat, lng });
         setMapCenter([lat, lng]);
         setLocationSource(user?.location?.coordinates ? "profile" : "default");
-        fetchNearbyGarages(lat, lng);
-      }
+      },
     );
-  }, [user, fetchNearbyGarages]);
+  }, [user]);
 
   useEffect(() => {
     // If user has a saved location, use it initially
@@ -90,11 +82,10 @@ export default function LiveGarageTracker({ user }) {
       setUserLocation({ lat, lng });
       setMapCenter([lat, lng]);
       setLocationSource("profile");
-      fetchNearbyGarages(lat, lng);
     } else {
       handleUpdateLocation();
     }
-  }, [user, fetchNearbyGarages]); // Only run when user or fetchNearbyGarages changes
+  }, [user, handleUpdateLocation]); // Only run when user or handleUpdateLocation changes
 
   const getStatusConfig = (status) => {
     // ... same ...
@@ -236,7 +227,7 @@ export default function LiveGarageTracker({ user }) {
           ) : (
             garages.map((garage, index) => {
               const statusConfig = getStatusConfig(
-                garage.isActive ? "available" : "closed"
+                garage.isActive ? "available" : "closed",
               );
 
               return (

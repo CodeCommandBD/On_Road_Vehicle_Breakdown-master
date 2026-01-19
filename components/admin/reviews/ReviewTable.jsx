@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
 import {
   Star,
   Trash2,
@@ -10,62 +9,49 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { format } from "date-fns";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 
 export default function ReviewTable() {
-  const [reviews, setReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [filterRating, setFilterRating] = useState("all");
 
-  const fetchReviews = useCallback(async () => {
-    try {
-      setLoading(true);
-      const queryParams = new URLSearchParams();
-      if (filterRating !== "all") queryParams.append("rating", filterRating);
+  const { data: reviewsData, isLoading: loading } = useQuery({
+    queryKey: ["adminReviews", filterRating],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filterRating !== "all") params.append("rating", filterRating);
+      const response = await axiosInstance.get(
+        `/api/admin/reviews?${params.toString()}`,
+      );
+      return response.data.data.reviews || [];
+    },
+  });
 
-      const res = await fetch(`/api/admin/reviews?${queryParams}`);
-      const json = await res.json();
+  const reviews = reviewsData || [];
 
-      if (json.success) {
-        setReviews(json.data.reviews);
-      } else {
-        toast.error("Failed to fetch reviews");
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  }, [filterRating]);
-
-  useEffect(() => {
-    fetchReviews();
-  }, [fetchReviews]);
+  const deleteMutation = useMutation({
+    mutationFn: async (id) => {
+      const response = await axiosInstance.delete(`/api/admin/reviews/${id}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Review deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["adminReviews"] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to delete review");
+    },
+  });
 
   const handleDelete = async (id) => {
     if (
       !confirm(
-        "Are you sure you want to delete this review? This action cannot be undone."
+        "Are you sure you want to delete this review? This action cannot be undone.",
       )
     )
       return;
-
-    try {
-      const res = await fetch(`/api/admin/reviews/${id}`, {
-        method: "DELETE",
-      });
-      const json = await res.json();
-
-      if (json.success) {
-        toast.success("Review deleted successfully");
-        setReviews(reviews.filter((r) => r._id !== id));
-      } else {
-        toast.error(json.message || "Failed to delete review");
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Error deleting review");
-    }
+    deleteMutation.mutate(id);
   };
 
   return (

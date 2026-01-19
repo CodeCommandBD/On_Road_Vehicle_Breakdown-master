@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
 import {
   Send,
   Wrench,
@@ -11,6 +10,8 @@ import {
   CheckCheck,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 
 export default function BookingChat({
   bookingId,
@@ -18,113 +19,67 @@ export default function BookingChat({
   currentUserId,
   recipientName,
 }) {
-  const [messages, setMessages] = useState([]);
+  const queryClient = useQueryClient();
   const [newMessage, setNewMessage] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
-  const [conversationId, setConversationId] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
-
   const messagesEndRef = useRef(null);
-  const lastPollTimeRef = useRef(null);
-  const pollingIntervalRef = useRef(null);
 
-  useEffect(() => {
-    if (isOpen && bookingId && recipientId) {
-      initChat();
-    } else {
-      stopPolling();
-    }
-    return () => stopPolling();
-  }, [isOpen]);
-
-  const initChat = async () => {
-    setLoading(true);
-    try {
-      // Find or create conversation
-      const res = await fetch("/api/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          recipientId,
-          text: "---CHAT_INIT---", // Special token to just get/create conversation
-          bookingId,
-        }),
+  // 1. Find or create conversation
+  const { data: conversationId, isLoading: isInitLoading } = useQuery({
+    queryKey: ["conversation", bookingId, recipientId],
+    queryFn: async () => {
+      const res = await axiosInstance.post("/api/messages", {
+        recipientId,
+        text: "---CHAT_INIT---",
+        bookingId,
       });
-      const data = await res.json();
-      if (data.success) {
-        setConversationId(data.conversationId);
-        await fetchMessages(data.conversationId);
-        startPolling(data.conversationId);
-      }
-    } catch (error) {
-      console.error("Chat init error:", error);
-      toast.error("Failed to initialize chat");
-    } finally {
-      setLoading(false);
-    }
-  };
+      return res.data.conversationId;
+    },
+    enabled: isOpen && !!bookingId && !!recipientId,
+  });
 
-  const fetchMessages = async (convId) => {
-    try {
-      const res = await fetch(`/api/messages/${convId}`);
-      const data = await res.json();
-      if (data.success) {
-        // Filter out the init token if present
-        const filteredMessages = data.messages.filter(
-          (m) => m.text !== "---CHAT_INIT---"
-        );
-        setMessages(filteredMessages);
-        lastPollTimeRef.current = data.serverTime;
-        scrollToBottom();
-      }
-    } catch (error) {
-      console.error("Fetch messages error:", error);
-    }
-  };
+  // 2. Fetch Messages
+  const { data: messagesData, isLoading: isMessagesLoading } = useQuery({
+    queryKey: ["messages", conversationId],
+    queryFn: async () => {
+      const res = await axiosInstance.get(`/api/messages/${conversationId}`);
+      // Filter out the init token if present
+      const filteredMessages = (res.data.messages || []).filter(
+        (m) => m.text !== "---CHAT_INIT---",
+      );
+      return filteredMessages;
+    },
+    enabled: !!conversationId,
+    refetchInterval: 3000, // Modernized polling
+    onSuccess: () => {
+      scrollToBottom();
+    },
+  });
 
-  const startPolling = (convId) => {
-    stopPolling();
-    pollingIntervalRef.current = setInterval(async () => {
-      const since = lastPollTimeRef.current;
-      if (!since) return;
+  const messages = messagesData || [];
+  const loading =
+    isInitLoading || (isOpen && !!conversationId && isMessagesLoading);
 
-      try {
-        const res = await fetch(
-          `/api/messages/${convId}?since=${encodeURIComponent(since)}`
-        );
-        const data = await res.json();
-        if (data.success) {
-          lastPollTimeRef.current = data.serverTime;
-          if (data.messages.length > 0) {
-            const newMessages = data.messages.filter(
-              (m) => m.text !== "---CHAT_INIT---"
-            );
-            if (newMessages.length > 0) {
-              setMessages((prev) => {
-                const existingIds = new Set(prev.map((m) => m._id));
-                const uniqueNewOnes = newMessages.filter(
-                  (m) => !existingIds.has(m._id)
-                );
-                if (uniqueNewOnes.length === 0) return prev;
-                return [...prev, ...uniqueNewOnes];
-              });
-              scrollToBottom();
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Polling error:", error);
-      }
-    }, 3000);
-  };
-
-  const stopPolling = () => {
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-      pollingIntervalRef.current = null;
-    }
-  };
+  const sendMutation = useMutation({
+    mutationFn: async (text) => {
+      const res = await axiosInstance.post("/api/messages", {
+        recipientId,
+        text,
+        bookingId,
+      });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(["messages", conversationId], (old) => [
+        ...(old || []),
+        data.messageData,
+      ]);
+      scrollToBottom();
+    },
+    onError: () => {
+      toast.error("Failed to send message");
+    },
+  });
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -134,34 +89,13 @@ export default function BookingChat({
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || sending) return;
-
+    if (!newMessage.trim() || sendMutation.isPending) return;
     const text = newMessage;
     setNewMessage("");
-    setSending(true);
-
-    try {
-      const res = await fetch("/api/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          recipientId,
-          text,
-          bookingId,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setMessages((prev) => [...prev, data.messageData]);
-        scrollToBottom();
-      }
-    } catch (error) {
-      toast.error("Failed to send message");
-      setNewMessage(text);
-    } finally {
-      setSending(false);
-    }
+    sendMutation.mutate(text);
   };
+
+  const sending = sendMutation.isPending;
 
   if (!isOpen) {
     return (

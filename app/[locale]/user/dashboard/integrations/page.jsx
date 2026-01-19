@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
@@ -11,18 +12,15 @@ import { useTranslations } from "next-intl";
 export default function IntegrationsPage() {
   const t = useTranslations("Common");
   const user = useSelector(selectUser);
+  const queryClient = useQueryClient();
   const [webhookUrl, setWebhookUrl] = useState("");
   const [isActive, setIsActive] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
   const [activeTab, setActiveTab] = useState("webhooks");
 
   // API Key state
-  const [apiKeys, setApiKeys] = useState([]);
   const [newKeyLabel, setNewKeyLabel] = useState("");
   const [generatedKey, setGeneratedKey] = useState(null);
-  const [generating, setGenerating] = useState(false);
 
   // Role Check State
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -35,12 +33,12 @@ export default function IntegrationsPage() {
       user.membershipTier === "enterprise" || user.planTier === "enterprise";
 
     if (isEnterprise) {
-      axios
+      axiosInstance
         .get("/api/organizations")
         .then((res) => {
           const orgs = res.data.data || [];
           const hasAuthRole = orgs.some(
-            (o) => o.role === "admin" || o.role === "owner"
+            (o) => o.role === "admin" || o.role === "owner",
           );
           setIsAuthorized(hasAuthRole);
         })
@@ -64,96 +62,91 @@ export default function IntegrationsPage() {
   const isEnterprise =
     user?.membershipTier === "enterprise" || user?.planTier === "enterprise";
 
-  useEffect(() => {
-    if (hasAccess) {
-      fetchConfig();
-      if (isEnterprise) {
-        fetchApiKeys();
-      }
-    } else if (roleChecked) {
-      setLoading(false);
-    }
-  }, [hasAccess, isEnterprise, roleChecked]);
-
-  const fetchConfig = async () => {
-    try {
-      const res = await axios.get("/api/integrations");
+  const { isLoading: configLoading } = useQuery({
+    queryKey: ["integrationsConfig"],
+    queryFn: async () => {
+      const res = await axiosInstance.get("/api/integrations");
       if (res.data.success && res.data.data) {
         setWebhookUrl(res.data.data.webhookUrl || "");
         setIsActive(res.data.data.isActive);
       }
-    } catch (err) {
-      console.error("Failed to fetch integration config", err);
-    } finally {
-      if (!isEnterprise) setLoading(false);
-    }
-  };
+      return res.data.data;
+    },
+    enabled: hasAccess,
+  });
 
-  const fetchApiKeys = async () => {
-    try {
-      const res = await axios.get("/api/user/api-keys");
-      if (res.data.success) {
-        setApiKeys(res.data.data);
-      }
-    } catch (err) {
-      console.error("Failed to fetch API keys", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: apiKeys = [], isLoading: keysLoading } = useQuery({
+    queryKey: ["apiKeys"],
+    queryFn: async () => {
+      const res = await axiosInstance.get("/api/user/api-keys");
+      return res.data.data;
+    },
+    enabled: hasAccess && isEnterprise,
+  });
 
-  const handleGenerateKey = async (e) => {
-    e.preventDefault();
-    setGenerating(true);
-    try {
-      const res = await axios.post("/api/user/api-keys", {
-        label: newKeyLabel || "Default Key",
-      });
-      if (res.data.success) {
-        setGeneratedKey(res.data.data.key);
-        setNewKeyLabel("");
-        fetchApiKeys();
-      }
-    } catch (err) {
+  const loading = configLoading || (isEnterprise && keysLoading);
+
+  const keyMutation = useMutation({
+    mutationFn: async (label) => {
+      const res = await axiosInstance.post("/api/user/api-keys", { label });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      setGeneratedKey(data.data.key);
+      setNewKeyLabel("");
+      queryClient.invalidateQueries({ queryKey: ["apiKeys"] });
+    },
+    onError: () => {
       setMessage({ type: "error", text: "Failed to generate API key." });
-    } finally {
-      setGenerating(false);
-    }
-  };
+    },
+  });
 
-  const handleRevokeKey = async (keyId) => {
-    if (!confirm("Are you sure you want to revoke this API key?")) return;
-    try {
-      const res = await axios.delete(`/api/user/api-keys?id=${keyId}`);
-      if (res.data.success) {
-        fetchApiKeys();
-        setMessage({ type: "success", text: "API key revoked." });
-      }
-    } catch (err) {
+  const revokeKeyMutation = useMutation({
+    mutationFn: async (keyId) => {
+      const res = await axiosInstance.delete(`/api/user/api-keys?id=${keyId}`);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["apiKeys"] });
+      setMessage({ type: "success", text: "API key revoked." });
+    },
+    onError: () => {
       setMessage({ type: "error", text: "Failed to revoke API key." });
-    }
-  };
+    },
+  });
 
-  const handleSave = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    setMessage(null);
-
-    try {
-      const res = await axios.post("/api/integrations", {
-        webhookUrl,
-        isActive,
-      });
-
-      if (res.data.success) {
-        setMessage({ type: "success", text: "Webhook settings saved!" });
-      }
-    } catch (err) {
+  const saveConfigMutation = useMutation({
+    mutationFn: async (config) => {
+      const res = await axiosInstance.post("/api/integrations", config);
+      return res.data;
+    },
+    onSuccess: () => {
+      setMessage({ type: "success", text: "Webhook settings saved!" });
+      queryClient.invalidateQueries({ queryKey: ["integrationsConfig"] });
+    },
+    onError: () => {
       setMessage({ type: "error", text: "Failed to save settings." });
-    } finally {
-      setSaving(false);
-    }
+    },
+  });
+
+  const handleGenerateKey = (e) => {
+    e.preventDefault();
+    keyMutation.mutate(newKeyLabel || "Default Key");
   };
+
+  const handleRevokeKey = (keyId) => {
+    if (!confirm("Are you sure you want to revoke this API key?")) return;
+    revokeKeyMutation.mutate(keyId);
+  };
+
+  const handleSave = (e) => {
+    e.preventDefault();
+    setMessage(null);
+    saveConfigMutation.mutate({ webhookUrl, isActive });
+  };
+
+  const generating = keyMutation.isPending;
+  const saving = saveConfigMutation.isPending;
 
   if (loading) {
     return (
@@ -410,7 +403,7 @@ export default function IntegrationsPage() {
                             {new Date(key.createdAt).toLocaleDateString()}
                             {key.lastUsedAt &&
                               ` | Last used: ${new Date(
-                                key.lastUsedAt
+                                key.lastUsedAt,
                               ).toLocaleDateString()}`}
                           </p>
                         </div>

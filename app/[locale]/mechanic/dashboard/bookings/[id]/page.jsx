@@ -18,17 +18,18 @@ import {
   ClipboardList,
   User,
 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
+import axios from "axios";
 import { toast } from "react-toastify";
 import Link from "next/link";
 import ReviewForm from "@/components/dashboard/ReviewForm";
 import ConfirmationModal from "@/components/common/ConfirmationModal";
 
 export default function MechanicJobDetails() {
+  const queryClient = useQueryClient();
   const { id } = useParams();
   const router = useRouterWithLoading(); // Regular routing
-  const [loading, setLoading] = useState(true);
-  const [booking, setBooking] = useState(null);
-  const [updating, setUpdating] = useState(false);
   const [showBillModal, setShowBillModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showJobCardModal, setShowJobCardModal] = useState(false);
@@ -55,132 +56,84 @@ export default function MechanicJobDetails() {
   // States for Payment
   const [collectionAmount, setCollectionAmount] = useState("");
 
-  useEffect(() => {
-    fetchBooking();
-  }, [id]);
+  const { data: booking, isLoading: loading } = useQuery({
+    queryKey: ["mechanicBooking", id],
+    queryFn: async () => {
+      const res = await axiosInstance.get(`/api/bookings/${id}`);
+      return res.data.booking;
+    },
+    enabled: !!id,
+  });
 
-  const fetchBooking = async () => {
-    try {
-      const res = await fetch(`/api/bookings/${id}`);
-      const data = await res.json();
-      if (data.success) {
-        setBooking(data.booking);
-      }
-    } catch (error) {
-      console.error("Fetch error:", error);
-    } finally {
-      setLoading(false);
-    }
+  const updateMutation = useMutation({
+    mutationFn: async ({ url, method = "PATCH", body }) => {
+      const res = await axiosInstance({ url, method, data: body });
+      return res.data;
+    },
+    onSuccess: (data, variables) => {
+      if (variables.successMessage) toast.success(variables.successMessage);
+      queryClient.invalidateQueries({ queryKey: ["mechanicBooking", id] });
+      if (variables.closeModal) variables.closeModal();
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Action failed");
+    },
+  });
+
+  const handleUpdateStatus = (newStatus) => {
+    updateMutation.mutate({
+      url: `/api/bookings/${id}`,
+      body: { status: newStatus },
+      successMessage: `Status updated to ${newStatus}`,
+    });
   };
 
-  const handleUpdateStatus = async (newStatus) => {
-    setUpdating(true);
-    try {
-      const res = await fetch(`/api/bookings/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success(`Status updated to ${newStatus}`);
-        fetchBooking();
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error("Failed to update status");
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  const handleAddBillItem = async (e) => {
+  const handleAddBillItem = (e) => {
     e.preventDefault();
-    setUpdating(true);
-    try {
-      const updatedItems = [
-        ...(booking.billItems || []),
-        { ...newItem, amount: Number(newItem.amount) },
-      ];
-      // Calculate new total
-      const newTotal =
-        updatedItems.reduce((sum, item) => sum + item.amount, 0) +
-        (booking.estimatedCost || 0);
+    const updatedItems = [
+      ...(booking.billItems || []),
+      { ...newItem, amount: Number(newItem.amount) },
+    ];
+    const newTotal =
+      updatedItems.reduce((sum, item) => sum + item.amount, 0) +
+      (booking.estimatedCost || 0);
 
-      const res = await fetch(`/api/bookings/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          billItems: updatedItems,
-          actualCost: newTotal,
-        }),
-      });
-
-      if (res.ok) {
-        toast.success("Bill item added");
+    updateMutation.mutate({
+      url: `/api/bookings/${id}`,
+      body: { billItems: updatedItems, actualCost: newTotal },
+      successMessage: "Bill item added",
+      closeModal: () => {
         setShowBillModal(false);
         setNewItem({ description: "", amount: "", category: "part" });
-        fetchBooking();
-      }
-    } catch (error) {
-      toast.error("Failed to add item");
-    } finally {
-      setUpdating(false);
-    }
+      },
+    });
   };
 
-  const handleCollectPayment = async () => {
-    setUpdating(true);
-    try {
-      const res = await fetch(`/api/bookings/${id}/pay`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: booking.actualCost || booking.estimatedCost,
-          paymentMethod: "cash",
-          transactionId: `CASH-${Date.now()}`, // Auto-generate for cash
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success("Payment Recorded! 💰");
-        setShowPaymentModal(false);
-        fetchBooking();
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error("Payment failed");
-    } finally {
-      setUpdating(false);
-    }
+  const handleCollectPayment = () => {
+    updateMutation.mutate({
+      url: `/api/bookings/${id}/pay`,
+      method: "POST",
+      body: {
+        amount: booking.actualCost || booking.estimatedCost,
+        paymentMethod: "cash",
+        transactionId: `CASH-${Date.now()}`,
+      },
+      successMessage: "Payment Recorded! 💰",
+      closeModal: () => setShowPaymentModal(false),
+    });
   };
 
-  const handleSaveJobCard = async () => {
-    setUpdating(true);
-    try {
-      const res = await fetch("/api/mechanic/job-card", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bookingId: id,
-          ...jobCardData,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success("Diagnosis Report Saved 📋");
-        setShowJobCardModal(false);
-      } else {
-        toast.error(data.message);
-      }
-    } catch (err) {
-      toast.error("Failed to save report");
-    } finally {
-      setUpdating(false);
-    }
+  const handleSaveJobCard = () => {
+    updateMutation.mutate({
+      url: "/api/mechanic/job-card",
+      method: "POST",
+      body: { bookingId: id, ...jobCardData },
+      successMessage: "Diagnosis Report Saved 📋",
+      closeModal: () => setShowJobCardModal(false),
+    });
   };
+
+  const updating = updateMutation.isPending;
 
   const updateChecklist = (index, status) => {
     const newChecklist = [...jobCardData.checklist];
@@ -226,8 +179,8 @@ export default function MechanicJobDetails() {
               booking.status === "completed"
                 ? "bg-green-500/10 text-green-400 border-green-500/20"
                 : booking.status === "in_progress"
-                ? "bg-orange-500/10 text-orange-400 border-orange-500/20"
-                : "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
+                  ? "bg-orange-500/10 text-orange-400 border-orange-500/20"
+                  : "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
             }`}
           >
             {booking.status.replace("_", " ")}

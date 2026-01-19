@@ -19,6 +19,8 @@ import {
   Navigation,
 } from "lucide-react";
 import { Link } from "@/i18n/routing";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -26,68 +28,40 @@ export default function FavoritesPage() {
   const user = useSelector(selectUser);
   const favorites = useSelector(selectFavorites);
   const dispatch = useDispatch();
-  const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const queryClient = useQueryClient();
 
-  const dashboardLink =
-    user?.role === "admin"
-      ? "/admin/dashboard"
-      : user?.role === "garage" ||
-        user?.membershipTier === "garage_pro" ||
-        user?.membershipTier === "garage_basic"
-      ? "/garage/dashboard"
-      : user?.role === "mechanic"
-      ? "/mechanic/dashboard"
-      : "/user/dashboard";
-
-  useEffect(() => {
-    const hasOnlyIds = favorites.some((fav) => typeof fav === "string");
-    if (hasOnlyIds && !loading) {
-      fetchFullFavorites();
-    }
-  }, [favorites]);
-
-  const fetchFullFavorites = async () => {
-    try {
-      setLoading(true);
-
-      const res = await axios.get("/api/user/favorites");
-
+  const { isLoading: loading } = useQuery({
+    queryKey: ["favoritesData"],
+    queryFn: async () => {
+      const res = await axiosInstance.get("/api/user/favorites");
       if (res.data.success) {
         dispatch({
           type: "auth/updateUser",
           payload: { favoriteGarages: res.data.favorites },
         });
       }
-    } catch (error) {
-      console.error("❌ Failed to fetch full favorites:", error);
-      console.error("Error response:", error.response?.data);
-      console.error("Error status:", error.response?.status);
+      return res.data.favorites;
+    },
+    enabled: !!user,
+  });
 
-      // Show user-friendly error
-      if (error.response?.status === 404) {
-        toast.error("User not found. Please try logging in again.");
-      } else if (error.response?.status === 401) {
-        toast.error("Session expired. Please login again.");
-        // Optionally redirect to login
-      } else {
-        toast.error("Failed to load favorites. Please refresh the page.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const removeFavorite = async (garageId) => {
-    try {
-      const res = await axios.post("/api/user/favorites", { garageId });
-      if (res.data.success) {
-        dispatch(toggleFavoriteSuccess(garageId));
-        toast.success("Removed from favorites");
-      }
-    } catch (error) {
+  const removeFavoriteMutation = useMutation({
+    mutationFn: async (garageId) => {
+      const res = await axiosInstance.post("/api/user/favorites", { garageId });
+      return res.data;
+    },
+    onSuccess: (data, garageId) => {
+      dispatch(toggleFavoriteSuccess(garageId));
+      toast.success("Removed from favorites");
+      queryClient.invalidateQueries({ queryKey: ["favoritesData"] });
+    },
+    onError: () => {
       toast.error("Failed to remove favorite");
-    }
+    },
+  });
+
+  const removeFavorite = (garageId) => {
+    removeFavoriteMutation.mutate(garageId);
   };
 
   const filteredFavorites = favorites.filter((garage) => {

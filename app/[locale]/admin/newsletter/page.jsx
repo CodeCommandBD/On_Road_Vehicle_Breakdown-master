@@ -15,101 +15,88 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 
 export default function NewsletterPage() {
-  const [activeTab, setActiveTab] = useState("compose"); // compose, subscribers, history
-  const [subscribers, setSubscribers] = useState([]);
-  const [stats, setStats] = useState({ total: 0, active: 0, inactive: 0 });
-  const [loading, setLoading] = useState(true);
-
-  // Email form state
+  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("compose");
   const [subject, setSubject] = useState("");
   const [content, setContent] = useState("");
   const [testEmail, setTestEmail] = useState("");
-  const [isSending, setIsSending] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
-  // Fetch subscribers
-  useEffect(() => {
-    fetchSubscribers();
-  }, []);
+  const { data: subscriberData, isLoading: loading } = useQuery({
+    queryKey: ["newsletterSubscribers"],
+    queryFn: async () => {
+      const response = await axiosInstance.get(
+        "/api/admin/newsletter/subscribers",
+      );
+      return response.data.data;
+    },
+    initialData: {
+      subscribers: [],
+      stats: { total: 0, active: 0, inactive: 0 },
+    },
+  });
 
-  const fetchSubscribers = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch("/api/admin/newsletter/subscribers");
-      const data = await response.json();
-      if (data.success) {
-        setSubscribers(data.data.subscribers);
-        setStats(data.data.stats);
-      }
-    } catch (error) {
-      console.error("Failed to fetch subscribers:", error);
-      toast.error("Failed to load subscribers");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const subscribers = subscriberData.subscribers;
+  const stats = subscriberData.stats;
 
-  const handleSendTest = async () => {
+  const testMutation = useMutation({
+    mutationFn: async (payload) => {
+      const response = await axiosInstance.post(
+        "/api/admin/newsletter/send-test",
+        payload,
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Test email sent successfully!");
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to send test email");
+    },
+  });
+
+  const bulkMutation = useMutation({
+    mutationFn: async (payload) => {
+      const response = await axiosInstance.post(
+        "/api/admin/newsletter/send-bulk",
+        payload,
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(`Newsletter sent to ${data.data.sentCount} subscribers!`);
+      setSubject("");
+      setContent("");
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to send newsletter");
+    },
+  });
+
+  const handleSendTest = () => {
     if (!testEmail || !subject || !content) {
       toast.error("Please fill all fields and provide a test email");
       return;
     }
-
-    setIsSending(true);
-    try {
-      const response = await fetch("/api/admin/newsletter/send-test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: testEmail, subject, content }),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        toast.success("Test email sent successfully!");
-      } else {
-        toast.error(data.message || "Failed to send test email");
-      }
-    } catch (error) {
-      toast.error("Error sending test email");
-    } finally {
-      setIsSending(false);
-    }
+    testMutation.mutate({ email: testEmail, subject, content });
   };
 
-  const handleSendToAll = async () => {
+  const handleSendToAll = () => {
     if (!subject || !content) {
       toast.error("Please fill subject and content");
       return;
     }
-
     if (!confirm(`Send newsletter to ${stats.active} subscribers?`)) {
       return;
     }
-
-    setIsSending(true);
-    try {
-      const response = await fetch("/api/admin/newsletter/send-bulk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject, content }),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        toast.success(`Newsletter sent to ${data.data.sentCount} subscribers!`);
-        setSubject("");
-        setContent("");
-      } else {
-        toast.error(data.message || "Failed to send newsletter");
-      }
-    } catch (error) {
-      toast.error("Error sending newsletter");
-    } finally {
-      setIsSending(false);
-    }
+    bulkMutation.mutate({ subject, content });
   };
+
+  const isSending = testMutation.isPending || bulkMutation.isPending;
 
   return (
     <div className="min-h-screen bg-[#111] p-6">

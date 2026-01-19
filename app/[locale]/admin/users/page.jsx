@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import UserTable from "@/components/admin/users/UserTable";
 import { Download, Loader2 } from "lucide-react";
+import axiosInstance from "@/lib/axios";
+import { toast } from "react-toastify";
 
 export default function UsersPage() {
   const [isExporting, setIsExporting] = useState(false);
@@ -10,11 +11,12 @@ export default function UsersPage() {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const response = await fetch("/api/admin/users");
-      const data = await response.json();
+      const res = await axiosInstance.get("/api/admin/users");
+      const data = res.data;
 
       if (data.success) {
         const users = data.users;
+        // ... rest of the logic
 
         // Convert to CSV
         const headers = ["Name", "Email", "Role", "Points", "Status", "Joined"];
@@ -45,6 +47,7 @@ export default function UsersPage() {
       }
     } catch (error) {
       console.error("Export failed:", error);
+      toast.error("Export failed. Please try again.");
     } finally {
       setIsExporting(false);
     }

@@ -1,5 +1,6 @@
-"use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 
@@ -22,33 +23,22 @@ const statusColors = {
 };
 
 export default function TicketList({ userRole = "user" }) {
-  const [tickets, setTickets] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState("all");
 
-  useEffect(() => {
-    fetchTickets();
-  }, [filter]);
-
-  const fetchTickets = async () => {
-    try {
+  const { data: ticketsData, isLoading } = useQuery({
+    queryKey: ["supportTickets", userRole, filter],
+    queryFn: async () => {
       let url = "/api/support/tickets";
       if (filter !== "all") {
         url += `?status=${filter}`;
       }
+      const response = await axiosInstance.get(url);
+      return response.data.tickets || [];
+    },
+    staleTime: 2 * 60 * 1000,
+  });
 
-      const response = await fetch(url);
-      const data = await response.json();
-
-      if (data.success) {
-        setTickets(data.tickets || []);
-      }
-    } catch (error) {
-      console.error("Failed to fetch tickets:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const tickets = ticketsData || [];
 
   if (isLoading) {
     return (
@@ -75,7 +65,7 @@ export default function TicketList({ userRole = "user" }) {
             >
               {status}
             </button>
-          )
+          ),
         )}
       </div>
 

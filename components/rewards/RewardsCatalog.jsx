@@ -3,34 +3,37 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
-import axios from "axios";
+import { useMutation } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import { toast } from "react-toastify";
 
 export default function RewardsCatalog({ rewards, userPoints, onRedeem }) {
   const t = useTranslations("Rewards"); // Assuming we'll add keys
-  const [loadingId, setLoadingId] = useState(null);
   const [selectedReward, setSelectedReward] = useState(null);
+
+  const redeemMutation = useMutation({
+    mutationFn: async (reward) => {
+      const res = await axiosInstance.post("/api/rewards/redeem", {
+        rewardId: reward._id,
+      });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Reward redeemed successfully!");
+      onRedeem(data.newBalance); // Update parent state
+      setSelectedReward(null);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Redemption failed");
+    },
+  });
 
   const handleRedeem = async (reward) => {
     if (userPoints < reward.pointsCost) return;
-
-    setLoadingId(reward._id);
-    try {
-      const res = await axios.post("/api/rewards/redeem", {
-        rewardId: reward._id,
-      });
-
-      if (res.data.success) {
-        toast.success(res.data.message || "Reward redeemed successfully!");
-        onRedeem(res.data.newBalance); // Update parent state
-        setSelectedReward(null);
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Redemption failed");
-    } finally {
-      setLoadingId(null);
-    }
+    redeemMutation.mutate(reward);
   };
+
+  const loadingId = redeemMutation.isPending ? selectedReward?._id : null;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -24,6 +24,7 @@ import {
 import { toast } from "react-toastify";
 import * as Tabs from "@radix-ui/react-tabs";
 import { useLocale } from "next-intl"; // Import useLocale
+import axiosInstance from "@/lib/axios";
 import {
   loginSuccess,
   loginFailure,
@@ -54,7 +55,7 @@ export default function SignupForm() {
   const initialRole = searchParams.get("role");
 
   const [activeTab, setActiveTab] = useState(
-    ["user", "garage"].includes(initialRole) ? initialRole : "user"
+    ["user", "garage"].includes(initialRole) ? initialRole : "user",
   );
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -93,20 +94,16 @@ export default function SignupForm() {
       async (position) => {
         try {
           const { latitude, longitude } = position.coords;
-          // Use our internal proxy API with language parameter
-          const response = await fetch(
-            `/api/geocode?lat=${latitude}&lon=${longitude}&lang=${locale}`
+          const response = await axiosInstance.get(
+            `/api/geocode?lat=${latitude}&lon=${longitude}&lang=${locale}`,
           );
-          const data = await response.json();
-          // ... rest of the function
+          const data = response.data;
 
           if (data && data.display_name) {
             setValue("address", data.display_name);
             toast.success("Address fetched successfully!");
           } else {
-            console.error("Geocode response:", data);
             toast.error(data.error || "Could not find address from location");
-            // Fallback to coords
             setValue("address", `Lat: ${latitude}, Lng: ${longitude}`);
           }
         } catch (error) {
@@ -125,14 +122,14 @@ export default function SignupForm() {
         toast.error(msg);
         setLoadingLocation(false);
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     );
   };
 
   const onSubmit = async (data) => {
     if (activeTab === "garage" && (!data.garageName || !data.address)) {
       toast.error(
-        "Garage name and address are required for garage registration"
+        "Garage name and address are required for garage registration",
       );
       return;
     }
@@ -151,33 +148,24 @@ export default function SignupForm() {
       const pathname = window.location.pathname;
       const lang = pathname.startsWith("/bn") ? "bn" : "en";
 
-      const response = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, role: activeTab, lang }),
-        signal: controller.signal,
+      const response = await axiosInstance.post("/api/auth/signup", {
+        ...data,
+        role: activeTab,
+        lang,
       });
-      clearTimeout(timeoutId);
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || "Signup failed");
-      }
 
       toast.success(
-        result.message || "Account created successfully! Please login."
+        response.data.message || "Account created successfully! Please login.",
       );
 
-      // Redirect to login page after signup with specific role tab
       router.push(`/login?role=${activeTab}`);
     } catch (error) {
-      dispatch(loginFailure(error.message || "An unexpected error occurred"));
-      toast.error(error.message || "Signup failed");
+      const message =
+        error.response?.data?.message || error.message || "Signup failed";
+      dispatch(loginFailure(message));
+      toast.error(message);
     } finally {
-      clearTimeout(timeoutId);
-      clearTimeout(safetyTimeout);
-      dispatch(setLoading(false)); // Double ensure loading is off
+      dispatch(setLoading(false));
     }
   };
 

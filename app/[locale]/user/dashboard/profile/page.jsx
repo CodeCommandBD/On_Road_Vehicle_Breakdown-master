@@ -20,6 +20,8 @@ import {
   Navigation,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import axios from "axios";
 import PasswordChangeModal from "@/components/profile/PasswordChangeModal";
 import ImageUpload from "@/components/common/ImageUpload";
@@ -43,8 +45,8 @@ export default function ProfilePage() {
   const t = useTranslations("Profile");
   const user = useSelector(selectUser);
   const dispatch = useDispatch();
+  const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [isLocationLocked, setIsLocationLocked] = useState(true);
@@ -71,46 +73,54 @@ export default function ProfilePage() {
     vehicleType: "Car",
   });
 
-  // Ref to always hold the latest formData to avoid stale closures in handleSubmit
-  const profileDataRef = useRef(profileFormData);
+  const { data: profile = null, isLoading: isFetching } = useQuery({
+    queryKey: ["userProfile"],
+    queryFn: async () => {
+      const response = await axiosInstance.get("/api/profile");
+      return response.data.user;
+    },
+    onSuccess: (data) => {
+      dispatch(updateUser(data));
+    },
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async (payload) => {
+      const response = await axiosInstance.put("/api/profile", payload);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      const updatedUser = data.user;
+      toast.success(t("updateSuccess"));
+      dispatch(updateUser(updatedUser));
+      queryClient.setQueryData(["userProfile"], updatedUser);
+      setIsEditing(false);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || t("updateFailed"));
+    },
+  });
+
+  const isLoading = isFetching || updateProfileMutation.isPending;
 
   useEffect(() => {
-    profileDataRef.current = profileFormData;
-  }, [profileFormData]);
-
-  // Fetch latest profile data on mount
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await axios.get("/api/profile");
-        if (response.data.success) {
-          dispatch(updateUser(response.data.user));
-        }
-      } catch (error) {
-        console.error("Failed to fetch fresh profile:", error);
-      }
-    };
-    fetchProfile();
-  }, [dispatch]);
-
-  useEffect(() => {
-    if (user && !isEditing && !isLoading) {
+    if (profile && !isEditing) {
       setProfileFormData({
-        name: user.name || "",
-        email: user.email || "",
-        phone: user.phone || "",
-        street: user.address?.street || "",
-        city: user.address?.city || "",
-        district: user.address?.district || "",
-        postalCode: user.address?.postalCode || "",
-        location: user.location || {
+        name: profile.name || "",
+        email: profile.email || "",
+        phone: profile.phone || "",
+        street: profile.address?.street || "",
+        city: profile.address?.city || "",
+        district: profile.address?.district || "",
+        postalCode: profile.address?.postalCode || "",
+        location: profile.location || {
           type: "Point",
           coordinates: [90.4125, 23.8103],
         },
-        vehicles: Array.isArray(user.vehicles) ? user.vehicles : [],
+        vehicles: Array.isArray(profile.vehicles) ? profile.vehicles : [],
       });
     }
-  }, [user, isEditing]);
+  }, [profile, isEditing]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -141,8 +151,8 @@ export default function ProfilePage() {
     try {
       const response = await axios.get(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          query
-        )}`
+          query,
+        )}`,
       );
       if (response.data && response.data.length > 0) {
         const { lat, lon } = response.data[0];
@@ -166,7 +176,7 @@ export default function ProfilePage() {
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
       toast.error(
-        "Your browser doesn't support geolocation. Please use Edit Map to set location manually."
+        "Your browser doesn't support geolocation. Please use Edit Map to set location manually.",
       );
       return;
     }
@@ -190,9 +200,9 @@ export default function ProfilePage() {
         // Show success with save reminder
         toast.success(
           `Location detected: ${latitude.toFixed(4)}, ${longitude.toFixed(
-            4
+            4,
           )}. Don't forget to click Save!`,
-          { autoClose: 5000 }
+          { autoClose: 5000 },
         );
 
         // Lock map after 1 second to allow map to update
@@ -223,67 +233,36 @@ export default function ProfilePage() {
         enableHighAccuracy: false,
         timeout: 10000,
         maximumAge: 0,
-      }
+      },
     );
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    const currentData = profileDataRef.current;
 
     // Explicitly reconstruct the payload to ensure NO KEYS are missing
     const payload = {
-      name: currentData.name || "",
-      phone: currentData.phone || "",
-      avatar: currentData.avatar || "",
+      name: profileFormData.name || "",
+      phone: profileFormData.phone || "",
+      avatar: profileFormData.avatar || "",
       address: {
-        street: currentData.street || "",
-        city: currentData.city || "",
-        district: currentData.district || "",
-        postalCode: currentData.postalCode || "",
+        street: profileFormData.street || "",
+        city: profileFormData.city || "",
+        district: profileFormData.district || "",
+        postalCode: profileFormData.postalCode || "",
       },
       location: {
         type: "Point",
-        coordinates: currentData.location?.coordinates || [90.4125, 23.8103],
+        coordinates: profileFormData.location?.coordinates || [
+          90.4125, 23.8103,
+        ],
       },
-      vehicles: Array.isArray(currentData.vehicles) ? currentData.vehicles : [],
+      vehicles: Array.isArray(profileFormData.vehicles)
+        ? profileFormData.vehicles
+        : [],
     };
 
-    try {
-      const response = await axios.put("/api/profile", payload);
-
-      if (response.data.success) {
-        const updatedUser = response.data.user;
-
-        // Update local state immediately to avoid flickers
-        setProfileFormData((prev) => ({
-          ...prev,
-          name: updatedUser.name || "",
-          phone: updatedUser.phone || "",
-          street: updatedUser.address?.street || "",
-          city: updatedUser.address?.city || "",
-          district: updatedUser.address?.district || "",
-          postalCode: updatedUser.address?.postalCode || "",
-          location: updatedUser.location || prev.location,
-          vehicles: Array.isArray(updatedUser.vehicles)
-            ? updatedUser.vehicles
-            : [],
-        }));
-
-        toast.success(t("updateSuccess"));
-
-        // Update global state
-        dispatch(updateUser(updatedUser));
-        setIsEditing(false);
-      }
-    } catch (error) {
-      console.error("Profile update error:", error);
-      toast.error(error.response?.data?.message || t("updateFailed"));
-    } finally {
-      setIsLoading(false);
-    }
+    updateProfileMutation.mutate(payload);
   };
 
   const handleCancel = () => {
@@ -465,7 +444,7 @@ export default function ProfilePage() {
                 >
                   {new Date(user.membershipExpiry) < new Date() ? (
                     `Expired on: ${new Date(
-                      user.membershipExpiry
+                      user.membershipExpiry,
                     ).toLocaleDateString()}`
                   ) : (
                     <>
@@ -475,7 +454,7 @@ export default function ProfilePage() {
                         (
                         {Math.ceil(
                           (new Date(user.membershipExpiry) - new Date()) /
-                            (1000 * 60 * 60 * 24)
+                            (1000 * 60 * 60 * 24),
                         )}
                         d left)
                       </span>
@@ -830,7 +809,8 @@ export default function ProfilePage() {
                   } catch (error) {
                     console.error("Error saving location:", error);
                     toast.error(
-                      error.response?.data?.message || "Failed to save location"
+                      error.response?.data?.message ||
+                        "Failed to save location",
                     );
                   } finally {
                     setIsLoading(false);

@@ -3,15 +3,11 @@
 import { useTranslations } from "next-intl";
 import { Shield, Award, Users } from "lucide-react";
 import { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
+import { useQuery } from "@tanstack/react-query";
 
 export default function TrustedBy() {
   const t = useTranslations("Home");
-  const [branding, setBranding] = useState({
-    sectionTitle: "Trusted by top automotive partners",
-    items: [],
-  });
-  const [loading, setLoading] = useState(true);
 
   // Default partners as fallback
   const defaultPartners = [
@@ -22,32 +18,28 @@ export default function TrustedBy() {
     { name: "Secure Drive", icon: "shield" },
   ];
 
-  useEffect(() => {
-    fetchBranding();
-  }, []);
-
-  const fetchBranding = async () => {
-    try {
-      const res = await axios.get("/api/admin/branding");
-      if (res.data.success && res.data.data.items.length > 0) {
-        setBranding(res.data.data);
-      } else {
-        // Use default if no data
-        setBranding({
-          sectionTitle: "Trusted by top automotive partners",
-          items: defaultPartners,
-        });
+  const { data: brandingData, isLoading: loading } = useQuery({
+    queryKey: ["branding"],
+    queryFn: async () => {
+      try {
+        const res = await axiosInstance.get("/api/admin/branding");
+        if (res.data.success && res.data.data.items.length > 0) {
+          return res.data.data;
+        }
+      } catch (error) {
+        console.error("Failed to load branding:", error);
       }
-    } catch (error) {
-      console.error("Failed to load branding:", error);
-      // Fallback to default
-      setBranding({
+      return {
         sectionTitle: "Trusted by top automotive partners",
         items: defaultPartners,
-      });
-    } finally {
-      setLoading(false);
-    }
+      };
+    },
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours caching for branding
+  });
+
+  const branding = brandingData || {
+    sectionTitle: "Trusted by top automotive partners",
+    items: defaultPartners,
   };
 
   // Icon mapping

@@ -1,19 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
-import axios from "axios";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import { Users, Plus, Edit2, Trash2, Loader2, Lock, Crown } from "lucide-react";
 import { toast } from "react-toastify";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 export default function TeamManagement() {
+  const queryClient = useQueryClient();
   const t = useTranslations("Subscription");
   const user = useSelector(selectUser);
-  const [members, setMembers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editMember, setEditMember] = useState(null);
   const [formData, setFormData] = useState({
@@ -38,59 +38,61 @@ export default function TeamManagement() {
 
   const currentLimit = memberLimits[user?.garage?.membershipTier || "free"];
 
-  useEffect(() => {
-    if (isPremium && user?.garage?._id) {
-      fetchMembers();
-    } else {
-      setLoading(false);
-    }
-  }, [user]);
-
-  const fetchMembers = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(
-        `/api/garage/team?garageId=${user.garage._id}`
+  const { data: members = [], isLoading: loading } = useQuery({
+    queryKey: ["garageTeam", user?.garage?._id],
+    queryFn: async () => {
+      const response = await axiosInstance.get(
+        `/api/garage/team?garageId=${user.garage._id}`,
       );
-      if (response.data.success) {
-        setMembers(response.data.data.teamMembers);
-      }
-    } catch (error) {
-      console.error("Failed to fetch team:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      return response.data.data.teamMembers || [];
+    },
+    enabled: !!(isPremium && user?.garage?._id),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const addMutation = useMutation({
+    mutationFn: async (newMember) => {
+      const response = await axiosInstance.post("/api/garage/team", {
+        garageId: user.garage._id,
+        ...newMember,
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Team member added!");
+      setShowAddModal(false);
+      setFormData({ name: "", email: "", phone: "", role: "mechanic" });
+      queryClient.invalidateQueries({ queryKey: ["garageTeam"] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to add member");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (memberId) => {
+      const response = await axiosInstance.delete(
+        `/api/garage/team?garageId=${user.garage._id}&memberId=${memberId}`,
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Member removed");
+      queryClient.invalidateQueries({ queryKey: ["garageTeam"] });
+    },
+    onError: () => {
+      toast.error("Failed to remove member");
+    },
+  });
 
   const handleAdd = async (e) => {
     e.preventDefault();
-    try {
-      const response = await axios.post("/api/garage/team", {
-        garageId: user.garage._id,
-        ...formData,
-      });
-      if (response.data.success) {
-        toast.success("Team member added!");
-        setShowAddModal(false);
-        setFormData({ name: "", email: "", phone: "", role: "mechanic" });
-        fetchMembers();
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to add member");
-    }
+    addMutation.mutate(formData);
   };
 
   const handleDelete = async (memberId) => {
     if (!confirm("Remove this team member?")) return;
-    try {
-      await axios.delete(
-        `/api/garage/team?garageId=${user.garage._id}&memberId=${memberId}`
-      );
-      toast.success("Member removed");
-      fetchMembers();
-    } catch (error) {
-      toast.error("Failed to remove member");
-    }
+    deleteMutation.mutate(memberId);
   };
 
   if (!isPremium) {
@@ -181,8 +183,8 @@ export default function TeamManagement() {
                   member.role === "owner"
                     ? "bg-yellow-500/20 text-yellow-400"
                     : member.role === "manager"
-                    ? "bg-blue-500/20 text-blue-400"
-                    : "bg-green-500/20 text-green-400"
+                      ? "bg-blue-500/20 text-blue-400"
+                      : "bg-green-500/20 text-green-400"
                 }`}
               >
                 {member.role === "owner" && (

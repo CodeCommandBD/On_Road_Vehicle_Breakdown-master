@@ -1,52 +1,52 @@
 "use client";
 import { useState } from "react";
 import { toast } from "react-toastify";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 
 export default function CreateTicket({ onTicketCreated }) {
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     subject: "",
     message: "",
     priority: "normal",
     category: "general",
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const createMutation = useMutation({
+    mutationFn: async (ticketData) => {
+      const response = await axiosInstance.post(
+        "/api/support/tickets",
+        ticketData,
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success("Support ticket created! We'll respond shortly.");
+      setFormData({
+        subject: "",
+        message: "",
+        priority: "normal",
+        category: "general",
+      });
+
+      if (onTicketCreated) {
+        onTicketCreated(data.ticket);
+      }
+      queryClient.invalidateQueries({ queryKey: ["supportTickets"] });
+    },
+    onError: (error) => {
+      console.error("Create ticket error:", error);
+      toast.error(error.response?.data?.message || "Failed to create ticket");
+    },
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch("/api/support/tickets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        toast.success("Support ticket created! We'll respond shortly.");
-        setFormData({
-          subject: "",
-          message: "",
-          priority: "normal",
-          category: "general",
-        });
-
-        // Callback to parent component
-        if (onTicketCreated) {
-          onTicketCreated(data.ticket);
-        }
-      } else {
-        toast.error(data.message || "Failed to create ticket");
-      }
-    } catch (error) {
-      console.error("Create ticket error:", error);
-      toast.error("Failed to create ticket. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    createMutation.mutate(formData);
   };
+
+  const isSubmitting = createMutation.isPending;
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">

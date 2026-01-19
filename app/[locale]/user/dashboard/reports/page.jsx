@@ -4,19 +4,8 @@ import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { selectUser, updateUser } from "@/store/slices/authSlice";
 import { useTranslations } from "next-intl";
-import {
-  FileText,
-  Settings,
-  Download,
-  Lock,
-  Palette,
-  Image as ImageIcon,
-  Building,
-  Loader2,
-  Save,
-  Activity,
-} from "lucide-react";
-import { toast } from "react-toastify";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import axios from "axios";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -44,17 +33,15 @@ export default function ReportsPage() {
   const t = useTranslations("Common"); // Assuming basic translations exist
   const user = useSelector(selectUser);
   const dispatch = useDispatch();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("generate");
-  const [isLoading, setIsLoading] = useState(false);
   const [brandingForm, setBrandingForm] = useState({
     companyName: "",
     logoUrl: "",
     primaryColor: "#EF4444",
     removeWatermark: false,
   });
-  const [reportData, setReportData] = useState(null);
   const [filterDays, setFilterDays] = useState(30);
-  const [fetchingReports, setFetchingReports] = useState(true);
 
   // Role Check State
   const [isAuthorized, setIsAuthorized] = useState(false);
@@ -67,12 +54,12 @@ export default function ReportsPage() {
       user.membershipTier === "enterprise" || user.planTier === "enterprise";
 
     if (isEnterprise) {
-      axios
+      axiosInstance
         .get("/api/organizations")
         .then((res) => {
           const orgs = res.data.data || [];
           const hasAuthRole = orgs.some(
-            (o) => o.role === "admin" || o.role === "owner"
+            (o) => o.role === "admin" || o.role === "owner",
           );
           setIsAuthorized(hasAuthRole);
         })
@@ -111,49 +98,42 @@ export default function ReportsPage() {
     }
   }, [user]);
 
-  useEffect(() => {
-    fetchReportData();
-  }, [filterDays]);
+  const { data: reportData = null, isLoading: fetchingReports } = useQuery({
+    queryKey: ["reportsData", filterDays],
+    queryFn: async () => {
+      const res = await axiosInstance.get(
+        `/api/user/reports?days=${filterDays}`,
+      );
+      return res.data.data;
+    },
+    enabled: !!user,
+  });
 
-  const fetchReportData = async () => {
-    setFetchingReports(true);
-    try {
-      const res = await axios.get(`/api/user/reports?days=${filterDays}`);
-      if (res.data.success) {
-        setReportData(res.data.data);
-      }
-    } catch (err) {
-      console.error("Failed to fetch reports", err);
-      toast.error("Failed to load report data.");
-    } finally {
-      setFetchingReports(false);
-    }
-  };
+  const brandingMutation = useMutation({
+    mutationFn: async (branding) => {
+      const response = await axiosInstance.put("/api/profile", { branding });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      dispatch(updateUser(data.user));
+      toast.success("Branding updated successfully!");
+      queryClient.invalidateQueries({ queryKey: ["reportsData"] });
+    },
+    onError: () => {
+      toast.error("Failed to update branding settings.");
+    },
+  });
 
-  const handleBrandingSave = async (e) => {
+  const handleBrandingSave = (e) => {
     e.preventDefault();
     if (!canManageBranding) {
       toast.error("Only the Organization Owner can manage branding.");
       return;
     }
-    setIsLoading(true);
-    try {
-      const response = await axios.put("/api/profile", {
-        branding: brandingForm,
-      }); // Re-using profile update endpoint or creating specific one?
-      // Assuming profile endpoint accepts partial updates
-
-      if (response.data.success) {
-        dispatch(updateUser(response.data.user));
-        toast.success("Branding updated successfully!");
-      }
-    } catch (error) {
-      console.error("Branding update error:", error);
-      toast.error("Failed to update branding settings.");
-    } finally {
-      setIsLoading(false);
-    }
+    brandingMutation.mutate(brandingForm);
   };
+
+  const isLoading = brandingMutation.isPending;
 
   const generatePDF = () => {
     const doc = new jsPDF();
@@ -499,7 +479,7 @@ export default function ReportsPage() {
                                 key={`cell-${index}`}
                                 fill={COLORS[index % COLORS.length]}
                               />
-                            )
+                            ),
                           )}
                         </Pie>
                         <RechartsTooltip

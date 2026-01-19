@@ -3,12 +3,32 @@
 import { useState } from "react";
 import { Star, Send, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 
 export default function ReviewForm({ bookingId, onReviewSubmitted }) {
+  const queryClient = useQueryClient();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
-  const [submitting, setSubmitting] = useState(false);
   const [hoveredRating, setHoveredRating] = useState(0);
+
+  const reviewMutation = useMutation({
+    mutationFn: async (reviewData) => {
+      const response = await axiosInstance.post("/api/reviews", reviewData);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Thank you for your review!");
+      if (onReviewSubmitted) onReviewSubmitted();
+      queryClient.invalidateQueries({ queryKey: ["userReviews"] });
+      queryClient.invalidateQueries({ queryKey: ["garageReviews"] });
+      queryClient.invalidateQueries({ queryKey: ["adminReviews"] });
+    },
+    onError: (error) => {
+      console.error("Review submission failed:", error);
+      toast.error(error.response?.data?.message || "Failed to submit review");
+    },
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,29 +36,10 @@ export default function ReviewForm({ bookingId, onReviewSubmitted }) {
       toast.warning("Please provide a rating");
       return;
     }
-
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/reviews", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId, rating, comment }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success("Thank you for your review!");
-        if (onReviewSubmitted) onReviewSubmitted();
-      } else {
-        console.error("Review submission failed:", data.message);
-        toast.error(data.message);
-      }
-    } catch (error) {
-      console.error("Review fetch error:", error);
-      toast.error("Failed to submit review");
-    } finally {
-      setSubmitting(false);
-    }
+    reviewMutation.mutate({ bookingId, rating, comment });
   };
+
+  const submitting = reviewMutation.isPending;
 
   return (
     <div className="bg-orange-50 border border-orange-100 rounded-3xl p-8">

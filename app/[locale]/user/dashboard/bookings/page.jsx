@@ -15,39 +15,46 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-toastify";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 
 export default function MyBookingsPage() {
+  const queryClient = useQueryClient();
   const user = useSelector(selectUser);
-  const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [viewType, setViewType] = useState("table"); // table or grid
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    if (user?._id) {
-      fetchBookings();
-    }
-  }, [user]);
+  const { data: bookings = [], isLoading: loading } = useQuery({
+    queryKey: ["userBookings", user?._id],
+    queryFn: async () => {
+      const res = await axiosInstance.get(
+        `/api/bookings?userId=${user._id}&role=user`,
+      );
+      return res.data.bookings || [];
+    },
+    enabled: !!user?._id,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  const fetchBookings = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(`/api/bookings?userId=${user._id}&role=user`, {
-        cache: "no-store",
+  const statusMutation = useMutation({
+    mutationFn: async ({ bookingId, newStatus }) => {
+      const res = await axiosInstance.patch(`/api/bookings/${bookingId}`, {
+        status: newStatus,
       });
-      const data = await res.json();
-      if (data.success) {
-        setBookings(data.bookings);
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      console.error("Fetch bookings error:", error);
-      toast.error("Failed to load bookings");
-    } finally {
-      setLoading(false);
-    }
+      return res.data;
+    },
+    onSuccess: (data, variables) => {
+      toast.success(`Booking ${variables.newStatus} successfully`);
+      queryClient.invalidateQueries({ queryKey: ["userBookings"] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to update status");
+    },
+  });
+
+  const handleStatusUpdate = async (bookingId, newStatus) => {
+    statusMutation.mutate({ bookingId, newStatus });
   };
 
   const filteredBookings = bookings.filter((b) => {

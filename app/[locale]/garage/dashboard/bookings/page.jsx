@@ -4,102 +4,73 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
 import { Wrench, Filter, Search } from "lucide-react";
-import axios from "axios";
 import { toast } from "react-toastify";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import BookingTable from "@/components/dashboard/BookingTable";
 
 export default function BookingsPage() {
   const user = useSelector(selectUser);
-  const [bookings, setBookings] = useState([]);
-  const [filteredBookings, setFilteredBookings] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [team, setTeam] = useState([]);
-
-  // Fetch bookings from API
-  const fetchBookings = async () => {
-    if (!user) return;
-
-    setIsLoading(true);
-    try {
-      const response = await axios.get(
-        `/api/bookings?userId=${user._id}&role=garage`
+  const { data: bookings = [], isLoading } = useQuery({
+    queryKey: ["garageBookings", user?._id],
+    queryFn: async () => {
+      const response = await axiosInstance.get(
+        `/api/bookings?userId=${user._id}&role=garage`,
       );
+      return response.data.bookings || [];
+    },
+    enabled: !!user?._id,
+  });
 
-      if (response.data.success) {
-        setBookings(response.data.bookings);
-        setFilteredBookings(response.data.bookings);
-      }
-    } catch (error) {
-      console.error("Error fetching bookings:", error);
-      toast.error("Failed to load bookings");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { data: team = [] } = useQuery({
+    queryKey: ["garageTeam"],
+    queryFn: async () => {
+      const res = await axiosInstance.get("/api/garage/team");
+      return res.data.teamMembers || [];
+    },
+    enabled: !!user?._id,
+  });
 
-  const fetchTeam = async () => {
-    try {
-      const res = await fetch("/api/garage/team");
-      const data = await res.json();
-      if (data.success) {
-        setTeam(data.teamMembers);
-      }
-    } catch (error) {
-      console.error("Error fetching team:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchBookings();
-    fetchTeam();
-  }, [user]);
-
-  // Filter bookings by status and search query
-  useEffect(() => {
-    let filtered = bookings;
-
-    // Filter by status
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((b) => b.status === statusFilter);
-    }
-
-    // Filter by search query (user name, booking number, service)
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (b) =>
-          b.user?.name?.toLowerCase().includes(query) ||
-          b.bookingNumber?.toLowerCase().includes(query) ||
-          b.service?.name?.toLowerCase().includes(query) ||
-          b._id.toLowerCase().includes(query)
+  const statusMutation = useMutation({
+    mutationFn: async ({ bookingId, newStatus }) => {
+      const response = await axiosInstance.patch(
+        `/api/bookings/${bookingId}/status`,
+        {
+          status: newStatus,
+        },
       );
-    }
-
-    setFilteredBookings(filtered);
-  }, [statusFilter, searchQuery, bookings]);
-
-  // Handle booking status update
-  const handleStatusUpdate = async (bookingId, newStatus) => {
-    try {
-      const response = await axios.patch(`/api/bookings/${bookingId}/status`, {
-        status: newStatus,
-      });
-
-      if (response.data.success) {
-        toast.success(`Booking ${newStatus} successfully`);
-        // Refresh bookings
-        fetchBookings();
-      }
-    } catch (error) {
-      console.error("Error updating booking status:", error);
+      return response.data;
+    },
+    onSuccess: (data, { newStatus }) => {
+      toast.success(`Booking ${newStatus} successfully`);
+      queryClient.invalidateQueries(["garageBookings"]);
+    },
+    onError: (error) => {
       toast.error(
-        error.response?.data?.message || "Failed to update booking status"
+        error.response?.data?.message || "Failed to update booking status",
       );
-    }
+    },
+  });
+
+  const handleStatusUpdate = (bookingId, newStatus) => {
+    statusMutation.mutate({ bookingId, newStatus });
   };
+
+  const filteredBookings = bookings.filter((b) => {
+    const matchesStatus = statusFilter === "all" || b.status === statusFilter;
+    const matchesSearch =
+      !searchQuery.trim() ||
+      b.user?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.bookingNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.service?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b._id.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesStatus && matchesSearch;
+  });
 
   if (isLoading) {
     return (

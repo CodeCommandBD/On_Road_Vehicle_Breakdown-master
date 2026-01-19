@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import axios from "axios";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import Sidebar from "@/components/layout/Sidebar";
@@ -8,22 +9,13 @@ import SupportForm from "@/components/dashboard/SupportForm";
 import { User, Phone, Mail, Crown } from "lucide-react";
 
 export default function SupportPage() {
-  const [manager, setManager] = useState(null);
-
-  useEffect(() => {
-    fetchSupportData();
-  }, []);
-
-  const fetchSupportData = async () => {
-    try {
-      const res = await axios.get("/api/support");
-      if (res.data.success) {
-        setManager(res.data.data.accountManager);
-      }
-    } catch (error) {
-      console.error("Failed to fetch support data", error);
-    }
-  };
+  const { data: manager = null, isLoading } = useQuery({
+    queryKey: ["supportData"],
+    queryFn: async () => {
+      const res = await axiosInstance.get("/api/support");
+      return res.data.data.accountManager;
+    },
+  });
 
   return (
     <div className="flex h-screen bg-[#121212] text-white overflow-hidden font-outfit">

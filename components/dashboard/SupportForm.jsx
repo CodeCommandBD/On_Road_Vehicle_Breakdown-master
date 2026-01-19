@@ -1,44 +1,47 @@
 "use client";
 
 import { useState } from "react";
-import axios from "axios";
+import { useMutation } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
 import { Send, Loader2, Rocket, Clock, ShieldCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 export default function SupportForm() {
-  // const t = useTranslations("Support"); // Assuming translations will be added later
   const user = useSelector(selectUser);
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [feedback, setFeedback] = useState(null);
 
   const planTier = user?.planTier || "free";
   const isVip = ["premium", "enterprise"].includes(planTier);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setFeedback(null);
-
-    try {
-      const res = await axios.post("/api/support", { subject, message });
-      if (res.data.success) {
-        setFeedback({ type: "success", text: "Ticket Sent Successfully!" });
-        setSubject("");
-        setMessage("");
-      }
-    } catch (err) {
+  const supportMutation = useMutation({
+    mutationFn: async (ticketData) => {
+      const response = await axiosInstance.post("/api/support", ticketData);
+      return response.data;
+    },
+    onSuccess: () => {
+      setFeedback({ type: "success", text: "Ticket Sent Successfully!" });
+      setSubject("");
+      setMessage("");
+    },
+    onError: () => {
       setFeedback({
         type: "error",
         text: "Failed to send ticket. Please try again.",
       });
-    } finally {
-      setIsLoading(false);
-    }
+    },
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setFeedback(null);
+    supportMutation.mutate({ subject, message });
   };
+
+  const isLoading = supportMutation.isPending;
 
   return (
     <div className="bg-white/5 border border-white/10 rounded-2xl p-6 lg:p-8 relative overflow-hidden">

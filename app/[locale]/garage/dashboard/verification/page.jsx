@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useTranslations } from "next-intl";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import axios from "axios";
 import ImageUpload from "@/components/common/ImageUpload";
 
@@ -35,9 +37,9 @@ const EQUIPMENT_SUGGESTIONS = [
 ];
 
 export default function GarageVerificationPage() {
+  const queryClient = useQueryClient();
   const t = useTranslations("Verification");
   const user = useSelector(selectUser);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     verification: {
@@ -58,50 +60,59 @@ export default function GarageVerificationPage() {
   });
 
   // Fetch garage profile
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!user) return;
-
-      setIsLoading(true);
-      try {
-        const response = await axios.get("/api/garages/profile");
-
-        if (response.data.success) {
-          const garage = response.data.garage;
-          setFormData({
-            verification: garage.verification || {
-              tradeLicense: { number: "", imageUrl: "" },
-              nid: { number: "", imageUrl: "" },
-              ownerPhoto: "",
-              status: "pending",
-            },
-            experience: garage.experience || { years: 0, description: "" },
-            specializedEquipments: garage.specializedEquipments || [],
-            garageImages: garage.garageImages || {
-              frontView: "",
-              indoorView: "",
-              additional: [],
-            },
-            mechanicDetails: garage.mechanicDetails || {
-              leadName: "",
-              experienceYears: 0,
-              specializations: [],
-              certifications: [{ title: "", imageUrl: "" }],
-            },
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching profile:", error);
-        toast.error(t("loadFailed"));
-      } finally {
-        setIsLoading(false);
+  const { isLoading } = useQuery({
+    queryKey: ["garageProfileForVerification"],
+    queryFn: async () => {
+      const response = await axiosInstance.get("/api/garages/profile");
+      if (response.data.success) {
+        const garage = response.data.garage;
+        setFormData({
+          verification: garage.verification || {
+            tradeLicense: { number: "", imageUrl: "" },
+            nid: { number: "", imageUrl: "" },
+            ownerPhoto: "",
+            status: "pending",
+          },
+          experience: garage.experience || { years: 0, description: "" },
+          specializedEquipments: garage.specializedEquipments || [],
+          garageImages: garage.garageImages || {
+            frontView: "",
+            indoorView: "",
+            additional: [],
+          },
+          mechanicDetails: garage.mechanicDetails || {
+            leadName: "",
+            experienceYears: 0,
+            specializations: [],
+            certifications: [{ title: "", imageUrl: "" }],
+          },
+        });
       }
-    };
+      return response.data.garage;
+    },
+    enabled: !!user?._id,
+  });
 
-    if (user?._id) {
-      fetchProfile();
-    }
-  }, [user?._id]);
+  const verificationMutation = useMutation({
+    mutationFn: async (data) => {
+      const res = await axiosInstance.put("/api/garages/profile", data);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success(t("updateSuccess"));
+      queryClient.invalidateQueries({
+        queryKey: ["garageProfileForVerification"],
+      });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || t("updateFailed"));
+    },
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    verificationMutation.mutate(formData);
+  };
 
   // Handle nested verification change
   const handleVerificationChange = (section, field, value) => {
@@ -179,24 +190,7 @@ export default function GarageVerificationPage() {
     handleMechanicChange("certifications", newCerts);
   };
 
-  // Handle submit
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSaving(true);
-
-    try {
-      const response = await axios.put("/api/garages/profile", formData);
-
-      if (response.data.success) {
-        toast.success(t("updateSuccess"));
-      }
-    } catch (error) {
-      console.error("Error saving verification:", error);
-      toast.error(error.response?.data?.message || t("updateFailed"));
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  // Submit handler replaced by verificationMutation
 
   if (isLoading) {
     return (
@@ -251,7 +245,7 @@ export default function GarageVerificationPage() {
             formData.verification.status === "verified"
               ? "bg-green-500/20"
               : "bg-orange-500/20"
-            }`}
+          }`}
         >
           <BadgeCheck size={20} />
         </div>
@@ -292,7 +286,7 @@ export default function GarageVerificationPage() {
                   handleVerificationChange(
                     "tradeLicense",
                     "number",
-                    e.target.value
+                    e.target.value,
                   )
                 }
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50"
@@ -487,7 +481,7 @@ export default function GarageVerificationPage() {
                 onChange={(e) =>
                   handleMechanicChange(
                     "experienceYears",
-                    parseInt(e.target.value) || 0
+                    parseInt(e.target.value) || 0,
                   )
                 }
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500/50"

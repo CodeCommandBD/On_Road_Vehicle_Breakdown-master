@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
-import { selectUser } from "@/store/slices/authSlice";
+import { useQuery } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import axios from "axios";
 import { Star, ThumbsUp, MessageSquare, Loader2, Filter } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -11,46 +10,35 @@ export default function GarageReviewsPage() {
   const t = useTranslations("Garage"); // Assuming Garage translations exist
   const commonT = useTranslations("Common");
   const user = useSelector(selectUser);
-  const [reviews, setReviews] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState({
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["garageReviews", user?._id],
+    queryFn: async () => {
+      const response = await axiosInstance.get(
+        `/api/reviews?garageId=${user._id}`,
+      );
+      const reviews = response.data.reviews || [];
+
+      const total = reviews.length;
+      const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
+      const average = total > 0 ? (sum / total).toFixed(1) : 0;
+
+      const breakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+      reviews.forEach((r) => {
+        if (breakdown[r.rating] !== undefined) breakdown[r.rating]++;
+      });
+
+      return { reviews, stats: { average, total, breakdown } };
+    },
+    enabled: !!user?._id,
+  });
+
+  const reviews = data?.reviews || [];
+  const stats = data?.stats || {
     average: 0,
     total: 0,
     breakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
-  });
-
-  useEffect(() => {
-    const fetchReviews = async () => {
-      if (!user?._id) return;
-      try {
-        const response = await axios.get(`/api/reviews?garageId=${user._id}`);
-        if (response.data.success) {
-          setReviews(response.data.reviews);
-          // Calculate stats locally if not provided by API
-          // Assuming API returns an array of reviews
-          const total = response.data.reviews.length;
-          const sum = response.data.reviews.reduce(
-            (acc, r) => acc + r.rating,
-            0
-          );
-          const average = total > 0 ? (sum / total).toFixed(1) : 0;
-
-          const breakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-          response.data.reviews.forEach((r) => {
-            if (breakdown[r.rating] !== undefined) breakdown[r.rating]++;
-          });
-
-          setStats({ average, total, breakdown });
-        }
-      } catch (error) {
-        console.error("Failed to fetch reviews:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchReviews();
-  }, [user?._id]);
+  };
 
   if (isLoading) {
     return (

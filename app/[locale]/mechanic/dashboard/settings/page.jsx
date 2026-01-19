@@ -17,7 +17,8 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useTranslations } from "next-intl";
-import axios from "axios";
+import { useMutation } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 
 export default function MechanicSettingsPage() {
   const t = useTranslations("Settings");
@@ -25,7 +26,6 @@ export default function MechanicSettingsPage() {
   const dispatch = useDispatch();
 
   const [activeTab, setActiveTab] = useState("profile");
-  const [loading, setLoading] = useState(false);
   const [showCurrentPass, setShowCurrentPass] = useState(false);
   const [showNewPass, setShowNewPass] = useState(false);
 
@@ -41,56 +41,56 @@ export default function MechanicSettingsPage() {
     availability: user?.availability?.status || "offline",
   });
 
-  const handleProfileUpdate = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const res = await axios.put("/api/profile", profileData);
-      if (res.data.success) {
-        dispatch(updateUser(res.data.user));
-        toast.success("Profile updated successfully");
-      }
-    } catch (error) {
+  const profileMutation = useMutation({
+    mutationFn: async (data) => {
+      const res = await axiosInstance.put("/api/profile", data);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      dispatch(updateUser(data.user));
+      toast.success("Profile updated successfully");
+    },
+    onError: (error) => {
       toast.error(error.response?.data?.message || "Failed to update profile");
-    } finally {
-      setLoading(false);
-    }
+    },
+  });
+
+  const passwordMutation = useMutation({
+    mutationFn: async (data) => {
+      const res = await axiosInstance.put("/api/user/settings/password", data);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success("Password updated successfully");
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to update password");
+    },
+  });
+
+  const handleProfileUpdate = (e) => {
+    e.preventDefault();
+    profileMutation.mutate(profileData);
   };
 
-  const handlePasswordChange = async (e) => {
+  const handlePasswordChange = (e) => {
     e.preventDefault();
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast.error("Passwords do not match!");
       return;
     }
-
-    setLoading(true);
-    try {
-      const res = await fetch("/api/user/settings/password", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success("Password updated successfully");
-        setPasswordData({
-          currentPassword: "",
-          newPassword: "",
-          confirmPassword: "",
-        });
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error("Failed to update password");
-    } finally {
-      setLoading(false);
-    }
+    passwordMutation.mutate({
+      currentPassword: passwordData.currentPassword,
+      newPassword: passwordData.newPassword,
+    });
   };
+
+  const loading = profileMutation.isPending || passwordMutation.isPending;
 
   const tabs = [
     { id: "profile", label: "Profile Info", icon: User },

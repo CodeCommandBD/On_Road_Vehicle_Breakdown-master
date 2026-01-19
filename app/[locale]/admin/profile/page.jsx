@@ -5,26 +5,23 @@ import { useSelector, useDispatch } from "react-redux";
 import { selectUser, updateUser } from "@/store/slices/authSlice";
 import { User, Shield, Phone, Mail, Save, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 
 export default function AdminProfilePage() {
   const user = useSelector(selectUser);
   const dispatch = useDispatch();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
   });
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
-    try {
-      const res = await fetch("/api/profile");
-      const data = await res.json();
+  const { isLoading: loading } = useQuery({
+    queryKey: ["adminProfile"],
+    queryFn: async () => {
+      const res = await axiosInstance.get("/api/profile");
+      const data = res.data;
       if (data.success) {
         setFormData({
           name: data.user.name || "",
@@ -32,40 +29,36 @@ export default function AdminProfilePage() {
           phone: data.user.phone || "",
         });
       }
-    } catch (error) {
-      toast.error("Failed to load profile");
-    } finally {
-      setLoading(false);
-    }
-  };
+      return data.user;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (updatedData) => {
+      const res = await axiosInstance.put("/api/profile", updatedData);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success("Profile updated successfully");
+      dispatch(updateUser(data.user));
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "An error occurred");
+    },
+  });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setSaving(true);
-    try {
-      const res = await fetch("/api/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success("Profile updated successfully");
-        dispatch(updateUser(data.user));
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error("An error occurred");
-    } finally {
-      setSaving(false);
-    }
+    updateMutation.mutate(formData);
   };
+
+  const saving = updateMutation.isPending;
 
   if (loading) {
     return (

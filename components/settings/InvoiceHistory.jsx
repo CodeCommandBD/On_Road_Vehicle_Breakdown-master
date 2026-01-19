@@ -1,48 +1,49 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { useState } from "react";
 import { format } from "date-fns";
 import { Download, FileText, Send } from "lucide-react";
 import { toast } from "react-toastify";
-
+import { useQuery, useMutation } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import { useTranslations } from "next-intl";
 
 export default function InvoiceHistory() {
   const t = useTranslations("Settings.Billing");
-  const [invoices, setInvoices] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [sendingId, setSendingId] = useState(null);
 
-  useEffect(() => {
-    fetchInvoices();
-  }, []);
+  const { data: invoices = [], isLoading: loading } = useQuery({
+    queryKey: ["userInvoices"],
+    queryFn: async () => {
+      const response = await axiosInstance.get("/api/user/invoices");
+      return response.data.invoices || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
-  const fetchInvoices = async () => {
-    try {
-      const invoiceRes = await axios.get("/api/user/invoices");
-      setInvoices(invoiceRes.data.invoices || []);
-    } catch (error) {
-      console.error("Failed to fetch invoices", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const emailMutation = useMutation({
+    mutationFn: async (id) => {
+      setSendingId(id);
+      const response = await axiosInstance.post(`/api/invoices/${id}/send`);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success(t("emailSent") || "Invoice sent to your email!");
+    },
+    onError: () => {
+      toast.error(t("emailFailed") || "Failed to send email");
+    },
+    onSettled: () => {
+      setSendingId(null);
+    },
+  });
 
   const handleDownload = (id, number) => {
     window.open(`/api/invoices/${id}/download`, "_blank");
   };
 
-  const handleEmail = async (id) => {
-    setSendingId(id);
-    try {
-      await axios.post(`/api/invoices/${id}/send`);
-      toast.success(t("emailSent") || "Invoice sent to your email!");
-    } catch (error) {
-      toast.error(t("emailFailed") || "Failed to send email");
-    } finally {
-      setSendingId(null);
-    }
+  const handleEmail = (id) => {
+    emailMutation.mutate(id);
   };
 
   if (loading) return <div className="p-4 text-gray-400">{t("loading")}</div>;
@@ -88,8 +89,8 @@ export default function InvoiceHistory() {
                         inv.status === "paid"
                           ? "bg-green-500/20 text-green-400"
                           : inv.status === "pending"
-                          ? "bg-yellow-500/20 text-yellow-400"
-                          : "bg-gray-500/20 text-gray-400"
+                            ? "bg-yellow-500/20 text-yellow-400"
+                            : "bg-gray-500/20 text-gray-400"
                       }`}
                     >
                       {inv.status}

@@ -17,124 +17,101 @@ import {
   Activity,
 } from "lucide-react";
 import { Link } from "@/i18n/routing";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import axios from "axios";
 import { toast } from "react-toastify";
 
 export default function MissionControlPage() {
   const user = useSelector(selectUser);
-  const [bookings, setBookings] = useState([]);
-  const [sosAlerts, setSosAlerts] = useState([]);
-  const [assignedSos, setAssignedSos] = useState([]);
-  const [garageProfile, setGarageProfile] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [lastUpdated, setLastUpdated] = useState(new Date());
 
   const [showAcceptModal, setShowAcceptModal] = useState(false);
   const [showResolveModal, setShowResolveModal] = useState(false);
   const [selectedSosId, setSelectedSosId] = useState(null);
-  const [isProcessingAccept, setIsProcessingAccept] = useState(false);
-  const [isProcessingResolve, setIsProcessingResolve] = useState(false);
 
-  const fetchData = useCallback(
-    async (showToast = false) => {
-      if (!user) return;
-      try {
-        const [garageRes, bookingsRes, sosRes] = await Promise.all([
-          axios.get("/api/garages/profile"),
-          axios.get(`/api/bookings?userId=${user._id}&role=garage`),
-          axios.get("/api/sos?status=pending,assigned"),
-        ]);
+  const { data, isLoading } = useQuery({
+    queryKey: ["missionControlData"],
+    queryFn: async () => {
+      const [garageRes, bookingsRes, sosRes] = await Promise.all([
+        axiosInstance.get("/api/garages/profile"),
+        axiosInstance.get(`/api/bookings?userId=${user._id}&role=garage`),
+        axiosInstance.get("/api/sos?status=pending,assigned"),
+      ]);
 
-        if (garageRes.data.success) {
-          setGarageProfile(garageRes.data.garage);
-        }
+      const allSos = sosRes.data.data || [];
+      const unfilteredBookings = bookingsRes.data.bookings || [];
 
-        if (sosRes.data.success) {
-          const allSos = sosRes.data.data;
-          setSosAlerts(allSos.filter((s) => s.status === "pending"));
-          setAssignedSos(allSos.filter((s) => s.status === "assigned"));
-        }
+      const sosAlerts = allSos.filter((s) => s.status === "pending");
+      const assignedSos = allSos.filter((s) => s.status === "assigned");
+      const bookings = unfilteredBookings.filter(
+        (b) =>
+          b.status === "pending" ||
+          b.status === "accepted" ||
+          b.status === "in_progress",
+      );
 
-        if (bookingsRes.data.success) {
-          setBookings(
-            bookingsRes.data.bookings.filter(
-              (b) =>
-                b.status === "pending" ||
-                b.status === "accepted" ||
-                b.status === "in_progress"
-            )
-          );
-        }
-
-        setLastUpdated(new Date());
-        if (showToast) toast.success("Mission data updated");
-      } catch (error) {
-        console.error("Mission Control Error:", error);
-        if (showToast) toast.error("Failed to sync mission data");
-      } finally {
-        setIsLoading(false);
-      }
+      setLastUpdated(new Date());
+      return {
+        garageProfile: garageRes.data.garage,
+        sosAlerts,
+        assignedSos,
+        bookings,
+      };
     },
-    [user]
-  );
+    enabled: !!user,
+    refetchInterval: 30000, // Poll every 30 seconds
+  });
 
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(() => fetchData(false), 30000);
-    return () => clearInterval(interval);
-  }, [fetchData]);
+  const garageProfile = data?.garageProfile;
+  const sosAlerts = data?.sosAlerts || [];
+  const assignedSos = data?.assignedSos || [];
+  const bookings = data?.bookings || [];
+
+  const fetchData = () =>
+    queryClient.invalidateQueries({ queryKey: ["missionControlData"] });
 
   const handleAcceptSOS = (sosId) => {
     setSelectedSosId(sosId);
     setShowAcceptModal(true);
   };
 
-  const executeAcceptSOS = async () => {
-    if (!selectedSosId) return;
-    setIsProcessingAccept(true);
-    try {
-      const res = await axios.patch("/api/sos", {
-        sosId: selectedSosId,
-        status: "assigned",
-      });
-      if (res.data.success) {
+  const sosMutation = useMutation({
+    mutationFn: async ({ sosId, status }) => {
+      const res = await axiosInstance.patch("/api/sos", { sosId, status });
+      return res.data;
+    },
+    onSuccess: (data, variables) => {
+      if (variables.status === "assigned") {
         toast.success("MISSION ACCEPTED! Head to location.");
         setShowAcceptModal(false);
-        setSelectedSosId(null);
-        fetchData();
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to accept mission");
-    } finally {
-      setIsProcessingAccept(false);
-    }
-  };
-
-  const handleResolveSOS = (sosId) => {
-    setSelectedSosId(sosId);
-    setShowResolveModal(true);
-  };
-
-  const executeResolveSOS = async () => {
-    if (!selectedSosId) return;
-    setIsProcessingResolve(true);
-    try {
-      const res = await axios.patch("/api/sos", {
-        sosId: selectedSosId,
-        status: "resolved",
-      });
-      if (res.data.success) {
+      } else if (variables.status === "resolved") {
         toast.success("Mission Accomplished!");
         setShowResolveModal(false);
-        setSelectedSosId(null);
-        fetchData();
       }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to resolve mission");
-    } finally {
-      setIsProcessingResolve(false);
-    }
+      setSelectedSosId(null);
+      fetchData();
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to update mission");
+    },
+  });
+
+  const executeAcceptSOS = () => {
+    if (!selectedSosId) return;
+    sosMutation.mutate({ sosId: selectedSosId, status: "assigned" });
   };
+
+  const executeResolveSOS = () => {
+    if (!selectedSosId) return;
+    sosMutation.mutate({ sosId: selectedSosId, status: "resolved" });
+  };
+
+  const isProcessingAccept =
+    sosMutation.isPending && sosMutation.variables?.status === "assigned";
+  const isProcessingResolve =
+    sosMutation.isPending && sosMutation.variables?.status === "resolved";
 
   const handleTrackUser = (sos) => {
     const lat = sos.location.coordinates[1];

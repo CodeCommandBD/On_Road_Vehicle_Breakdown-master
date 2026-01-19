@@ -17,6 +17,8 @@ import {
   ToggleLeft,
   ToggleRight,
 } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useTranslations } from "next-intl";
@@ -25,7 +27,6 @@ export default function GarageSettingsPage() {
   const t = useTranslations("Settings");
   const commonT = useTranslations("Common");
   const user = useSelector(selectUser);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -51,23 +52,35 @@ export default function GarageSettingsPage() {
     confirmPassword: "",
   });
 
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const response = await axios.get("/api/garages/settings");
-        if (response.data.success) {
-          setSettings(response.data.settings);
-        }
-      } catch (error) {
-        console.error("Fetch Settings Error:", error);
-        toast.error("Failed to load settings");
-      } finally {
-        setIsLoading(false);
+  const { isLoading } = useQuery({
+    queryKey: ["garageSettings"],
+    queryFn: async () => {
+      const response = await axiosInstance.get("/api/garages/settings");
+      if (response.data.success) {
+        setSettings(response.data.settings);
       }
-    };
+      return response.data.settings;
+    },
+    enabled: !!user,
+  });
 
-    fetchSettings();
-  }, [user]);
+  const saveMutation = useMutation({
+    mutationFn: async (payload) => {
+      const res = await axiosInstance.put("/api/garages/settings", payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success(t("saveChanges"));
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to update settings");
+    },
+  });
 
   const handleToggle = (type, field) => {
     if (type === "account") {
@@ -109,39 +122,23 @@ export default function GarageSettingsPage() {
     });
   };
 
-  const saveSettings = async () => {
-    setIsSaving(true);
-    try {
-      const payload = {
-        notificationPreferences: settings.account.notificationPreferences,
-        garageActive: settings.garage.isActive,
-        accountActive: settings.account.isActive,
-      };
+  const saveSettings = () => {
+    const payload = {
+      notificationPreferences: settings.account.notificationPreferences,
+      garageActive: settings.garage.isActive,
+      accountActive: settings.account.isActive,
+    };
 
-      if (passwordForm.currentPassword && passwordForm.newPassword) {
-        if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-          toast.error("Passwords do not match");
-          setIsSaving(false);
-          return;
-        }
-        payload.currentPassword = passwordForm.currentPassword;
-        payload.newPassword = passwordForm.newPassword;
+    if (passwordForm.currentPassword && passwordForm.newPassword) {
+      if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+        toast.error("Passwords do not match");
+        return;
       }
-
-      const response = await axios.put("/api/garages/settings", payload);
-      if (response.data.success) {
-        toast.success(t("saveChanges"));
-        setPasswordForm({
-          currentPassword: "",
-          newPassword: "",
-          confirmPassword: "",
-        });
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update settings");
-    } finally {
-      setIsSaving(false);
+      payload.currentPassword = passwordForm.currentPassword;
+      payload.newPassword = passwordForm.newPassword;
     }
+
+    saveMutation.mutate(payload);
   };
 
   if (isLoading) {
@@ -267,8 +264,8 @@ export default function GarageSettingsPage() {
                           key.replace(/([A-Z])/g, " $1") === "email"
                             ? "emailNotif"
                             : key === "push"
-                            ? "pushNotif"
-                            : "serviceReminders"
+                              ? "pushNotif"
+                              : "serviceReminders",
                         )}
                       </span>
                       <input
@@ -278,7 +275,7 @@ export default function GarageSettingsPage() {
                         className="w-5 h-5 rounded border-white/10 accent-orange-500"
                       />
                     </label>
-                  )
+                  ),
                 )}
               </div>
             </div>

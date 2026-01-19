@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Plus,
   User,
@@ -21,10 +21,11 @@ import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/authSlice";
 import LockedFeature from "@/components/common/LockedFeature";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 
 export default function TeamManagementPage() {
-  const [loading, setLoading] = useState(true);
-  const [team, setTeam] = useState([]);
+  const queryClient = useQueryClient();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -47,15 +48,77 @@ export default function TeamManagementPage() {
     password: "",
     skills: "", // Comma separated
   });
-  const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (isPremium) {
-      fetchTeam();
-    } else {
-      setLoading(false);
-    }
-  }, [isPremium]);
+  const { data: team = [], isLoading: loading } = useQuery({
+    queryKey: ["garageTeamData"],
+    queryFn: async () => {
+      const res = await axiosInstance.get("/api/garage/team");
+      return res.data.teamMembers || [];
+    },
+    enabled: !!isPremium,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const addMutation = useMutation({
+    mutationFn: async (mechanicData) => {
+      const res = await axiosInstance.post("/api/garage/team", mechanicData);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success("Mechanic added successfully! 🎉");
+      setShowAddModal(false);
+      setNewUser({
+        name: "",
+        phone: "",
+        email: "",
+        password: "",
+        skills: "",
+      });
+      queryClient.invalidateQueries({ queryKey: ["garageTeamData"] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to add mechanic");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id) => {
+      const res = await axiosInstance.delete(`/api/garage/team/${id}`);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success("Mechanic removed successfully");
+      setShowDeleteModal(false);
+      setMemberToDelete(null);
+      queryClient.invalidateQueries({ queryKey: ["garageTeamData"] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to remove mechanic");
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (memberData) => {
+      const res = await axiosInstance.patch(
+        `/api/garage/team/${memberData._id}`,
+        memberData,
+      );
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success("Mechanic updated successfully!");
+      setShowEditModal(false);
+      queryClient.invalidateQueries({ queryKey: ["garageTeamData"] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to update mechanic");
+    },
+  });
+
+  const submitting =
+    addMutation.isPending ||
+    deleteMutation.isPending ||
+    updateMutation.isPending;
 
   if (!isPremium && !loading) {
     return (
@@ -73,121 +136,38 @@ export default function TeamManagementPage() {
     );
   }
 
-  const fetchTeam = async () => {
-    try {
-      const res = await fetch("/api/garage/team");
-      const data = await res.json();
-      if (data.success) {
-        setTeam(data.teamMembers);
-      }
-    } catch (error) {
-      console.error("Failed to fetch team:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleAddMechanic = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
+    const skillsArray = newUser.skills
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s);
 
-    try {
-      const skillsArray = newUser.skills
-        .split(",")
-        .map((s) => s.trim())
-        .filter((s) => s);
-
-      const res = await fetch("/api/garage/team", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...newUser,
-          skills: skillsArray,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        toast.success("Mechanic added successfully! 🎉");
-        setShowAddModal(false);
-        setNewUser({
-          name: "",
-          phone: "",
-          email: "",
-          password: "",
-          skills: "",
-        });
-        fetchTeam(); // Refresh list
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error("Failed to add mechanic");
-    } finally {
-      setSubmitting(false);
-    }
+    addMutation.mutate({
+      ...newUser,
+      skills: skillsArray,
+    });
   };
 
   const handleDelete = async () => {
     if (!memberToDelete) return;
-    setSubmitting(true);
-
-    try {
-      const res = await fetch(`/api/garage/team/${memberToDelete._id}`, {
-        method: "DELETE",
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success("Mechanic removed successfully");
-        setShowDeleteModal(false);
-        setMemberToDelete(null);
-        fetchTeam();
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error("Failed to remove mechanic");
-    } finally {
-      setSubmitting(false);
-    }
+    deleteMutation.mutate(memberToDelete._id);
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
+    const skillsArray =
+      typeof editingMember.skills === "string"
+        ? editingMember.skills
+            .split(",")
+            .map((s) => s.trim())
+            .filter((s) => s)
+        : editingMember.skills;
 
-    try {
-      const skillsArray =
-        typeof editingMember.skills === "string"
-          ? editingMember.skills
-              .split(",")
-              .map((s) => s.trim())
-              .filter((s) => s)
-          : editingMember.skills;
-
-      const res = await fetch(`/api/garage/team/${editingMember._id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...editingMember,
-          skills: skillsArray,
-        }),
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        toast.success("Mechanic updated successfully!");
-        setShowEditModal(false);
-        fetchTeam();
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error("Failed to update mechanic");
-    } finally {
-      setSubmitting(false);
-    }
+    updateMutation.mutate({
+      ...editingMember,
+      skills: skillsArray,
+    });
   };
 
   return (
@@ -256,8 +236,8 @@ export default function TeamManagementPage() {
                       member.user?.availability?.status === "online"
                         ? "bg-green-100 text-green-600"
                         : member.user?.availability?.status === "busy"
-                        ? "bg-orange-100 text-orange-600"
-                        : "bg-gray-100 text-gray-400"
+                          ? "bg-orange-100 text-orange-600"
+                          : "bg-gray-100 text-gray-400"
                     }`}
                   >
                     {member.user?.availability?.status || "offline"}
@@ -267,8 +247,8 @@ export default function TeamManagementPage() {
                       member.user?.availability?.status === "online"
                         ? "bg-green-500"
                         : member.user?.availability?.status === "busy"
-                        ? "bg-orange-500"
-                        : "bg-gray-300"
+                          ? "bg-orange-500"
+                          : "bg-gray-300"
                     } ring-4 ring-gray-50`}
                   />
                 </div>

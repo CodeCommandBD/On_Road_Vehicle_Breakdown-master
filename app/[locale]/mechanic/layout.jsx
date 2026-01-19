@@ -10,6 +10,8 @@ import {
   selectUser,
   updateUser,
 } from "@/store/slices/authSlice";
+import { useQuery } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import axios from "axios";
 import {
   Home,
@@ -38,69 +40,33 @@ export default function MechanicLayout({ children }) {
   const isLoading = useSelector(selectAuthLoading);
   const user = useSelector(selectUser);
 
-  // Sync profile data on mount
-  useEffect(() => {
-    const syncProfile = async () => {
-      try {
-        const res = await axios.get("/api/profile");
-        if (res.data.success) {
-          dispatch(updateUser(res.data.user));
-        }
-      } catch (error) {
-        console.error("Mechanic layout - Profile sync failed:", error);
+  // Sync profile data and notifications using TanStack Query
+  const { data: profileData } = useQuery({
+    queryKey: ["mechanicProfile"],
+    queryFn: async () => {
+      const res = await axiosInstance.get("/api/profile");
+      if (res.data.success) {
+        dispatch(updateUser(res.data.user));
       }
-    };
+      return res.data.user;
+    },
+    enabled: isAuthenticated,
+  });
 
-    if (isAuthenticated) {
-      syncProfile();
-    }
-  }, [isAuthenticated, dispatch]);
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push("/login");
-    } else if (!isLoading && user && user.role !== "mechanic") {
-      // Redirect based on role
-      if (user.role === "admin") {
-        router.push("/admin/dashboard");
-      } else if (
-        user.role === "garage" ||
-        user.membershipTier === "garage_pro" ||
-        user.membershipTier === "garage_basic"
-      ) {
-        router.push("/garage/dashboard");
-      } else {
-        router.push("/user/dashboard");
+  const { data: notificationData } = useQuery({
+    queryKey: ["mechanicNotifications"],
+    queryFn: async () => {
+      const res = await axiosInstance.get("/api/notifications");
+      if (res.data.success) {
+        dispatch(setUnreadNotificationsCount(res.data.unreadCount));
       }
-    }
-  }, [isLoading, isAuthenticated, user, router]);
+      return res.data;
+    },
+    enabled: isAuthenticated,
+    refetchInterval: 30000,
+  });
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isNotifyOpen, setIsNotifyOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-
-  const notifyRef = useRef(null);
-
-  const isActive = (path) => pathname === path;
-
-  // Bottom Navigation Items (Mobile)
-  // Fetch current notifications
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const res = await axios.get("/api/notifications");
-        if (res.data.success) {
-          setNotifications(res.data.notifications);
-          dispatch(setUnreadNotificationsCount(res.data.unreadCount));
-        }
-      } catch (err) {
-        console.error("Failed to fetch notifications in mechanic layout:", err);
-      }
-    };
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  const notifications = notificationData?.notifications || [];
 
   // Click outside handler
   useEffect(() => {
@@ -115,7 +81,7 @@ export default function MechanicLayout({ children }) {
 
   const markNotifyRead = async () => {
     try {
-      await axios.patch("/api/notifications", { markAllAsRead: true });
+      await axiosInstance.patch("/api/notifications", { markAllAsRead: true });
       dispatch(setUnreadNotificationsCount(0));
     } catch (err) {
       console.error("Failed to mark notifications read:", err);

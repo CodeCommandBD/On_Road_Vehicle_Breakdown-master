@@ -19,17 +19,18 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useTranslations } from "next-intl";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 
 import InvoiceHistory from "@/components/settings/InvoiceHistory";
 
 export default function SettingsPage() {
+  const queryClient = useQueryClient();
   const t = useTranslations("Settings");
   const commonT = useTranslations("Common");
   const user = useSelector(selectUser);
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState("security");
-  const [loading, setLoading] = useState(false);
-  const [notifLoading, setNotifLoading] = useState(false);
   const [showCurrentPass, setShowCurrentPass] = useState(false);
   const [showNewPass, setShowNewPass] = useState(false);
 
@@ -45,6 +46,44 @@ export default function SettingsPage() {
     serviceReminders: true,
   });
 
+  const passwordMutation = useMutation({
+    mutationFn: async (data) => {
+      const res = await axiosInstance.put("/api/user/settings/password", data);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success(t("passwordSecure"));
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to update password");
+    },
+  });
+
+  const notificationMutation = useMutation({
+    mutationFn: async (updatedPrefs) => {
+      const res = await axiosInstance.put(
+        "/api/user/settings/notifications",
+        updatedPrefs,
+      );
+      return res.data;
+    },
+    onSuccess: (data) => {
+      dispatch(updateUser({ notificationPreferences: data.preferences }));
+      toast.success("Preferences updated", { autoClose: 1000 });
+    },
+    onError: (error) => {
+      setNotificationPrefs(user.notificationPreferences); // Revert
+      toast.error(
+        error.response?.data?.message || "Failed to update preferences",
+      );
+    },
+  });
+
   // Sync with user data from Redux
   useEffect(() => {
     if (user?.notificationPreferences) {
@@ -58,33 +97,10 @@ export default function SettingsPage() {
       toast.error("New passwords do not match!");
       return;
     }
-
-    setLoading(true);
-    try {
-      const res = await fetch("/api/user/settings/password", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success(t("passwordSecure"));
-        setPasswordData({
-          currentPassword: "",
-          newPassword: "",
-          confirmPassword: "",
-        });
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error("An error occurred. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    passwordMutation.mutate({
+      currentPassword: passwordData.currentPassword,
+      newPassword: passwordData.newPassword,
+    });
   };
 
   const handleNotificationToggle = async (key) => {
@@ -93,28 +109,10 @@ export default function SettingsPage() {
 
     // Optimistic update
     setNotificationPrefs(updatedPrefs);
-
-    try {
-      const res = await fetch("/api/user/settings/notifications", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedPrefs),
-      });
-      const data = await res.json();
-      if (data.success) {
-        // Sync back with global state
-        dispatch(updateUser({ notificationPreferences: data.preferences }));
-        toast.success("Preferences updated", { autoClose: 1000 });
-      } else {
-        // Revert on error
-        setNotificationPrefs(notificationPrefs);
-        toast.error(data.message);
-      }
-    } catch (error) {
-      setNotificationPrefs(notificationPrefs);
-      toast.error("Failed to update preferences");
-    }
+    notificationMutation.mutate(updatedPrefs);
   };
+
+  const loading = passwordMutation.isPending;
 
   const tabs = [
     { id: "security", label: t("security"), icon: Lock },
@@ -400,8 +398,8 @@ export default function SettingsPage() {
                             user.contract.status === "active"
                               ? "bg-green-500/10 border-green-500/30 text-green-400"
                               : user.contract.status === "pending"
-                              ? "bg-yellow-500/10 border-yellow-500/30 text-yellow-400"
-                              : "bg-red-500/10 border-red-500/30 text-red-400"
+                                ? "bg-yellow-500/10 border-yellow-500/30 text-yellow-400"
+                                : "bg-red-500/10 border-red-500/30 text-red-400"
                           }`}
                         >
                           {user.contract.status}

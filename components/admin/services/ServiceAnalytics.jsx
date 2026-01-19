@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
+import { useQuery } from "@tanstack/react-query";
 import {
   TrendingUp,
   DollarSign,
@@ -26,29 +27,18 @@ import {
 } from "recharts";
 
 export default function ServiceAnalytics() {
-  const [analytics, setAnalytics] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState(30);
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [timeFilter]);
-
-  const fetchAnalytics = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(
-        `/api/admin/analytics/services?days=${timeFilter}`
+  const { data: analytics, isLoading: loading } = useQuery({
+    queryKey: ["serviceAnalytics", timeFilter],
+    queryFn: async () => {
+      const response = await axiosInstance.get(
+        `/api/admin/analytics/services?days=${timeFilter}`,
       );
-      if (response.data.success) {
-        setAnalytics(response.data.data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch analytics:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      return response.data.data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
   const handleExport = () => {
     if (!analytics?.servicesDetailed) return;
@@ -361,7 +351,7 @@ export default function ServiceAnalytics() {
                   <td className="py-4 text-right text-white/60">
                     ৳
                     {Math.round(
-                      service.revenue / (service.requests || 1)
+                      service.revenue / (service.requests || 1),
                     ).toLocaleString()}
                   </td>
                   <td className="py-4 text-right text-green-500">

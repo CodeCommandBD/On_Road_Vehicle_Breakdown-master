@@ -18,6 +18,8 @@ import {
   Lock,
   AlertCircle,
 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useTranslations } from "next-intl";
@@ -38,87 +40,66 @@ const categoryIcons = {
 };
 
 export default function ServicesPage() {
+  const queryClient = useQueryClient();
   const t = useTranslations("Garage");
   const commonT = useTranslations("Common");
   const user = useSelector(selectUser);
-  const [allServices, setAllServices] = useState([]);
-  const [garageProfile, setGarageProfile] = useState(null);
   const [selectedServices, setSelectedServices] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
   // Fetch all services and garage profile
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!user) return;
+  const { data, isLoading } = useQuery({
+    queryKey: ["garageServicesData"],
+    queryFn: async () => {
+      const [servicesRes, garageRes] = await Promise.all([
+        axiosInstance.get("/api/services"),
+        axiosInstance.get("/api/garages/profile"),
+      ]);
 
-      setIsLoading(true);
-      try {
-        const [servicesRes, garageRes] = await Promise.all([
-          axios.get("/api/services"),
-          axios.get("/api/garages/profile"),
-        ]);
+      const services =
+        servicesRes.data.data?.services || servicesRes.data.services || [];
+      const garage = garageRes.data.garage;
 
-        if (servicesRes.data.success) {
-          // Handle both response formats
-          const services =
-            servicesRes.data.data?.services || servicesRes.data.services || [];
-          setAllServices(services);
-        }
+      // Initialize selected services once
+      const serviceIds =
+        garage.services?.map((s) => (typeof s === "string" ? s : s._id)) || [];
+      setSelectedServices(serviceIds);
 
-        if (garageRes.data.success) {
-          setGarageProfile(garageRes.data.garage);
-          // Set initially selected services
-          const serviceIds =
-            garageRes.data.garage.services?.map((s) =>
-              typeof s === "string" ? s : s._id
-            ) || [];
-          setSelectedServices(serviceIds);
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        toast.error("Failed to load services");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      return { services, garage };
+    },
+    enabled: !!user,
+  });
 
-    fetchData();
-  }, [user]);
+  const allServices = data?.services || [];
+  const garageProfile = data?.garage;
 
-  // Handle service toggle
-  const toggleService = (serviceId) => {
-    setSelectedServices((prev) =>
-      prev.includes(serviceId)
-        ? prev.filter((id) => id !== serviceId)
-        : [...prev, serviceId]
-    );
-  };
-
-  // Save services
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      const response = await axios.put("/api/garages/services", {
-        serviceIds: selectedServices,
+  const saveMutation = useMutation({
+    mutationFn: async (serviceIds) => {
+      const res = await axiosInstance.put("/api/garages/services", {
+        serviceIds,
       });
-
-      if (response.data.success) {
-        toast.success(
-          `Services updated successfully! ${selectedServices.length} services selected`
-        );
-        // Update garage profile with new data
-        setGarageProfile(response.data.garage);
-      }
-    } catch (error) {
-      console.error("Error saving services:", error);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success(
+        `Services updated successfully! ${selectedServices.length} services selected`,
+      );
+      queryClient.setQueryData(["garageServicesData"], (old) => ({
+        ...old,
+        garage: data.garage,
+      }));
+    },
+    onError: (error) => {
       toast.error(error.response?.data?.message || "Failed to update services");
-    } finally {
-      setIsSaving(false);
-    }
+    },
+  });
+
+  const handleSave = () => {
+    saveMutation.mutate(selectedServices);
   };
+
+  const isSaving = saveMutation.isPending;
 
   // Filter services
   const filteredServices = (allServices || []).filter((service) => {

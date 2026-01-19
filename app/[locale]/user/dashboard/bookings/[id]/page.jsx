@@ -28,6 +28,8 @@ import {
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "react-toastify";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import ReviewForm from "@/components/dashboard/ReviewForm";
 import BookingChat from "@/components/dashboard/BookingChat";
 import { downloadReceiptPDF } from "@/lib/utils/clientReceipt";
@@ -42,79 +44,119 @@ const MapComponent = dynamic(() => import("@/components/maps/MapComponent"), {
 
 export default function BookingDetailsPage() {
   const { id } = useParams();
-  const router = useRouterWithLoading(); // Regular routing
-  const [loading, setLoading] = useState(true);
-  const [booking, setBooking] = useState(null);
-  const [currentUser, setCurrentUser] = useState(null);
+  const queryClient = useQueryClient();
+  const router = useRouterWithLoading();
   const [showRejectModal, setShowRejectModal] = useState(false);
-  const [rejecting, setRejecting] = useState(false);
   const [showDisputeModal, setShowDisputeModal] = useState(false);
-  const [disputing, setDisputing] = useState(false);
-  // Estimate State
   const [showEstimateModal, setShowEstimateModal] = useState(false);
-  const [respondingToEstimate, setRespondingToEstimate] = useState(false);
-
-  // Payment States
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("bkash");
   const [transactionId, setTransactionId] = useState("");
-  const [paying, setPaying] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      fetchBookingDetails();
-      fetchCurrentUser();
-    }
-  }, [id]);
+  const { data: currentUser = null } = useQuery({
+    queryKey: ["userProfile"],
+    queryFn: async () => {
+      const res = await axiosInstance.get("/api/profile");
+      return res.data.user;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: booking = null, isLoading: loading } = useQuery({
+    queryKey: ["bookingDetails", id],
+    queryFn: async () => {
+      const res = await axiosInstance.get(`/api/bookings/${id}`);
+      return res.data.booking;
+    },
+    refetchInterval: (query) => {
+      const terminalStatuses = ["completed", "cancelled", "disputed"];
+      if (
+        query.state.data &&
+        !terminalStatuses.includes(query.state.data.status)
+      ) {
+        return 3000;
+      }
+      return false;
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || "Failed to load booking details",
+      );
+      router.push("/user/dashboard/bookings");
+    },
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ bookingId, status, payload }) => {
+      const res = await axiosInstance.patch(`/api/bookings/${bookingId}`, {
+        status,
+        ...payload,
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["bookingDetails", id]);
+    },
+  });
+
+  const estimateMutation = useMutation({
+    mutationFn: async (action) => {
+      const res = await axiosInstance.post("/api/user/estimate/respond", {
+        bookingId: id,
+        action,
+      });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message);
+      setShowEstimateModal(false);
+      queryClient.invalidateQueries(["bookingDetails", id]);
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || "Failed to respond to estimate",
+      );
+    },
+  });
+
+  const paymentMutation = useMutation({
+    mutationFn: async (paymentData) => {
+      if (paymentMethod === "sslcommerz") {
+        const res = await axiosInstance.post("/api/bookings/payment/init", {
+          bookingId: id,
+        });
+        return res.data;
+      } else {
+        const res = await axiosInstance.post(
+          `/api/bookings/${id}/pay`,
+          paymentData,
+        );
+        return res.data;
+      }
+    },
+    onSuccess: (data) => {
+      if (paymentMethod === "sslcommerz") {
+        if (data.success && data.data.paymentUrl) {
+          window.location.href = data.data.paymentUrl;
+        } else {
+          toast.error(data.message || "Failed to initialize payment");
+        }
+      } else {
+        toast.success("Payment submitted for verification");
+        setShowPaymentModal(false);
+        queryClient.invalidateQueries(["bookingDetails", id]);
+      }
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Payment failed");
+    },
+  });
 
   useEffect(() => {
     if (booking?.status === "estimate_sent") {
       setShowEstimateModal(true);
     }
   }, [booking?.status]);
-
-  const fetchCurrentUser = async () => {
-    try {
-      const res = await fetch("/api/profile");
-      const data = await res.json();
-      if (data.success) {
-        setCurrentUser(data.user);
-      }
-    } catch (error) {
-      console.error("Failed to fetch current user:", error);
-    }
-  };
-
-  // Poll for live updates (status changes, location, etc.) for any active booking
-  useEffect(() => {
-    let interval;
-    const terminalStatuses = ["completed", "cancelled", "disputed"];
-
-    // If booking exists and is NOT in a terminal status, poll for updates
-    if (booking && !terminalStatuses.includes(booking.status)) {
-      interval = setInterval(() => {
-        fetchBookingDetails(true); // silent update to sync status & location
-      }, 3000); // reduced to 3s for "live" feel
-    }
-    return () => clearInterval(interval);
-  }, [booking?.status]);
-
-  const fetchBookingDetails = async (silent = false) => {
-    try {
-      const res = await fetch(`/api/bookings/${id}`);
-      const data = await res.json();
-      if (data.success) {
-        setBooking(data.booking);
-      } else if (!silent) {
-        toast.error(data.message);
-        router.push("/user/dashboard/bookings");
-      }
-    } catch (error) {
-      if (!silent) toast.error("Failed to load booking details");
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  };
 
   const handleDownloadReceipt = () => {
     downloadReceiptPDF(booking);
@@ -139,133 +181,72 @@ export default function BookingDetailsPage() {
     }
   };
 
-  const handleConfirmReject = async () => {
-    setRejecting(true);
-    try {
-      const res = await fetch(`/api/bookings/${booking._id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          status: "cancelled",
+  const handleConfirmReject = () => {
+    updateStatusMutation.mutate(
+      {
+        bookingId: booking._id,
+        status: "cancelled",
+        payload: {
           towingRequested: false,
-          actualCost: 150, // Policy fee for rejection
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.info("Towing rejected. Service cancelled.");
-        setShowRejectModal(false);
-        fetchBookingDetails();
-      }
-    } catch (err) {
-      toast.error("Failed to reject towing");
-    } finally {
-      setRejecting(false);
-    }
+          actualCost: 150,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.info("Towing rejected. Service cancelled.");
+          setShowRejectModal(false);
+        },
+      },
+    );
   };
 
-  const handleEstimateResponse = async (action) => {
-    // 'approve' or 'reject'
-    setRespondingToEstimate(true);
-    try {
-      const res = await fetch("/api/user/estimate/respond", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId: id, action }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        toast.success(result.message);
-        setShowEstimateModal(false);
-        fetchBookingDetails();
-      } else {
-        toast.error(result.message);
-      }
-    } catch (error) {
-      toast.error("Failed to respond to estimate");
-    } finally {
-      setRespondingToEstimate(false);
-    }
+  const handleEstimateResponse = (action) => {
+    estimateMutation.mutate(action);
   };
 
-  const handlePaymentSubmit = async () => {
-    if (paymentMethod === "sslcommerz") {
-      setPaying(true);
-      try {
-        const res = await fetch("/api/bookings/payment/init", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ bookingId: id }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          window.location.href = data.data.paymentUrl;
-        } else {
-          toast.error(data.message || "Failed to initialize payment");
-          setPaying(false);
-        }
-      } catch (error) {
-        toast.error("Network error");
-        setPaying(false);
-      }
-      return;
-    }
+  const rejecting = updateStatusMutation.isPending;
+  const respondingToEstimate = estimateMutation.isPending;
 
-    if (!transactionId && paymentMethod !== "cash") {
+  const handlePaymentSubmit = () => {
+    if (
+      paymentMethod !== "sslcommerz" &&
+      paymentMethod !== "cash" &&
+      !transactionId
+    ) {
       toast.error("Please enter Transaction ID");
       return;
     }
-    setPaying(true);
-    try {
-      const res = await fetch(`/api/bookings/${id}/pay`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          paymentMethod,
-          transactionId:
-            paymentMethod === "cash" ? `CASH-${Date.now()}` : transactionId,
-          amount: booking.actualCost || booking.estimatedCost,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success("Payment submitted for verification");
-        setShowPaymentModal(false);
-        fetchBookingDetails();
-      } else {
-        toast.error(data.message || "Payment submission failed");
-      }
-    } catch (error) {
-      toast.error("Network error submitting payment");
-    } finally {
-      if (paymentMethod !== "sslcommerz") {
-        setPaying(false);
-      }
-    }
+
+    const payload =
+      paymentMethod === "sslcommerz"
+        ? {}
+        : {
+            paymentMethod,
+            transactionId:
+              paymentMethod === "cash" ? `CASH-${Date.now()}` : transactionId,
+            amount: booking.actualCost || booking.estimatedCost,
+          };
+
+    paymentMutation.mutate(payload);
   };
 
-  const handleConfirmDispute = async () => {
-    setDisputing(true);
-    try {
-      const res = await fetch(`/api/bookings/${booking._id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "disputed" }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success("Booking marked as disputed");
-        setShowDisputeModal(false);
-        fetchBookingDetails();
-      }
-    } catch (err) {
-      toast.error("Failed to mark as disputed");
-    } finally {
-      setDisputing(false);
-    }
+  const handleConfirmDispute = () => {
+    updateStatusMutation.mutate(
+      {
+        bookingId: booking._id,
+        status: "disputed",
+      },
+      {
+        onSuccess: () => {
+          toast.success("Booking marked as disputed");
+          setShowDisputeModal(false);
+        },
+      },
+    );
   };
+
+  const paying = paymentMutation.isPending;
+  const disputing = updateStatusMutation.isPending;
 
   if (loading) {
     return (
@@ -288,8 +269,8 @@ export default function BookingDetailsPage() {
     displayText: !booking.isPaymentSubmitted
       ? "Payment Pending"
       : booking.isPaymentSubmitted && !booking.isPaymentApproved
-      ? "Payment Verified by Mechanic"
-      : "Payment Successful",
+        ? "Payment Verified by Mechanic"
+        : "Payment Successful",
   });
 
   // Helper to determine step status
@@ -418,7 +399,7 @@ export default function BookingDetailsPage() {
                   <Clock className="w-4 h-4 text-orange-400" />
                   <span>
                     {new Date(
-                      booking.scheduledAt || booking.createdAt
+                      booking.scheduledAt || booking.createdAt,
                     ).toLocaleDateString()}
                   </span>
                 </div>
@@ -428,8 +409,8 @@ export default function BookingDetailsPage() {
                       booking.status === "completed"
                         ? "bg-green-500"
                         : booking.status === "confirmed"
-                        ? "bg-blue-500"
-                        : "bg-orange-500"
+                          ? "bg-blue-500"
+                          : "bg-orange-500"
                     }`}
                   />
                   <span className="capitalize">
@@ -467,7 +448,7 @@ export default function BookingDetailsPage() {
                   <span className="text-xs text-gray-400 font-mono">
                     Updated:{" "}
                     {new Date(
-                      booking.driverLocation.updatedAt
+                      booking.driverLocation.updatedAt,
                     ).toLocaleTimeString()}
                   </span>
                 )}
@@ -515,8 +496,8 @@ export default function BookingDetailsPage() {
                         step.isCompleted
                           ? "bg-green-500 border-green-100 text-white shadow-lg shadow-green-500/20"
                           : step.isActive
-                          ? "bg-white border-orange-500 text-orange-500 shadow-xl shadow-orange-500/20 scale-110"
-                          : "bg-white border-gray-100 text-gray-300"
+                            ? "bg-white border-orange-500 text-orange-500 shadow-xl shadow-orange-500/20 scale-110"
+                            : "bg-white border-gray-100 text-gray-300"
                       }`}
                     >
                       {step.isCompleted ? (
@@ -539,8 +520,8 @@ export default function BookingDetailsPage() {
                           step.isCompleted
                             ? "text-green-600"
                             : step.isActive
-                            ? "text-orange-600"
-                            : "text-gray-400"
+                              ? "text-orange-600"
+                              : "text-gray-400"
                         }`}
                       >
                         {step.label}
@@ -683,8 +664,8 @@ export default function BookingDetailsPage() {
                   booking.isPaid && booking.isPaymentApproved
                     ? "bg-green-50 text-green-600"
                     : booking.isPaymentSubmitted && !booking.isPaymentApproved
-                    ? "bg-blue-50 text-blue-600"
-                    : "bg-red-50 text-red-600"
+                      ? "bg-blue-50 text-blue-600"
+                      : "bg-red-50 text-red-600"
                 }`}
               >
                 {booking.isPaid && booking.isPaymentApproved ? (
@@ -695,8 +676,8 @@ export default function BookingDetailsPage() {
                 {booking.isPaymentSubmitted && !booking.isPaymentApproved
                   ? "Payment Verified by Mechanic"
                   : booking.isPaid && booking.isPaymentApproved
-                  ? "Payment Successful"
-                  : "Payment Pending"}
+                    ? "Payment Successful"
+                    : "Payment Pending"}
               </div>
 
               {!booking.isPaid &&

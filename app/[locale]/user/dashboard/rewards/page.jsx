@@ -1,54 +1,40 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import axios from "axios";
 import { motion } from "framer-motion";
 import RewardsCatalog from "@/components/rewards/RewardsCatalog";
 import PointsHistory from "@/components/rewards/PointsHistory";
 
 export default function RewardsPage() {
-  const [data, setData] = useState({
-    userPoints: 0,
-    history: [],
-    redemptions: [],
-    rewards: [],
-  });
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("catalog"); // catalog | history
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      // Fetch user data (includes points)
-      const userRes = await axios.get("/api/profile");
-      // Fetch history & redemptions
-      const historyRes = await axios.get("/api/user/rewards/history");
-      // Fetch rewards catalog
-      const rewardsRes = await axios.get("/api/rewards");
+  const { data, isLoading } = useQuery({
+    queryKey: ["rewardsData"],
+    queryFn: async () => {
+      // Parallel fetches using axiosInstance
+      const [userRes, historyRes, rewardsRes] = await Promise.all([
+        axiosInstance.get("/api/profile"),
+        axiosInstance.get("/api/user/rewards/history"),
+        axiosInstance.get("/api/rewards"),
+      ]);
 
-      setData({
+      return {
         userPoints: userRes.data.user?.rewardPoints || 0,
         history: historyRes.data.history || [],
         redemptions: historyRes.data.redemptions || [],
         rewards: rewardsRes.data.rewards || [],
-      });
-    } catch (error) {
-      console.error("Failed to fetch rewards data", error);
-    } finally {
-      setLoading(false);
-    }
+      };
+    },
+  });
+
+  const handleRedemptionComplete = () => {
+    queryClient.invalidateQueries({ queryKey: ["rewardsData"] });
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const handleRedemptionComplete = (newBalance) => {
-    setData((prev) => ({ ...prev, userPoints: newBalance }));
-    fetchData(); // Refresh history and coupons
-  };
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />

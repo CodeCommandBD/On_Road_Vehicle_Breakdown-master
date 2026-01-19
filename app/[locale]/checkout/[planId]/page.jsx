@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 import { useParams, useSearchParams } from "next/navigation";
 import { useRouterWithLoading } from "@/hooks/useRouterWithLoading";
 import { useSelector } from "react-redux";
@@ -19,16 +21,13 @@ import {
 export default function CheckoutPage() {
   const params = useParams();
   const searchParams = useSearchParams();
-  const router = useRouterWithLoading(); // Regular routing
+  const router = useRouterWithLoading();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const user = useSelector(selectUser);
 
   const planId = params.planId;
   const billingCycle = searchParams.get("cycle") || "monthly";
 
-  const [plan, setPlan] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [processing, setProcessing] = useState(false);
   const [agreed, setAgreed] = useState(false);
 
   const [billingInfo, setBillingInfo] = useState({
@@ -36,6 +35,36 @@ export default function CheckoutPage() {
     email: "",
     phone: "",
     address: "",
+  });
+
+  const { data: plan = null, isLoading: loading } = useQuery({
+    queryKey: ["packagePlan", planId],
+    queryFn: async () => {
+      const res = await axiosInstance.get(`/api/packages/${planId}`);
+      return res.data.data.plan;
+    },
+    enabled: !!planId && isAuthenticated,
+    onError: () => {
+      alert("Plan not found");
+      router.push("/pricing");
+    },
+  });
+
+  const checkoutMutation = useMutation({
+    mutationFn: async (checkoutData) => {
+      const res = await axiosInstance.post("/api/payments/init", checkoutData);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      if (data.success && data.data.paymentUrl) {
+        window.location.href = data.data.paymentUrl;
+      } else {
+        alert(`Failed: ${data.message}`);
+      }
+    },
+    onError: (error) => {
+      alert(error.response?.data?.message || "Failed to process payment");
+    },
   });
 
   useEffect(() => {
@@ -52,27 +81,7 @@ export default function CheckoutPage() {
         address: "",
       });
     }
-
-    fetchPlan();
   }, [planId, user, isAuthenticated]);
-
-  const fetchPlan = async () => {
-    try {
-      const response = await fetch(`/api/packages/${planId}`);
-      const data = await response.json();
-      if (data.success) {
-        setPlan(data.data.plan);
-      } else {
-        alert("Plan not found");
-        router.push("/pricing");
-      }
-    } catch (error) {
-      console.error("Error fetching plan:", error);
-      alert("Failed to load plan details");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -90,37 +99,14 @@ export default function CheckoutPage() {
       return;
     }
 
-    setProcessing(true);
-
-    try {
-      const response = await fetch("/api/payments/init", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          planId,
-          billingCycle,
-          billingInfo,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success && data.data.paymentUrl) {
-        // Redirect to SSLCommerz payment page
-        window.location.href = data.data.paymentUrl;
-      } else {
-        console.error("Payment Init Failed:", data);
-        alert(
-          `Failed: ${data.message}\nError: ${data.error}\nStack: ${data.stack}`
-        );
-        setProcessing(false);
-      }
-    } catch (error) {
-      console.error("Error initializing payment:", error);
-      alert("Failed to process payment");
-      setProcessing(false);
-    }
+    checkoutMutation.mutate({
+      planId,
+      billingCycle,
+      billingInfo,
+    });
   };
+
+  const processing = checkoutMutation.isPending;
 
   if (loading) {
     return (
