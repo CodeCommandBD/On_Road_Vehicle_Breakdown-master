@@ -36,6 +36,9 @@ export default function MechanicLayout({ children }) {
   const dispatch = useDispatch();
   const router = useRouterWithLoading(true); // i18n routing
   const unreadCount = useSelector(selectUnreadNotificationsCount);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isNotifyOpen, setIsNotifyOpen] = useState(false);
+  const notifyRef = useRef(null);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const isLoading = useSelector(selectAuthLoading);
   const user = useSelector(selectUser);
